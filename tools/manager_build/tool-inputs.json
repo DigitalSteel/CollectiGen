@@ -1,0 +1,82 @@
+{
+  "dependency_sources": {
+    "PyInstaller": "https://github.com/pyinstaller/pyinstaller",
+    "PySide6": "https://doc.qt.io/qtforpython-6/licenses.html",
+    "other_wheels": "https://pypi.org/"
+  },
+  "distributions": {
+    "PySide6-Essentials": "6.11.2",
+    "altgraph": "0.17.5",
+    "packaging": "26.3",
+    "pefile": "2024.8.26",
+    "pyinstaller": "6.22.3",
+    "pyinstaller-hooks-contrib": "2026.8",
+    "pywin32-ctypes": "0.2.3",
+    "setuptools": "84.0.0",
+    "shiboken6": "6.11.2"
+  },
+  "msvc": {
+    "architecture": "x64",
+    "minimum_version": "14.44.35211.0",
+    "policy": "existing-system-prerequisite"
+  },
+  "notices": {
+    "Manager-Frozen-Bundle-Attribution.md": {
+      "sha256": "762ced957bd8768e0b5d67685c7109f1183779a250212d9bb73fc5ec149117c9",
+      "source": "licenses/Manager-Frozen-Bundle-Attribution.md"
+    },
+    "Python-3.14.7-LICENSE.txt": {
+      "sha256": "935cf13e19f8c31b497d20b05d73623431a226b230c3599bc30fa3348979bc68",
+      "source": "licenses/Python-3.14.7-LICENSE.txt"
+    },
+    "Velopack-1.2.161-LICENSE.txt": {
+      "sha256": "91845db83551c877ebbb1118e0fb92e4e527290d23b995c55dcd438b3293943f",
+      "source": "licenses/Velopack-1.2.161-LICENSE.txt"
+    },
+    "Velopack-1.2.161-SBOM.json": {
+      "sha256": "abe4c25623102601a621e48d60a10837c57ebc7fb7b966ca7e9d4642bc3b6d87",
+      "source": "licenses/Velopack-1.2.161-SBOM.json"
+    },
+    "Velopack-1.2.161-ThirdParty-Notices.json": {
+      "sha256": "f3d32c110edc6d66ff4889cfc57dec72f4419715213e07c5a56c237d36c50779",
+      "source": "licenses/Velopack-1.2.161-ThirdParty-Notices.json"
+    }
+  },
+  "platform": {
+    "architecture": "x86_64",
+    "os": "windows",
+    "python_abi": "cp314"
+  },
+  "python": {
+    "bytes": 255200,
+    "license": "licenses/Python-3.14.7-LICENSE.txt",
+    "sha256": "9b7bffc26240463c965a2a2a5fada1d8e741c21c25cd2e977728c339b82d9977",
+    "upstream": "https://www.python.org/downloads/release/python-3147/",
+    "version": "3.14.7"
+  },
+  "root_entry_ast_sha256": "45824982973557d9b0e83b5f4e98b2849b7ae1dec499c52afd04a89282e3d209",
+  "schema": 1,
+  "sdk": {
+    "files": {
+      "velopack-1.2.161.dist-info/INSTALLER": "ceebae7b8927a3227e5303cf5e0f1f7b34bb542ad7250ac03fbcde36ec2f1508",
+      "velopack-1.2.161.dist-info/METADATA": "8ed9bcadb67d83c8a28545947507286bec421f63dbfddb849f1e4ffdeef4e6ce",
+      "velopack-1.2.161.dist-info/RECORD": "d44eb90a4c32f125baaebe5f4872c9dc7177933f5b52896b0918cf004721963c",
+      "velopack-1.2.161.dist-info/REQUESTED": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "velopack-1.2.161.dist-info/WHEEL": "98783adff22ec0b48d9181b5f2734e700f8b5f7b1ec797e40c32d3f36ee971c9",
+      "velopack-1.2.161.dist-info/sboms/velopack_python.cyclonedx.json": "abe4c25623102601a621e48d60a10837c57ebc7fb7b966ca7e9d4642bc3b6d87",
+      "velopack/__init__.py": "8bf864ddfbeca880d95c345c363d39440b56d75f471e64639a2300a13ec022a1",
+      "velopack/__init__.pyi": "b6871b4fe54e7ad0633b454dcb7566db0d16a13af83bd17d03dfab0cfe618f6c",
+      "velopack/velopack.pyd": "6fd683ca5a19c54125ac49204e962d5dbe4b124f8ffe01afe1f518272f397352"
+    },
+    "license": "licenses/Velopack-1.2.161-LICENSE.txt",
+    "name": "velopack",
+    "upstream": "https://github.com/velopack/velopack/tree/1.2.161",
+    "version": "1.2.161"
+  },
+  "templates": {
+    "CollectiGen.spec": "654ce64e312ff9d3e45f6e1e88b1d09e63680182f158cf6ef91c54432451a72d",
+    "CollectiGenManager.spec": "6112eb151cfc25ad1ac0f72f6cf522f5c43a9c0b6bfa6989012275e52e5c39fc",
+    "sdk_binary_origin.py": "84fc3756721a339dbee1e515b0179fcee6bea8212fb6472946578c9806cf8d1e",
+    "windows_build_isolation.py": "5edf2dcdc50fc848ab3904871db257a570b3d7868cfa5300dafd609efb617fa0"
+  }
+}

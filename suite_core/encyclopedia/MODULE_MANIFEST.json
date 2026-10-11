@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "module_id": "collectigen.tag-encyclopedia",
+  "software_version": "0.1.0-alpha.8",
+  "snapshot_interface_version": 2,
+  "runtime_files": [
+    "core/component_release_identity.py",
+    "qt_app/__init__.py",
+    "qt_app/browse_components.py",
+    "release_contract.py",
+    "suite_core/__init__.py",
+    "suite_core/encyclopedia/RELEASE_PRESENTATION.json",
+    "suite_core/encyclopedia/__init__.py",
+    "suite_core/encyclopedia/__main__.py",
+    "suite_core/encyclopedia/browser.py",
+    "suite_core/encyclopedia/demo.py",
+    "suite_core/encyclopedia/hosted_examples.py",
+    "suite_core/encyclopedia/native_writer.py",
+    "suite_core/encyclopedia/publication.py",
+    "suite_core/encyclopedia/version.py",
+    "suite_core/knowledge/__init__.py",
+    "suite_core/knowledge/catalog_migration_preview.py",
+    "suite_core/knowledge/tag_lookup.py",
+    "suite_core/knowledge/version.py",
+    "suite_core/media_examples.py",
+    "suite_core/selected_catalog.py",
+    "suite_core/version.py"
+  ],
+  "support_files": [
+    "suite_core/encyclopedia/README.md",
+    "suite_core/encyclopedia/WHATS_NEW.md",
+    "suite_core/encyclopedia/MODULE_MANIFEST.json",
+    "suite_core/encyclopedia/RELEASE_HISTORY.json"
+  ],
+  "dependencies": {
+    "python": ">=3.10; qualified 3.13.15",
+    "qt": "PySide6_Essentials/shiboken6 qualified 6.11.2"
+  },
+  "entrypoint": "python -B -m suite_core.encyclopedia",
+  "scope": "Separate read-only snapshot browser. Current unsigned Windows candidate has verified frozen dependency closure, packaging and byte read-back. Ordinary visible browsing/reopen/Close, hosted examples and clean-machine acceptance remain pending. This source inventory is not an installer or activation authority.",
+  "supported_snapshot_interface_versions": [
+    1,
+    2
+  ],
+  "compatible_wire_interface_version": 1,
+  "diagnostic_wire_interface_version": 2,
+  "status": "unpublished source; unsigned frozen candidate package verified; native visible/hosted and clean-machine acceptance pending"
+}

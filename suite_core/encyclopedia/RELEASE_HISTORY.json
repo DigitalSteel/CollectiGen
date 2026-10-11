@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "releases": [
+    {
+      "software_version": "0.1.0-alpha.1",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 1,
+      "scope": "Independently reviewed read-only browser/publication foundation; 11 module tests, actual native capture synthetic only"
+    },
+    {
+      "software_version": "0.1.0-alpha.2",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 1,
+      "scope": "Separate explicit module inventory and focused distribution selection; no browser or native writer behavior changes"
+    },
+    {
+      "software_version": "0.1.0-alpha.3",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 1,
+      "scope": "Bounded symmetric public codec and canonical incremental serialization; detached synthetic export qualification only. Existing alpha.2 archives unchanged."
+    },
+    {
+      "software_version": "0.1.0-alpha.4",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 1,
+      "scope": "Reject positive/negative JSON float overflow during parsing; detached synthetic byte-scale evidence only, native readers unchanged."
+    },
+    {
+      "software_version": "0.1.0-alpha.5",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 2,
+      "scope": "Maximum reader interfaces 1/2; compatible publications retain exact v1 bytes, retired/unavailable diagnostics require v2. Browser details retain nonassignable IDs and relationship attribution. Detached synthetic source qualification; package and visible GUI acceptance remain separate."
+    },
+    {
+      "software_version": "0.1.0-alpha.6",
+      "date": "2026-10-06",
+      "timezone": "America/New_York",
+      "snapshot_interface_version": 2,
+      "scope": "Landed unpublished native coherent capture/publication admission; browser/codec unchanged; no publication/activation"
+    },
+    {
+      "software_version": "0.1.0-alpha.7",
+      "date": "2026-10-06",
+      "timezone": "America/New_York",
+      "snapshot_interface_version": 2,
+      "scope": "Reviewed hosted examples source landing; existing wire interfaces unchanged; native workflow/distribution unqualified; delivered alpha.6 artifacts unchanged"
+    },
+    {
+      "software_version": "0.1.0-alpha.8",
+      "date": "2026-10-08",
+      "timezone": "America/New_York",
+      "snapshot_interface_version": 2,
+      "scope": "Standalone source inventory includes the existing catalog-preview dependency so an isolated source copy can open Tag Encyclopedia. Existing archives and snapshot interfaces are unchanged; no new package is released or native catalog workflow activated."
+    }
+  ]
+}
