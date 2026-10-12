@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 354,
+  "allowlisted_source_file_count": 355,
   "component_ids": [
     "collectigen.suite-manager",
     "collectigen.tag-encyclopedia"
@@ -21,6 +21,10 @@
     "PRIVACY.md": {
       "sha256": "d8912dc5ca5d60c35aebb721d8e47a8757e0164d1ef5f370765c3db70aa7e228",
       "size_bytes": 9008
+    },
+    "README.md": {
+      "sha256": "73f094aae009de2156c66d6ce0dcf0e10095368d27bdc14d4316898e2ce01c36",
+      "size_bytes": 3733
     },
     "SUPPORT.md": {
       "sha256": "1cb1e9aea57477e1494bf8b89ff692c9342e9169c4af5b8292ece123788fb1f3",
