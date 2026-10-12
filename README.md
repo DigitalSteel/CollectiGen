@@ -1,6 +1,6 @@
 # CollectiGen
 
-CollectiGen is a developing suite for collecting, understanding and organizing images, preserving metadata and provenance, and preparing training data. Its longer-term direction includes connected training and image-generation workflows, with ordinary work primarily performed locally.
+CollectiGen is a developing suite for collecting, identifying and organizing media, preserving metadata and provenance, and preparing training data. Its longer-term direction includes connected training and image-generation workflows, with ordinary work primarily performed locally.
 
 The project is in alpha. This repository contains a source checkpoint, not a complete installable suite.
 
