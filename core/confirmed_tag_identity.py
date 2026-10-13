@@ -937,7 +937,7 @@ def active_refinement_inputs(knowledge, categories, relationships, source_id):
     wanted=sources|set(candidates)
     # Existing compounds only: exact base ID, not spelling/category similarity.
     wanted.update(r.endpoints[0].id for r in relationships if r.kind==MODIFIER_VALUE and r.endpoints
-                  and r.details.get('base_tag_id') in candidates)
+                  and dict(r.details).get('base_tag_id') in candidates)
     if len(wanted)>256 or len(candidates)>64:raise ValueError('refinement_input_bound')
     slots=tuple(r for r in relationships if r.kind==MODIFIER_VALUE and r.endpoints and r.endpoints[0].id in wanted)
     if len(slots)+len(links)>1024:raise ValueError('refinement_input_bound')

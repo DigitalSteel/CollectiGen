@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 355,
+  "allowlisted_source_file_count": 358,
   "component_ids": [
     "collectigen.suite-manager",
     "collectigen.tag-encyclopedia"
@@ -23,8 +23,12 @@
       "size_bytes": 9008
     },
     "README.md": {
-      "sha256": "73f094aae009de2156c66d6ce0dcf0e10095368d27bdc14d4316898e2ce01c36",
-      "size_bytes": 3733
+      "sha256": "0ccb89753124e63a9d3b8776a5b5af3bcd92209e54f190bd64f20d2a1de54d10",
+      "size_bytes": 3730
+    },
+    "SOURCE_CHECKPOINT.md": {
+      "sha256": "bc1cd04cb522e85877b12466511cfbe1eb6281e3949149df8b87eb023e29491a",
+      "size_bytes": 1716
     },
     "SUPPORT.md": {
       "sha256": "1cb1e9aea57477e1494bf8b89ff692c9342e9169c4af5b8292ece123788fb1f3",
@@ -151,8 +155,8 @@
       "size_bytes": 5546
     },
     "core/confirmed_tag_identity.py": {
-      "sha256": "6924365f54130f2d75016a75f14c99536fece12c90631bccd351db775d917282",
-      "size_bytes": 40898
+      "sha256": "f087f4443fd94282f417d40adfb23c2cb5331ae1868a6beab56e72fdb40444d9",
+      "size_bytes": 40904
     },
     "core/conflict_policy.py": {
       "sha256": "554fd1e85925b8f7f21d54ea12bb632c3415a4c70e9f3c21279e919c040640bb",
@@ -633,6 +637,10 @@
     "core/tag_ordering.py": {
       "sha256": "fd73c172a3e10e7dec0206a683d3b3a1671b60f502abccd38620e10c309084d3",
       "size_bytes": 12584
+    },
+    "core/tag_refinement_plan.py": {
+      "sha256": "d3ee1f67d6b19e48b5bf90f26acaf753f39a32ce9274fd06ea13dc28c1c502a2",
+      "size_bytes": 10231
     },
     "core/tag_relationship_compatibility.py": {
       "sha256": "0970f0ee1bc1d7f4611d4b56ff19f696e382c0808e963c8763e71ae0100c2ad4",
@@ -1374,6 +1382,10 @@
       "sha256": "b723b218fb9edc4121cfab8647f9b2ee43b76d92188b29403f6f7d47c68fa5a2",
       "size_bytes": 3735
     },
+    "tests/test_tag_serialized_modifier_refinement.py": {
+      "sha256": "66d17303562310f2250cd0f75529f3c77d58cb8a8ab65dc671e82492b427008c",
+      "size_bytes": 3383
+    },
     "tools/Build-PublicSource.py": {
       "sha256": "2aa407dbbb65c567db94cbf668ad42167fbba87e76422865b8e28c4559577251",
       "size_bytes": 451
@@ -1444,6 +1456,6 @@
   "reviewed_defaults_digest": "156fa5ec75dd4ef3a5f7c36bcb80cbb9084151c0ee0c313cb863ae3270e5f4e5",
   "reviewed_defaults_ref": "working-tree",
   "schema_version": 1,
-  "source_ref": "working-tree",
+  "source_ref": "public-base:3bda838d22d346a966a960516952a557dd261271+accepted-serialized-refinement",
   "working_tree_reviewed_defaults": []
 }
