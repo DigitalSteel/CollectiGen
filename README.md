@@ -22,11 +22,19 @@ The project is in alpha. This repository contains a source checkpoint, not a com
 
 Read the included `README.md`, `USER_GUIDE.md` and release notes. Preserve older packages and existing data while evaluating an alpha.
 
+## Media Organizer
+
+Media Organizer a.0.4.5 for Windows x64 is a separate evaluation prerelease. Local image organization, manual metadata editing and guarded move workflows are available within the qualified scope. Guided Setup saves choices without starting a scan. Manager integration, automatic updates and model/training/generation execution are not supplied by this package.
+
+Download the complete `MediaOrganizer-a.0.4.5-windows-x64.zip` from the Organizer release Assets, verify its checksum and extract into a new folder. Run `Apps/collectigen.media-organizer/0.4.5-alpha.1/Start_MediaOrganizer.bat`. Microsoft Visual C++ v14 Redistributable x64 14.44.35211.0 or newer is required; Python and Qt are bundled. Use copied media and a separate profile, keep backups and older packages, and read the release notes. Updating is a fresh extraction; automatic/in-place updates and cross-version profile migration are not qualified.
+
+The matching source-notices ZIP and source-delivery supplement accompany the binary. [Proposed Organizer release link — availability unverified](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.4.5-alpha.1). This link is a proposal until publication is verified.
+
 ## Development status and limits
 
 - **Suite Manager:** under development; no Manager executable is supplied by the current public release. Default acquisition and update profiles remain inactive.
 - **Tag Database:** optional content, separate from the reader; not currently published.
-- **Media Organizer and broader image, training and generation workflows:** ongoing development, not supplied as a complete public suite by this release.
+- **Media Organizer:** separate evaluation package described above; broader training and generation workflows remain under development.
 - **Linux:** no supported Linux package is currently published.
 
 This reader does not edit catalogs, import a Tag Database, run inference or include models. Hosted image examples require a separately admitted host.
