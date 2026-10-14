@@ -19,7 +19,7 @@ The Encyclopedia starts empty. No Tag Database, snapshot, image library or model
 
 1. Download the application ZIP from its release's **Assets** and check the accompanying SHA-256 checksum. Extract the **entire ZIP into a new folder** and keep its folder structure intact.
 2. Install **Microsoft Visual C++ v14 Redistributable x64, version 14.44.35211.0 or newer**, if needed. Python and Qt are bundled; no separate Python installation is needed. Do not substitute DLLs.
-3. For Organizer, run **`Apps/collectigen.media-organizer/0.4.5-alpha.1/Start_MediaOrganizer.bat`** in the extracted folder. For Encyclopedia, open the extracted **`TagEncyclopedia`** folder and run **`TagEncyclopedia.exe`**.
+3. For Organizer, run **`Start_MediaOrganizer.bat`** in the extracted folder. For Encyclopedia, open the extracted **`TagEncyclopedia`** folder and run **`TagEncyclopedia.exe`**.
 4. In Organizer's Guided Setup, choose **Library locations**, optional **AI setup**, **Preferences and defaults**, then **Review and finish**. Finish saves your choices without automatically opening a library or starting a scan. Evaluate with copied images and keep backups. Optional AI controls do not mean a model is installed or ready to run.
 5. In Encyclopedia, choose **Open Snapshot** if you have an approved compatible snapshot. An empty reader is expected otherwise.
 
