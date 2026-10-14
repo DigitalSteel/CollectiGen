@@ -1,33 +1,32 @@
-# Media Organizer a.0.4.5 - Alpha (compatibility wire 0.4.5-alpha.1)
+# Media Organizer a.0.4.6 - Unreleased development (compatibility wire 0.4.6-alpha.1)
 
-2026-10-13 (America/New_York; unpublished candidate)
+2026-10-14 (America/New_York)
 
-## Improvements
+## Bug fixes
 
-- Guided Setup opens directly with Library locations, followed by optional AI setup, Preferences and defaults, and Review and finish.
-- Existing profile choices are prefilled. Model-use history stays optional on the AI page, and Preferences keeps its actions visible while detailed controls scroll.
+Tag Encyclopedia cannot open once Organizer's background work is shutting down.
 
-## Fixes
+This development checkpoint has not been packaged or released. Native and packaged acceptance remain pending. Video/audio, model execution and Generation/Training are not added to the supported release scope.
 
-- Finish saves configuration without automatically opening a library, scanning media or starting source-evidence processing.
-- Saved setup resumes at the appropriate category, including older Welcome checkpoints. Existing choices remain intact when setup is paused or skipped.
+# Media Organizer a.0.4.5 - Published alpha (compatibility wire 0.4.5-alpha.1)
 
-The a.0.4.4 local image workflow and portable prerequisite checker are retained. Active Suite Manager settings inheritance, Manager-managed launch, automatic/in-place updates, Video/audio, model analysis and training/generation are outside this candidate's supported scope. Optional AI setup can be configured later; its presence does not establish an installed or runnable capability. This is an unpublished candidate; use copied media and a separate profile.
-
-# Media Organizer a.0.4.4 - Alpha (compatibility wire 0.4.4-alpha.1)
-
-2026-10-13 (America/New_York; unpublished candidate)
+Published 2026-10-14; source checkpoint 2026-10-13 (America/New_York).
 
 ## Improvements
 
-- Start Media Organizer through its own portable launcher using the bundled image runtime. Startup errors stay visible without automatic repair or a system-Python fallback.
-- A short version-specific guide explains the manual image workflow, prerequisites, backups, privacy and alpha limits.
+- Guided Setup follows Library locations, optional AI setup, Preferences and defaults, then Review and finish.
+- Existing choices are prefilled, and Finish saves configuration without starting a media scan or source-evidence processing.
 
-## Fixes
+This entry describes the distinct published a.0.4.5 source and package, not later development changes. Optional AI choices do not establish installed or runnable model support. Manager-managed launch and updates, Video/audio and Generation/Training remain outside that release's supported scope.
 
-- Dataset and Tag Encyclopedia can prepare Character Knowledge concurrently without failing when another background preparation is using the same profile. Cancellation and recovery remain available.
+# Media Organizer a.0.4.4 - Alpha source checkpoint (compatibility wire 0.4.4-alpha.1)
 
-The existing a.0.4.3 image workflow is retained. Manager-managed launch, automatic/in-place updates, Video/audio, model analysis and training/generation are outside this candidate's supported scope. This is an unpublished candidate; use copied media and a separate profile.
+2026-10-13 (America/New_York)
+
+## Improvements
+
+- The portable image launcher keeps startup errors visible without automatic repair or a system-Python fallback.
+- Version-specific guidance explains the manual image workflow, prerequisites, backups and alpha limits.
 
 # Media Organizer a.0.4.3 - Alpha (compatibility wire 0.4.3-alpha.1)
 
@@ -91,7 +90,6 @@ retry. Local corrections, Tag ordering and public catalog data stay unchanged.
 
 ## Candidate limits
 
-This integrated source candidate has focused synthetic integration coverage.
 Normal native entry, visible Dataset return, close/reopen and clean-package
 acceptance are pending. No new package has been produced or published. Existing
 archives retain their original identities. Generation and Training execution

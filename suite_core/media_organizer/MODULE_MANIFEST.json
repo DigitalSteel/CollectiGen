@@ -34,7 +34,7 @@
   "maturity": "alpha",
   "module_id": "collectigen.media-organizer",
   "native_activation_qualified": false,
-  "numeric_version": "0.4.5",
+  "numeric_version": "0.4.6",
   "optional_integrations": [
     "injected model-manager status",
     "borrowed Encyclopedia TagLookup interface 1"
@@ -46,7 +46,7 @@
     "Ingest",
     "Setup"
   ],
-  "release_date": "2026-10-13",
+  "release_date": "2026-10-14",
   "release_timezone": "America/New_York",
   "required_runtime": [
     "bundled Python 3.13.15 organizer-image runtime",
@@ -106,14 +106,14 @@
   "runtime_kind": "interpreter-portable",
   "runtime_profile": "organizer-image",
   "schema_version": 1,
-  "scope": "Accepted frozen a044 source/runtime/resources plus reviewed four-category setup delta and a045 version/guidance only",
+  "scope": "Exact published a045 runtime/profile/prerequisites/Setup/source-owner declarations; only shutdown availability correction and a046 metadata.",
   "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
   "shell_owner": "qt_app.main_window.TagManagerWindow",
-  "software_version": "0.4.5-alpha.1",
+  "software_version": "0.4.6-alpha.1",
   "standalone_distribution_qualified": false,
   "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
   "startup_owner": "qt_main._start_application",
-  "status": "Exact a045 input packet; build/native/distribution acceptance pending",
+  "status": "isolated unbuilt a046 source selection; availability correction; binary/native qualification pending",
   "unavailable_product_workspaces": [
     "Generate",
     "Training"

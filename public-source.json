@@ -1849,6 +1849,10 @@
       "sha256": "64924b26e62ba92657faa4941fcc32217b27b729f5bf1582e21c51c7c0267a28",
       "size_bytes": 2398
     },
+    "docs/releases/v0.4.6-alpha.1.md": {
+      "sha256": "50db1662f45f6fbc5f00f0108b528c450cda8510a2796ebb48dc284e31176f7c",
+      "size_bytes": 902
+    },
     "licenses/Apache-2.0.txt": {
       "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
       "size_bytes": 11357
@@ -3126,20 +3130,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "85be99ed869a81a8a1171fd8dbd3c54054e8b6ac3b06d3b2a9e2eb74e5ffdcb8",
-      "size_bytes": 5089
+      "sha256": "10eb2f92159b3aa10de7e3f281e84b29890a051caea96fde1eecac36d81c70ab",
+      "size_bytes": 5008
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "b6f703d612dfff4d08d2d54b0592bcf27baeeffd2c4d4dff39f3c45dc6f46238",
-      "size_bytes": 6133
+      "sha256": "69be457599426f96f00d6c0d4ce84db796cf4756f049106318d9c3a952b4044b",
+      "size_bytes": 8791
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
-      "sha256": "4ca0cae7f840959b3928325d82fd5334fbbb156c43a341bc3090f3db16f5f079",
-      "size_bytes": 257
+      "sha256": "65ca08515210bdc16ad9035c99f0bfcd407b4fa2013f502ecbed3f62888607f4",
+      "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "9574babaaaebba006f8b8b13113cc23d9cadf3b54d7120c125bd8a98ad5f2ae1",
-      "size_bytes": 7159
+      "sha256": "447bb14d3b6bf355d840a6bc2971ba080cdb7aa5c4b51c20e97f8f396da3c30f",
+      "size_bytes": 6316
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3166,8 +3170,8 @@
       "size_bytes": 7104
     },
     "suite_core/media_organizer/encyclopedia_native_entry.py": {
-      "sha256": "b949a96be836926aa82888d81d25d1c45e67ba3314c09eb6c125b438c701a5c6",
-      "size_bytes": 7746
+      "sha256": "eb080bb33be92eedac55f392b9a2d50bb7a5d413f5a55dd1a80000d5da0bdb3e",
+      "size_bytes": 7838
     },
     "suite_core/media_organizer/entry.py": {
       "sha256": "44e626fa73fb02a359da4ee06cf43aae5243f6454ab2a8cf48ab94717af30c71",
@@ -3198,8 +3202,8 @@
       "size_bytes": 3136
     },
     "suite_core/media_organizer/version.py": {
-      "sha256": "8d882f0c4a76c6ca1384db35889ebecf6460e7d289684df7f4dc5969a4597b28",
-      "size_bytes": 271
+      "sha256": "a598be5c74f4e62982324f428e47c24039d132892d9387500e0491f166a62974",
+      "size_bytes": 264
     },
     "suite_core/registry/__init__.py": {
       "sha256": "510411f0065510db578ac1d249051f1c207c1930866b1cc07bfd6c6c0a4498e9",
@@ -3296,11 +3300,12 @@
     "README.md",
     "docs/releases/v0.4.5-alpha.1.md",
     "SOURCE_DELIVERY_SUPPLEMENT.md",
-    "data/defaults/release-trust.json"
+    "data/defaults/release-trust.json",
+    "docs/releases/v0.4.6-alpha.1.md"
   ],
   "reviewed_defaults_digest": "156fa5ec75dd4ef3a5f7c36bcb80cbb9084151c0ee0c313cb863ae3270e5f4e5",
   "reviewed_defaults_ref": "working-tree",
   "schema_version": 1,
-  "source_ref": "working-tree",
+  "source_ref": "review-proposal-a046-from-published-76641598; exact accepted runtime plus canonical release body; no public commit yet",
   "working_tree_reviewed_defaults": []
 }

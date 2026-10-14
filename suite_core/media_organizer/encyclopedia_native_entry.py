@@ -15,7 +15,9 @@ class NativeEncyclopediaRoute:
     def available(self):
         try:
             self.host.organizer._check_context()
-            return callable(getattr(self.host.state.jobs,"create_execution_scope",None))
+            jobs = self.host.state.jobs
+            return (not getattr(jobs,"shutting_down",False)
+                    and callable(getattr(jobs,"create_execution_scope",None)))
         except Exception:
             return False
 
