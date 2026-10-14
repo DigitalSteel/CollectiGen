@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "roadmap_id": "REL-03",
+  "frozen_manager_candidate": {
+    "status": "static_bundle_evidence_only_not_release_qualified",
+    "reviewed_date": "2026-10-09",
+    "source_manifest_sha256": "63dafae2f728606495ca2b1328184020d2d4b618a6548d311609209021ea8f0f",
+    "payload_inventory_sha256": "abc009249207da99b001b4150cb7c4a817d3185ac8dbb4357703a879bf3dc0a6",
+    "payload_file_count": 905,
+    "scope": "Exact build-03 frozen Suite Manager only; does not replace the portable Python runtime contract or qualify Tag Encyclopedia/Media Organizer packages.",
+    "notice": "licenses/Manager-Frozen-Bundle-Attribution.md",
+    "components": [
+      {
+        "name": "Velopack Python SDK",
+        "version": "1.2.161",
+        "bundled": true,
+        "license": "MIT; transitive components retain their upstream expressions",
+        "artifact_sha256": "6fd683ca5a19c54125ac49204e962d5dbe4b124f8ffe01afe1f518272f397352",
+        "source_url": "https://github.com/velopack/velopack/tree/1.2.161",
+        "license_evidence": "licenses/Velopack-1.2.161-LICENSE.txt",
+        "sbom": "licenses/Velopack-1.2.161-SBOM.json",
+        "sbom_sha256": "abe4c25623102601a621e48d60a10837c57ebc7fb7b966ca7e9d4642bc3b6d87",
+        "sbom_component_count": 139,
+        "third_party_notices": "licenses/Velopack-1.2.161-ThirdParty-Notices.json",
+        "third_party_notices_sha256": "f3d32c110edc6d66ff4889cfc57dec72f4419715213e07c5a56c237d36c50779",
+        "source_notice_record_count": 268,
+        "unresolved_source_components": 0,
+        "redistribution_status": "exact_sbom_source_notices_retained_package_inclusion_pending",
+        "scope": "Native SDK in both frozen support trees; no Update.exe, vpk executable or installer payload. SBOM is dependency evidence, not complete notices or proof every dependency is linked."
+      },
+      {
+        "name": "PyInstaller",
+        "version": "6.22.3",
+        "bundled": "generated bootloader and embedded runtime loader support only",
+        "license": "GPL-2.0 with PyInstaller exception; specified files Apache-2.0",
+        "source_url": "https://pyinstaller.org/en/v6.22.3/license.html",
+        "redistribution_status": "stock_generated_bundle_exception_recorded",
+        "scope": "No PyInstaller build-tool installation shipped; upstream exception does not remove dependency obligations or cover distributed modifications to PyInstaller."
+      },
+      {
+        "name": "PyAV / FFmpeg",
+        "bundled": false,
+        "scope": "No av package, FFmpeg executable or codec/library artifacts in this exact inventory. Existing portable-runtime attribution hold remains unchanged."
+      },
+      {
+        "name": "Ollama",
+        "bundled": false,
+        "scope": "CollectiGen integration/preparation modules only; no runner, model, installer or Ollama distribution. No unshipped runtime version is selected by this inventory."
+      },
+      {
+        "name": "Python",
+        "version": "3.14.7",
+        "bundled": true,
+        "license_evidence": "licenses/Python-3.14.7-LICENSE.txt",
+        "license_sha256": "935cf13e19f8c31b497d20b05d73623431a226b230c3599bc30fa3348979bc68",
+        "redistribution_status": "pending_packaged_license_and_version_notice_correction"
+      }
+    ],
+    "release_blockers": [
+      "Include the pinned Velopack source-notice appendix in the package; conservative coverage of all 139 SBOM components is retained, without claiming linked-binary dependency completeness or legal acceptance.",
+      "Include the exact Python 3.14.7 license and correct the bundled runtime description.",
+      "Resolve bundled MSVCP140/VCRUNTIME140 copies against the approved system-prerequisite policy.",
+      "The existing component audit targets the portable interpreter layout and does not validate this frozen candidate section.",
+      "New notice files require separate public-source allowlist and package inclusion by their owners."
+    ]
+  },
+  "project": {
+    "application_code": {
+      "status": "approved",
+      "license": "AGPL-3.0-or-later",
+      "license_evidence": ["LICENSE", "LICENSES.md"],
+      "scope": "Original CollectiGen application code only; third-party components retain their own licenses."
+    },
+    "original_documentation": {
+      "status": "approved",
+      "license": "CC-BY-SA-4.0",
+      "license_evidence": ["licenses/CC-BY-SA-4.0.txt", "LICENSES.md"],
+      "scope": "Original prose and diagrams only; quoted or incorporated third-party material retains its upstream terms."
+    },
+    "compiled_knowledge": {
+      "status": "approved",
+      "license": "CC-BY-SA-4.0",
+      "license_evidence": ["licenses/CC-BY-SA-4.0.txt", "LICENSES.md"],
+      "scope": "Original selection, organization, and additions only; upstream facts and licensed source material remain separately attributed."
+    },
+    "public_identity": {
+      "status": "approved",
+      "name": "CollectiGen",
+      "tagline": "Collect. Identify. Organize. Generate.",
+      "rejected_candidate": "Frameweave",
+      "private_repository_name": "TagManager",
+      "clearance_status": "owner_accepted_screening",
+      "clearance_summary": "Exact-name internet, indexed software/company, package-registry, account, and automated trademark searches found no indexed CollectiGen product match on 2026-07-20. A corrected official RDAP check found that collectigen.com has been registered since 2025-10-05 and is not project-owned, so the project will not claim or depend on that domain. The private TagManager repository name and tag-manager compatibility identifiers are not presented as the public mark. The user reviewed the documented limits of the screening and approved CollectiGen for public use without making outside legal clearance or domain/handle ownership a release requirement. Optional professional clearance remains a risk-reduction measure, not a completed legal opinion or release gate."
+    }
+  },
+  "bundled_runtime": [
+    {
+      "name": "av",
+      "version": "18.1.0",
+      "license": "BSD-3-Clause for PyAV; bundled FFmpeg and codec-specific terms apply",
+      "source_url": "https://pypi.org/project/av/18.1.0/",
+      "wheel_filename": "av-18.1.0-cp311-abi3-win_amd64.whl",
+      "wheel_sha256": "ea1480b7a8d5405cb5f382b344731bf125fd2c1c6fae3964f6c48595628387ff",
+      "license_evidence": ["installed distribution license files"],
+      "redistribution_status": "pending_ffmpeg_codec_attribution"
+    },
+    {
+      "name": "Python",
+      "version": "3.13.15",
+      "license": "Python-2.0 and incorporated historical license notices",
+      "source_url": "https://www.python.org/downloads/release/python-31315/",
+      "license_evidence": ["data/runtime/python/LICENSE.txt"]
+    },
+    {
+      "name": "pip",
+      "version": "26.2.1",
+      "license": "MIT",
+      "source_url": "https://pypi.org/project/pip/26.2.1/",
+      "wheel_filename": "pip-26.2.1-py3-none-any.whl",
+      "wheel_sha256": "71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e",
+      "license_evidence": ["installed distribution license files"]
+    },
+    {
+      "name": "Pillow",
+      "version": "12.3.0",
+      "license": "MIT-CMU",
+      "source_url": "https://pypi.org/project/pillow/12.3.0/",
+      "license_evidence": ["installed distribution license files"]
+    },
+    {
+      "name": "PySide6_Essentials",
+      "version": "6.11.2",
+      "license": "LGPL-3.0-only or GPL-3.0-only by bundled Qt module, plus third-party terms",
+      "upstream_expression": "LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only",
+      "source_url": "https://download.qt.io/official_releases/QtForPython/pyside6/PySide6-6.11.2-src/",
+      "wheel_filename": "pyside6_essentials-6.11.2-cp310-abi3-win_amd64.whl",
+      "wheel_sha256": "c8a29def77032773a30879f7f24415b5395ad08592d147c170824ef4c735dfc1",
+      "qt_source_url": "https://download.qt.io/official_releases/qt/6.11/6.11.2/single/qt-everywhere-src-6.11.2.zip",
+      "qt_source_sha256": "0bc81a7420e2d5c99ac241f5c37ca3fa3e666f91f178fbac4bb2b5de23b4757c",
+      "license_evidence": ["licenses/LGPL-3.0-only.txt", "licenses/GPL-3.0-only.txt", "licenses/Qt-6.11.2-ThirdParty-Attributions.json"],
+      "status": "complete",
+      "notes": "CollectiGen imports only Qt Core, GUI, and Widgets, but the unmodified Essentials wheel also conveys other Qt modules, including GPL-only Lottie, QML Compiler, and Quick Timeline binaries. Because the official wheel omits Qt's build-time SBOM, the package combines an exact wheel-RECORD-owned binary inventory with a conservative appendix containing every Qt 6.11.2 upstream attribution record and unique source LICENSES text; this may over-attribute and does not assert undocumented build flags."
+    },
+    {
+      "name": "shiboken6",
+      "version": "6.11.2",
+      "license": "LGPL-3.0-only",
+      "upstream_expression": "LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only",
+      "source_url": "https://download.qt.io/official_releases/QtForPython/shiboken6/",
+      "license_evidence": ["licenses/LGPL-3.0-only.txt", "licenses/GPL-3.0-only.txt"]
+    },
+    {
+      "name": "ExifTool Windows package",
+      "version": "13.59",
+      "license": "Artistic-1.0-Perl and bundled third-party terms",
+      "source_url": "https://sourceforge.net/projects/exiftool/files/exiftool-13.59_64.zip/download",
+      "license_evidence": [
+        "data/runtime/exiftool/exiftool_files/LICENSE",
+        "data/runtime/exiftool/exiftool_files/Licenses_Strawberry_Perl.zip"
+      ]
+    }
+  ],
+  "system_prerequisites": [
+    {
+      "id": "microsoft-vc-runtime-x64",
+      "name": "Microsoft Visual C++ v14 Redistributable (x64)",
+      "minimum_version": "14.44.35211.0",
+      "source_url": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+      "license_url": "https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files?view=msvc-170",
+      "redistributed": false,
+      "status": "system_prerequisite",
+      "verification": "tools/Test-WindowsPrerequisites.ps1 verifies the required System32 DLL set and minimum file version before Python starts; tools/Install-WindowsPrerequisite.ps1 accepts only an explicit user-supplied Microsoft-signed installer."
+    }
+  ],
+  "optional_python_roots": [
+    {
+      "name": "numpy",
+      "requirement": "numpy==2.2.5",
+      "profiles": ["wd-cpu", "wd-cuda", "joycaption"],
+      "license": "BSD-3-Clause and bundled third-party notices",
+      "source_url": "https://pypi.org/project/numpy/"
+    },
+    {
+      "name": "onnxruntime-gpu",
+      "requirement": "onnxruntime-gpu==1.26.0",
+      "profiles": ["wd-cpu", "wd-cuda"],
+      "license": "MIT and bundled third-party notices",
+      "source_url": "https://pypi.org/project/onnxruntime-gpu/"
+    },
+    {
+      "name": "onnxruntime-gpu CUDA extras",
+      "requirement": "onnxruntime-gpu[cuda,cudnn]==1.26.0",
+      "profiles": ["wd-cuda"],
+      "license": "Includes LicenseRef-NVIDIA-Proprietary CUDA/cuDNN packages",
+      "source_url": "https://docs.nvidia.com/cuda/eula/index.html",
+      "separate_terms": true
+    },
+    {
+      "name": "huggingface-hub",
+      "requirement": "huggingface-hub==0.30.2",
+      "profiles": ["wd-cpu", "wd-cuda", "joycaption"],
+      "license": "Apache-2.0",
+      "source_url": "https://pypi.org/project/huggingface-hub/"
+    },
+    {
+      "name": "torch",
+      "requirement": "torch==2.7.0+cu128",
+      "profiles": ["joycaption"],
+      "license": "BSD-3-Clause and bundled third-party notices",
+      "source_url": "https://download.pytorch.org/whl/cu128",
+      "separate_terms": true
+    },
+    {
+      "name": "transformers",
+      "requirement": "transformers==4.51.3",
+      "profiles": ["joycaption"],
+      "license": "Apache-2.0",
+      "source_url": "https://pypi.org/project/transformers/"
+    },
+    {
+      "name": "accelerate",
+      "requirement": "accelerate==1.6.0",
+      "profiles": ["joycaption"],
+      "license": "Apache-2.0",
+      "source_url": "https://pypi.org/project/accelerate/"
+    },
+    {
+      "name": "bitsandbytes",
+      "requirement": "bitsandbytes==0.48.1",
+      "profiles": ["joycaption"],
+      "license": "MIT",
+      "source_url": "https://pypi.org/project/bitsandbytes/"
+    }
+  ],
+  "optional_models": [
+    {
+      "model_id": "SmilingWolf/wd-eva02-large-tagger-v3",
+      "revision": "b25b82a03f7282e41aa2f257a52c7583b710bd1c",
+      "license": "Apache-2.0",
+      "license_url": "https://huggingface.co/SmilingWolf/wd-eva02-large-tagger-v3/blob/b25b82a03f7282e41aa2f257a52c7583b710bd1c/LICENSE",
+      "source_url": "https://huggingface.co/SmilingWolf/wd-eva02-large-tagger-v3/tree/b25b82a03f7282e41aa2f257a52c7583b710bd1c",
+      "bundled": false
+    },
+    {
+      "model_id": "SmilingWolf/wd-vit-large-tagger-v3",
+      "revision": "ae469aa2e4706a3af08d3673cf73a11d1add314c",
+      "license": "Apache-2.0",
+      "license_url": "https://huggingface.co/SmilingWolf/wd-vit-large-tagger-v3/blob/ae469aa2e4706a3af08d3673cf73a11d1add314c/LICENSE",
+      "source_url": "https://huggingface.co/SmilingWolf/wd-vit-large-tagger-v3/tree/ae469aa2e4706a3af08d3673cf73a11d1add314c",
+      "bundled": false
+    },
+    {
+      "model_id": "SmilingWolf/wd-swinv2-tagger-v3",
+      "revision": "627aef95638667ddcaa3ac8ae625e88ea5b02f51",
+      "license": "Apache-2.0",
+      "license_url": "https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/blob/627aef95638667ddcaa3ac8ae625e88ea5b02f51/LICENSE",
+      "source_url": "https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/tree/627aef95638667ddcaa3ac8ae625e88ea5b02f51",
+      "bundled": false
+    },
+    {
+      "model_id": "SmilingWolf/wd-convnext-tagger-v3",
+      "revision": "d39e46de298d27340111b64965e20b8185c407e6",
+      "license": "Apache-2.0",
+      "license_url": "https://huggingface.co/SmilingWolf/wd-convnext-tagger-v3/blob/d39e46de298d27340111b64965e20b8185c407e6/LICENSE",
+      "source_url": "https://huggingface.co/SmilingWolf/wd-convnext-tagger-v3/tree/d39e46de298d27340111b64965e20b8185c407e6",
+      "bundled": false
+    },
+    {
+      "model_id": "SmilingWolf/wd-vit-tagger-v3",
+      "revision": "7f6b584d0bd3f55c4531f14ba3d4761b2bccdc0f",
+      "license": "Apache-2.0",
+      "license_url": "https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/blob/7f6b584d0bd3f55c4531f14ba3d4761b2bccdc0f/LICENSE",
+      "source_url": "https://huggingface.co/SmilingWolf/wd-vit-tagger-v3/tree/7f6b584d0bd3f55c4531f14ba3d4761b2bccdc0f",
+      "bundled": false
+    },
+    {
+      "model_id": "fancyfeast/llama-joycaption-beta-one-hf-llava",
+      "revision": "ebf414ea497a020da0f82df3913e5b6cb8e9663a",
+      "license": "Llama 3.1 Community License",
+      "license_url": "https://huggingface.co/fancyfeast/llama-joycaption-beta-one-hf-llava/blob/ebf414ea497a020da0f82df3913e5b6cb8e9663a/LLAMA_LICENSE",
+      "source_url": "https://huggingface.co/fancyfeast/llama-joycaption-beta-one-hf-llava/tree/ebf414ea497a020da0f82df3913e5b6cb8e9663a",
+      "bundled": false,
+      "status": "approved_optional_separate_terms",
+      "license_evidence": ["licenses/Llama-3.1-Community.txt"],
+      "source_code_license": "Apache-2.0",
+      "source_code_url": "https://github.com/fpgaminer/joycaption",
+      "attribution": "Built with Llama",
+      "notes": "The source repository is Apache-2.0, but these model weights use separate Llama 3.1 terms and are not described as OSI open source. Setup discloses the license and Acceptable Use Policy before download; final legal review remains a release requirement."
+    },
+    {
+      "model_id": "florence-community/Florence-2-base-ft",
+      "revision": "0b03b6f15a4a211370fb204aee4e7dd48887ea37",
+      "license": "MIT",
+      "license_url": "https://huggingface.co/microsoft/Florence-2-base-ft/blob/494b983c36978a56fdd3b1082f5995cc9fed7c09/LICENSE",
+      "source_url": "https://huggingface.co/florence-community/Florence-2-base-ft/tree/0b03b6f15a4a211370fb204aee4e7dd48887ea37",
+      "bundled": false,
+      "status": "approved_optional",
+      "notes": "Native Transformers conversion of Microsoft's Florence-2-base-ft checkpoint. CollectiGen pins the reviewed revision and does not execute model-supplied Python code."
+    }
+  ],
+  "compiled_knowledge_sources": [
+    {
+      "name": "SmilingWolf WD selected-tag vocabulary",
+      "license": "Apache-2.0",
+      "source_url": "https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3",
+      "license_evidence": ["licenses/Apache-2.0.txt"]
+    },
+    {
+      "name": "kierarkia/danbooru-wiki-2026",
+      "license": "WTFPL-2.0",
+      "source_url": "https://huggingface.co/datasets/kierarkia/danbooru-wiki-2026",
+      "license_evidence": ["licenses/WTFPL-2.txt"]
+    }
+  ],
+  "release_policy": {
+    "optional_packages_bundled": false,
+    "optional_models_bundled": false,
+    "core_runtime_lock_sha256": "e6f6700478b8faade4a41dfb259ff65380ab7dc327e2088ca6a65afeda4d30da",
+    "optional_install_inventory": "data/optional-components/installed-components.json",
+    "optional_install_inventory_policy": "Every installed distribution and its bundled license/notice files are recorded after a user-approved install.",
+    "repository_license_sha256": {
+      "LICENSE": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
+      "licenses/Apache-2.0.txt": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "licenses/CC-BY-SA-4.0.txt": "23ee78c8bae49cf08ea2f0c84945c66b987ebe4520881fb51b3dad4fb43d07c2",
+      "licenses/GPL-3.0-only.txt": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "licenses/LGPL-3.0-only.txt": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+      "licenses/Llama-3.1-Community.txt": "bf2eac60b81e5c5f779fc3b4849d3bfacfd63f97f3eb68b44e9c6868c5801712",
+      "licenses/WTFPL-2.txt": "ea90e828429d172ba61f7f6e030dc18cad5ce52e184351bb4ad7fbd8d5ee9999"
+    },
+    "pending_release_requirements": [
+      {
+        "id": "public-identity-clearance",
+        "status": "complete",
+        "requirement": "Record the owner-approved public identity, exact-name screening evidence, known domain conflict, and accepted limits without claiming a legal opinion or ownership of unregistered domains or handles."
+      },
+      {
+        "id": "joycaption-llama-terms",
+        "status": "complete",
+        "requirement": "Retain JoyCaption as an optional unbundled acquisition under its separate terms, provide the Llama 3.1 license and Acceptable Use Policy disclosure, retain the required notice, display Built with Llama attribution, and do not describe the weights as OSI open source."
+      },
+      {
+        "id": "qt-wheel-attributions",
+        "status": "complete",
+        "requirement": "Package an exact wheel-RECORD-owned Qt/PySide binary SBOM plus a complete conservative Qt 6.11.2 upstream attribution/license appendix, explicitly recording that the official wheel omits Qt's build-time SBOM."
+      },
+      {
+        "id": "microsoft-vc-runtime-redistribution",
+        "status": "complete",
+        "requirement": "Do not convey the Visual C++ runtime DLL copies from the official Python/PySide distributions. Require and verify the official system-wide x64 runtime before Python starts, and permit only an explicit user-supplied Microsoft-signed installer for offline recovery."
+      },
+      {
+        "id": "optional-ai-dependency-lock",
+        "status": "complete",
+        "requirement": "Resolve, record, and compatibility-test exact optional AI package/transitive versions for each supported install profile; preserve the installed component/license inventory and require a reviewed lock update for dependency changes."
+      }
+    ],
+    "required_repository_files": [
+      "LICENSE",
+      "LICENSES.md",
+      "CONTRIBUTING.md",
+      "FUNDING.md",
+      "PRIVACY.md",
+      "SECURITY.md",
+      "SUPPORT.md",
+      "THIRD_PARTY_NOTICES.md",
+      "WINDOWS_PREREQUISITES.md",
+      "requirements-runtime.lock",
+      "licenses/Qt-6.11.2-ThirdParty-Attributions.json",
+      "tools/optional-ai-profiles.json",
+      "tools/Install-WindowsPrerequisite.ps1",
+      "tools/Test-WindowsPrerequisites.ps1",
+      "licenses/CC-BY-SA-4.0.txt",
+      "licenses/LGPL-3.0-only.txt",
+      "licenses/GPL-3.0-only.txt",
+      "licenses/Llama-3.1-Community.txt"
+    ]
+  }
+}

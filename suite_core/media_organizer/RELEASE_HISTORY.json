@@ -1,0 +1,129 @@
+{
+  "releases": [
+    {
+      "date": "2026-10-13",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "maturity": "alpha",
+      "numeric_version": "0.4.5",
+      "software_version": "0.4.5-alpha.1",
+      "scope": "Four-category guided setup, preserved choices and configuration-only Finish; retained a044 runtime/image workflow.",
+      "status": "allocated exact source/metadata packet; no a045 build or native acceptance"
+    },
+    {
+      "date": "2026-10-13",
+      "interface_version": 1,
+      "maturity": "alpha",
+      "numeric_version": "0.4.4",
+      "scope": "Portable image launcher and concise exact-version guidance; unchanged accepted a.0.4.3 image implementation.",
+      "software_version": "0.4.4-alpha.1",
+      "status": "allocated source metadata checkpoint; no new runnable artifact/native acceptance",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-13",
+      "interface_version": 1,
+      "maturity": "alpha",
+      "numeric_version": "0.4.3",
+      "scope": "Open Ingest after Dataset initialization already finished without losing completion; retain failure/cancel/navigation and Close guards.",
+      "software_version": "0.4.3-alpha.1",
+      "status": "accepted lost-completion source checkpoint; new package and same-image acceptance pending",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-13",
+      "interface_version": 1,
+      "maturity": "alpha",
+      "numeric_version": "0.4.2",
+      "scope": "First Image Knowledge save with deferred optional Metadata; safe queued content-safety Close; duplicate Tag review; loaded compound recommendation details.",
+      "software_version": "0.4.2-alpha.1",
+      "status": "accepted source checkpoint; coherent package and actual workflow acceptance pending",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-13",
+      "interface_version": 1,
+      "maturity": "alpha",
+      "numeric_version": "0.4.1",
+      "scope": "Organizer-specific About and What's New, and Setup limited to supported image workflows.",
+      "software_version": "0.4.1-alpha.1",
+      "status": "integrated accepted source checkpoint; coherent package and visible acceptance pending",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-12",
+      "interface_version": 1,
+      "maturity": "alpha",
+      "numeric_version": "0.4.0",
+      "scope": "Hosted local example-image entry, original scoped physical query/thumbnail drain and unchanged Tag/public data authority.",
+      "software_version": "0.4.0-alpha.1",
+      "status": "integrated source candidate; no package or native visible acceptance",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-11",
+      "interface_version": 1,
+      "scope": "Exclude private future-default teaching and development inbox from public runtime; retain local editing, prompt authoring and diagnostic-only startup recovery.",
+      "software_version": "0.3.1-alpha.1",
+      "status": "public-only unsigned portable candidate; exact frozen source and package contents verified; ordinary visible workflow and clean-machine acceptance unrun",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-11",
+      "interface_version": 1,
+      "scope": "Standalone reviewed prompt authoring from one Dataset image; unverified model writing guides, manual positive/negative transfer, retained session edits and close/cancellation guards.",
+      "software_version": "0.3.0-alpha.1",
+      "status": "integrated source candidate; synthetic native prompt acceptance passed; package and user acceptance pending",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-10",
+      "interface_version": 1,
+      "scope": "Correct workspace navigation for first-use Setup and exact Dataset package receipt review; preserve native leave guards and saved recovery context.",
+      "software_version": "0.2.1-alpha.1",
+      "status": "unsigned development candidate; user acceptance pending",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-10",
+      "interface_version": 1,
+      "scope": "Standalone profile binding and immutable default initialization; Organizer command scope and exact Dataset recovery navigation.",
+      "software_version": "0.2.0-alpha.1",
+      "status": "unsigned development candidate; user acceptance pending",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-10",
+      "interface_version": 1,
+      "scope": "Module callers can open native Add Images review, review the latest added images and view one included library image, with native page-leave and admission guards.",
+      "software_version": "0.1.0-alpha.4",
+      "status": "unpublished source; native workflow/distribution unqualified",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-09",
+      "interface_version": 1,
+      "scope": "Complete the Organizer contract seam for modular integration, preserving existing Ingest, Dataset, Tag editing and hosted example-image compatibility.",
+      "software_version": "0.1.0-alpha.3",
+      "status": "unpublished source; native workflow/distribution unqualified",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-08",
+      "interface_version": 1,
+      "scope": "Correct the Dataset ribbon action label and guidance for reopening saved drafts.",
+      "software_version": "0.1.0-alpha.2",
+      "status": "unpublished source; native workflow/distribution unqualified",
+      "timezone": "America/New_York"
+    },
+    {
+      "date": "2026-10-06",
+      "interface_version": 1,
+      "scope": "Compose existing Library, Dataset, Ingest and Setup; exact Dataset package recovery; hosted Encyclopedia references",
+      "software_version": "0.1.0-alpha.1",
+      "status": "unpublished source; native workflow/distribution unqualified",
+      "timezone": "America/New_York"
+    }
+  ],
+  "schema_version": 1
+}

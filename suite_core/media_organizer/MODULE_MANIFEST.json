@@ -1,0 +1,136 @@
+{
+  "app_id": "collectigen.media-organizer",
+  "base_shell_page_indices": [
+    2,
+    1,
+    6
+  ],
+  "canonical_page_indices": [
+    0,
+    2,
+    1,
+    6
+  ],
+  "contextual_navigation": [
+    "Dashboard",
+    "Review Center",
+    "Tag Encyclopedia",
+    "Rules & Automation"
+  ],
+  "data_authority": "existing AppState Dataset, Knowledge and guarded native services",
+  "display_name": "Media Organizer",
+  "entrypoint": "Start_MediaOrganizer.bat",
+  "example_images": "Explicit Knowledge > Tag Encyclopedia command opens a user-selected approved snapshot and borrows the already-admitted included-library session; no new catalog, scan or standalone filesystem provider.",
+  "excluded_actions": [
+    "automatic runtime installation",
+    "subprocess repair retry",
+    "new media database",
+    "new tagging engine",
+    "new importer",
+    "default catalog activation"
+  ],
+  "frozen_release_inputs_modified": false,
+  "interface_version": 1,
+  "maturity": "alpha",
+  "module_id": "collectigen.media-organizer",
+  "native_activation_qualified": false,
+  "numeric_version": "0.4.5",
+  "optional_integrations": [
+    "injected model-manager status",
+    "borrowed Encyclopedia TagLookup interface 1"
+  ],
+  "platform_settings_identity": "unchanged canonical CollectiGen identity",
+  "primary_navigation": [
+    "Library",
+    "Dataset",
+    "Ingest",
+    "Setup"
+  ],
+  "release_date": "2026-10-13",
+  "release_timezone": "America/New_York",
+  "required_runtime": [
+    "bundled Python 3.13.15 organizer-image runtime",
+    "PySide6 Essentials 6.11.2",
+    "Pillow 12.3.0",
+    "ExifTool 13.59",
+    "separate Microsoft Visual C++ x64 system prerequisite"
+  ],
+  "required_source_owners": [
+    "qt_main.py",
+    "qt_app",
+    "core",
+    "suite_core.encyclopedia",
+    "qt_app/onboarding_dialog.py",
+    "qt_app/main_window.py"
+  ],
+  "runtime_files": [
+    "core/component_release_identity.py",
+    "release_contract.py",
+    "suite_core/media_organizer/RELEASE_PRESENTATION.json",
+    "suite_core/media_organizer/__init__.py",
+    "suite_core/media_organizer/__main__.py",
+    "suite_core/media_organizer/contracts.py",
+    "suite_core/media_organizer/entry.py",
+    "suite_core/media_organizer/facade.py",
+    "suite_core/media_organizer/hosted_encyclopedia_overlay.py",
+    "suite_core/media_organizer/organizer_recovery_entry.py",
+    "suite_core/media_organizer/organizer_workflow_corrections.py",
+    "suite_core/media_organizer/version.py",
+    "core/startup_profile.py",
+    "tools/test_profile_isolation.py",
+    "core/application_profile.py",
+    "core/paths.py",
+    "core/generation_prompt_profiles.py",
+    "core/organizer_prompt_export.py",
+    "qt_app/organizer_prompt_dialog.py",
+    "suite_core/media_organizer/organizer_prompt_entry.py",
+    "core/organizer_example_images.py",
+    "suite_core/media_organizer/encyclopedia_image_gallery.py",
+    "suite_core/media_organizer/encyclopedia_entry.py",
+    "suite_core/media_organizer/encyclopedia_native_entry.py",
+    "suite_core/encyclopedia/browser.py",
+    "suite_core/encyclopedia/hosted_examples.py",
+    "suite_core/encyclopedia/publication.py",
+    "suite_core/encyclopedia/version.py",
+    "suite_core/knowledge/tag_lookup.py",
+    "suite_core/selected_catalog.py",
+    "suite_core/media_examples.py",
+    "qt_app/gallery.py",
+    "qt_app/workers.py",
+    "core/background_jobs.py",
+    "suite_core/manager/ui_cards.py",
+    "core/character_storage_transaction.py",
+    "qt_app/dataset_page.py",
+    "qt_app/knowledge_page.py"
+  ],
+  "runtime_kind": "interpreter-portable",
+  "runtime_profile": "organizer-image",
+  "schema_version": 1,
+  "scope": "Accepted frozen a044 source/runtime/resources plus reviewed four-category setup delta and a045 version/guidance only",
+  "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
+  "shell_owner": "qt_app.main_window.TagManagerWindow",
+  "software_version": "0.4.5-alpha.1",
+  "standalone_distribution_qualified": false,
+  "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
+  "startup_owner": "qt_main._start_application",
+  "status": "Exact a045 input packet; build/native/distribution acceptance pending",
+  "unavailable_product_workspaces": [
+    "Generate",
+    "Training"
+  ],
+  "prerequisite_checker": {
+    "path": "tools/OrganizerPrerequisites.exe",
+    "architecture": "x86_64",
+    "minimum_vc_version": "14.44.35211.0",
+    "sha256": "bb719b74563a08c3c82123ed547112fb3c52e003b24c95ab75360e9824071f48",
+    "ordinary_startup_uses_powershell": false
+  },
+  "setup_categories": [
+    "Library locations",
+    "AI setup",
+    "Preferences and defaults",
+    "Review and finish"
+  ],
+  "active_manager_inheritance_qualified": false,
+  "setup_settings_authority": "Current component profile only; optional Manager-provenance helpers absent from frozen closure, no live connection inferred"
+}
