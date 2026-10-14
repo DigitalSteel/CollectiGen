@@ -2,43 +2,36 @@
 
 CollectiGen is a developing suite for collecting, identifying and organizing media, preserving metadata and provenance, and preparing training data. Its longer-term direction includes connected training and image-generation workflows, with ordinary work primarily performed locally.
 
-The suite is in early alpha. Its applications have separate releases and versions; the downloads below are evaluation packages with the limits described here.
+CollectiGen is still in early alpha. You can try the two Windows apps below on their own; Suite Manager is not needed to open them.
 
-## Downloadable now
+## Try the Windows apps
 
-| Application | What it does today | Windows x64 download |
-| --- | --- | --- |
-| **Media Organizer a.0.4.5** | Organize local images, manually edit Tags and Descriptions, save JSON/TXT sidecars, preview destinations, move ready images and browse the saved results in Dataset. | [Organizer release](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.4.5-alpha.1) — choose **MediaOrganizer-a.0.4.5-windows-x64.zip**. |
-| **Tag Encyclopedia a.0.1.8** | Read an explicitly selected compatible Tag snapshot: search names and aliases, filter categories and inspect published details. | [Encyclopedia release](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.1.0-alpha.8) — choose **TagEncyclopedia-a.0.1.8-windows-x64.zip**. |
+**Media Organizer a.0.4.5** lets you sort local images, edit Tags and Descriptions, save JSON/TXT sidecars, preview where images will go and move them into your library. You can then browse the results in Dataset.
 
-**For ordinary Windows use, choose the application ZIP named `windows-x64`.** GitHub's automatic “Source code” downloads and Organizer's `source-notices.zip` are for source/licensing access, not the runnable application. The source companion and `SOURCE_DELIVERY_SUPPLEMENT.md` provide corresponding source, notices and library-replacement guidance. Release checksums and detached signatures accompany the application; a detached signature is not Windows Authenticode signing.
+[Download Media Organizer](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.4.5-alpha.1). Under **Assets**, choose **`MediaOrganizer-a.0.4.5-windows-x64.zip`**.
 
-The Encyclopedia starts empty. No Tag Database, snapshot, image library or model is included. You need an approved compatible snapshot to browse content. The reader does not import a Tag Database pack or edit catalogs. The optional default Tag Database is not currently published.
+**Tag Encyclopedia a.0.1.8** is a read-only browser for a compatible Tag snapshot. It can search names and aliases, filter categories and show Tag details. It starts empty: you'll need an approved compatible snapshot to see content. A default Tag Database is not available to download yet.
 
-## Start on Windows
+[Download Tag Encyclopedia](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.1.0-alpha.8). Under **Assets**, choose **`TagEncyclopedia-a.0.1.8-windows-x64.zip`**.
 
-1. Download the application ZIP from its release's **Assets** and check the accompanying SHA-256 checksum. Extract the **entire ZIP into a new folder** and keep its folder structure intact.
-2. Install **Microsoft Visual C++ v14 Redistributable x64, version 14.44.35211.0 or newer**, if needed. Python and Qt are bundled; no separate Python installation is needed. Do not substitute DLLs.
-3. For Organizer, run **`Start_MediaOrganizer.bat`** in the extracted folder. For Encyclopedia, open the extracted **`TagEncyclopedia`** folder and run **`TagEncyclopedia.exe`**.
-4. In Organizer's Guided Setup, choose **Library locations**, optional **AI setup**, **Preferences and defaults**, then **Review and finish**. Finish saves your choices without automatically opening a library or starting a scan. Evaluate with copied images and keep backups. Optional AI controls do not mean a model is installed or ready to run.
-5. In Encyclopedia, choose **Open Snapshot** if you have an approved compatible snapshot. An empty reader is expected otherwise.
+Choose the **Windows ZIP** to run an app. The `source-notices.zip` and GitHub's “Source code” downloads are for people who want the source or licensing information. You don't need them to launch the app.
 
-Read the application's included README and user guidance. Keep older packages and backups of profiles/data. For Organizer, update by extracting a complete new package into a separate folder; automatic/in-place updates and cross-version profile migration are not qualified. The Organizer launcher accepts `--profile-root` for a separate evaluation profile.
+## Get started
 
-## Standalone apps and Suite Manager
+1. Download your app's Windows ZIP and check its accompanying SHA-256 checksum. Extract the whole ZIP into a new folder.
+2. If needed, install **Microsoft Visual C++ v14 Redistributable x64, version 14.44.35211.0 or newer**. Python and Qt are included, so you don't need to install Python separately. Keep the extracted files together.
+3. For Organizer, run **`Start_MediaOrganizer.bat`** directly in the extracted folder. For Encyclopedia, open the **`TagEncyclopedia`** folder and run **`TagEncyclopedia.exe`**.
+4. Organizer's Guided Setup walks you through library locations, optional AI settings and your preferences. **Finish** saves your choices; it doesn't start a scan. In Encyclopedia, use **Open Snapshot** when you have a compatible snapshot.
 
-These downloads run as standalone applications. **No Suite Manager executable is supplied by the current public releases.** You do not need Manager to launch them.
+Start with copies of your images and keep backups. The included README and guides explain each app in more detail. To try a newer Organizer release, extract it into a separate folder and keep the old copy. Its launcher also accepts `--profile-root` if you want a separate evaluation profile.
 
-Manager is intended to help connect applications and manage their resources and updates. Manager-managed installation, launch, settings inheritance, update reconciliation and optional default acquisition are still in development; the published packages do not activate them.
+## What is still being built?
 
-## In development
+Suite Manager is intended to help connect apps and manage their resources and updates. There is no public Manager executable yet. Manager-managed installation, launch, shared settings and update reconciliation are still being worked on.
 
-- Tag Database download/import/update and cross-application Encyclopedia integration.
-- AI/model execution, video/audio workflows, training and image generation.
-- Automatic updates and broader connected suite workflows.
-- Supported Linux packages; none are currently published.
+These releases don't include automatic updates, Tag Database download/import/update, cross-app Encyclopedia integration, model execution, video/audio, training or image generation. No models are bundled. Optional AI settings in Organizer don't mean a model is installed or ready to use. There is no supported Linux package yet.
 
-The current downloads are limited evaluation releases, not a feature-complete suite. No models are bundled. Clean-machine installation, every profile type and large-library behavior are not claimed as qualified. Consult each release's known limits before using original media.
+These are early releases, so keep backups and avoid testing on your only copy of important media. Automatic/in-place updates, moving profiles between versions, clean-machine installation and large-library behavior haven't been fully checked. The downloads have checksum files and detached release signatures; that is separate from Windows Authenticode signing.
 
 ## Feedback
 
