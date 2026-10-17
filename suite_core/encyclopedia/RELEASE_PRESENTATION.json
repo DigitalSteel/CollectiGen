@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "purpose": "presentation only; not signed release/update metadata",
+  "component": "TagEncyclopedia",
+  "numeric_version": "0.3.0",
+  "maturity": "alpha",
+  "display_version": "a.0.3.0",
+  "legacy_wire_version": "0.3.0-alpha.1"
+}
