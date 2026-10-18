@@ -1,0 +1,62 @@
+{
+  "build_inputs": [
+    {
+      "bytes": 23123,
+      "path": "tools/build_manager_distribution.py",
+      "sha256": "60555187dd7d32ca10d5574b6799d0b3e6e7d55624aa5d42d558530f4d544282"
+    },
+    {
+      "bytes": 225,
+      "path": "tools/encyclopedia_build/TagEncyclopediaReader.spec",
+      "sha256": "e0a3fd76f54949a2f91ad1ae3ab76599ddd9ad5c9796c2bf8989d894cc22f969"
+    },
+    {
+      "bytes": 223,
+      "path": "tools/encyclopedia_build/TagEncyclopediaRoot.spec",
+      "sha256": "4fbfaa9995a3cdb1b880b7497ddcd8d6f9e1d8ffe79f14dbbf25343ba2d776ae"
+    },
+    {
+      "bytes": 20929,
+      "path": "tools/encyclopedia_build/profile_renderer.py",
+      "sha256": "c28a44517cc38bd0389105143834e45aa43ea51c0ee27a8de5b1b92c666c2e50"
+    },
+    {
+      "bytes": 17950,
+      "path": "tools/encyclopedia_build/recipe_support.py",
+      "sha256": "9ad6d1cc781c631f3914ed9daddf38f7885b88baecf2bd41b75a20144a68164a"
+    },
+    {
+      "bytes": 2620,
+      "path": "tools/manager_build/windows_build_isolation.py",
+      "sha256": "8b6aa2dbb6901c8590b04ba9e039cf597b122061b5c708d5315074e9983b2d95"
+    },
+    {
+      "bytes": 17252,
+      "path": "tools/prepare_encyclopedia_qualification_stage.py",
+      "sha256": "7a99c2954ffb22ee4b6eb2701cf2db004acca60f2f327fc5bb6b3d44d5d87d55"
+    }
+  ],
+  "distributions": {
+    "PySide6-Essentials": "6.11.2",
+    "altgraph": "0.17.5",
+    "packaging": "26.3",
+    "pefile": "2024.8.26",
+    "pyinstaller": "6.22.3",
+    "pyinstaller-hooks-contrib": "2026.8",
+    "pywin32-ctypes": "0.2.3",
+    "setuptools": "84.0.0",
+    "shiboken6": "6.11.2"
+  },
+  "platform": {
+    "architecture": "x86_64",
+    "os": "windows",
+    "python_abi": "cp314"
+  },
+  "purpose": "ENCYCLOPEDIA_NORMAL_PORTABLE_BUILD_ONLY",
+  "python": {
+    "bytes": 255200,
+    "sha256": "9b7bffc26240463c965a2a2a5fada1d8e741c21c25cd2e977728c339b82d9977",
+    "version": "3.14.7"
+  },
+  "schema": 1
+}
