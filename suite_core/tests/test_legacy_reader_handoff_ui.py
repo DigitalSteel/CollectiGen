@@ -39,8 +39,10 @@ def flow(monkeypatch):
         def __init__(self):
             self.reader_selection=SimpleNamespace(selected=selected);self.operations=[]
             self.state='ready';self.refused=False;self.lost_reply=False
+            self.unsent=False
         def request_legacy_reader(self,operation,handoff_id):
             self.operations.append(operation)
+            if self.unsent:raise ui.LegacyReaderPrepareNotSent('Synthetic preparation never sent.')
             if self.lost_reply:
                 self.state='held';raise TimeoutError('injected unknown original reply')
             if self.refused:
@@ -79,6 +81,15 @@ def test_clean_refusal_leaves_manager_and_close_available(flow):
     assert subject.state=='done' and not subject.close_held and session.state=='ready'
     assert subject.dialog.cancel.isEnabled() and subject.dialog.cancel.text()=='Close'
     assert 'Manager stays open' in subject.dialog.status.text()
+    subject.cancel()
+    assert not subject.dialog.isVisible() and window.close_calls==0
+
+
+def test_proven_unsent_prepare_can_close_its_dialog_without_arming_launch(flow):
+    subject,window,session=flow;session.unsent=True
+    prepare(subject)
+    assert subject.state=='done' and not subject.close_held and session.state=='ready'
+    assert subject.dialog.cancel.isEnabled() and subject.dialog.cancel.text()=='Close'
     subject.cancel()
     assert not subject.dialog.isVisible() and window.close_calls==0
 

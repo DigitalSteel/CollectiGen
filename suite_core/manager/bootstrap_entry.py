@@ -66,6 +66,10 @@ def check_update_profile(profile, admitted):
 class EntryHold(ValueError):
     pass
 
+
+class LegacyReaderPrepareNotSent(EntryHold):
+    """A new preparation never entered its own RPC or armed a Root plan."""
+
 def require(value, reason):
     if not value: raise EntryHold(reason)
 
@@ -437,6 +441,8 @@ class NormalEntrySession:
         self.helper_capabilities = []
         self.helper_outstanding = None
         self.component_stage_outstanding = None
+        self.legacy_reader_outstanding = None
+        self.legacy_reader_completed = None
         self.legacy_reader_profile_sha256 = None
         self.seal = None
 
@@ -487,7 +493,19 @@ class NormalEntrySession:
         payload=check_legacy_reader_request(dict(schema=1,request_id=uuid4().hex,
             operation=operation,profile_sha256=self.legacy_reader_profile_sha256,handoff_id=handoff_id))
         with self.wire.lock:
-            reply=self._exchange('legacy-reader-request',payload,{'legacy-reader-reply'},reply_timeout=30)['payload']
+            try:
+                reply=self._exchange('legacy-reader-request',payload,{'legacy-reader-reply'},reply_timeout=30)['payload']
+            except BaseException as error:
+                completed=getattr(self,'legacy_reader_completed',None)
+                if (operation=='prepare' and handoff_id is None and self.state=='ready'
+                        and getattr(self,'legacy_reader_outstanding',None) is None
+                        and (completed is None or completed['reply']['payload']['result']['consumed'])):
+                    # No current ledger was allocated, no send entered and the
+                    # last fully validated legacy reply left no armed plan.
+                    # Other original helper holds remain owned independently.
+                    raise LegacyReaderPrepareNotSent(
+                        'Reader preparation did not start. Let the current Manager task finish before trying again.') from error
+                raise
             try:
                 require(type(reply) is dict and set(reply)==set(payload)|{'result'}
                         and all(reply[k]==v for k,v in payload.items())
@@ -506,7 +524,8 @@ class NormalEntrySession:
             except BaseException as error:
                 self.state,self.error='held',error
                 raise
-            self.readiness_outstanding=None
+            self.legacy_reader_completed=self.legacy_reader_outstanding
+            self.legacy_reader_outstanding=None
             return reply['result']
 
     def request_component_stage(self,operation,scope_id=None,*,component=None):
@@ -546,6 +565,8 @@ class NormalEntrySession:
     def _exchange(self, kind, payload, expected, *, reply_timeout=None):
         require(self.helper_outstanding is None, 'helper_reply_outstanding')
         stage_request=kind=='component-stage-request'
+        reply_slot=('legacy_reader_outstanding' if kind=='legacy-reader-request'
+                    else 'readiness_outstanding')
         if stage_request:
             require(getattr(self,'component_stage_outstanding',None) is None,
                     'original_component_stage_reply_required')
@@ -555,19 +576,21 @@ class NormalEntrySession:
         if reply_timeout is not None:
             require(type(reply_timeout) in {int,float} and math.isfinite(reply_timeout)
                     and 0<reply_timeout<=30,'bounded_entry_reply_deadline_required')
-            require(getattr(self,'readiness_outstanding',None) is None,'original_readiness_reply_required')
-            self.readiness_outstanding=dict(kind=kind,payload=payload,send_entered=False,
-                deadline=time.monotonic()+reply_timeout,reply=None)
+            require(getattr(self,reply_slot,None) is None,
+                    'original_legacy_reader_reply_required' if kind=='legacy-reader-request'
+                    else 'original_readiness_reply_required')
+            setattr(self,reply_slot,dict(kind=kind,payload=payload,send_entered=False,
+                deadline=time.monotonic()+reply_timeout,reply=None))
         try:
             self._peer()
-            if reply_timeout is not None:self.readiness_outstanding['send_entered']=True
+            if reply_timeout is not None:getattr(self,reply_slot)['send_entered']=True
             if stage_request:self.component_stage_outstanding['send_entered']=True
             self.wire.send(kind, payload)
             while True:
                 try:
                     if reply_timeout is None and not stage_request:frame=self.wire.receive()
                     else:
-                        outstanding=self.component_stage_outstanding if stage_request else self.readiness_outstanding
+                        outstanding=self.component_stage_outstanding if stage_request else getattr(self,reply_slot)
                         remaining=outstanding['deadline']-time.monotonic()
                         require(remaining>0,'entry_component_stage_reply_deadline' if stage_request
                                 else 'entry_readiness_reply_deadline')
@@ -581,7 +604,7 @@ class NormalEntrySession:
                     self._peer()
             self._peer()
             require(frame['kind'] in expected, 'normal_rpc_not_accepted')
-            if reply_timeout is not None:self.readiness_outstanding['reply']=frame
+            if reply_timeout is not None:getattr(self,reply_slot)['reply']=frame
             if stage_request:self.component_stage_outstanding['reply']=frame
             return frame
         except BaseException as error:
@@ -656,6 +679,8 @@ class NormalEntrySession:
     def begin_cleanup(self):
         with self.wire.lock:
             require(self.helper_outstanding is None, 'helper_reply_outstanding')
+            require(getattr(self,'legacy_reader_outstanding',None) is None,
+                    'original_legacy_reader_reply_required')
             if self.state in {'sealed', 'local_accepted'}: return True
             require(self.state in {'offered', 'ready', 'sealing'}, 'entry_cleanup_held')
             self.state = 'sealing'

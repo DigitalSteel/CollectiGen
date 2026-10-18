@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QDialog, QLabel, QPushButton, QHBoxLayout
 from qt_app.components import IndeterminateActivityBar
 from .resource_executor import ResourceExecutorOwner
 from .ui_cards import workspace_layout, workspace_heading, compact_action
+from .bootstrap_entry import LegacyReaderPrepareNotSent
 
 
 class _HandoffDialog(QDialog):
@@ -86,6 +87,14 @@ class LegacyReaderHandoffFlow:
             self._submit('cancel','cancelling','Cancelling the prepared Reader handoff…')
         # A sent commit or uncertain reply cannot be dismissed or replayed.
 
+    def _refused(self,message):
+        self.state='done';self.started=None;self.timer.stop()
+        self.dialog.activity.set_active(False)
+        self.dialog.activity.hide();self.dialog.elapsed.hide()
+        self.dialog.primary.setEnabled(False)
+        self.dialog.cancel.setText('Close');self.dialog.cancel.setEnabled(True)
+        self.dialog.status.setText('The Reader could not be prepared. Manager stays open. '+message)
+
     def poll(self):
         if self.started is not None:
             seconds=max(0,int(monotonic()-self.started))
@@ -95,12 +104,7 @@ class LegacyReaderHandoffFlow:
         try:
             result=future.result()
             if result['status']=='refused':
-                self.state='done';self.started=None;self.timer.stop()
-                self.dialog.activity.set_active(False)
-                self.dialog.activity.hide();self.dialog.elapsed.hide()
-                self.dialog.primary.setEnabled(False)
-                self.dialog.cancel.setText('Close');self.dialog.cancel.setEnabled(True)
-                self.dialog.status.setText('The Reader could not be prepared. Manager stays open. '+result['reason'])
+                self._refused(result['reason'])
                 return
             self.handoff_id=result['handoff_id']
             self.dialog.activity.set_active(False)
@@ -131,6 +135,8 @@ class LegacyReaderHandoffFlow:
             elif self.state=='cancelling':
                 if result['committed'] or not result['consumed']:raise ValueError('Reader cancellation remains unconfirmed.')
                 self.state='done';self.timer.stop();self.dialog.close()
+        except LegacyReaderPrepareNotSent as error:
+            self._refused(str(error))
         except BaseException as error:
             self.state='held';self.timer.stop()
             self.dialog.activity.set_active(False)

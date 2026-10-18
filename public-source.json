@@ -3090,8 +3090,8 @@
       "size_bytes": 5605
     },
     "suite_core/manager/bootstrap_entry.py": {
-      "sha256": "2b95477013e02fb686522f7330ec6653a589573f1af4a31eb2fe19d54897677b",
-      "size_bytes": 108377
+      "sha256": "13e2571af9db60a9586295de9957229e6bab4c4a920f03dc7c84851c9639dfc5",
+      "size_bytes": 109906
     },
     "suite_core/manager/candidate_inventory.py": {
       "sha256": "2274b30218af9ccacdb3a030f241fa67e41170610269b77541a91238aa07cdd1",
@@ -3182,8 +3182,8 @@
       "size_bytes": 51784
     },
     "suite_core/manager/legacy_reader_handoff_ui.py": {
-      "sha256": "5ddca2a4f252c1de3565010a51635b0f0d8b38a96924f9a783f0fc51b7c06ed6",
-      "size_bytes": 7478
+      "sha256": "39800c3cd12e2caf277b3f57a34d050ccc72d3dccd55596ae8549f732d74869e",
+      "size_bytes": 7648
     },
     "suite_core/manager/legacy_reader_supervisor.py": {
       "sha256": "b791c8e3cf9ff189aab1390bb2f7d6814427dc818411de0e2f4ea244890ab251",
@@ -3594,8 +3594,8 @@
       "size_bytes": 7709
     },
     "suite_core/tests/test_legacy_reader_handoff_ui.py": {
-      "sha256": "1aed991525af0ca3206f2c853b0eee81faf98551cd11fac9995bbf9c2c76849a",
-      "size_bytes": 5466
+      "sha256": "077235e5a89b2f05c1b13f2551b37386b45df560c091b1aaa8a587d9e898eaa0",
+      "size_bytes": 6015
     },
     "suite_core/tests/test_media_examples.py": {
       "sha256": "e2e51c3e501b92ccab7053e7d06efa20884707cc93a43e5ae9d731d265388e05",
@@ -3750,8 +3750,8 @@
       "size_bytes": 1290
     },
     "tests/test_legacy_reader_rpc.py": {
-      "sha256": "f23c53f714049da573d693b8a7e7f7b9e41916b1417123d2c0cb557bc487ce26",
-      "size_bytes": 2758
+      "sha256": "5d4ce1b550919478311de9cb7bbed76ef9f1b485d8e61414a1abca7caba647bd",
+      "size_bytes": 8226
     },
     "tests/test_legacy_reader_supervisor.py": {
       "sha256": "7d9370b7180701fe0a55e0a281b10ae2008ee5d6143ba6355332906a431a059b",
@@ -3882,7 +3882,7 @@
       "size_bytes": 18369
     },
     "tools/encyclopedia_build/source-manifest.json": {
-      "sha256": "eab7d9cb62b4e09b5d74a6dd2c103734588c21c5408b9ca40f7818e9c5e999e7",
+      "sha256": "df71de48c29ce9b4af58810fe94281b893b4dbbc882b7725cd0a8e82bcf2c153",
       "size_bytes": 70031
     },
     "tools/manager_build/CollectiGen.spec": {
@@ -3906,7 +3906,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "9f5335bf604a78d6cdc41dfcb25bd026b32aceae8076429065506d3b21282461",
+      "sha256": "648d6348d71d63cd6b0a8471cef16bc6f56b44b2a295e8d9b85f40459caa2894",
       "size_bytes": 136730
     },
     "tools/manager_build/tool-inputs.json": {

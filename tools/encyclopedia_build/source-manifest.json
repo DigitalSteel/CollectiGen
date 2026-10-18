@@ -1773,8 +1773,8 @@
     },
     {
       "path": "suite_core/manager/bootstrap_entry.py",
-      "bytes": 108377,
-      "sha256": "2b95477013e02fb686522f7330ec6653a589573f1af4a31eb2fe19d54897677b"
+      "bytes": 109906,
+      "sha256": "13e2571af9db60a9586295de9957229e6bab4c4a920f03dc7c84851c9639dfc5"
     },
     {
       "path": "suite_core/manager/candidate_inventory.py",
@@ -1873,8 +1873,8 @@
     },
     {
       "path": "suite_core/manager/legacy_reader_handoff_ui.py",
-      "bytes": 7478,
-      "sha256": "5ddca2a4f252c1de3565010a51635b0f0d8b38a96924f9a783f0fc51b7c06ed6"
+      "bytes": 7648,
+      "sha256": "39800c3cd12e2caf277b3f57a34d050ccc72d3dccd55596ae8549f732d74869e"
     },
     {
       "path": "suite_core/manager/legacy_reader_supervisor.py",
