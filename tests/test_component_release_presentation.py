@@ -14,7 +14,7 @@ from suite_core.manager.window import create_window, unconfigured, NOTES
 from qt_app.theme import apply_theme
 
 CURRENT_COMPONENT_RELEASES = {
-    'manager': ('0.5.1-alpha.1', 'a.0.5.1'),
+    'manager': ('0.6.0-alpha.1', 'a.0.6.0'),
     'encyclopedia': ('0.2.2-alpha.1', 'a.0.2.2'),
     'media_organizer': ('0.4.6-alpha.1', 'a.0.4.6'),
 }

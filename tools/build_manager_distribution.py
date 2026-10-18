@@ -12,6 +12,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import zipfile
 
 TEMPLATES = {'CollectiGenManager.spec', 'CollectiGen.spec',
              'sdk_binary_origin.py', 'windows_build_isolation.py', 'hooks/hook-core.py'}
@@ -300,15 +301,77 @@ def tree_inventory(folder):
     return inventory
 
 
+def render_legacy_reader_config(value):
+    """Fixed public build inputs; no runtime discovery or source activation."""
+    required={'schema','trust_hex','trust_sha256','manifest_hex','signature_hex','archive_sha256','inventory_sha256'}
+    require(type(value) is dict and set(value)==required and type(value['schema']) is int and value['schema']==1,
+            'closed_legacy_bootstrap_input_required')
+    for name in ('trust_hex','manifest_hex','signature_hex'):
+        require(type(value[name]) is str and len(value[name])<=128*1024,'bounded_legacy_bootstrap_metadata_required')
+        bytes.fromhex(value[name])
+    require(digest(bytes.fromhex(value['trust_hex']))==value['trust_sha256']
+            and all(type(value[k]) is str and re.fullmatch('[0-9a-f]{64}',value[k])
+                    for k in ('trust_sha256','archive_sha256','inventory_sha256')),'legacy_bootstrap_pins_required')
+    return ("# Exact public legacy bootstrap inputs. No signing or runtime discovery.\nINPUT = "+repr(value)+"\n"
+        "from core.encyclopedia_legacy_host import CompiledLegacyReaderProfile\n"
+        "PROFILE = CompiledLegacyReaderProfile(bytes.fromhex(INPUT['trust_hex']), INPUT['trust_sha256'], INPUT['inventory_sha256'])\n")
+
+
+def legacy_reader_files(config_raw, archive):
+    """Reuse the signed unmodified standalone Root; map its docs without collision."""
+    tree=ast.parse(config_raw)
+    assignments=[n for n in tree.body if isinstance(n,ast.Assign) and len(n.targets)==1
+                 and isinstance(n.targets[0],ast.Name) and n.targets[0].id=='INPUT']
+    if not assignments:
+        require(archive is None and config_raw==b'"""Inactive source default. Only exact reviewed packaging inputs enable handoff."""\nPROFILE = None\n',
+                'explicit_legacy_bootstrap_profile_required')
+        return {},None
+    require(len(assignments)==1,'one_legacy_bootstrap_input_required')
+    value=ast.literal_eval(assignments[0].value)
+    require(config_raw==render_legacy_reader_config(value).encode(),'canonical_legacy_bootstrap_config_required')
+    require(archive is not None,'signed_legacy_bootstrap_archive_required')
+    from release_contract import verify_release_manifest, verify_artifact, safe_zip_members
+    release=verify_release_manifest(bytes.fromhex(value['manifest_hex']),bytes.fromhex(value['signature_hex']),
+        decode(bytes.fromhex(value['trust_hex'])),expected_channel='beta')
+    require(release.version=='0.2.2-alpha.1' and len(release.artifacts)==1,'exact_legacy_bootstrap_release_required')
+    artifact=release.artifacts[0]
+    require(artifact.sha256==value['archive_sha256'] and artifact.portable_manifest_sha256==value['inventory_sha256'],
+            'signed_legacy_bootstrap_input_changed')
+    verify_artifact(archive,artifact)
+    mapped={}
+    with zipfile.ZipFile(archive) as bundle:
+        names=safe_zip_members(bundle.namelist())
+        raw=bundle.read('BOOTSTRAP_INVENTORY.json')
+        require(digest(raw)==value['inventory_sha256'],'legacy_bootstrap_inventory_changed')
+        inventory=decode(raw)
+        rows={row['path']:row for row in inventory['files']}
+        require(set(bundle.namelist())==set(rows)|{'BOOTSTRAP_INVENTORY.json'},'legacy_bootstrap_members_changed')
+        for name in bundle.namelist():
+            safe_path(name)
+            raw=bundle.read(name)
+            if name in rows:
+                require(len(raw)==rows[name]['size_bytes'] and digest(raw)==rows[name]['sha256'],
+                        'legacy_bootstrap_file_changed')
+            target=name if name=='TagEncyclopedia.exe' or name.startswith('_internal/') else '_legacy-reader/'+name
+            mapped[target]=raw
+    # Preserve exact signed provenance next to the original documentation.
+    mapped['_legacy-reader/ROOT-RELEASE.json']=bytes.fromhex(value['manifest_hex'])
+    mapped['_legacy-reader/ROOT-RELEASE.json.sig']=bytes.fromhex(value['signature_hex'])
+    return mapped,{'version':release.version,'archive_sha256':artifact.sha256,
+        'inventory_sha256':value['inventory_sha256'],'detached_release_verified':True,'apps_launched':False}
+
+
 def build_distribution(source_stage, output, *, stage_sha256, public_inventory, interpreter, sdk_root,
                        notice_root, root_renderer, source_manifest=HERE / 'source-manifest.json',
-                       tool_inputs=HERE / 'tool-inputs.json'):
+                       tool_inputs=HERE / 'tool-inputs.json', legacy_bootstrap_archive=None):
     source_stage, output, interpreter = map(unredirected, (source_stage, output, interpreter))
     require(not output.exists() and not output.is_relative_to(source_stage)
             and not source_stage.is_relative_to(output), 'fresh_separate_output_required')
     manifest_raw, profile_raw = read(source_manifest), read(tool_inputs)
     inventory_raw = read(public_inventory)
     receipt, manifest, sources = validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw)
+    legacy_files,legacy_profile=legacy_reader_files(sources.get('suite_core/manager/compiled_legacy_reader_config.py',
+        b'"""Inactive source default. Only exact reviewed packaging inputs enable handoff."""\nPROFILE = None\n'),legacy_bootstrap_archive)
     profile = decode(profile_raw)
     require(profile.get('schema') == 1 and set(profile.get('templates', {})) == TEMPLATES,
             'public_tool_profile_required')
@@ -344,9 +407,11 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         config['notice_rows'].append({'path': 'notices/' + name, 'bytes': len(raw), 'sha256': digest(raw)})
     for name, raw in metadata.items():
         write_new(stage / name, raw)
-    write_new(output / 'SEALED_INPUTS.json', json_bytes({'stage_sha256': stage_sha256,
+    sealed_inputs={'stage_sha256': stage_sha256,
         'source_manifest_sha256': digest(manifest_raw), 'tool_inputs_sha256': digest(profile_raw),
-        'root_renderer_sha256': digest(renderer_raw), 'public_inventory_sha256': receipt['public_inventory_sha256']}))
+        'root_renderer_sha256': digest(renderer_raw), 'public_inventory_sha256': receipt['public_inventory_sha256']}
+    if legacy_profile is not None:sealed_inputs['legacy_bootstrap_archive_sha256']=legacy_profile['archive_sha256']
+    write_new(output / 'SEALED_INPUTS.json', json_bytes(sealed_inputs))
     def set_root(text):
         raw = text.encode()
         path = stage / 'source/public_root_entry.py'
@@ -390,6 +455,10 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         require(tree_inventory(suite / 'Apps/Manager/current') == child_inventory,
                 'child_distribution_copy_changed')
         write_new(suite / 'MANAGER_PACKAGE.json', package_raw)
+        if legacy_profile is not None:
+            checked,checked_profile=legacy_reader_files(sources['suite_core/manager/compiled_legacy_reader_config.py'],legacy_bootstrap_archive)
+            require(checked==legacy_files and checked_profile==legacy_profile,'legacy_bootstrap_input_changed_after_freeze')
+        for name,raw in legacy_files.items():write_new(suite/name,raw)
         require(not (suite / 'Data').exists(), 'mutable_data_in_distribution')
         files = []
         for path in sorted(suite.rglob('*')):
@@ -399,12 +468,16 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
                 source = root_exe.parent / path.relative_to(suite)
                 if path.is_relative_to(suite / 'Apps/Manager/current'):
                     source = child.parent / path.relative_to(suite / 'Apps/Manager/current')
-                if path.name != 'MANAGER_PACKAGE.json':
+                relative=path.relative_to(suite).as_posix()
+                if relative in legacy_files:
+                    require(raw==legacy_files[relative],'legacy_bootstrap_distribution_copy_changed')
+                elif path.name != 'MANAGER_PACKAGE.json':
                     require(raw == read(source), 'distribution_copy_changed')
                 files.append({'path': path.relative_to(suite).as_posix(), 'bytes': len(raw), 'sha256': digest(raw)})
         result = {'status': 'BUILD_ONLY_NOT_EXECUTED', 'software_version': receipt['software_version'],
                   'manager_package_sha256': package_pin, 'files': files, 'apps_launched': False,
                   'signed': False, 'native_qualified': False}
+        if legacy_profile is not None:result['legacy_reader_bootstrap']=legacy_profile
         write_new(output / 'BUILD_RESULT.json', json_bytes(result))
         return suite
     except Exception as error:
@@ -419,6 +492,7 @@ def main(argv=None):
     for name in ('source-stage', 'output', 'public-inventory', 'interpreter', 'sdk-root', 'notice-root', 'root-renderer'):
         parser.add_argument('--' + name, required=True, type=Path)
     parser.add_argument('--stage-sha256', required=True)
+    parser.add_argument('--legacy-bootstrap-archive', type=Path)
     args = parser.parse_args(argv)
     try:
         print(build_distribution(**vars(args)))

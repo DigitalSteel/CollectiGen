@@ -308,8 +308,8 @@
     },
     {
       "path": "core/component_release_identity.py",
-      "bytes": 8584,
-      "sha256": "20d4730db277ed2629391dcf64ee84ee4707151112f60608e4f24490e8b05b96"
+      "bytes": 8641,
+      "sha256": "aee2d2ff1478bf614741f9298d7dcf040847fd828e2e8348da7340ffec4e9686"
     },
     {
       "path": "core/component_release_transport.py",
@@ -493,8 +493,8 @@
     },
     {
       "path": "core/encyclopedia_connection.py",
-      "bytes": 15690,
-      "sha256": "89eaadfd836c177d41e323d8ca43324ae08a042ad1d1391c9a632ee313cdebcb"
+      "bytes": 18897,
+      "sha256": "7b29516aa8fe503907a1eaa4b77c3dd850b3dc61eba66d99687b9e64da34819f"
     },
     {
       "path": "core/encyclopedia_editing.py",
@@ -520,6 +520,16 @@
       "path": "core/encyclopedia_installation.py",
       "bytes": 20189,
       "sha256": "770ed26a7a86165219d47259060fec48993eb03b0bdf822dae44829521f9afcf"
+    },
+    {
+      "path": "core/encyclopedia_legacy_handoff.py",
+      "bytes": 7756,
+      "sha256": "1e6ed1f73700832a29741b0c7056ae8b1e96168b7d7ba4972d345046d1c8a347"
+    },
+    {
+      "path": "core/encyclopedia_legacy_host.py",
+      "bytes": 8956,
+      "sha256": "7f1474fe898c353bf9f1430c3f1e28ff6382459f1abfea5e595a98eaa83217bb"
     },
     {
       "path": "core/encyclopedia_read_admission.py",
@@ -1278,8 +1288,8 @@
     },
     {
       "path": "core/ollama_owned_windows.py",
-      "bytes": 20179,
-      "sha256": "3f6bb7bedf81bdf45d2954576c8f28ecafbd84822d12a10b296e140df5208d0a"
+      "bytes": 22421,
+      "sha256": "739a8e8437a676eaec5a5f611c9167fcac3fdeb26db2c5b2cf382687a5d63649"
     },
     {
       "path": "core/ollama_package_preparation.py",
@@ -2108,8 +2118,8 @@
     },
     {
       "path": "core/training_process_windows.py",
-      "bytes": 16396,
-      "sha256": "6e57d93200d9c74bc4f4c68aa2f8f302f8db531ab708a3200f3f3473173425c6"
+      "bytes": 17569,
+      "sha256": "efc4b829d2a4eb2301de47916a40d4eabf38a1837909a047043d6d2649185c94"
     },
     {
       "path": "core/training_progress.py",
@@ -3628,23 +3638,23 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 33969,
-      "sha256": "bd8ed62da28edb13f4265f641bb3e1acd2efe39b35f7ce0d5e79cf5b54e482f9"
+      "bytes": 34145,
+      "sha256": "a8541993cf2e83394ab01fe88d5c456af971fea1ad376848cc6b1316f6629906"
     },
     {
       "path": "suite_core/manager/README.md",
-      "bytes": 8251,
-      "sha256": "c1e2868bced18b4b10646f0e55c707bbaafb036459cf22324149cdbb739c681f"
+      "bytes": 8561,
+      "sha256": "9c88a7ac3bd6f9e981be75c248536696a4e23b0958e3b80eb5b3a5ccf58013be"
     },
     {
       "path": "suite_core/manager/RELEASE_HISTORY.json",
-      "bytes": 9318,
-      "sha256": "b7982f9825aeec4b618ae49a68d0186af51d555412fc946634c51ce57dba2ed5"
+      "bytes": 9582,
+      "sha256": "1ae14d59e377368fd10538eca407faf5f3c500723e737bf5203536587de6118c"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "7c9018a5763fb5b4c7231b62583d292034f09011d0b19b98b6feccbfa3aae2d2"
+      "sha256": "cf77d78a8c292d2de4ceecd9d9de3becbcef8aff74dd6de2e3c5e929632b387b"
     },
     {
       "path": "suite_core/manager/RESOURCE_DASHBOARD_INTEGRATION.md",
@@ -3653,8 +3663,8 @@
     },
     {
       "path": "suite_core/manager/WHATS_NEW.md",
-      "bytes": 19284,
-      "sha256": "9c9291225cb445bfaa9da06b2ac0b00c49c585a600dd2042bceae0f7a59960b0"
+      "bytes": 20144,
+      "sha256": "e46441dbfbf481b4158235529db25829f4fb77086948ad09b274249e7b470392"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -3663,8 +3673,8 @@
     },
     {
       "path": "suite_core/manager/__main__.py",
-      "bytes": 31405,
-      "sha256": "48e7197df53f3588cb2addf643c9e118dd62a25a14c8f70a1c1eabb669d0b0e8"
+      "bytes": 32047,
+      "sha256": "ac4fcb023c5f4303bce9b3ea3a7b4ff2aa0216bca72b31f53f391d9a7eef591e"
     },
     {
       "path": "suite_core/manager/assets/collectigen.ico",
@@ -3688,8 +3698,8 @@
     },
     {
       "path": "suite_core/manager/bootstrap_entry.py",
-      "bytes": 102980,
-      "sha256": "d9e216082c42d490124fa316f2400b6a88694200eacc8911818fd984095fa42b"
+      "bytes": 108377,
+      "sha256": "2b95477013e02fb686522f7330ec6653a589573f1af4a31eb2fe19d54897677b"
     },
     {
       "path": "suite_core/manager/candidate_inventory.py",
@@ -3715,6 +3725,11 @@
       "path": "suite_core/manager/compiled_encyclopedia_config.py",
       "bytes": 3434,
       "sha256": "af681e64c78a0e86ca449b75ee195121b44416b27316768625a7e0635466e1c8"
+    },
+    {
+      "path": "suite_core/manager/compiled_legacy_reader_config.py",
+      "bytes": 7538,
+      "sha256": "1014a8dd03b64c3f2413cb11d4822c9d5dc9cff47c3f528b24ca8b550e849698"
     },
     {
       "path": "suite_core/manager/compiled_organizer_config.py",
@@ -3763,8 +3778,8 @@
     },
     {
       "path": "suite_core/manager/encyclopedia_acquisition_binding.py",
-      "bytes": 5245,
-      "sha256": "5684849620e89929d46626ee3aed9a8ff706204e952804718de309af610d5f3e"
+      "bytes": 5521,
+      "sha256": "ef4ed912f300c090f924a0d59364b9920250622caa8aa85c709a5996070d4c66"
     },
     {
       "path": "suite_core/manager/encyclopedia_acquisition_ui.py",
@@ -3793,8 +3808,18 @@
     },
     {
       "path": "suite_core/manager/launcher_main.py",
-      "bytes": 47012,
-      "sha256": "33adf7ee200a23dd52062074697fc2a5a62c5ef611572c38308dada16d9b13e5"
+      "bytes": 51784,
+      "sha256": "5786648ce7b8428619f62d7729e1a0c436d9707d933df8c011fe7813850866ed"
+    },
+    {
+      "path": "suite_core/manager/legacy_reader_handoff_ui.py",
+      "bytes": 7478,
+      "sha256": "5ddca2a4f252c1de3565010a51635b0f0d8b38a96924f9a783f0fc51b7c06ed6"
+    },
+    {
+      "path": "suite_core/manager/legacy_reader_supervisor.py",
+      "bytes": 7672,
+      "sha256": "b791c8e3cf9ff189aab1390bb2f7d6814427dc818411de0e2f4ea244890ab251"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",
@@ -3984,12 +4009,12 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 281,
-      "sha256": "063a0dc0886974f059838d598a7523a44f7aadd3b12c5927b554eb0aa90c0f7f"
+      "sha256": "835b973b1a79394eb3a696889dce18b740e14c4263aee533b8e87882094475f0"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 175298,
-      "sha256": "d80a6b3e077e9d0b6199929810cbffb73b5bd3c1d9ae58796bc3d1c72584273c"
+      "bytes": 176166,
+      "sha256": "43c64dfd3e4a4437aa1a8d60cfdf3b895563f0794f8ddfdffda0003e1c0aab2c"
     },
     {
       "path": "suite_core/media_examples.py",

@@ -136,10 +136,42 @@ class RootReaderSelection:
         return next(row["sha256"] for row in profile["files"] if row["path"] == "TagEncyclopedia/TagEncyclopedia.exe")
 
 
-def root_reader_selection(root, admitted_settings_path):
+def manager_reader_settings_path(root, admitted_settings_path):
+    """One Reader selection shared with standalone, retaining older connections.
+
+    Existing Manager sidecars remain the source until an explicit handoff moves
+    their selection. Never copy catalogs/preferences or silently replace a
+    malformed canonical document with the historical sidecar.
+    """
+    root = Path(root)
     settings_path = Path(admitted_settings_path)
+    if not settings_path.is_absolute() or not settings_path.is_relative_to(root / 'Data'):
+        raise EncyclopediaHold('Reader settings must belong to the original Manager deployment.')
     if settings_path.suffix.casefold() == ".ini":
         settings_path = settings_path.with_suffix(".json")
+    authority = root / 'State' / COMPONENT.value / 'legacy-reader-settings.json'
+    guard(authority)
+    if not authority.exists():
+        return settings_path
+    from suite_core.discovery.component_staging import read_json
+    canonical = root / 'Data/Encyclopedia/settings.json'
+    value = read_json(authority)
+    historical_store = ReaderConnectionStore(settings_path)
+    selected = historical_store.selected(historical_store.observe())
+    if (type(value) is not dict or set(value) != {'schema','manager_settings_path','reader_settings_path','prior_selection'}
+            or type(value['schema']) is not int or value['schema'] != 1
+            or value['manager_settings_path'] != str(settings_path)
+            or value['reader_settings_path'] != str(canonical)
+            or selected is None or value['prior_selection'] != selected.mapping()):
+        raise EncyclopediaHold('The original Manager Reader selection changed. Review its legacy settings handoff.')
+    canonical_store = ReaderConnectionStore(canonical)
+    if canonical_store.selected(canonical_store.observe()) is None:
+        raise EncyclopediaHold('The shared legacy Reader selection is unavailable. Review its saved connection.')
+    return canonical
+
+
+def root_reader_selection(root, admitted_settings_path):
+    settings_path = manager_reader_settings_path(root, admitted_settings_path)
     store = ReaderConnectionStore(settings_path)
     selected = store.selected(store.observe())
     if selected is None:return None
@@ -198,10 +230,12 @@ class OwnedEncyclopedia:
         self._visible_seen = False
         self._health = None
         self._stopped = False
+        self.legacy_handoff = None
 
     @property
     def close_held(self):
-        return self.native is not None or self.component_stage_pending
+        return (self.native is not None or self.component_stage_pending
+                or self.legacy_handoff is not None and self.legacy_handoff.close_held)
 
     def launch(self, selected):
         if not self.launch_allowed:
@@ -209,6 +243,20 @@ class OwnedEncyclopedia:
         if self.close_held:
             raise EncyclopediaHold("Close the retained Encyclopedia window before launching again.")
         selected = review_directory(selected.directory, expected=selected)
+        if self.normal_entry_session is not None and selected.version == '0.2.2-alpha.1' and self.legacy_handoff is None:
+            raise EncyclopediaHold('Reader 0.2.2 needs its original standalone launcher. This Manager build has no admitted legacy handoff.')
+        if self.normal_entry_session is not None and self.legacy_handoff is not None:
+            from core.encyclopedia_legacy_handoff import (LEGACY_VERSION, LEGACY_PROGRAM_SHA256,
+                HOSTED_UPGRADE_VERSION, HOSTED_UPGRADE_PROGRAM_SHA256)
+            pins={LEGACY_VERSION:LEGACY_PROGRAM_SHA256,HOSTED_UPGRADE_VERSION:HOSTED_UPGRADE_PROGRAM_SHA256}
+            if selected.version in pins:
+                from release_contract import sha256_file
+                if sha256_file(selected.program) != pins[selected.version]:
+                    raise EncyclopediaHold('This Reader does not match its admitted published package.')
+                self._health=None
+                self.legacy_handoff.open(selected)
+                self.reason='Review the Reader handoff. Manager closes before this Reader opens and returns after it closes.'
+                return
         self._health = None
         self._visible_seen = self._stopped = False
         native = self.factory()

@@ -3,6 +3,13 @@
   "module_id": "collectigen.suite-manager",
   "releases": [
     {
+      "software_version": "0.6.0-alpha.1",
+      "date": "2026-10-18",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Unpublished legacy Reader handoff candidate. Packaged update and rollback qualification pending."
+    },
+    {
       "software_version": "0.5.1-alpha.1",
       "date": "2026-10-18",
       "date_timezone": "Etc/UTC",

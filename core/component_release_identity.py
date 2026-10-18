@@ -133,6 +133,7 @@ _LOCAL_LABEL_ROWS = (
     ('SuiteManager', '0.4.1-alpha.1', '0.4.1', 'alpha'),
     ('SuiteManager', '0.5.0-alpha.1', '0.5.0', 'alpha'),
     ('SuiteManager', '0.5.1-alpha.1', '0.5.1', 'alpha'),
+    ('SuiteManager', '0.6.0-alpha.1', '0.6.0', 'alpha'),
     ('TagEncyclopedia', '0.2.2-alpha.1', '0.2.2', 'alpha'),
     ('MediaOrganizer', '0.4.6-alpha.1', '0.4.6', 'alpha'),
     ('TagEncyclopedia', '0.1.0-alpha.1', '0.1.1', 'alpha'),

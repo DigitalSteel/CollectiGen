@@ -1,3 +1,11 @@
+# What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-10-18
+
+- Adds a reviewed legacy Reader handoff: Manager closes before opening the unchanged signed Reader 0.2.2 launcher, then reopens after Reader closes.
+- Legacy-origin installations share their saved catalog connection across Reader 0.2.2, public Reader 0.3.1 and rollback. Fresh Reader 0.3.1 retains its existing launch route.
+- Pending preparation, launch and return operations show progress. Uncertain process closure keeps recovery held; an unstarted Reader can be explicitly cancelled.
+
+Local candidate under qualification. Packaged legacy update and usable rollback acceptance are pending; this source alone does not establish support. Organizer downloads and Manager self-update remain unavailable. Keep backups and extract into a new writable folder. Executables are not Authenticode-signed.
+
 # What's New - a.0.5.1 (embedded 0.5.1-alpha.1) - 2026-10-18
 
 - Dashboard now lists Tag Encyclopedia Reader, with a pointer to Applications.

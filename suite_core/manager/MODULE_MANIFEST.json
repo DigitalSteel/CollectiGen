@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "module_id": "collectigen.suite-manager",
-  "software_version": "0.5.1-alpha.1",
+  "software_version": "0.6.0-alpha.1",
   "manager_interface_version": 1,
   "runtime_files": [
     "core/__init__.py",
@@ -105,6 +105,8 @@
     "core/encyclopedia_entry_adapter.py",
     "core/encyclopedia_help_content.py",
     "core/encyclopedia_installation.py",
+    "core/encyclopedia_legacy_handoff.py",
+    "core/encyclopedia_legacy_host.py",
     "core/encyclopedia_read_admission.py",
     "core/encyclopedia_update_binding.py",
     "core/encyclopedia_update_check.py",
@@ -712,6 +714,7 @@
     "suite_core/knowledge/tag_transactions.py",
     "suite_core/knowledge/version.py",
     "suite_core/local_resources.py",
+    "suite_core/manager/RELEASE_PRESENTATION.json",
     "suite_core/manager/__init__.py",
     "suite_core/manager/__main__.py",
     "suite_core/manager/assets/collectigen.ico",
@@ -724,6 +727,7 @@
     "suite_core/manager/command_bar.py",
     "suite_core/manager/command_search.py",
     "suite_core/manager/compiled_encyclopedia_config.py",
+    "suite_core/manager/compiled_legacy_reader_config.py",
     "suite_core/manager/compiled_organizer_config.py",
     "suite_core/manager/compiled_update_config.py",
     "suite_core/manager/current_build.py",
@@ -740,6 +744,8 @@
     "suite_core/manager/frozen_entry.py",
     "suite_core/manager/host_contracts.py",
     "suite_core/manager/launcher_main.py",
+    "suite_core/manager/legacy_reader_handoff_ui.py",
+    "suite_core/manager/legacy_reader_supervisor.py",
     "suite_core/manager/lifecycle_controller.py",
     "suite_core/manager/metadata_binding.py",
     "suite_core/manager/metadata_setup.py",
@@ -761,7 +767,6 @@
     "suite_core/manager/organizer_connection_ui.py",
     "suite_core/manager/owned_package_entry.py",
     "suite_core/manager/owned_runtime_ui.py",
-    "suite_core/manager/RELEASE_PRESENTATION.json",
     "suite_core/manager/resource_dashboard.py",
     "suite_core/manager/resource_executor.py",
     "suite_core/manager/resource_host_binding_candidate.py",
@@ -818,5 +823,5 @@
     "owned_ollama": "Exact host-admitted descriptor/publication/environment/binding and permission; worker teardown/reconciliation and retained-child Stop; default entry unconfigured; model/Hermes actions unavailable"
   },
   "entrypoint": "python -B -m suite_core.manager",
-  "scope": "Fresh Reader 0.3.1-only Windows x64 portable Alpha. Dashboard Reader visibility and first-run Find reader / Install clarity. Legacy Reader upgrade and rollback through Manager excluded; Organizer acquisition and Manager self-update inactive. Source and package qualification are recorded in the matching release evidence."
+  "scope": "Windows x64 portable Alpha candidate. Fresh public Reader 0.3.1 and legacy-origin Reader 0.2.2 / 0.3.1 via serial standalone ownership. Packaged legacy update and rollback acceptance pending. Organizer acquisition and Manager self-update inactive."
 }

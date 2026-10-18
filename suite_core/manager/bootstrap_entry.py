@@ -19,7 +19,20 @@ FAST_HOOKS = frozenset({'--veloapp-install', '--veloapp-updated',
 MESSAGE_KINDS = frozenset({'offer','ready','helper-reserve','helper-grant',
     'helper-register','helper-registered','seal-request','sealed','local-drained',
     'local-report-accepted','hold','health','helper-status','helper-non-creation',
-    'helper-settled','helper-drained','manager-update-request','manager-update-reply','recovery-visible','recovery-accepted','helper-held','component-stage-request','component-stage-reply'})
+    'helper-settled','helper-drained','manager-update-request','manager-update-reply','recovery-visible','recovery-accepted','helper-held','component-stage-request','component-stage-reply','legacy-reader-request','legacy-reader-reply'})
+
+
+def check_legacy_reader_request(payload):
+    require(type(payload) is dict and set(payload)=={'schema','request_id','operation','profile_sha256','handoff_id'}
+            and type(payload['schema']) is int and payload['schema']==1
+            and type(payload['request_id']) is str and re.fullmatch('[0-9a-f]{32}',payload['request_id'])
+            and type(payload['profile_sha256']) is str and re.fullmatch('[0-9a-f]{64}',payload['profile_sha256'])
+            and type(payload['operation']) is str
+            and payload['operation'] in {'prepare','commit','cancel','status'},'closed_legacy_reader_request_required')
+    require(payload['handoff_id'] is None if payload['operation']=='prepare' else
+            type(payload['handoff_id']) is str and re.fullmatch('[0-9a-f]{64}',payload['handoff_id']),
+            'exact_legacy_handoff_identity_required')
+    return payload
 
 def check_update_request(payload):
     require(type(payload) is dict and set(payload)=={'schema','request_id','operation','profile_sha256','body'}
@@ -387,7 +400,7 @@ class NormalEntrySession:
                     raise
         require(frame['kind'] == 'offer' and frame['sequence'] == 1 and
                 {'binding','scope'}.issubset(frame['payload'])
-                and set(frame['payload']).issubset({'binding','scope','update_profile','reader_selection','organizer_selection'}),
+                and set(frame['payload']).issubset({'binding','scope','update_profile','reader_selection','organizer_selection','legacy_reader_profile_sha256'}),
                 'initial_normal_offer_required')
         document = frame['payload']['binding']
         binding = _binding_document(document)
@@ -402,6 +415,10 @@ class NormalEntrySession:
         session.update_profile=(check_update_profile(frame['payload']['update_profile'],admitted)
             if 'update_profile' in frame['payload'] else None)
         session.reader_selection = None
+        session.legacy_reader_profile_sha256=frame['payload'].get('legacy_reader_profile_sha256')
+        require(session.legacy_reader_profile_sha256 is None or
+                type(session.legacy_reader_profile_sha256) is str and re.fullmatch('[0-9a-f]{64}',session.legacy_reader_profile_sha256),
+                'root_legacy_reader_profile_required')
         if 'reader_selection' in frame['payload']:
             from core.encyclopedia_connection import root_reader_selection
             selected = root_reader_selection(admitted.layout.code_root,admitted.settings_path)
@@ -420,6 +437,7 @@ class NormalEntrySession:
         self.helper_capabilities = []
         self.helper_outstanding = None
         self.component_stage_outstanding = None
+        self.legacy_reader_profile_sha256 = None
         self.seal = None
 
     def _peer(self):
@@ -461,6 +479,35 @@ class NormalEntrySession:
                 self.state,self.error='held',error
                 raise
         return reply
+
+    def request_legacy_reader(self, operation, handoff_id=None):
+        from uuid import uuid4
+        require(self.state=='ready' and self.legacy_reader_profile_sha256 is not None,
+                'ready_legacy_reader_host_required')
+        payload=check_legacy_reader_request(dict(schema=1,request_id=uuid4().hex,
+            operation=operation,profile_sha256=self.legacy_reader_profile_sha256,handoff_id=handoff_id))
+        with self.wire.lock:
+            reply=self._exchange('legacy-reader-request',payload,{'legacy-reader-reply'},reply_timeout=30)['payload']
+            try:
+                require(type(reply) is dict and set(reply)==set(payload)|{'result'}
+                        and all(reply[k]==v for k,v in payload.items())
+                        and type(reply['result']) is dict
+                        and set(reply['result'])=={'status','handoff_id','committed','consumed','reason'}
+                        and reply['result']['status'] in {'ready','refused'}
+                        and (reply['result']['handoff_id'] is None if reply['result']['status']=='refused' else
+                             type(reply['result']['handoff_id']) is str and re.fullmatch('[0-9a-f]{64}',reply['result']['handoff_id']))
+                        and all(type(reply['result'][key]) is bool for key in ('committed','consumed')),
+                        'correlated_legacy_reader_reply_required')
+                require((reply['result']['status']=='ready' and reply['result']['reason'] is None) or
+                        operation=='prepare' and reply['result']['status']=='refused'
+                        and not reply['result']['committed'] and reply['result']['consumed']
+                        and type(reply['result']['reason']) is str and len(reply['result']['reason'])<=256,
+                        'nonarming_legacy_refusal_required')
+            except BaseException as error:
+                self.state,self.error='held',error
+                raise
+            self.readiness_outstanding=None
+            return reply['result']
 
     def request_component_stage(self,operation,scope_id=None,*,component=None):
         from suite_core.installation import ComponentId
@@ -1308,7 +1355,7 @@ class NormalOwnerRoute:
     """
     @classmethod
     def spawn(cls, owner, admitted, *, manager_executable, manager_sha256,
-              helper_pins, environment, timeout=1, abort_scope=None, manager_update_host=None,reader_selection=None,organizer_selection=None):
+              helper_pins, environment, timeout=1, abort_scope=None, manager_update_host=None,reader_selection=None,organizer_selection=None,legacy_reader_host=None):
         from pathlib import Path
         from .entry_binding import validate_normal_launch
         checked = validate_normal_launch(admitted.restart_arguments, executable=manager_executable)
@@ -1323,10 +1370,10 @@ class NormalOwnerRoute:
         _, channel = _native().WindowsNormalTransport.spawn(owner,
             (str(manager_executable), *admitted.restart_arguments), **options)
         return cls(owner, channel, admitted, manager_sha256=manager_sha256,
-                   helper_pins=helper_pins, timeout=timeout, manager_update_host=manager_update_host,reader_selection=reader_selection,organizer_selection=organizer_selection)
+                   helper_pins=helper_pins, timeout=timeout, manager_update_host=manager_update_host,reader_selection=reader_selection,organizer_selection=organizer_selection,legacy_reader_host=legacy_reader_host)
 
     def __init__(self, owner, channel, admitted, *, manager_sha256, helper_pins, timeout=1,
-                 manager_update_host=None, successor_selection=None, peer_role='manager', successor_ready=None,reader_selection=None,organizer_selection=None):
+                 manager_update_host=None, successor_selection=None, peer_role='manager', successor_ready=None,reader_selection=None,organizer_selection=None,legacy_reader_host=None):
         native = _native()
         require(type(owner) is native.DeploymentOwner and type(channel) is native.WindowsControlChannel
                 and channel.transport is owner.native_transport, 'same_native_owner_required')
@@ -1371,6 +1418,8 @@ class NormalOwnerRoute:
         self.manager_update_profile_sha256 = None
         self.manager_update_request_ids = set()
         self.manager_update_profile = None
+        self.legacy_reader_host=legacy_reader_host
+        self.legacy_reader_request_ids=set()
         offer={'binding':document,'scope':self.scope}
         self.reader_helper_selection = reader_selection
         self.organizer_helper_selection = organizer_selection
@@ -1381,6 +1430,12 @@ class NormalOwnerRoute:
         if reader_selection is not None:
             require(successor_selection is None,'reader_successor_admission_unqualified')
             offer['reader_selection'] = owner.admit_helper_wire_reader(reader_selection).context
+        if legacy_reader_host is not None:
+            from core.encyclopedia_legacy_host import LegacyReaderHost
+            require(type(legacy_reader_host) is LegacyReaderHost and legacy_reader_host.owner is owner
+                    and legacy_reader_host.selection is reader_selection and successor_selection is None,
+                    'original_legacy_reader_host_required')
+            offer['legacy_reader_profile_sha256']=legacy_reader_host.profile.identity
         if manager_update_host is not None:
             from core.manager_update_service import ManagerUpdateHostBinding
             require(type(manager_update_host) is ManagerUpdateHostBinding, 'explicit_update_host_binding_required')
@@ -1485,6 +1540,24 @@ class NormalOwnerRoute:
                             'reason':type(original_error).__name__+': '+str(original_error)[:200]})
                         except BaseException as notice_error:self.recovery_notice_error=notice_error
                     raise
+            if kind == 'legacy-reader-request':
+                request=check_legacy_reader_request(payload)
+                host=self.legacy_reader_host
+                require(self.state=='ready' and host is not None
+                        and request['profile_sha256']==host.profile.identity
+                        and request['request_id'] not in self.legacy_reader_request_ids
+                        and len(self.legacy_reader_request_ids)<32,'original_legacy_request_required')
+                self.legacy_reader_request_ids.add(request['request_id'])
+                from core.encyclopedia_legacy_handoff import LegacyReaderRefusal
+                try:result=host.handle(self,request)
+                except LegacyReaderRefusal as error:
+                    self.owner._owned()
+                    require(request['operation']=='prepare' and host.plan is None
+                            and 'component_stage' not in self.owner.record and self._live_peer(),
+                            'settled_legacy_refusal_required')
+                    result=dict(status='refused',handoff_id=None,committed=False,consumed=True,reason=str(error)[:256])
+                self.wire.send('legacy-reader-reply',dict(request,result=result))
+                return kind
             if kind == 'component-stage-request':
                 require(type(payload) is dict and set(payload)=={'schema','operation','scope_id','component'}
                         and type(payload['schema']) is int and payload['schema']==1

@@ -103,7 +103,7 @@ def parse_public_arguments(argv, root):
 class PublicLaunch:
     """Retain the same owner, native construction state and RPC route on failure."""
     def __init__(self, root, *, abort_action_admission=None, update_after_close=None, update_host_factory=None,
-                 successor_trust_sha256=None):
+                 successor_trust_sha256=None, legacy_reader_profile=None):
         if abort_action_admission is not None and not callable(abort_action_admission):
             raise ValueError('trusted_root_abort_action_callable_required')
         if update_after_close is not None and not callable(update_after_close):
@@ -128,6 +128,14 @@ class PublicLaunch:
         self.update_owner = self.update_recovery_gate = None
         self.update_terminal_receipt = None
         self.update_host_factory = update_host_factory
+        if legacy_reader_profile is not None:
+            from core.encyclopedia_legacy_host import CompiledLegacyReaderProfile
+            if type(legacy_reader_profile) is not CompiledLegacyReaderProfile:
+                raise ValueError('typed_compiled_legacy_reader_profile_required')
+        self.legacy_reader_profile=legacy_reader_profile
+        self.legacy_reader_host=None
+        self.legacy_reader_process=None
+        self.normal_exit_code=None
 
     def record(self, kind, **details):
         directory = self.root / 'Data/Manager/PublicLaunchReports'
@@ -211,6 +219,18 @@ class PublicLaunch:
             self.record('acquired', manager_version=contract['manager_version'],
                 argv_sha256=self.owner.record['deployment']['entry_binding']['argv_sha256'])
             route_options={}
+            if (self.legacy_reader_profile is not None and reader_selection is not None
+                    and (reader_selection.selected.version=='0.2.2-alpha.1' or
+                         reader_selection.selected.version=='0.3.1-alpha.1'
+                         and reader_selection.settings_path==self.root/'Data/Encyclopedia/settings.json'
+                         and (self.root/'State/collectigen.tag-encyclopedia/legacy-reader-settings.json').exists())):
+                from core.encyclopedia_legacy_host import LegacyReaderHost
+                try:
+                    self.legacy_reader_profile.verify_bootstrap(self.root)
+                    self.legacy_reader_host=LegacyReaderHost(self.legacy_reader_profile,self.owner,admitted,reader_selection)
+                    route_options['legacy_reader_host']=self.legacy_reader_host
+                except (ValueError,OSError) as error:
+                    self.legacy_reader_error=error
             if self.update_host_factory is not None:
                 from core.manager_update_service import ManagerUpdateHostBinding
                 host=self.update_host_factory(owner=self.owner,admitted=admitted,launcher=self)
@@ -228,6 +248,7 @@ class PublicLaunch:
             self.state = 'local_accepted'
             self.record('local-accepted', seal=self.route.seal)
             code = self.owner.children['manager'].wait(timeout=5)
+            self.normal_exit_code=code
             if self.update_after_close is not None:
                 drain = self.route.retain_for_maintenance(timeout=1)
                 self.state = 'maintenance_ready'
@@ -574,6 +595,8 @@ class PublicLaunch:
         return self._wait_only_abort(timeout=.1)
 
     def can_close(self):
+        if self.legacy_reader_process is not None and self.legacy_reader_process.close_held:
+            return False
         if getattr(self,'update_worker',None) is not None and self.update_worker.close_held:
             return False
         if not self.acquired: return True  # No owned launch was started.
@@ -593,6 +616,11 @@ class PublicLaunch:
         return (self.owner.fd is None and self.route is not None and self.route.state == 'closed')
 
     def recheck(self):
+        if self.legacy_reader_process is not None and self.legacy_reader_process.close_held:
+            try:return self.legacy_reader_process.recheck()
+            except BaseException as error:
+                self.error=error
+                return False
         if self.can_close():return True  # Never re-query retired native handles.
         # Only an already accepted local report permits the existing final drain.
         if self.route is not None and self.route.state == 'local_accepted' and self.abort_ticket is None:
@@ -623,6 +651,9 @@ class PublicLaunch:
         label = QLabel('Manager could not complete startup. Its original startup state is retained. '
             'Keep this window open while closure is unresolved. No runner or helper is stopped automatically.')
         label.setWordWrap(True); layout.addWidget(label)
+        if self.legacy_reader_process is not None:
+            dialog.setWindowTitle('Reader startup needs review')
+            label.setText('Manager has closed safely. The original Reader startup is retained. Close its Reader or launcher window normally, then check closure. No replacement launch is started automatically.')
         recorded_reason = type(self.error).__name__ + ': ' + str(self.error)[:256]
         status = QLabel('Checking whether Manager can finish recovery. Keep this review open until closure is confirmed.')
         status.setObjectName('startupRecoveryStatus'); status.setWordWrap(True); status.setTextFormat(Qt.PlainText)
@@ -637,6 +668,7 @@ class PublicLaunch:
             location = QLabel('Startup details: ' + str(self.report_paths[-1])); location.setWordWrap(True)
             details_layout.addWidget(location);location.hide();details.toggled.connect(location.setVisible)
         check = QPushButton('Check closure'); close = QPushButton('Close')
+        cancel_unstarted=None
         check.setObjectName('startupRecoveryCheck'); close.setObjectName('startupRecoveryClose')
         def refresh():
             try: confirmed = held.recheck()
@@ -644,6 +676,9 @@ class PublicLaunch:
                 held.error = error
                 confirmed = held.can_close()
             close.setEnabled(confirmed)
+            if cancel_unstarted is not None:
+                try:cancel_unstarted.setEnabled(held.legacy_reader_process.can_cancel_unstarted)
+                except BaseException:cancel_unstarted.setEnabled(False)
             if confirmed:
                 if held.state == 'update_closed':
                     status.setText('Recovery verified and all owned resources closed. Choose Close to finish.')
@@ -660,6 +695,19 @@ class PublicLaunch:
                 location.setText('Startup details: ' + str(held.report_paths[-1]))
         check.clicked.connect(refresh); close.clicked.connect(dialog.close)
         close.setEnabled(self.can_close()); layout.addWidget(check); layout.addWidget(close)
+        if self.legacy_reader_process is not None:
+            consequence=QLabel('Cancel is available only if the original Reader process is still suspended and has never been resumed. It ends only that unstarted attempt; catalogs have not been opened by it.')
+            consequence.setWordWrap(True);layout.addWidget(consequence)
+            cancel_unstarted=QPushButton('Cancel unstarted Reader')
+            cancel_unstarted.setObjectName('legacyReaderCancelUnstarted')
+            def cancel_original_unstarted():
+                cancel_unstarted.setEnabled(False)
+                try:held.legacy_reader_process.cancel_unstarted(confirmed=True)
+                except BaseException as error:held.error=error
+                refresh()
+            cancel_unstarted.clicked.connect(cancel_original_unstarted)
+            cancel_unstarted.setEnabled(False)
+            layout.addWidget(cancel_unstarted)
         if self.state == 'update_repair_available':
             from core.manager_stock_hook_provider import WindowsStockHookProvider
             from .resource_executor import ResourceExecutorOwner
@@ -739,8 +787,11 @@ class PublicLaunch:
 
 def main(argv=None, *, expected_package_sha256=None, executable=None, abort_action_admission=None,
          update_host_factory=None, update_after_close=None, successor_trust_sha256=None,
-         compiled_update_profile=None):
+         compiled_update_profile=None, compiled_legacy_reader_profile=None):
     if expected_package_sha256 is None: raise ValueError('compiled_public_package_pin_required')
+    if compiled_legacy_reader_profile is None:
+        from .compiled_legacy_reader_config import PROFILE
+        compiled_legacy_reader_profile=PROFILE
     if compiled_update_profile is not None:
         from core.manager_update_host import CompiledManagerUpdateProfile
         if (type(compiled_update_profile) is not CompiledManagerUpdateProfile
@@ -753,12 +804,34 @@ def main(argv=None, *, expected_package_sha256=None, executable=None, abort_acti
     _assert_unredirected(exe)
     if exe.name != 'CollectiGen.exe' or not exe.is_file(): raise ValueError('exact_public_root_entry_required')
     if not (exe.parent / '_bootstrap').is_dir(): raise ValueError('public_bootstrap_payload_required')
-    controller = PublicLaunch(exe.parent, abort_action_admission=abort_action_admission,
-        update_host_factory=update_host_factory,update_after_close=update_after_close,
-        successor_trust_sha256=successor_trust_sha256)
-    result = controller.launch(tuple(sys.argv[1:] if argv is None else argv),
-        expected_package_sha256=expected_package_sha256, environment=dict(os.environ))
-    if (result is controller and controller.preowner_import_error is not None
-            and controller.owner is None and not controller.acquired):
-        return 1  # Handled pre-owner diagnostic; natural exit, no frozen error dialog.
-    return result.present() if type(result) is PublicLaunch else result
+    arguments=tuple(sys.argv[1:] if argv is None else argv)
+    environment=dict(os.environ)
+    while True:
+        controller = PublicLaunch(exe.parent, abort_action_admission=abort_action_admission,
+            update_host_factory=update_host_factory,update_after_close=update_after_close,
+            successor_trust_sha256=successor_trust_sha256,legacy_reader_profile=compiled_legacy_reader_profile)
+        result = controller.launch(arguments,
+            expected_package_sha256=expected_package_sha256, environment=environment)
+        if (result is controller and controller.preowner_import_error is not None
+                and controller.owner is None and not controller.acquired):
+            return 1  # Pre-owner diagnostic; no native scope to settle.
+        code=result.present() if type(result) is PublicLaunch else result
+        host=controller.legacy_reader_host
+        if host is None or not host.committed or host.consumed:
+            return code
+        try:
+            plan=host.take_after_close(controller)
+            from .legacy_reader_supervisor import LegacyReaderSupervisor
+            actor=LegacyReaderSupervisor(host.profile,plan)
+            controller.legacy_reader_process=actor
+            actor.run(environment)
+        except BaseException as error:
+            # Keep the original controller and any partially born actor. No
+            # detached retry, replacement owner, Stop or automatic restart.
+            controller.error,controller.state=error,'held'
+            if controller not in _HELD_PUBLIC_LAUNCHES:_HELD_PUBLIC_LAUNCHES.append(controller)
+            controller.present()
+            return 1
+        # The old Root has released its own lease and the entire original Job
+        # has drained. A fresh ordinary Manager admission reads canonical Reader
+        # selection; the closed Manager's owner/session is never reused.

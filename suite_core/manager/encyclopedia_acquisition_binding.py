@@ -56,7 +56,7 @@ def factory_for_session(session):
 
     def create(reader_owner, settings_path):
         from uuid import uuid4
-        from core.encyclopedia_connection import OwnedEncyclopedia, ReaderConnectionStore
+        from core.encyclopedia_connection import OwnedEncyclopedia, ReaderConnectionStore, manager_reader_settings_path
         from core.component_acquisition import ComponentAcquisition
         from core.component_release_transport import ComponentReleaseTransport, ReleaseTransportPolicy
         from core.encyclopedia_installation import EncyclopediaInstallation
@@ -65,8 +65,7 @@ def factory_for_session(session):
         from .version import VERSION
         # Preserve the original INI admission; AppSettings owns its JSON sidecar.
         admitted_settings = Path(session.admitted.settings_path)
-        connection_settings = (admitted_settings.with_suffix('.json')
-            if admitted_settings.suffix.casefold() == '.ini' else admitted_settings)
+        connection_settings = manager_reader_settings_path(session.admitted.layout.code_root, admitted_settings)
         if (type(reader_owner) is not OwnedEncyclopedia or reader_owner.normal_entry_session is not session
                 or Path(settings_path) != connection_settings):
             raise ValueError('original_reader_settings_binding_required')
@@ -80,7 +79,10 @@ def factory_for_session(session):
             manifest_name=profile.expected_offer.manifest.name,
             signature_name=profile.expected_offer.signature.name,
             expected_offer=profile.expected_offer)
+        shared_legacy=(connection_settings==session.admitted.layout.data_root/'Encyclopedia/settings.json'
+            and (session.admitted.layout.code_root/'State/collectigen.tag-encyclopedia/legacy-reader-settings.json').exists())
         service = EncyclopediaInstallation(acquisition,ReaderConnectionStore(settings_path),
-            admission=ComponentStageAdmission(reader_owner.component_stage_hold),native_health=reader_owner.native_health)
+            admission=ComponentStageAdmission(reader_owner.component_stage_hold),native_health=reader_owner.native_health,
+            standalone_compatibility=shared_legacy)
         return service, ResourceExecutorOwner()
     return create

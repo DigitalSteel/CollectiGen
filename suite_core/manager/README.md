@@ -1,6 +1,6 @@
 # CollectiGen Suite Manager
 
-Current development source: **a.0.5.0** (wire **0.5.0-alpha.1**), **2026-10-14**;
+Current development source: **a.0.6.0** (wire **0.6.0-alpha.1**), **2026-10-18**;
 [dated source notes](WHATS_NEW.md). This is an unpublished candidate.
 
 Manager coordinates Reader and Organizer setup, visible progress, explicit Open
@@ -8,8 +8,8 @@ and ordinary Close, and recovery. Its Tag Database workspace keeps connection,
 preview, Apply and recovery as separate decisions and protects local corrections.
 Help and release history share the current application version label.
 
-This source keeps production enrollment inactive. The distributed package README
-identifies its configured verified releases and supported installation routes.
+The compiled acquisition profile identifies public Reader **0.3.1-alpha.1**.
+The distributed package README identifies its verified releases and qualified routes.
 Manager self-update is unavailable. This is alpha evaluation software for Windows
 11 x64 portable use; keep backups and use test copies for catalog evaluation.
 
@@ -18,8 +18,12 @@ Applications search and status filters include Encyclopedia; its card shows one 
 Applications > Encyclopedia connects an already installed standalone reader.
 Review its package folder, save the selection and restart Manager before Launch.
 Launch stays disabled after changing the saved reader until the exact selection
-is admitted at startup. Open saved connection retains that choice. Automatic reader download/install
-has no default production feed or trust profile and remains unavailable.
+is admitted at startup. Open saved connection retains that choice. Reader acquisition uses Find reader, explicit installation confirmation and the
+compiled exact public release. The legacy-origin route prepares a shared Reader
+connection, closes Manager before the unchanged signed 0.2.2 standalone launcher
+opens, and returns to Manager after ordinary Reader Close. The shared connection
+is retained for public 0.3.1 and rollback. Packaged legacy update and usable
+rollback qualification are pending; see [handoff scope and upstream source](../../docs/MANAGER_LEGACY_READER_HANDOFF.md).
 Databases provides separate Tag connection, preview, Apply, recovery and Reload.
 Model/chat tools retain their existing bounded scope. Native application updates,
 public release and GPU operation remain separately qualified. Clean-machine/

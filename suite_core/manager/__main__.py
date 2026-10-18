@@ -474,7 +474,11 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             raise ValueError("owned_runtime_not_demo_authority")
         lifecycle_bridge = entry_owner.acquire(None if disposable_module_binding is None else
             AsyncLifecycleBridge(disposable_module_binding=disposable_module_binding))
-        from core.encyclopedia_connection import OwnedEncyclopedia
+        from core.encyclopedia_connection import OwnedEncyclopedia, manager_reader_settings_path
+        reader_settings = connection_settings
+        if normal_entry_session is not None and not args.demo:
+            reader_settings = manager_reader_settings_path(normal_entry_session.admitted.layout.code_root,
+                                                          normal_entry_session.admitted.settings_path)
         reader_owner = None if args.demo else OwnedEncyclopedia(
             launch_allowed=normal_entry_session is None or getattr(normal_entry_session,'reader_selection',None) is not None,
             normal_entry_session=normal_entry_session)
@@ -483,7 +487,7 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
         if encyclopedia_acquisition_factory is not None:
             if args.demo or not callable(encyclopedia_acquisition_factory):
                 raise ValueError('explicit_non_demo_acquisition_factory_required')
-            encyclopedia_acquisition, encyclopedia_executor = encyclopedia_acquisition_factory(reader_owner, connection_settings)
+            encyclopedia_acquisition, encyclopedia_executor = encyclopedia_acquisition_factory(reader_owner, reader_settings)
             from core.encyclopedia_installation import EncyclopediaInstallation
             from .resource_executor import ResourceExecutorOwner
             if (type(encyclopedia_acquisition) is not EncyclopediaInstallation
@@ -523,7 +527,7 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             manager_update_service=manager_update_service, normal_entry_session=normal_entry_session,
             tag_database_controller=tag_database_controller, tag_encyclopedia=tag_encyclopedia,
             chat_host=chat_host,direct_model_host=direct_model_host,
-            reader_settings_path=None if args.demo else connection_settings, reader_owner=reader_owner,
+            reader_settings_path=None if args.demo else reader_settings, reader_owner=reader_owner,
             encyclopedia_acquisition=encyclopedia_acquisition, encyclopedia_executor=encyclopedia_executor,
             organizer_connection_host=organizer_connection_host,
             organizer_acquisition=organizer_acquisition, organizer_executor=organizer_executor,
@@ -532,6 +536,9 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             shared_settings_close_choice=shared_settings_close_choice,
             model_workspace_factory=model_workspace_factory, tag_content_host=entry_owner.tag_content_host)
         entry_owner.window = window
+        if normal_entry_session is not None and getattr(normal_entry_session,'legacy_reader_profile_sha256',None) is not None:
+            from .legacy_reader_handoff_ui import LegacyReaderHandoffFlow
+            reader_owner.legacy_handoff=LegacyReaderHandoffFlow(window,normal_entry_session)
         entry_owner.acquisition_panel = getattr(window, "acquisition_panel", None)
         entry_owner.organizer_acquisition_panel = getattr(window, "organizer_acquisition_panel", None)
         entry_owner.update_panel = getattr(window, "manager_update_panel", None)

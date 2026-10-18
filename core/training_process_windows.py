@@ -137,19 +137,29 @@ def is_local_volume(anchor: str) -> bool:
 
 
 class WindowsTrainingJob:
-    def __init__(self, name: str, *, interactive: bool = False):
+    def __init__(self, name: str, *, interactive: bool = False, kill_on_close: bool = True):
+        if type(kill_on_close) is not bool:
+            raise ValueError('explicit_job_close_policy_required')
         self.interactive = interactive is True
+        self.kill_on_close = kill_on_close
         self.api = _api()
         self.handle = _check(self.api.CreateJobObjectW(None, name))
         self._owns_handle = True
         self.process = self.thread = None
         self.stdout = None
         self.pid = None
+        self.creation_entered = False
+        self.creation_returned = None
+        self.creation_command = None
+        self.creation_info = None
+        self.resume_entered = False
         try:
             if C.get_last_error() == 183:
                 raise RuntimeError("The selected process owner already exists.")
             limits = _ExtendedLimits()
-            limits.basic.flags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE; no breakaway
+            # Training keeps its existing default. A standalone Root supervisor
+            # must preserve that Root's own custody if its outer observer exits.
+            limits.basic.flags = 0x2000 if kill_on_close else 0  # no breakaway
             _check(self.api.SetInformationJobObject(self.handle, 9, C.byref(limits), C.sizeof(limits)))
         except BaseException:
             self.close()
@@ -254,6 +264,7 @@ class WindowsTrainingJob:
         import msvcrt
         if self.process is not None:
             raise RuntimeError("This process owner already has a root process.")
+        self.creation_command = tuple(command)
         read, write = W.HANDLE(), W.HANDLE()
         security = _Security(C.sizeof(_Security), None, True)
         _check(self.api.CreatePipe(C.byref(read), C.byref(write), C.byref(security), 0))
@@ -286,11 +297,18 @@ class WindowsTrainingJob:
                 startup.startup.stdout = startup.startup.stderr = write.value
                 startup.attributes = C.cast(attributes, W.LPVOID)
                 info = _ProcessInfo()
+                self.creation_info = info  # Retain the original native outputs even if a call raises.
                 env = C.create_unicode_buffer("\0".join(f"{k}={v}" for k, v in sorted(environment.items())) + "\0\0")
                 args = C.create_unicode_buffer(subprocess.list2cmdline(command))
                 with _external_dll_directory(self.api):
-                    _check(self.api.CreateProcessW(command[0], args, None, None, True,
-                        0x4 | 0x8000000 | 0x80000 | 0x400, env, cwd, C.byref(startup), C.byref(info)))
+                    self.creation_entered = True
+                    created = self.api.CreateProcessW(command[0], args, None, None, True,
+                        0x4 | 0x8000000 | 0x80000 | 0x400, env, cwd, C.byref(startup), C.byref(info))
+                    self.creation_returned = bool(created)
+                    # Preserve any outputs before validation or DLL restoration.
+                    if created or info.process or info.thread or info.pid:
+                        self.process, self.thread, self.pid = info.process, info.thread, info.pid
+                    _check(created)
                     # Restoration can fail after successful creation. Retain the
                     # suspended original before leaving the guarded boundary.
                     self.process, self.thread, self.pid = info.process, info.thread, info.pid
@@ -306,6 +324,7 @@ class WindowsTrainingJob:
                 self.api.CloseHandle(read)
 
     def resume(self):
+        self.resume_entered = True
         if not self.thread or self.api.ResumeThread(self.thread) == 0xFFFFFFFF:
             raise OSError("The contained process could not start.")
         self.api.CloseHandle(self.thread)
@@ -327,8 +346,9 @@ class WindowsTrainingJob:
         _check(self.api.TerminateJobObject(self.handle, 1))
 
     def close(self):
-        # Closing the sole owner handle also kills a still-suspended root after
-        # an exception. Normal callers observe active()==0 before releasing GPU.
+        # Default training Jobs kill on close, including a suspended root after
+        # an exception. Custody supervisors explicitly opt out and must retain
+        # their original handles until complete drain; closing is not Stop.
         for name in ("handle", "thread", "process"):
             value = getattr(self, name, None)
             if value:

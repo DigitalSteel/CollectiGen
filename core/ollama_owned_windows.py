@@ -85,6 +85,7 @@ class WindowsOwnedProcess:
         self.logs={}
 
         self.job_factory=WindowsTrainingJob;self.job=None;self.drain=None
+        self.ordinary_create_entered=False
         self.drained=threading.Event();self.drain_failed=False;self.start_failed=False;self.verified_identities={}
 
     def bind_helper_capability(self, capability):
@@ -238,11 +239,17 @@ class WindowsOwnedProcess:
         phase='create_process'
         try:
             if cap is not None:self._helper_create_entered=True
+            self.ordinary_create_entered=True
             self.job.spawn_suspended(command,cwd,environment)
         except BaseException as error:
             # Do not discard any partially created original process/job handle.
             self.start_failure=error;self.start_failure_phase=phase
             if self.job.process is None:
+                if getattr(self.job,'kill_on_close',True) is False:
+                    self.start_failed=True
+                    # The post-lease Root supervisor reconciles this same Job's
+                    # native creation outputs. Never discard an uncertain birth.
+                    raise
                 # Exception is NOT a positive zero-call receipt. Keep accounting
                 # held; only the entry's native reconciliation can settle it.
                 self.job.close();self.job=None;raise
@@ -344,6 +351,37 @@ class WindowsOwnedProcess:
             self.helper_reservation=None;self.helper_accounting_held=False
     def check_retained_handle(self,child):
         require(child in self.logs and child._handle is not None,'original_spawn_handle_required')
+
+    def recover_failed_root_child(self, command):
+        """Cleanup-only reconciliation for the original non-killing Root Job.
+
+        No PID discovery, relaunch, health or helper-capability bypass. Called
+        only after the original startup worker has physically settled.
+        """
+        require(getattr(self,'helper_capability',None) is None,'root_only_failed_birth_recovery_required')
+        job=self.job
+        if job is None:
+            require(not self.ordinary_create_entered and not self.logs and self.drain is None,
+                    'positive_precreation_required')
+            return None
+        require(job.kill_on_close is False and job.creation_command==command,
+                'original_non_killing_root_attempt_required')
+        info=job.creation_info
+        if job.process is None and info is not None and (info.process or info.thread or info.pid):
+            require(info.process and info.thread and info.pid,'complete_original_creation_outputs_required')
+            job.process,job.thread,job.pid=info.process,info.thread,info.pid
+        if job.process is None:
+            require((not job.creation_entered or job.creation_returned is False)
+                    and (info is None or not (info.process or info.thread or info.pid))
+                    and not self.logs and self.drain is None and job.active()==0,
+                    'positive_native_noncreation_required')
+            job.close();self.job=None
+            return None
+        children=[child for child in self.logs if child.job is job and child._handle==job.process and child.pid==job.pid]
+        require(len(self.logs)==len(children) and len(children)<=1,'original_partial_root_handle_required')
+        if children:return children[0]
+        child=JobChild(job);self.logs[child]=None
+        return child
     def job_empty(self):return self.job is not None and self.job.handle is None
 
     def pause(self, seconds):time.sleep(seconds)
