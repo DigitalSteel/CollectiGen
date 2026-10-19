@@ -146,3 +146,34 @@ def test_external_change_failed_refresh_reopen_explicit_reload_preserves_old_dra
     assert c.saved.endpoint.endswith("11436") and c.draft==original and c.dirty and c.state=="reloaded"
     assert c.use_saved() and not c.dirty and not c.can_save and not c.can_refresh
     assert c.message=="Connection saved. Metadata access is off." and host.calls==1
+
+import os
+
+@pytest.mark.parametrize('theme', ['light', 'dark'])
+def test_enabled_setup_actions_fit_themed_text_without_changing_save_authority(theme):
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtGui import QFont, QFontDatabase
+    from PySide6.QtTest import QTest
+    from qt_app.theme import apply_theme
+    from suite_core.manager.backend_setup_ui import create_setup_dialog
+    app = QApplication.instance() or QApplication([])
+    font_id = QFontDatabase.addApplicationFont('C:/Windows/Fonts/segoeui.ttf')
+    assert font_id >= 0
+    app.setFont(QFont(QFontDatabase.applicationFontFamilies(font_id)[0], 10))
+    apply_theme(app, theme)
+    c, setup, host = flow()
+    dialog = create_setup_dialog(c, None)
+    try:
+        dialog.show(); app.processEvents()
+        dialog.endpoint.setFocus(); QTest.keyClicks(dialog.endpoint, 'http://127.0.0.1:12491'); app.processEvents()
+        assert dialog.save.isEnabled() and not dialog.permission.isChecked()
+        for action in (dialog.save, dialog.cancel):
+            assert action.isVisible() and action.width() >= action.fontMetrics().horizontalAdvance(action.text()) + 24
+        capture = os.environ.get('BACKEND_SETUP_CAPTURE')
+        if capture:
+            target = Path(capture); target.mkdir(parents=True, exist_ok=True)
+            assert dialog.grab().save(str(target / (theme + '-enabled-save.png')))
+        dialog.save.click(); app.processEvents()
+        assert setup.persisted.endpoint == 'http://127.0.0.1:12491' and host.calls == 0
+    finally:
+        dialog.timer.stop(); dialog.close(); app.processEvents()

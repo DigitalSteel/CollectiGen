@@ -393,3 +393,70 @@ def test_reader_scoped_discovery_still_rejects_invalid_target(tmp_path, monkeypa
     with pytest.raises(ValueError): caller.discover(channel='beta')
     assert not any('collectigen.unrelated' in url for url, *_rest in feed.calls)
     assert not caller.store.settings.path.exists()
+
+
+@pytest.mark.parametrize("interruption", [None, "before_version_publish", "new_journal_established", "version_published", "active_reference_replaced"])
+def test_repeat_update_after_rollback_reuses_exact_code_and_remains_recoverable(fixture, monkeypatch, interruption):
+    f = fixture
+    first = f.install()
+    f.service.native_health = lambda selected: True  # injected native boundary, not process proof
+    f.service.confirm_health()
+    f.add("0.1.0-alpha.9", b"INERT SECOND CODE")
+    second = f.install()
+    f.service.recover(confirmed=True)
+    directory = second.installed.selected.directory
+    retained = {str(p.relative_to(directory)): (p.read_bytes(), p.stat().st_mtime_ns) for p in directory.rglob("*") if p.is_file()}
+    settings_before = f.settings.read_bytes()
+    original = staging._stage_and_activate
+    if interruption is not None:
+        def interrupted(*args, **kwargs):
+            failpoint = kwargs["failpoint"]
+            def stop(phase):
+                failpoint(phase)
+                if phase == interruption:
+                    raise RuntimeError("synthetic retained-code interruption")
+            return original(*args, **dict(kwargs, failpoint=stop))
+        monkeypatch.setattr(staging, "_stage_and_activate", interrupted)
+        with pytest.raises(RuntimeError, match="retained-code interruption"):
+            f.install()
+        monkeypatch.setattr(staging, "_stage_and_activate", original)
+        assert f.settings.read_bytes() == settings_before
+    else:
+        repeated = f.install()
+        assert repeated.installed.selected == second.installed.selected
+        f.service.confirm_health()
+    result = f.service.recover(confirmed=True)
+    assert result.connection_saved and result.installed.selected == first.installed.selected
+    assert {str(p.relative_to(directory)): (p.read_bytes(), p.stat().st_mtime_ns) for p in directory.rglob("*") if p.is_file()} == retained
+    assert f.sentinel.read_bytes() == b'{"unknown_future":[1,2]}\n'
+
+
+@pytest.mark.parametrize("fault", ["changed", "extra"])
+def test_repeat_update_refuses_changed_retained_package_before_metadata_writes(fixture, fault):
+    f = fixture
+    f.install(); f.service.native_health = lambda selected: True; f.service.confirm_health()
+    f.add("0.1.0-alpha.9", b"INERT SECOND CODE")
+    second = f.install(); f.service.recover(confirmed=True)
+    directory = second.installed.selected.directory
+    path = second.installed.selected.program if fault == "changed" else directory / "unexpected.txt"
+    path.write_bytes(b"CHANGED INERT CODE")
+    base = f.root / "State" / COMPONENT.value
+    before = {p.name: p.read_bytes() for p in base.iterdir() if p.is_file()}
+    settings = f.settings.read_bytes()
+    with pytest.raises(staging.StagingHold, match="payload_"):
+        f.install()
+    assert {p.name: p.read_bytes() for p in base.iterdir() if p.is_file()} == before
+    assert f.settings.read_bytes() == settings and path.read_bytes() == b"CHANGED INERT CODE"
+
+
+def test_first_install_undo_allows_explicit_reinstall_without_overwriting_retained_code(fixture):
+    f = fixture
+    first = f.install()
+    directory = first.installed.selected.directory
+    retained = {str(p.relative_to(directory)): (p.read_bytes(), p.stat().st_mtime_ns) for p in directory.rglob("*") if p.is_file()}
+    undone = f.service.recover(confirmed=True)
+    assert undone.installed.selected is None
+    repeated = f.install()
+    assert repeated.connection_saved and repeated.installed.selected == first.installed.selected
+    assert {str(p.relative_to(directory)): (p.read_bytes(), p.stat().st_mtime_ns) for p in directory.rglob("*") if p.is_file()} == retained
+    assert f.sentinel.read_bytes() == b'{"unknown_future":[1,2]}\n'

@@ -30,3 +30,40 @@ Owners: `core/encyclopedia_installation.py::EncyclopediaInstallation`, `suite_co
 Organizer downloads and Manager self-update have no compiled profile and stay unavailable. Owned Ollama installation/lifecycle, repository inspection and frozen direct-GGUF execution require their separate existing admissions. Development cards do not represent installed or executable features. No qualification transfers from catalog awareness or a source test to those inactive routes.
 
 The New User Workflow Test remains active at every inspected state: purpose, next action, scope, progress, saved completion and recovery. Source/component checks and native execution receipts are recorded separately. This review remains incomplete until its affected visible routes are exercised and reviewed.
+
+
+## Current packaged audit and follow-up
+
+The R14 native build passed a fresh public Reader 0.3.1 install, catalog/details,
+ordinary Close and saved healthy state. It also passed unchanged Reader 0.2.2
+handoff, catalog/details, ordinary Close and automatic distinct Manager return.
+The returned Manager restored Applications and maximized geometry before tool
+activation; activation itself restored a normal-sized window. Three original
+native scopes retired completely with exit 0; no forced stop was used.
+
+The consolidated repeat-update attempt stopped at immutable_version_already_exists:
+the prior rollback retained its 0.3.1 directory. This is an incomplete transaction
+acceptance, not a pass. R15 adapts the existing staging engine to verify an exact
+retained signed payload before reusing it for an explicitly confirmed update.
+The authenticated current journal, supported upgrade, idle admission, stale guards,
+archive verification and complete inventory closure remain mandatory. Files are
+never overwritten. Changed or unexpected files hold before transaction writes;
+interruption and subsequent rollback retain the original recovery path.
+
+The same audit found clipped enabled Save text, a stale Ollama informational hint
+on other pages, and an absent-Reader Dependencies hint that named only extracted
+packages. R15 reuses measured compact actions, confines informational status to
+the Ollama workspace while preserving errors, and routes absent Reader setup to
+Find reader when the admitted release path is available. Source checks cover
+both themes, guarded Save, repeat update/recovery and interrupted reuse. New
+packaged evidence for these changes and named update/rollback remains pending.
+
+The stock legacy Reader opened without a selected catalog; the operator selected
+the synthetic catalog through its normal Folder picker. Shared connection claims
+refer to the selected Reader executable, not automatic catalog reopening. Catalog
+files remained unchanged. No automatic catalog-selection acceptance is claimed.
+
+The same retained-package check also covers an explicitly reviewed reinstall after
+Undo installation. A focused reproduction confirmed the original collision; the
+fix admits only fully verified signed bytes with a validated prior transaction.
+No catalog or package file is removed to make a retry succeed.

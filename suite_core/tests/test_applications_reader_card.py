@@ -219,3 +219,33 @@ def test_backend_dependency_chat_busy_then_idle_and_rejected_retry(tmp_path):
     finally:
         window.chat_host = original_chat; window.backend_setup_controller = original_flow
         window.reader_panel.timer.stop(); window.close(); app.processEvents()
+
+
+def test_dependency_reader_find_route_and_navigation_hint_preserve_errors(tmp_path, monkeypatch):
+    from tests.test_encyclopedia_installation import Fixture
+    from suite_core.manager.resource_executor import ResourceExecutorOwner
+    app = QApplication.instance() or QApplication([])
+    fixture = Fixture(tmp_path, monkeypatch)
+    executor = ResourceExecutorOwner()
+    window = create_window(unconfigured(datetime.now(timezone.utc)),
+        reader_settings_path=fixture.settings, encyclopedia_acquisition=fixture.service,
+        encyclopedia_executor=executor)
+    try:
+        window.show(); window.navigation.setCurrentRow(window.page_rows['Dependencies']); app.processEvents()
+        row = next(r for r in window.dependency_status_panel.snapshot.observations if r.key == 'reader-connection')
+        assert 'Find reader' in row.detail and 'Connection settings' in row.detail
+        calls = []
+        monkeypatch.setattr(window.acquisition_panel, 'refresh_releases', lambda: calls.append('find'))
+        window.open_dependency_route('reader-connection', 'reader-connection')
+        assert window.acquisition_dialog.isVisible() and calls == ['find']
+        window.acquisition_dialog.reject(); app.processEvents()
+        hint = 'Read-only Ollama metadata; see dated route status in Applications'
+        window.statusBar().showMessage(hint)
+        window.navigation.setCurrentRow(window.page_rows['Settings']); app.processEvents()
+        assert window.statusBar().currentMessage() != hint
+        window.statusBar().showMessage('Synthetic genuine error: review connection')
+        window.navigation.setCurrentRow(window.page_rows['Dashboard']); app.processEvents()
+        assert window.statusBar().currentMessage() == 'Synthetic genuine error: review connection'
+    finally:
+        window.acquisition_panel.timer.stop(); window.reader_panel.timer.stop()
+        executor.begin_close(); window.close(); app.processEvents()

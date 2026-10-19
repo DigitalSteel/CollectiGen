@@ -2,7 +2,7 @@
 def create_setup_dialog(controller, parent):
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtWidgets import QDialog, QLabel, QLineEdit, QCheckBox, QPushButton, QHBoxLayout, QDialogButtonBox, QWidget, QToolButton
-    from suite_core.manager.ui_cards import workspace_layout, workspace_heading, disclosure_panel
+    from suite_core.manager.ui_cards import workspace_layout, workspace_heading, disclosure_panel, compact_action
 
     class SetupDialog(QDialog):
         def __init__(self):
@@ -39,6 +39,9 @@ def create_setup_dialog(controller, parent):
             actions = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
             self.save = actions.button(QDialogButtonBox.Save)
             self.cancel = actions.button(QDialogButtonBox.Cancel)
+            self.save.setText("Save connection")
+            compact_action(self.save)
+            compact_action(self.cancel)
             self.save.setAutoDefault(False)
             self.save.setAccessibleName("Save connection")
             actions.rejected.connect(self.reject)

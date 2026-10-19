@@ -69,9 +69,12 @@ def test_dialog_closes_only_after_verified_persistence(success):
     obj.save_and_close()
     assert calls == (["stop","accept"] if success else ["render"])
 
-def test_applications_route_and_return_only_change_view():
+@pytest.mark.parametrize("message,expected", [("Read-only Ollama metadata; see dated route status in Applications", ""), ("Synthetic real failure", "Synthetic real failure")])
+def test_applications_route_and_return_only_change_view(message, expected):
     obj = methods("window.py", {"open_ollama_workspace","close_ollama_workspace"})()
     rows, rendered = [], []
+    status = [message]
+    obj.statusBar = lambda: SimpleNamespace(currentMessage=lambda: status[0], clearMessage=lambda: status.__setitem__(0, ""))
     obj.navigation = SimpleNamespace(setCurrentRow=rows.append)
     obj.page_rows = {"Applications":2}
     obj.dependency_route_settled = lambda: None
@@ -87,6 +90,7 @@ def test_applications_route_and_return_only_change_view():
     assert not obj.ollama_workspace.visible and obj.application_categories.visible
     assert obj.applications.visible and not obj.app_observation_heading.visible
     assert rendered == ["inventory","inventory","catalog"]
+    assert status[0] == expected
 
 def test_shared_editor_is_singleton_and_both_routes_reference_it():
     obj = methods("window.py", {"open_backend_setup"})()

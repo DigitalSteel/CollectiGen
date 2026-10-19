@@ -387,7 +387,12 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
                   "directory": f"Apps/{component.value}/{version}", "inventory_sha256": verified.artifact.portable_manifest_sha256}
         destination = root / target["directory"]
         guard(destination)
-        require(not destination.exists(), "immutable_version_already_exists")
+        reuse = destination.exists()
+        if reuse:
+            require(previous_bytes is not None and before != target,
+                    "immutable_version_already_exists")
+            profile = verify_directory(destination, target["inventory_sha256"], component, version, payload_policy=policy)
+            require(profile["platform"] == platform, "inventory_platform")
         stage_name = "staging-" + uuid4().hex
         staging = base / stage_name
         guard(staging)
@@ -397,11 +402,13 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
             "prior_journal": None}
         require(len(canonical(journal)) <= MAX_METADATA_BYTES, "journal_size")
         atomic(pending_path, journal)
-        staging.mkdir()
+        if not reuse:
+            staging.mkdir()
         failpoint("staging_created")
-        extract_component_archive(archive_path, staging,
-            member_extracted=lambda: failpoint("member_extracted"), payload_policy=policy)
-        profile = verify_directory(staging, target["inventory_sha256"], component, version, payload_policy=policy)
+        if not reuse:
+            extract_component_archive(archive_path, staging,
+                member_extracted=lambda: failpoint("member_extracted"), payload_policy=policy)
+        profile = verify_directory(destination if reuse else staging, target["inventory_sha256"], component, version, payload_policy=policy)
         require(profile["platform"] == {"os": os_name, "architecture": architecture}, "inventory_platform")
         verify_artifact(archive_path, verified.artifact)
         journal["phase"] = "activation_pending"
@@ -422,7 +429,13 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         failpoint("new_journal_established")
         pending_path.unlink()
         destination.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(staging, destination)  # same filesystem; absent immutable destination
+        if reuse:
+            # Never overwrite retained code. Recheck exact signed bytes after
+            # journal publication and immediately before switching authority.
+            profile = verify_directory(destination, target["inventory_sha256"], component, version, payload_policy=policy)
+            require(profile["platform"] == platform, "inventory_platform")
+        else:
+            os.replace(staging, destination)  # same filesystem; absent immutable destination
         failpoint("version_published")
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_commit")
         atomic(base / "active.json", target)

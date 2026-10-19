@@ -1,7 +1,7 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-10-18
 
 - Adds a reviewed legacy Reader handoff: Manager closes before opening the unchanged signed Reader 0.2.2 launcher, then reopens after Reader closes.
-- Legacy-origin installations share their saved catalog connection across Reader 0.2.2, public Reader 0.3.1 and rollback. Fresh Reader 0.3.1 retains its existing launch route.
+- Legacy-origin installations share their saved Reader executable connection across Reader 0.2.2, public Reader 0.3.1 and rollback. Fresh Reader 0.3.1 retains its existing launch route.
 - Reader Recovery names the signed previous version before confirmation; first-install undo explains that no Reader will remain selected.
 - Portable Manager saves its page and window geometry on ordinary Close and restores them on return. Unavailable model commands no longer crowd Applications.
 - Servers refresh shows activity and elapsed time through cancellation; guidance uses the visible command name. Usable applications appear before development cards.

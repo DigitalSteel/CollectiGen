@@ -3408,8 +3408,8 @@
     },
     {
       "path": "suite_core/discovery/component_staging.py",
-      "bytes": 30781,
-      "sha256": "e1162128d4537d9be435c6d7cc5534f45a25f61763991550f56824919bd669d2"
+      "bytes": 31566,
+      "sha256": "a44871d5c9bf079b40b67409d01199055afa0ed4dd92bd54622c4cdafbb4f170"
     },
     {
       "path": "suite_core/discovery/github_component_releases.py",
@@ -3663,8 +3663,8 @@
     },
     {
       "path": "suite_core/manager/WHATS_NEW.md",
-      "bytes": 20949,
-      "sha256": "13eccee026551dcfb88ae52a73eb4fbd73481836fd1b5cddcb9fc6a636247566"
+      "bytes": 20959,
+      "sha256": "ca37fe28daae3145d1db13b28de699010938741d4779f7aee97dd62321bdeb38"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -3693,8 +3693,8 @@
     },
     {
       "path": "suite_core/manager/backend_setup_ui.py",
-      "bytes": 5605,
-      "sha256": "57cb72515c55cb9037ad7d654924d8d72e83371abf249d88d1144fdacfe5c251"
+      "bytes": 5751,
+      "sha256": "ee0b6509b0f14001238cc747a8544e0c0140b37f20be565e49ad0b923c178cdc"
     },
     {
       "path": "suite_core/manager/bootstrap_entry.py",
@@ -4018,8 +4018,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 178088,
-      "sha256": "b861d769b65d66650d25a9650cd9fc5ff44dd6df2155f665827cee2d282dea1c"
+      "bytes": 179461,
+      "sha256": "ea7343fcdc3d4d8929aef1ac5e7d3d82a1853a3d390389bc231db9f40663c7ac"
     },
     {
       "path": "suite_core/media_examples.py",
