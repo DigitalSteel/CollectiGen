@@ -651,11 +651,17 @@ class PublicLaunch:
         label = QLabel('Manager could not complete startup. Its original startup state is retained. '
             'Keep this window open while closure is unresolved. No runner or helper is stopped automatically.')
         label.setWordWrap(True); layout.addWidget(label)
-        if self.legacy_reader_process is not None:
-            dialog.setWindowTitle('Reader startup needs review')
-            label.setText('Manager has closed safely. The original Reader startup is retained. Close its Reader or launcher window normally, then check closure. No replacement launch is started automatically.')
+        legacy = self.legacy_reader_process is not None
+        reader_started = legacy and self.legacy_reader_process.identity is not None
+        if legacy:
+            dialog.setWindowTitle('Reader return needs review' if reader_started else 'Reader startup needs review')
+            if reader_started:
+                label.setText('Manager closed safely before the Reader opened. Its return was interrupted. If the Reader is still open, close it normally, then check Reader closure. No replacement Reader is started.')
+            else:
+                label.setText('Manager has closed safely. Reader startup needs review. Close any Reader or launcher window normally, then check Reader closure. No replacement Reader is started.')
         recorded_reason = type(self.error).__name__ + ': ' + str(self.error)[:256]
         status = QLabel('Checking whether Manager can finish recovery. Keep this review open until closure is confirmed.')
+        if legacy:status.setText('Choose Check Reader closure to verify that its launcher and background tasks have finished.')
         status.setObjectName('startupRecoveryStatus'); status.setWordWrap(True); status.setTextFormat(Qt.PlainText)
         layout.addWidget(status)
         reason = QLabel(recorded_reason); reason.setWordWrap(True); reason.setTextFormat(Qt.PlainText)
@@ -669,6 +675,10 @@ class PublicLaunch:
             details_layout.addWidget(location);location.hide();details.toggled.connect(location.setVisible)
         check = QPushButton('Check closure'); close = QPushButton('Close')
         cancel_unstarted=None
+        if legacy:
+            from .ui_cards import compact_action
+            check.setText('Check Reader closure');compact_action(check);compact_action(close)
+            check.setDefault(True)
         check.setObjectName('startupRecoveryCheck'); close.setObjectName('startupRecoveryClose')
         def refresh():
             try: confirmed = held.recheck()
@@ -676,11 +686,20 @@ class PublicLaunch:
                 held.error = error
                 confirmed = held.can_close()
             close.setEnabled(confirmed)
+            if legacy:
+                check.setVisible(not confirmed);check.setDefault(not confirmed)
+                close.setDefault(confirmed)
             if cancel_unstarted is not None:
-                try:cancel_unstarted.setEnabled(held.legacy_reader_process.can_cancel_unstarted)
-                except BaseException:cancel_unstarted.setEnabled(False)
+                try:available=not confirmed and held.legacy_reader_process.can_cancel_unstarted
+                except BaseException:available=False
+                cancel_unstarted.setEnabled(available)
+                cancel_unstarted.setVisible(available);consequence.setVisible(available)
             if confirmed:
-                if held.state == 'update_closed':
+                if legacy:
+                    status.setText('Reader closure confirmed. Close this review, then start Manager again.')
+                    label.setText('The original Reader, launcher and background tasks have finished. Closing this review does not stop a process.')
+                    reason.setText('Recorded Reader return issue: ' + recorded_reason if reader_started else 'Recorded Reader startup issue: ' + recorded_reason)
+                elif held.state == 'update_closed':
                     status.setText('Recovery verified and all owned resources closed. Choose Close to finish.')
                     label.setText('The prior Manager reopened successfully in a distinct fresh process. Recovery evidence is retained.')
                     reason.setText('Original update failure: ' + recorded_reason)
@@ -689,7 +708,7 @@ class PublicLaunch:
                     label.setText('Startup failed; its original process scope has now closed. No runner is stopped by closing this review.')
                     reason.setText('Recorded startup failure: ' + recorded_reason)
             else:
-                status.setText('Manager recovery is still unresolved. Review Details if it cannot finish cleanup.')
+                status.setText('Reader closure is not yet confirmed. Close any Reader or launcher window normally, then check again.' if legacy else 'Manager recovery is still unresolved. Review Details if it cannot finish cleanup.')
                 reason.setText(type(held.error).__name__ + ': ' + str(held.error)[:256])
             if location is not None and held.report_paths:
                 location.setText('Startup details: ' + str(held.report_paths[-1]))
@@ -706,7 +725,10 @@ class PublicLaunch:
                 except BaseException as error:held.error=error
                 refresh()
             cancel_unstarted.clicked.connect(cancel_original_unstarted)
-            cancel_unstarted.setEnabled(False)
+            try:available=self.legacy_reader_process.can_cancel_unstarted
+            except BaseException:available=False
+            cancel_unstarted.setEnabled(available)
+            cancel_unstarted.setVisible(available);consequence.setVisible(available)
             layout.addWidget(cancel_unstarted)
         if self.state == 'update_repair_available':
             from core.manager_stock_hook_provider import WindowsStockHookProvider

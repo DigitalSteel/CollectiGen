@@ -10,6 +10,42 @@ from suite_core.manager.close_policy import CloseCoordinator
 from suite_core.manager import legacy_reader_handoff_ui as ui
 
 
+@pytest.mark.parametrize('opened,cancellable',[(True,False),(False,True),(False,False)])
+def test_original_legacy_review_names_actual_phase_and_available_actions(qt_test_scope,monkeypatch,tmp_path,opened,cancellable):
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QLabel,QPushButton
+    from suite_core.manager.launcher_main import PublicLaunch
+    subject=PublicLaunch(tmp_path)
+    subject.state='held';subject.error=RuntimeError('synthetic original observation failure')
+    subject.legacy_reader_process=SimpleNamespace(identity={'original':True} if opened else None,
+        can_cancel_unstarted=cancellable,close_held=True)
+    state=dict(closed=False);failures=[]
+    monkeypatch.setattr(subject,'can_close',lambda:state['closed'])
+    monkeypatch.setattr(subject,'recheck',lambda:state.update(closed=True) or True)
+    def inspect():
+        dialog=subject.dialog
+        try:
+            assert dialog.windowTitle()==('Reader return needs review' if opened else 'Reader startup needs review')
+            status=dialog.findChild(QLabel,'startupRecoveryStatus')
+            assert status.text().startswith('Choose Check Reader closure')
+            cancel=dialog.findChild(QPushButton,'legacyReaderCancelUnstarted')
+            assert cancel.isVisible()==cancellable
+            check=dialog.findChild(QPushButton,'startupRecoveryCheck')
+            close=dialog.findChild(QPushButton,'startupRecoveryClose')
+            assert check.isVisible() and check.isEnabled() and check.isDefault() and not close.isEnabled()
+            check.click()
+            assert close.isEnabled() and close.isDefault() and not check.isVisible()
+            assert not cancel.isVisible() and not cancel.isEnabled()
+            assert 'start Manager again' in status.text()
+        except BaseException as error:failures.append(error)
+        finally:
+            state['closed']=True;dialog.close()
+    QTimer.singleShot(0,inspect)
+    assert subject.present()==1
+    subject.dialog.deleteLater();QApplication.instance().processEvents()
+    if failures:raise failures[0]
+
+
 class ManualExecutor:
     def __init__(self):self.close_held=False;self.closed=False;self.pending=None
     def submit(self,fn,*args):

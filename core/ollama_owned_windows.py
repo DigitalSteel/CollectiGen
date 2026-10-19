@@ -321,12 +321,22 @@ class WindowsOwnedProcess:
     def check_identity(self,child,identity,program):
         self.check_retained_handle(child)
         require(child.job is self.job,'exact_owned_job_required')
-        if child.poll() is not None:
-            # An exited root may no longer answer image queries. Its original
-            # handle, frozen creation/image identity and exact job remain owned.
+        exited = child.poll() is not None
+        if not exited:
+            try:
+                current = self.identity(child,program)
+            except ExecutorHold as error:
+                # Exit can occur between the liveness and image observations.
+                # Only that exact query failure plus positive exit on the same
+                # retained handle may reuse its already verified birth witness.
+                if str(error) != 'retained_process_image_unavailable' or child.poll() is None:
+                    raise
+                exited = True
+            else:
+                require(current==identity,'retained_process_identity_changed')
+        if exited:
             require(self.verified_identities.get(child)==identity,'retained_exited_root_identity_changed')
             require(identity.get('program')==str(program.resolve()),'retained_exited_root_program_changed')
-        else:require(self.identity(child,program)==identity,'retained_process_identity_changed')
     def owned_execution_live(self,child):
         self.check_retained_handle(child)
         require(child.job is self.job,'exact_owned_job_required')

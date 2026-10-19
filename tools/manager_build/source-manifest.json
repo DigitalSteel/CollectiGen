@@ -1288,8 +1288,8 @@
     },
     {
       "path": "core/ollama_owned_windows.py",
-      "bytes": 22421,
-      "sha256": "739a8e8437a676eaec5a5f611c9167fcac3fdeb26db2c5b2cf382687a5d63649"
+      "bytes": 22821,
+      "sha256": "7f6d728fe593fd11845d9ef4dd0816204bd3fb465e05d598e0f9185f937e34dc"
     },
     {
       "path": "core/ollama_package_preparation.py",
@@ -3808,8 +3808,8 @@
     },
     {
       "path": "suite_core/manager/launcher_main.py",
-      "bytes": 51784,
-      "sha256": "5786648ce7b8428619f62d7729e1a0c436d9707d933df8c011fe7813850866ed"
+      "bytes": 53592,
+      "sha256": "369191312828d12c4ccd0f0ecc75bd92bf723cc4334d602bc230c44f0144bd1a"
     },
     {
       "path": "suite_core/manager/legacy_reader_handoff_ui.py",
