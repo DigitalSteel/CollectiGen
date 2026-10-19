@@ -1950,8 +1950,8 @@
       "size_bytes": 724
     },
     "docs/MANAGER_LEGACY_READER_HANDOFF.md": {
-      "sha256": "bec5dce7050cfb80480e8499514dc5fe8b00ef20f900c2bb8fa759cba70e5a88",
-      "size_bytes": 3292
+      "sha256": "b326474fc3120b6f85dbf999b1091905cade7b65527529889a21a6edd1b8ff0d",
+      "size_bytes": 3926
     },
     "docs/STANDALONE_ENCYCLOPEDIA_SOURCE_LANDING.md": {
       "sha256": "1b3943495367c0a95ab4f855f7a50a694d59313bc6a21d0d7c0ec35f037d0ca5",
@@ -3186,8 +3186,8 @@
       "size_bytes": 7648
     },
     "suite_core/manager/legacy_reader_supervisor.py": {
-      "sha256": "b791c8e3cf9ff189aab1390bb2f7d6814427dc818411de0e2f4ea244890ab251",
-      "size_bytes": 7672
+      "sha256": "905ecd2ea73820edc97baf4e15e9cadfd30a095f56085ae5a08b8a010b4ea433",
+      "size_bytes": 9836
     },
     "suite_core/manager/lifecycle_controller.py": {
       "sha256": "94d85571116b3f8a6bf8c529945a1b4311880e80028c6b0869cb46e3c5075924",
@@ -3754,8 +3754,8 @@
       "size_bytes": 8226
     },
     "tests/test_legacy_reader_supervisor.py": {
-      "sha256": "2163ab262a418b23963df50ebae15d4576b157de04c7c667a7ba27af632a93a1",
-      "size_bytes": 8599
+      "sha256": "e5bad8ab766a0c220291cfea585c8c916f23fb83eefe844dccf7df01963264b3",
+      "size_bytes": 14183
     },
     "tests/test_manager_dependency_status.py": {
       "sha256": "09cf16829f43bcf2d1d91e25f467e0a18dd65bc2198a5a0cb63e912c79d8c267",
@@ -3882,7 +3882,7 @@
       "size_bytes": 18369
     },
     "tools/encyclopedia_build/source-manifest.json": {
-      "sha256": "edf3f5d02e97a1cbd14ff4d846a81c6860e5c63c9ce78b5f632dfcf73e35f5b6",
+      "sha256": "3f63b62192aecf4ca749a79a597ae944ba4b009305b6e2bb649be68b996d8677",
       "size_bytes": 70031
     },
     "tools/manager_build/CollectiGen.spec": {
@@ -3906,7 +3906,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "6092cd00eb0da5db61117a6abf2e86fd3aa8de0d1bf880e577ea1db0cb086e97",
+      "sha256": "e512555c92512f234725a69fd91d7dfc99d9c6a921e96c15573aef516223d7ca",
       "size_bytes": 136730
     },
     "tools/manager_build/tool-inputs.json": {

@@ -1878,8 +1878,8 @@
     },
     {
       "path": "suite_core/manager/legacy_reader_supervisor.py",
-      "bytes": 7672,
-      "sha256": "b791c8e3cf9ff189aab1390bb2f7d6814427dc818411de0e2f4ea244890ab251"
+      "bytes": 9836,
+      "sha256": "905ecd2ea73820edc97baf4e15e9cadfd30a095f56085ae5a08b8a010b4ea433"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",

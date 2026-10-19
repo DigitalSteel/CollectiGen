@@ -119,7 +119,7 @@ def identity_race(tmp_path, *, exits=True, failure='retained_process_image_unava
         pid=93
         def poll(self):return state['code']
     native=object.__new__(RealWindowsOwnedProcess);child=Child()
-    native.job=child.job=SimpleNamespace(active=lambda:state['members'])
+    native.job=child.job=SimpleNamespace(active=lambda:state['members'],process=91,pid=93)
     native.logs={child:bytearray()}
     program=tmp_path/'TagEncyclopedia.exe'
     witness=dict(pid=child.pid,created_100ns=123,program=str(program.resolve()))
@@ -175,3 +175,110 @@ def test_real_identity_exit_race_still_requires_job_eof_and_worker_retirement(ac
     assert not subject.poll() and not state['closed']  # EOF not yet observed.
     native.drained.set()
     assert subject.poll() and subject.retired and state['closed'] and subject.exit_code==0
+
+
+@pytest.fixture
+def pending_original(actor,tmp_path,monkeypatch):
+    subject,_=actor
+    native,child,witness,program,state=identity_race(tmp_path,exits=False)
+    subject.started=True;subject.native=native;subject.child=child;subject.identity=witness
+    subject.plan.binding.bootstrap_program=program
+    clock=[10.0]
+    monkeypatch.setattr('suite_core.manager.legacy_reader_supervisor.monotonic',lambda:clock[0])
+    return subject,state,clock
+
+
+def test_unsignaled_image_failures_stay_pending_then_require_full_retirement(pending_original):
+    subject,state,clock=pending_original
+    for now in (10.0,10.5,11.9):
+        clock[0]=now
+        assert not subject.poll() and subject.identity_pending
+        assert subject.close_held and not subject.retired and not state['closed']
+        assert subject._identity_query_deadline==12.0
+    state['code']=0
+    assert not subject.poll() and not subject.identity_pending  # Original Job still has members.
+    state['members']=0
+    assert not subject.poll()  # Original output worker remains alive.
+    state['alive']=False;subject.native.drained.clear()
+    assert not subject.poll()  # EOF remains unconfirmed.
+    subject.native.drained.set()
+    assert subject.poll() and subject.retired and subject.exit_code==0 and state['closed']
+
+
+def test_pending_image_deadline_is_not_extended_by_polling(pending_original):
+    from core.ollama_owned_executor import ExecutorHold
+    subject,state,clock=pending_original
+    assert not subject.poll();original=subject._identity_query_error
+    clock[0]=11.9;assert not subject.poll()
+    clock[0]=12.0
+    with pytest.raises(ExecutorHold,match='retained_process_image_unavailable') as caught:subject.poll()
+    assert caught.value is original and subject.close_held and not state['closed']
+    state.update(code=0,members=0,alive=False)
+    assert subject.recheck() and subject.retired  # Manual recheck can still prove later closure.
+
+
+def test_matching_live_observation_clears_pending_but_mismatch_stays_held(pending_original):
+    from core.ollama_owned_executor import ExecutorHold
+    subject,state,clock=pending_original
+    assert not subject.poll() and subject.identity_pending
+    subject.native.identity=lambda *args:dict(subject.identity)
+    assert not subject.poll() and not subject.identity_pending
+    assert subject._identity_query_deadline is None and subject._identity_query_error is None
+    subject.native.identity=lambda *args:dict(subject.identity,created_100ns=999)
+    with pytest.raises(ExecutorHold,match='identity_changed'):subject.poll()
+    assert subject.close_held and not state['closed']
+
+
+@pytest.mark.parametrize('defect',['witness','program','job','handle','pid'])
+def test_pending_never_accepts_foreign_originals(pending_original,defect):
+    from core.ollama_owned_executor import ExecutorHold
+    subject,state,clock=pending_original
+    if defect=='witness':subject.native.verified_identities.clear()
+    elif defect=='program':subject.plan.binding.bootstrap_program=subject.plan.binding.bootstrap_program.with_name('foreign.exe')
+    elif defect=='job':subject.child.job=object()
+    elif defect=='handle':subject.child._handle=92
+    elif defect=='pid':subject.child.pid=94
+    with pytest.raises((ExecutorHold,ValueError)):subject.poll()
+    assert not subject.identity_pending and subject.close_held and not state['closed']
+
+
+def test_other_native_error_during_pending_holds_immediately(pending_original):
+    from core.ollama_owned_executor import ExecutorHold
+    subject,state,clock=pending_original
+    assert not subject.poll()
+    def failure(*args):raise ExecutorHold('retained_process_time_unavailable')
+    subject.native.identity=failure
+    with pytest.raises(ExecutorHold,match='time_unavailable'):subject.poll()
+    assert subject.close_held and not subject.retired and not state['closed']
+
+
+def test_pending_worker_shows_one_phase_and_never_infers_readiness(pending_original,monkeypatch):
+    from concurrent.futures import Future
+    subject,state,clock=pending_original
+    phases=[];sleeps=[]
+    class Executor:
+        close_held=False
+        def submit(self,fn):
+            future=Future()
+            try:future.set_result(fn())
+            except BaseException as error:future.set_exception(error)
+            return future
+        def begin_close(self):pass
+    class Progress:
+        def phase(self,heading,detail):phases.append((heading,detail))
+        def reader_ready(self):raise AssertionError('Unknown identity cannot establish readiness')
+        def wait(self,future,executor):return future.result()
+        def finish(self):pass
+    def advance(seconds):
+        sleeps.append(seconds);clock[0]+=seconds
+        if len(sleeps)==3:state.update(code=0,members=0,alive=False)
+    monkeypatch.setattr(subject,'start',lambda environment:None)
+    monkeypatch.setattr(subject,'reader_visible',lambda:pytest.fail('Pending identity cannot infer visibility'))
+    monkeypatch.setattr('suite_core.manager.resource_executor.ResourceExecutorOwner',Executor)
+    monkeypatch.setattr('suite_core.encyclopedia.pending_task_ui.RootTaskProgress',Progress)
+    monkeypatch.setattr('suite_core.manager.legacy_reader_supervisor.sleep',advance)
+    expected=SimpleNamespace(phase='healthy',selected=SimpleNamespace(version='0.2.2-alpha.1'))
+    subject.plan.binding.current=lambda:expected
+    assert subject.run({}) is expected
+    assert [heading for heading,_ in phases]==['Opening Reader','Checking Reader closure','Returning to Manager']
+    assert len(sleeps)==3 and subject.retired and state['closed']

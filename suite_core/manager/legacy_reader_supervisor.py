@@ -1,6 +1,8 @@
 """One non-killing standalone Root, after the original Manager fully retires."""
 from functools import partial
-from time import sleep
+from time import monotonic, sleep
+
+from core.ollama_owned_executor import ExecutorHold
 
 from core.encyclopedia_legacy_handoff import LegacyReaderHandoff
 from core.encyclopedia_legacy_host import CompiledLegacyReaderProfile
@@ -20,6 +22,9 @@ class LegacyReaderSupervisor:
         self.exit_code=None
         self.executor=None
         self.failed_start=False
+        self.identity_pending=False
+        self._identity_query_deadline=None
+        self._identity_query_error=None
 
     @property
     def close_held(self):
@@ -83,7 +88,31 @@ class LegacyReaderSupervisor:
             require(self.child.job is self.native.job and self.child._handle==self.native.job.process
                     and self.child.pid==self.native.job.pid,'original_partial_legacy_handle_required')
         else:
-            self.native.check_identity(self.child,self.identity,self.plan.binding.bootstrap_program)
+            try:
+                self.native.check_identity(self.child,self.identity,self.plan.binding.bootstrap_program)
+            except ExecutorHold as error:
+                if str(error)!='retained_process_image_unavailable':raise
+                # Unknown image is not identity approval. Keep only this exact
+                # original scope pending briefly, then expose persistent doubt.
+                self.native.check_retained_handle(self.child)
+                job=self.native.job
+                require(job is not None and self.child.job is job
+                    and self.child._handle==job.process and self.child.pid==job.pid,
+                    'original_pending_legacy_handle_required')
+                require(self.native.verified_identities.get(self.child)==self.identity,
+                    'original_pending_legacy_identity_required')
+                require(self.identity.get('program')==str(self.plan.binding.bootstrap_program.resolve()),
+                    'original_pending_legacy_program_required')
+                if self._identity_query_deadline is None:
+                    self._identity_query_deadline=monotonic()+2.0
+                    self._identity_query_error=error
+                if monotonic()>=self._identity_query_deadline:
+                    raise self._identity_query_error
+                self.identity_pending=True
+                return False
+            self.identity_pending=False
+            self._identity_query_deadline=None
+            self._identity_query_error=None
         code=self.child.poll()
         if code is None or self.native.job.active()!=0:return False
         if self.failed_start and self.native.drain is None:
@@ -121,10 +150,20 @@ class LegacyReaderSupervisor:
         progress.phase('Opening Reader',
             'Manager has closed safely. Checking and opening the selected Reader; Manager will return after the Reader closes.')
         visible=False
+        pending_visible=False
         def service():
-            nonlocal visible
+            nonlocal visible,pending_visible
             self.start(environment)
             while not self.poll():
+                if self.identity_pending:
+                    if not pending_visible:
+                        progress.phase('Checking Reader closure',
+                            'Waiting for the original Reader launcher to finish. Manager will return only after closure is confirmed.')
+                    pending_visible=True
+                    visible=False  # Unknown identity cannot establish readiness.
+                    sleep(.1)
+                    continue
+                pending_visible=False
                 # Inspect only members of this retained original Job, never
                 # discover/adopt an unrelated desktop process or window.
                 current=self.reader_visible()
