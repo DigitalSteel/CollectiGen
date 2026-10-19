@@ -21,6 +21,7 @@ def test_reader_search_status_and_saved_connection_dispatch(tmp_path):
             if c.property('componentKey') == 'encyclopedia-connection'), None)
     try:
         assert card() is not None
+        assert window.library_body.cards[0].property('componentKey') == 'encyclopedia-connection'
         window.library_search.setText('unrelated application')
         assert card() is None
         window.library_search.setText('encyclopedia')

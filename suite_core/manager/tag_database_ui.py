@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QHBoxLayout, QLabel, QProgr
 
 from suite_core.manager.database_presentation import project_database_review, project_connection_error
 from suite_core.manager.tag_database_controller import TagDatabaseController
-from suite_core.manager.ui_cards import compact_action, workspace_heading, workspace_layout
+from suite_core.manager.ui_cards import compact_action, workspace_heading, workspace_layout, disclosure_panel
 
 
 class TagDatabasePane(QWidget):
@@ -25,10 +25,11 @@ class TagDatabasePane(QWidget):
         scroll = QScrollArea(); scroll.setWidgetResizable(True)
         body = QWidget(); content = workspace_layout(body)
         content.addWidget(workspace_heading("Databases"))
-        self.goal = self._label("Install approved Tag vocabulary into a blank selected catalog or review a later merge. Original image assignments are retained.")
+        self.goal = self._label("Connect a Tag catalog, then preview the vocabulary you want to install or update. Your local edits and original image assignments are retained.")
         content.addWidget(self.goal)
         self.connection_box = QGroupBox("Connect a local Tag database")
         connection_layout = QVBoxLayout(self.connection_box)
+        connection_layout.addWidget(self._label('Choose the Tag source data you reviewed, then choose an existing catalog folder or explicitly create a new catalog. Review checks this exact selection before it is saved.'))
         self.source_directory = QLineEdit(); self.source_directory.setAccessibleName("Approved Tag source data folder")
         self.catalog_directory = QLineEdit(); self.catalog_directory.setAccessibleName("Native Tag catalog folder")
         self.connection_browse = []
@@ -75,7 +76,11 @@ class TagDatabasePane(QWidget):
         if not controller.choices:
             self.catalog.addItem("No catalog connected")
         content.addWidget(self.catalog)
-        self.versions = self._label(""); content.addWidget(self.versions)
+        self.content_summary = self._label('No catalog connected. Choose or open a saved connection first.')
+        content.addWidget(self.content_summary)
+        self.versions = self._label("")
+        self.version_details = disclosure_panel('Content versions and sources', self.versions)
+        content.addWidget(self.version_details)
         start = QHBoxLayout()
         self.preview = compact_action(QPushButton("Preview approved content"))
         self.discard = compact_action(QPushButton("Discard preview"))
@@ -86,6 +91,9 @@ class TagDatabasePane(QWidget):
         self.progress.setAccessibleName("Native Tag operation progress")
         self.cancel = compact_action(QPushButton("Cancel safely"))
         self.sections = QComboBox(); self.sections.setAccessibleName("Tag review detail section")
+        self.review_summary = self._label('Preview content to see the proposed changes before you confirm Apply.')
+        self.review_summary.setAccessibleName('Tag changes summary')
+        content.addWidget(self.review_summary)
         content.addWidget(self.sections)
         self.details = QTextBrowser(); self.details.setOpenExternalLinks(False)
         self.details.setAccessibleName("Tag transaction review details")
@@ -251,6 +259,27 @@ class TagDatabasePane(QWidget):
         for title, _text in self._sections: self.sections.addItem(title)
         self.sections.setCurrentIndex(max(0, self.sections.findText(prior))); self.sections.blockSignals(False)
         self.show_details()
+        if c.pending:
+            self.review_summary.setText('A catalog operation is in progress. Follow the status below; review and Apply wait for the original work to finish.')
+        elif c.error:
+            self.review_summary.setText('The last operation needs attention. Review its reason and follow the recovery or Reload guidance below before starting another change.')
+        elif state.review_accepted and all(section.total is not None for section in state.sections[:4]):
+            counts = [section.total for section in state.sections[:4]]
+            labels = ('new tag', 'tag update', 'protected local edit', 'conflict')
+            summary = ' · '.join(f'{count} {label if count == 1 else label + "s"}' for count, label in zip(counts, labels))
+            self.review_summary.setText(summary + '. Review the changes below; original image assignments are kept.')
+        else:
+            self.review_summary.setText('No current change review. Refresh observations or choose Preview approved content when available.' if choice is not None else
+                'Connect or open a saved catalog, then choose Preview approved content to review its changes.')
+        if state.review_accepted:
+            review = c.review.database
+            self.content_summary.setText('Installed content: ' + (review.installed_version or 'Not installed')
+                + ' · Provided content for this preview: ' + (review.available_version or 'Unavailable'))
+        elif choice is not None and choice.observation_status == 'current':
+            self.content_summary.setText('Installed content: ' + (choice.base_release.revision.content_version if choice.installed else 'Verified blank catalog')
+                + ' · Provided content: ' + (choice.available_release.revision.content_version if choice.available_release else 'Unavailable'))
+        else:
+            self.content_summary.setText('Content version is unknown. Open a saved catalog or refresh its observations; no new content is assumed.')
         if c.review:
             versions = "\n".join(state.versions)
         elif choice and choice.native_adapter is not None:

@@ -276,7 +276,7 @@ class DiagnosticsHelpFlow:
 def create_diagnostics_dialog(parent, flow):
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QCheckBox, QComboBox, QTextBrowser, QFileDialog
-    from suite_core.manager.ui_cards import workspace_heading, workspace_layout
+    from suite_core.manager.ui_cards import workspace_heading, workspace_layout, compact_action
 
     class DiagnosticsDialog(QDialog):
         def closeEvent(self, event):
@@ -301,7 +301,7 @@ def create_diagnostics_dialog(parent, flow):
         'Raw logs, prompts/chats, credentials, catalogs and media are excluded. Startup capture is not enabled by this screen.')
     scope.setWordWrap(True); scope.setTextFormat(Qt.PlainText); layout.addWidget(scope)
     status = QLabel(); status.setWordWrap(True); status.setTextFormat(Qt.PlainText); layout.addWidget(status)
-    preview = QPushButton('Preview diagnostics'); cancel = QPushButton('Cancel preview')
+    preview = compact_action(QPushButton('Preview diagnostics')); cancel = compact_action(QPushButton('Cancel preview'))
     preview_actions = QHBoxLayout(); preview_actions.addWidget(preview); preview_actions.addWidget(cancel)
     preview_actions.addStretch(); layout.addLayout(preview_actions)
     choices = QHBoxLayout(); boxes = {}
@@ -313,7 +313,7 @@ def create_diagnostics_dialog(parent, flow):
     layout.addWidget(chooser)
     exact = QCheckBox('Show exact diagnostic details'); layout.addWidget(exact)
     browser = QTextBrowser(); browser.setOpenExternalLinks(False); layout.addWidget(browser, 1)
-    footer = QHBoxLayout(); save = QPushButton('Save selected diagnostics…'); close = QPushButton('Close')
+    footer = QHBoxLayout(); save = compact_action(QPushButton('Save selected diagnostics…')); close = compact_action(QPushButton('Close'))
     footer.addStretch(); footer.addWidget(save); footer.addWidget(close); layout.addLayout(footer)
 
     def render():
@@ -327,6 +327,7 @@ def create_diagnostics_dialog(parent, flow):
         status.setText(flow.notice + extra)
         preview.setEnabled(flow.can_request); save.setEnabled(flow.can_export)
         cancel.setEnabled(flow.pending is not None and flow.pending.action is HelpAction.PREVIEW)
+        cancel.setVisible(flow.pending is not None and flow.pending.action is HelpAction.PREVIEW)
         close.setEnabled(not flow.close_held)
         for name, box in boxes.items():
             box.blockSignals(True); box.setChecked(name in flow.state.selected); box.blockSignals(False)
@@ -347,8 +348,17 @@ def create_diagnostics_dialog(parent, flow):
 
     preview.clicked.connect(request_preview); cancel.clicked.connect(cancel_preview)
     save.clicked.connect(choose_export); close.clicked.connect(dialog.reject)
+    def select_category(member, checked):
+        flow.select(member, checked)
+        if checked:
+            chooser.setCurrentIndex(chooser.findData(member))
+        elif chooser.currentData() not in flow.state.selected and flow.state.selected:
+            chooser.setCurrentIndex(next(index for index in range(chooser.count())
+                if chooser.itemData(index) in flow.state.selected))
+        render()
+
     for name, box in boxes.items():
-        box.toggled.connect(lambda checked, member=name: (flow.select(member, checked), render()))
+        box.toggled.connect(lambda checked, member=name: select_category(member, checked))
     chooser.currentIndexChanged.connect(lambda *_: render())
     exact.toggled.connect(lambda *_: render())
     dialog.render = render

@@ -115,7 +115,7 @@ def test_visible_panel_review_confirm_install_save_and_recovery(tmp_path, monkey
             f.service.native_health = lambda selected: selected == f.store.selected(f.store.observe())
             panel.reconcile_launch(); wait(panel)  # existing-owner settlement callback
             assert panel.installed.phase == "healthy" and "setup is complete" in panel.status.text()
-            toggle_details(panel.technical)
+            toggle_details(panel.recovery_toggle)
             click(panel.recovery_confirm); click(panel.recover); wait(panel)
             assert f.store.selected(f.store.observe()) is None and "Recovery settled" in panel.status.text()
             if captures:
@@ -139,6 +139,39 @@ def test_save_failure_visible_retry_does_not_reapply(tmp_path, monkeypatch):
             monkeypatch.setattr(f.store, "save", original)
             click(panel.retry_save); wait(panel)
             assert f.calls == calls and not panel.retry_save.isEnabled()
+        finally:
+            panel.timer.stop(); panel.close()
+
+
+@pytest.mark.parametrize('theme', ['light', 'dark'])
+def test_recovery_names_verified_previous_version_without_opening_details(tmp_path, monkeypatch, theme):
+    application = app()
+    from qt_app.theme import apply_theme
+    apply_theme(application, theme)
+    f = Fixture(tmp_path, monkeypatch); f.add()
+    first = f.install()
+    f.service.native_health = lambda selected: selected == first.installed.selected
+    f.service.confirm_health()
+    f.add('0.1.0-alpha.9', b'INERT SECOND CODE')
+    f.install()
+    with executor_scope() as executor:
+        panel = EncyclopediaAcquisitionPanel(f.service, executor)
+        panel.resize(1000, 650); panel.show(); application.processEvents()
+        try:
+            # Ordinary release discovery also observes the authenticated origin.
+            click(panel.refresh); wait(panel)
+            assert panel.recovery_container.isVisible() and not panel.details.isVisible()
+            click(panel.recovery_toggle)
+            assert panel.recover.text() == 'Restore Reader 0.1.0-alpha.8'
+            assert '0.1.0-alpha.8' in panel.recovery_summary.text()
+            assert not panel.recover.isEnabled()
+            captures = os.environ.get('ENCYCLOPEDIA_ACQUISITION_CAPTURE')
+            if captures:
+                output = Path(captures); output.mkdir(parents=True, exist_ok=True)
+                assert panel.grab().save(str(output / (theme + '-named-recovery.png')))
+            click(panel.recovery_confirm)
+            click(panel.recover); wait(panel)
+            assert f.store.selected(f.store.observe()) == first.installed.selected
         finally:
             panel.timer.stop(); panel.close()
 

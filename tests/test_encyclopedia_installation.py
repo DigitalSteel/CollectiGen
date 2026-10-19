@@ -169,6 +169,8 @@ def test_update_requires_native_health_and_preserves_previous_code_and_data(fixt
     f.service.confirm_health()
     second = f.install()
     assert second.installed.selected.version == "0.1.0-alpha.9"
+    assert second.installed.recovery_available
+    assert second.installed.recovery_version == first.installed.selected.version
     assert first.installed.selected.program.read_bytes() == b"INERT NOT EXECUTABLE"
     restored = f.service.recover(confirmed=True)
     assert restored.connection_saved and restored.installed.selected == first.installed.selected
@@ -182,6 +184,48 @@ def test_first_install_recovery_clears_only_reader_setting(fixture):
     assert result.installed.selected is None and result.connection_saved
     assert KEY not in json.loads(f.settings.read_text())
     assert json.loads(f.settings.read_text())["future_field"] == {"keep": True}
+
+
+def test_recovery_preview_is_bound_to_unchanged_authenticated_installation(fixture):
+    f = fixture
+    first = f.install()
+    reviewed = f.service.observe()
+    assert reviewed.recovery_available and reviewed.recovery_version is None
+    f.service.native_health = lambda selected: selected == first.installed.selected
+    f.service.confirm_health()
+    before = f.settings.read_bytes()
+    with pytest.raises(ValueError, match='Installation changed'):
+        f.service.recover(confirmed=True, expected_installed=reviewed)
+    assert f.settings.read_bytes() == before
+    assert f.service.observe().selected == first.installed.selected
+    current = f.service.observe()
+    result = f.service.recover(confirmed=True, expected_installed=current)
+    assert result.installed.selected is None and not result.installed.recovery_available
+
+
+def test_recovery_preview_uses_pending_update_journal_not_previous_install(fixture):
+    f = fixture
+    first = f.install()
+    f.service.native_health = lambda selected: selected == first.installed.selected
+    f.service.confirm_health()
+    f.add('0.1.0-alpha.9', b'INERT SECOND CODE')
+    reviewed = f.reviewed()
+    acquired = f.acquisition.acquire(reviewed.offer)
+    offer = acquired.offer
+    def stop(phase):
+        if phase == 'staging_created':
+            raise RuntimeError('synthetic interruption')
+    with pytest.raises(RuntimeError, match='synthetic interruption'):
+        staging.stage_and_activate_admitted(f.admission, acquired.artifact, component=COMPONENT,
+            version=offer.release.software_version, os_name='windows', architecture='x86_64',
+            manifest_bytes=offer.manifest_bytes, signature_bytes=offer.signature_bytes,
+            trust_bytes=f.trust, expected_active_token=reviewed.installed.active_sha256, failpoint=stop)
+    preview = f.service.observe()
+    assert preview.pending and preview.recovery_available
+    assert preview.recovery_version == first.installed.selected.version
+    assert preview.recovery_journal_sha256 != preview.journal_sha256
+    result = f.service.recover(confirmed=True, expected_installed=preview)
+    assert result.installed.selected == first.installed.selected and not result.installed.pending
 
 
 def test_cancel_transfer_cleanup_then_fresh_explicit_retry(fixture):

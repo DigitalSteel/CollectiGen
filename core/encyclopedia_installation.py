@@ -26,6 +26,9 @@ class InstalledEncyclopedia:
     journal_sha256: str
     pending: bool
     connection_pending: bool = False
+    recovery_available: bool = False
+    recovery_version: str | None = None
+    recovery_journal_sha256: str = ""
 
 
 @dataclass(frozen=True)
@@ -97,8 +100,20 @@ class EncyclopediaInstallation:
             root / reference["directory"], reference["inventory_sha256"], reference["version"])
         if selected is not None:
             self.review_selected(selected.directory, expected=selected)
+        # Preview the exact authenticated journal recovery will consume, including
+        # an interrupted transaction rather than an unrelated installed version.
+        recovery = journal
+        pending_path = base / "pending-transaction.json"
+        if pending_path.exists():
+            recovery = read_json(pending_path)
+            validate_journal(recovery, self.component, owner, self.acquisition.trust)
+            prior_journal_bytes(base, recovery, self.component, owner, self.acquisition.trust)
+        available = recovery is not None and (pending or recovery["phase"] not in ("rolled_back", "abandoned"))
+        before = None if recovery is None else recovery["before"]
         return InstalledEncyclopedia(selected, phase, active_token(reference),
-            sha256(canonical(journal)).hexdigest(), pending, (base / "connection-pending.json").exists())
+            sha256(canonical(journal)).hexdigest(), pending, (base / "connection-pending.json").exists(),
+            available, None if before is None else before["version"],
+            "" if recovery is None else sha256(canonical(recovery)).hexdigest())
 
     def observe(self):
         self.acquisition._trust()
@@ -287,12 +302,16 @@ class EncyclopediaInstallation:
             "Reader setup is complete. Launch remains your choice." if installed.phase == "healthy" else
             "No managed reader is active. Refresh releases to review an installation.")
 
-    def recover(self, *, confirmed=False):
+    def recover(self, *, confirmed=False, expected_installed=None):
         require(confirmed is True, "explicit_recovery_confirmation_required")
         self._review = None
         expected = self.store.observe()
         old_publication = [None]
         def preflight(root, base, owner):
+            if expected_installed is not None:
+                require(type(expected_installed) is InstalledEncyclopedia
+                    and self._observe(root, base, owner) == expected_installed,
+                    "Installation changed. Check Again and review recovery before confirming.")
             require(self.store.observe().digest == expected.digest, "Settings changed before recovery.")
             path = base / "pending-transaction.json"
             journal = read_json(path if path.exists() else base / "transaction.json")

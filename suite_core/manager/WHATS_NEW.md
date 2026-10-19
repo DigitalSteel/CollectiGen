@@ -2,9 +2,14 @@
 
 - Adds a reviewed legacy Reader handoff: Manager closes before opening the unchanged signed Reader 0.2.2 launcher, then reopens after Reader closes.
 - Legacy-origin installations share their saved catalog connection across Reader 0.2.2, public Reader 0.3.1 and rollback. Fresh Reader 0.3.1 retains its existing launch route.
+- Reader Recovery names the signed previous version before confirmation; first-install undo explains that no Reader will remain selected.
+- Portable Manager saves its page and window geometry on ordinary Close and restores them on return. Unavailable model commands no longer crowd Applications.
+- Servers refresh shows activity and elapsed time through cancellation; guidance uses the visible command name. Usable applications appear before development cards.
+- Tag Database previews summarize proposed changes before technical provenance, retain stable identities and explain protected local edits.
+- Diagnostics keeps the selected category in view and gives its Save button enough room.
 - Pending preparation, launch and return operations show progress. Uncertain process closure keeps recovery held; an unstarted Reader can be explicitly cancelled.
 
-Local candidate under qualification. Packaged legacy update and usable rollback acceptance are pending; this source alone does not establish support. Organizer downloads and Manager self-update remain unavailable. Keep backups and extract into a new writable folder. Executables are not Authenticode-signed.
+Local candidate under qualification. Bounded synthetic packaged legacy update, usable rollback and corrected automatic return passed across retained runs. The latest recovery/context UI still needs packaged acceptance; this source alone does not establish support. Organizer downloads and Manager self-update remain unavailable. Keep backups and extract into a new writable folder. Executables are not Authenticode-signed.
 
 # What's New - a.0.5.1 (embedded 0.5.1-alpha.1) - 2026-10-18
 

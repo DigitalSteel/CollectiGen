@@ -2,6 +2,7 @@
 from core.manager_server_inventory import project_ollama_connection, project_unmatched_jobs
 from .resource_presentation_candidate import project_local_resources
 from .resource_dashboard import server_views
+from time import monotonic
 
 
 def create_servers_panel(report, jobs=(), *, route=None, now, synthetic=False,
@@ -30,6 +31,12 @@ def create_servers_panel(report, jobs=(), *, route=None, now, synthetic=False,
             controls.addWidget(self.refresh); controls.addWidget(self.cancel); controls.addStretch()
             body.addLayout(controls)
             self.status = label("", body)
+            from qt_app.components import IndeterminateActivityBar
+            self.activity = IndeterminateActivityBar(self)
+            self.activity.setAccessibleName('Local resource refresh progress')
+            body.addWidget(self.activity)
+            self.elapsed = label('', body)
+            self._measurement_started = None
             self.grid = ResponsiveCardGrid(minimum_card_width=330, maximum_columns=3)
             body.addWidget(self.grid); body.addStretch()
             self._signature = None; self.update_values()
@@ -83,9 +90,23 @@ def create_servers_panel(report, jobs=(), *, route=None, now, synthetic=False,
             backend = project_ollama_connection(scope.connection, accepted, now()) if scope is not None else None
             can_request = route is not None and not synthetic and route.can_request and not route.executor.close_held
             pending = route is not None and not synthetic and route.pending and not route.closed
-            self.refresh.setEnabled(can_request); self.cancel.setEnabled(pending)
+            cancellable = pending and route.state != 'canceled'
+            self.refresh.setEnabled(can_request); self.cancel.setEnabled(cancellable)
+            self.cancel.setVisible(cancellable)
+            if pending and self._measurement_started is None:
+                self._measurement_started = monotonic()
+            self.activity.set_active(pending, 'Refreshing this computer')
+            self.activity.setVisible(pending)
+            self.elapsed.setVisible(pending)
+            if pending:
+                seconds = max(0, int(monotonic() - self._measurement_started))
+                self.elapsed.setText(f'{seconds // 60}m {seconds % 60:02d}s elapsed. Waiting for the original refresh to finish.')
+            else:
+                self._measurement_started = None
             message = ("Local measurement unavailable for this view." if route is None or synthetic else
                        f"{route.state.capitalize()}: {route.reason}".replace("leaving Dashboard", "leaving Servers"))
+            if route is not None and not synthetic and route.reason == 'Refresh local resources to measure this host.':
+                message = 'Not measured. Choose Refresh this computer to check CPU, RAM and GPU use.'
             self.status.setText(message)
             signature = (local, hosts, unmatched, backend, callable(configure), callable(open_metadata))
             if signature == self._signature:

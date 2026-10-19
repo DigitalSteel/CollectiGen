@@ -51,6 +51,8 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
 
     def package_review_name(self):return 'Organizer'
 
+    def recovery_content_name(self):return 'libraries and images'
+
     def available_status_text(self,offer):
         return f'Organizer {offer.release.software_version} is available. Choose Install or Update to review it.'
 

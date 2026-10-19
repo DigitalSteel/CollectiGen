@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 989,
+  "allowlisted_source_file_count": 998,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -450,8 +450,8 @@
       "size_bytes": 2724
     },
     "core/encyclopedia_installation.py": {
-      "sha256": "770ed26a7a86165219d47259060fec48993eb03b0bdf822dae44829521f9afcf",
-      "size_bytes": 20189
+      "sha256": "1c5b7c748213923bd3da2fb2c1a024153f3488b9c6047d799c1a6a2b7758d26b",
+      "size_bytes": 21484
     },
     "core/encyclopedia_legacy_handoff.py": {
       "sha256": "1e6ed1f73700832a29741b0c7056ae8b1e96168b7d7ba4972d345046d1c8a347",
@@ -1950,8 +1950,12 @@
       "size_bytes": 724
     },
     "docs/MANAGER_LEGACY_READER_HANDOFF.md": {
-      "sha256": "b326474fc3120b6f85dbf999b1091905cade7b65527529889a21a6edd1b8ff0d",
-      "size_bytes": 3926
+      "sha256": "8c8a037a70b743550ada238bdb356cbdf6446538084a66beafdcea7e77001749",
+      "size_bytes": 4360
+    },
+    "docs/MANAGER_UI_WORKFLOWS.md": {
+      "sha256": "0c8f15bbd44b698e9346710667d4be0ec55f88b2fb28db70aded0f75d4f2b9db",
+      "size_bytes": 4743
     },
     "docs/STANDALONE_ENCYCLOPEDIA_SOURCE_LANDING.md": {
       "sha256": "1b3943495367c0a95ab4f855f7a50a694d59313bc6a21d0d7c0ec35f037d0ca5",
@@ -3038,12 +3042,12 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "a8541993cf2e83394ab01fe88d5c456af971fea1ad376848cc6b1316f6629906",
-      "size_bytes": 34145
+      "sha256": "70229fed4f751d7ddc00d0460ed5e3f3255ab1325ba91b8421f42009b95619c9",
+      "size_bytes": 34189
     },
     "suite_core/manager/README.md": {
-      "sha256": "9c88a7ac3bd6f9e981be75c248536696a4e23b0958e3b80eb5b3a5ccf58013be",
-      "size_bytes": 8561
+      "sha256": "b4fa9e329bd46b1f4c8008295331aadcf07e659d123a0f7f68e96fa268b06e7f",
+      "size_bytes": 8949
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
       "sha256": "1ae14d59e377368fd10538eca407faf5f3c500723e737bf5203536587de6118c",
@@ -3062,16 +3066,16 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "e46441dbfbf481b4158235529db25829f4fb77086948ad09b274249e7b470392",
-      "size_bytes": 20144
+      "sha256": "13eccee026551dcfb88ae52a73eb4fbd73481836fd1b5cddcb9fc6a636247566",
+      "size_bytes": 20949
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
       "size_bytes": 96
     },
     "suite_core/manager/__main__.py": {
-      "sha256": "ac4fcb023c5f4303bce9b3ea3a7b4ff2aa0216bca72b31f53f391d9a7eef591e",
-      "size_bytes": 32047
+      "sha256": "2a3baeb9e6e78dc2281e9b0e14222bc7e7f2102fdcbaa22cc66b33c6f67c9b70",
+      "size_bytes": 32342
     },
     "suite_core/manager/assets/collectigen.ico": {
       "sha256": "f819e00ab1dbaad539c7f25f08b9353561a56701eb83b6440e21b87dcf83bd10",
@@ -3130,8 +3134,8 @@
       "size_bytes": 6547
     },
     "suite_core/manager/database_presentation.py": {
-      "sha256": "28a879948d2e577814cc9c99f14db6047b79ce743ae601ce18e8fb5ec9c893ac",
-      "size_bytes": 10690
+      "sha256": "4f5e20ba43ae95af61712b123712e7696a71224bd3613413f78bb286df1719cc",
+      "size_bytes": 11569
     },
     "suite_core/manager/database_preview_route.py": {
       "sha256": "50d473c6bb7d26d51d9c8bed9e9559b21b011b152c3ef4624da437d8aa438f50",
@@ -3142,8 +3146,8 @@
       "size_bytes": 4206
     },
     "suite_core/manager/diagnostic_help_candidate.py": {
-      "sha256": "924a4ac86cc63d8d1b3e8867e74f036a4305ffdd000f4d7aa4e5d290eeeb2fe1",
-      "size_bytes": 18566
+      "sha256": "b8936c8297d931c8589d4bf2ae434d5aa8b7a98694f2eb4ac4c4d8d9250bae78",
+      "size_bytes": 19153
     },
     "suite_core/manager/diagnostic_help_provider.py": {
       "sha256": "fb02667a13858a7fa844a69a7df8fccc376bb30b62b2a508d9bd9e085f8de774",
@@ -3158,8 +3162,8 @@
       "size_bytes": 5521
     },
     "suite_core/manager/encyclopedia_acquisition_ui.py": {
-      "sha256": "89fd72602032b9edb5c2e8e1ee83c8e56cd837b6bff4be82a3f6e105f755b4c7",
-      "size_bytes": 27954
+      "sha256": "a31767ce75419a54369cf5b0d3ed0451b895d3eee1109398325f8b8c7adc49ba",
+      "size_bytes": 30651
     },
     "suite_core/manager/encyclopedia_connection_ui.py": {
       "sha256": "60675d41a1efffa13f835aa32606bf8dfd54f87eb33dde0be4d56aa2f0946ef4",
@@ -3254,8 +3258,8 @@
       "size_bytes": 9623
     },
     "suite_core/manager/organizer_acquisition_ui.py": {
-      "sha256": "4fed470ac476478f3199641968fabc4f03612da7cf0e6f3346ceeb0cf84fa5b6",
-      "size_bytes": 12253
+      "sha256": "ea3c6f39d9b4342bca3152a42e0310c5ef0e1ac395a5fcd2638a4575bba170fd",
+      "size_bytes": 12320
     },
     "suite_core/manager/organizer_cached_binding.py": {
       "sha256": "4d243f983caab8726edffddc45f664e531baea3fee78f54f7432233266088cab",
@@ -3302,8 +3306,8 @@
       "size_bytes": 18757
     },
     "suite_core/manager/servers_ui.py": {
-      "sha256": "0018f1056f66ba75964502152e86ade00c3d62de2be84f07a0c492090740808a",
-      "size_bytes": 12314
+      "sha256": "a6167d20ad05e494965f46a330e244868141a465eae93271c2248b58455bfbed",
+      "size_bytes": 13619
     },
     "suite_core/manager/shared_settings_controller.py": {
       "sha256": "9f013d7e294e4bc316b0dca99f78f8f610823fb660049f785f4b68f17545e6ed",
@@ -3322,8 +3326,8 @@
       "size_bytes": 33848
     },
     "suite_core/manager/tag_database_ui.py": {
-      "sha256": "53a748ae5e87c162ef380a68f9e9ff6ecacaa1a43427c54292eb57f92ce877f4",
-      "size_bytes": 24728
+      "sha256": "08a8faaa7508c267fdd834f41284868d4b7031f4e5c27370b5ab3e270ed93ffa",
+      "size_bytes": 27524
     },
     "suite_core/manager/tag_entry_recovery.py": {
       "sha256": "8caf43f70a6e16b7031f5e58b56743f49d0d61a6347e321623a3e03a60932e2d",
@@ -3332,6 +3336,10 @@
     "suite_core/manager/ui_cards.py": {
       "sha256": "043e79b9c86c3ec1e837a3f2e298a3a0543e2ba11b585d03ed0eed6fe1bfba38",
       "size_bytes": 9149
+    },
+    "suite_core/manager/ui_preferences.py": {
+      "sha256": "77689423653dc3c9453fea6156cfb90224f4c4c5dbea73e3373906294af398bb",
+      "size_bytes": 2459
     },
     "suite_core/manager/update_review_ui.py": {
       "sha256": "00299f05fc50685dce8722822605c6ebe46feba39869bc019bf40eaecad6d800",
@@ -3342,8 +3350,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "43c64dfd3e4a4437aa1a8d60cfdf3b895563f0794f8ddfdffda0003e1c0aab2c",
-      "size_bytes": 176166
+      "sha256": "757a76e8b64b09295a6f39b4b17a19f2d04485ba37d692866f770ad464f413e3",
+      "size_bytes": 178066
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3474,8 +3482,8 @@
       "size_bytes": 17593
     },
     "suite_core/tests/test_applications_reader_card.py": {
-      "sha256": "2c628efdd13860a30d16a610429e4f3bb4b95c68aab1492910d766393523cbf0",
-      "size_bytes": 11589
+      "sha256": "ae5a7f5891235f84c26480256a397fb9100f22cb2fe73271fc97662f9787bcb3",
+      "size_bytes": 11687
     },
     "suite_core/tests/test_catalog_migration_preview.py": {
       "sha256": "31a2a5f5e0aff17c6a64f2a45f158ee82e59d2543b106a133375370aa475c51f",
@@ -3506,8 +3514,8 @@
       "size_bytes": 14098
     },
     "suite_core/tests/test_encyclopedia_acquisition_ui.py": {
-      "sha256": "f1ee7d554b2e91d7289cba90b15b9f5cc98fb5e2896339f8890627207089e01c",
-      "size_bytes": 18492
+      "sha256": "bebe3887328221b9d0979861e4c3c5b28ac4c099c18c6c0f19c6243740eafba8",
+      "size_bytes": 20157
     },
     "suite_core/tests/test_encyclopedia_adapter_delivery.py": {
       "sha256": "b7427246b7edd31d871b0e2b5288ea5478ca6e92c7b2433794aa61af088ea081",
@@ -3557,6 +3565,10 @@
       "sha256": "1b0b67e1dddd83f70648bbecd5552569f069065a0db3d2f3e93ea37b37c3e175",
       "size_bytes": 15597
     },
+    "suite_core/tests/test_encyclopedia_install_progress.py": {
+      "sha256": "5e4482f189e564ca2c2349bfc49840b70153f7f6d2113321aaf3ba989ed94eec",
+      "size_bytes": 6314
+    },
     "suite_core/tests/test_encyclopedia_media_examples_candidate.py": {
       "sha256": "2e0703bcb7b2e17b0da086fed2ef03711d9d8c33d7802bc842b54133759d626f",
       "size_bytes": 13680
@@ -3597,6 +3609,14 @@
       "sha256": "f9be320e1cfd41656b531d3a4212c6d905eb0ec005444c8d5af5337b0d0037b3",
       "size_bytes": 8104
     },
+    "suite_core/tests/test_manager_servers_progress.py": {
+      "sha256": "254eec11202787639d430e6b7de49e1db0a1f79699ce8d898a8c32e5456d0767",
+      "size_bytes": 2203
+    },
+    "suite_core/tests/test_manager_ui_preferences.py": {
+      "sha256": "f7ff79b8368f64be6cc67d48ce74ad5a426c598eee4fdb37fdd449387af2ce5d",
+      "size_bytes": 3698
+    },
     "suite_core/tests/test_media_examples.py": {
       "sha256": "e2e51c3e501b92ccab7053e7d06efa20884707cc93a43e5ae9d731d265388e05",
       "size_bytes": 13756
@@ -3608,6 +3628,10 @@
     "suite_core/tests/test_media_organizer_setup_scope.py": {
       "sha256": "b427060ab2222fddf606ec45528c2ff4bcf9cb8663e01b7ec2c913c51184e12c",
       "size_bytes": 5737
+    },
+    "suite_core/tests/test_organizer_acquisition_ui.py": {
+      "sha256": "66deef53f64c1a9611099bfe839eb50d11ac81f4dcfab7e52715af87b1eda780",
+      "size_bytes": 8860
     },
     "suite_core/tests/test_organizer_encyclopedia_actual_dataset_controls.py": {
       "sha256": "2e4c21919bff2e25164939092643711699599a050daf31bec0f65f369c1d819d",
@@ -3710,8 +3734,8 @@
       "size_bytes": 6065
     },
     "tests/test_encyclopedia_installation.py": {
-      "sha256": "215ea0e23efeb7c26354f403bd19c21221524b47cf514b94c1fc1355ad958fec",
-      "size_bytes": 18256
+      "sha256": "159f71aae418231457ffd92ba028ef77dd8d7b6dd2328519d38642fa2f27e8a9",
+      "size_bytes": 20599
     },
     "tests/test_encyclopedia_legacy_handoff.py": {
       "sha256": "d96dc595ac986edf563568462a0f63bdf043c4958b8ee343ef7eb2b0d185f99c",
@@ -3757,6 +3781,10 @@
       "sha256": "e5bad8ab766a0c220291cfea585c8c916f23fb83eefe844dccf7df01963264b3",
       "size_bytes": 14183
     },
+    "tests/test_manager_backend_setup_flow.py": {
+      "sha256": "6fea69bcbb2f95b786fb2c7bb07876d920d36242fd0d6d7cd9f1a8a89fe7e570",
+      "size_bytes": 6786
+    },
     "tests/test_manager_dependency_status.py": {
       "sha256": "09cf16829f43bcf2d1d91e25f467e0a18dd65bc2198a5a0cb63e912c79d8c267",
       "size_bytes": 2249
@@ -3769,9 +3797,17 @@
       "sha256": "a867c4d43063f27f8031f290ed4215b668277f46074c603b5851375c71d943ae",
       "size_bytes": 3852
     },
+    "tests/test_manager_ollama_workspace.py": {
+      "sha256": "11c3bc629b2b4609e5302239b4716ec938e3802a85e0a570cdd935e96baa62f3",
+      "size_bytes": 8187
+    },
     "tests/test_manager_production_stage.py": {
       "sha256": "825d645f102aee180f032b48b2bbb8d9be2e437ae1dbe5214135e6ed10b25daf",
       "size_bytes": 22059
+    },
+    "tests/test_organizer_installation.py": {
+      "sha256": "9c2901d687a2095e552f974831b2950afcb0a1938d0ba07fa4e3d69a40e53172",
+      "size_bytes": 7416
     },
     "tests/test_organizer_portable_runtime.py": {
       "sha256": "cd9761acdfe29fa12a52f43dbfb20b682a02fb395f730b29d4aa0ddc305b9303",
@@ -3858,8 +3894,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "232b90abddfe1a97c448b36d392cdf9d0043d2adda58a6bd600494dde2d79837",
-      "size_bytes": 40790
+      "sha256": "c8b37da3a0ba2d7e034a942154fd899e0c8b9a61709b5eabd247d322b47f6ce9",
+      "size_bytes": 41239
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",
@@ -3882,8 +3918,8 @@
       "size_bytes": 18369
     },
     "tools/encyclopedia_build/source-manifest.json": {
-      "sha256": "3f63b62192aecf4ca749a79a597ae944ba4b009305b6e2bb649be68b996d8677",
-      "size_bytes": 70031
+      "sha256": "40ba9da6112f8cbfba40155230da852600c2f0446d13ad0b959fd054340a92e0",
+      "size_bytes": 70202
     },
     "tools/manager_build/CollectiGen.spec": {
       "sha256": "ed6a783bc61d1ebc2fbfa37fe2a2f8ba0b6e550579747d25f4bd742596c5f81e",
@@ -3906,8 +3942,8 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "e512555c92512f234725a69fd91d7dfc99d9c6a921e96c15573aef516223d7ca",
-      "size_bytes": 136730
+      "sha256": "066888d03b85c7bf4f0cd349b4f546c54361d43400461243a02260419e19caa6",
+      "size_bytes": 136901
     },
     "tools/manager_build/tool-inputs.json": {
       "sha256": "15358dc8679e26f539267ca98dab0ab11493c82daa7bbbc6ef4b7146a5d20cce",

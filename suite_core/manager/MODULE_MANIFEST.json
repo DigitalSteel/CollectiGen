@@ -781,6 +781,7 @@
     "suite_core/manager/tag_database_ui.py",
     "suite_core/manager/tag_entry_recovery.py",
     "suite_core/manager/ui_cards.py",
+    "suite_core/manager/ui_preferences.py",
     "suite_core/manager/update_review_ui.py",
     "suite_core/manager/version.py",
     "suite_core/manager/window.py",

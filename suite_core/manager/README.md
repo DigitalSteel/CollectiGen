@@ -22,8 +22,9 @@ is admitted at startup. Open saved connection retains that choice. Reader acquis
 compiled exact public release. The legacy-origin route prepares a shared Reader
 connection, closes Manager before the unchanged signed 0.2.2 standalone launcher
 opens, and returns to Manager after ordinary Reader Close. The shared connection
-is retained for public 0.3.1 and rollback. Packaged legacy update and usable
-rollback qualification are pending; see [handoff scope and upstream source](../../docs/MANAGER_LEGACY_READER_HANDOFF.md).
+is retained for public 0.3.1 and rollback. Synthetic packaged legacy update, usable
+rollback and the corrected automatic return have passed in bounded runs; see [handoff scope and upstream source](../../docs/MANAGER_LEGACY_READER_HANDOFF.md).
+Reader recovery now names its authenticated destination in a separate Recovery disclosure. Ordinary portable Close saves the Manager page and geometry in the existing UI INI; a returned Manager restores that context. These UI changes still need updated packaged acceptance. See [current UI/workflow review](../../docs/MANAGER_UI_WORKFLOWS.md).
 Databases provides separate Tag connection, preview, Apply, recovery and Reload.
 Model/chat tools retain their existing bounded scope. Native application updates,
 public release and GPU operation remain separately qualified. Clean-machine/

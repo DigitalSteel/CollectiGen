@@ -373,8 +373,8 @@
     },
     {
       "path": "core/encyclopedia_installation.py",
-      "bytes": 20189,
-      "sha256": "770ed26a7a86165219d47259060fec48993eb03b0bdf822dae44829521f9afcf"
+      "bytes": 21484,
+      "sha256": "1c5b7c748213923bd3da2fb2c1a024153f3488b9c6047d799c1a6a2b7758d26b"
     },
     {
       "path": "core/encyclopedia_legacy_handoff.py",
@@ -1753,8 +1753,8 @@
     },
     {
       "path": "suite_core/manager/__main__.py",
-      "bytes": 32047,
-      "sha256": "ac4fcb023c5f4303bce9b3ea3a7b4ff2aa0216bca72b31f53f391d9a7eef591e"
+      "bytes": 32342,
+      "sha256": "2a3baeb9e6e78dc2281e9b0e14222bc7e7f2102fdcbaa22cc66b33c6f67c9b70"
     },
     {
       "path": "suite_core/manager/async_lifecycle_bridge.py",
@@ -1813,8 +1813,8 @@
     },
     {
       "path": "suite_core/manager/database_presentation.py",
-      "bytes": 10690,
-      "sha256": "28a879948d2e577814cc9c99f14db6047b79ce743ae601ce18e8fb5ec9c893ac"
+      "bytes": 11569,
+      "sha256": "4f5e20ba43ae95af61712b123712e7696a71224bd3613413f78bb286df1719cc"
     },
     {
       "path": "suite_core/manager/database_preview_route.py",
@@ -1828,8 +1828,8 @@
     },
     {
       "path": "suite_core/manager/diagnostic_help_candidate.py",
-      "bytes": 18566,
-      "sha256": "924a4ac86cc63d8d1b3e8867e74f036a4305ffdd000f4d7aa4e5d290eeeb2fe1"
+      "bytes": 19153,
+      "sha256": "b8936c8297d931c8589d4bf2ae434d5aa8b7a98694f2eb4ac4c4d8d9250bae78"
     },
     {
       "path": "suite_core/manager/diagnostic_help_provider.py",
@@ -1848,8 +1848,8 @@
     },
     {
       "path": "suite_core/manager/encyclopedia_acquisition_ui.py",
-      "bytes": 27954,
-      "sha256": "89fd72602032b9edb5c2e8e1ee83c8e56cd837b6bff4be82a3f6e105f755b4c7"
+      "bytes": 30651,
+      "sha256": "a31767ce75419a54369cf5b0d3ed0451b895d3eee1109398325f8b8c7adc49ba"
     },
     {
       "path": "suite_core/manager/encyclopedia_connection_ui.py",
@@ -1988,8 +1988,8 @@
     },
     {
       "path": "suite_core/manager/servers_ui.py",
-      "bytes": 12314,
-      "sha256": "0018f1056f66ba75964502152e86ade00c3d62de2be84f07a0c492090740808a"
+      "bytes": 13619,
+      "sha256": "a6167d20ad05e494965f46a330e244868141a465eae93271c2248b58455bfbed"
     },
     {
       "path": "suite_core/manager/tag_database_controller.py",
@@ -1998,8 +1998,8 @@
     },
     {
       "path": "suite_core/manager/tag_database_ui.py",
-      "bytes": 24728,
-      "sha256": "53a748ae5e87c162ef380a68f9e9ff6ecacaa1a43427c54292eb57f92ce877f4"
+      "bytes": 27524,
+      "sha256": "08a8faaa7508c267fdd834f41284868d4b7031f4e5c27370b5ab3e270ed93ffa"
     },
     {
       "path": "suite_core/manager/tag_entry_recovery.py",
@@ -2010,6 +2010,11 @@
       "path": "suite_core/manager/ui_cards.py",
       "bytes": 9149,
       "sha256": "043e79b9c86c3ec1e837a3f2e298a3a0543e2ba11b585d03ed0eed6fe1bfba38"
+    },
+    {
+      "path": "suite_core/manager/ui_preferences.py",
+      "bytes": 2459,
+      "sha256": "77689423653dc3c9453fea6156cfb90224f4c4c5dbea73e3373906294af398bb"
     },
     {
       "path": "suite_core/manager/update_review_ui.py",
@@ -2023,8 +2028,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 176166,
-      "sha256": "43c64dfd3e4a4437aa1a8d60cfdf3b895563f0794f8ddfdffda0003e1c0aab2c"
+      "bytes": 178066,
+      "sha256": "757a76e8b64b09295a6f39b4b17a19f2d04485ba37d692866f770ad464f413e3"
     },
     {
       "path": "suite_core/media_examples.py",

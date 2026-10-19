@@ -536,6 +536,10 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             shared_settings_close_choice=shared_settings_close_choice,
             model_workspace_factory=model_workspace_factory, tag_content_host=entry_owner.tag_content_host)
         entry_owner.window = window
+        if not args.demo and settings_path is not None and Path(settings_path).suffix.casefold() == '.ini':
+            from .ui_preferences import ManagerUiPreferences
+            window.ui_preferences = ManagerUiPreferences(settings_path)
+            window.ui_preferences.restore(window)
         if normal_entry_session is not None and getattr(normal_entry_session,'legacy_reader_profile_sha256',None) is not None:
             from .legacy_reader_handoff_ui import LegacyReaderHandoffFlow
             reader_owner.legacy_handoff=LegacyReaderHandoffFlow(window,normal_entry_session)

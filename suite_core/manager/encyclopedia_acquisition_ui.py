@@ -43,6 +43,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
         self.confirming = False
         self.check_attempted = False
         self.started_at = None
+        self.recovery_review = None
         layout = workspace_layout(self)
         title = workspace_heading("Tag Encyclopedia")
         from qt_app.navigation_icons import navigation_icon
@@ -101,14 +102,25 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 'Running the original reader; close its window normally to finish setup',self.service.run_reader))
         self.recovery_confirm = QCheckBox("Restore the previous app state and connection. Keep catalogs and images.")
         self.recovery_confirm.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        layout.insertWidget(layout.count()-2,self.recovery_confirm)
+        self.recovery_summary = QLabel(self); self.recovery_summary.setWordWrap(True)
+        self.recovery_summary.setTextFormat(Qt.PlainText)
+        recovery_body = QWidget(self); recovery_layout = QVBoxLayout(recovery_body)
+        recovery_layout.setContentsMargins(0, 0, 0, 0)
+        recovery_layout.addWidget(self.recovery_summary)
+        recovery_layout.addWidget(self.recovery_confirm)
+        if not recovery_only:
+            row.removeWidget(self.recover)
+            recovery_layout.addWidget(self.recover, 0, Qt.AlignLeft)
+        self.recovery_container = disclosure_panel("Recovery", recovery_body)
+        self.recovery_toggle = self.recovery_container.findChild(QToolButton)
+        layout.insertWidget(layout.indexOf(technical), self.recovery_container)
         self.refresh.clicked.connect(self.refresh_releases)
         self.install.clicked.connect(self.install_reviewed)
         self.stop.clicked.connect(self.request_cancel)
         self.retry_save.clicked.connect(self.retry_connection)
         self.recover.clicked.connect(self.recover_installation)
         self.health_accept.clicked.connect(self.reconcile_launch)
-        self.recovery_confirm.toggled.connect(self.render)
+        self.recovery_confirm.toggled.connect(self._confirm_recovery)
         self.timer = QTimer(self); self.timer.setInterval(100)
         self.timer.timeout.connect(self.poll); self.timer.start()
         if recovery_only:
@@ -145,6 +157,9 @@ class EncyclopediaAcquisitionPanel(QWidget):
 
     def package_review_name(self):
         return "Reader"
+
+    def recovery_content_name(self):
+        return 'catalogs and images'
 
     def available_status_text(self, offer):
         return f"Reader {offer.release.software_version} is available. Choose Install or Update to review it."
@@ -224,8 +239,17 @@ class EncyclopediaAcquisitionPanel(QWidget):
             return
         if not self.recovery_confirm.isChecked():
             return
+        reviewed = self.recovery_review
         self.recovery_confirm.setChecked(False)
-        self._start("Recovering installation", lambda: self.service.recover(confirmed=True))
+        if self.recovery_only:
+            self._start("Recovering installation", lambda: self.service.recover(confirmed=True))
+        elif reviewed is not None and reviewed == self.installed and reviewed.recovery_available:
+            self._start("Recovering installation", lambda: self.service.recover(
+                confirmed=True, expected_installed=reviewed))
+
+    def _confirm_recovery(self, checked):
+        self.recovery_review = self.installed if checked else None
+        self.render()
 
     def reconcile_launch(self):
         if not self.service.install_available or self.closing:
@@ -314,7 +338,9 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 self.publication_pending = not result.connection_saved
                 self.status.setText(self.installation_status_reason(result))
                 self.show_installed_details()
-                self.details.appendPlainText('\nStatus: ' + result.reason)
+                self.details.appendPlainText('\nStatus: ' + self.installation_status_reason(result))
+                if not result.connection_saved and result.reason != self.installation_status_reason(result):
+                    self.details.appendPlainText('\nConnection details: ' + result.reason)
                 self.offer = self.reviewed = None
                 if result.connection_saved and self.connection_changed is not None:
                     self.connection_changed()
@@ -406,6 +432,9 @@ class EncyclopediaAcquisitionPanel(QWidget):
         self.return_action.setEnabled(not busy and not self.closing)
         _primary_action(self.return_action, self.return_action.isVisible())
         if self.recovery_only:
+            self.recovery_container.show()
+            self.recovery_toggle.setChecked(True)
+            self.recovery_summary.setText('Review the original held update before confirming recovery. Catalogs and images are preserved.')
             ready=not busy and not self.closing
             self.health_accept.setEnabled(ready)
             self.retry_save.setEnabled(ready and self.service.can_retry)
@@ -439,11 +468,22 @@ class EncyclopediaAcquisitionPanel(QWidget):
         self.retry_save.setEnabled(admitted and not busy and self.publication_pending)
         self.health_accept.setVisible(selected is not None and not busy and (launch_pending or self.technical.isChecked()))
         self.health_accept.setEnabled(admitted and not busy)
-        recovery_visible = not busy and (pending or selected is not None and self.technical.isChecked())
-        self.recover.setVisible(recovery_visible)
-        self.recover.setEnabled(admitted and not busy and self.recovery_confirm.isChecked())
-        self.recovery_confirm.setVisible(recovery_visible)
+        recovery_visible = self.installed is not None and getattr(self.installed, 'recovery_available', False)
+        self.recovery_container.setVisible(recovery_visible)
+        if self.recovery_review is not None and self.recovery_review != self.installed:
+            self.recovery_confirm.setChecked(False)
+        version = None if self.installed is None else getattr(self.installed, 'recovery_version', None)
+        name = self.package_review_name()
+        content = self.recovery_content_name()
+        self.recover.setText(f'Restore {name} {version}' if version is not None else 'Undo installation')
+        self.recovery_summary.setText(
+            f'Restore {name} {version} and its saved connection. Keep your {content}.' if version is not None else
+            f'Undo this installation. No {name} will be selected; your {content} will be kept.')
+        self.recovery_confirm.setText(f'I confirm restoring {name} {version}.' if version is not None else 'I confirm undoing this installation.')
+        self.recover.setEnabled(admitted and not busy and self.recovery_confirm.isChecked() and self.recovery_review == self.installed)
         self.recovery_confirm.setEnabled(admitted and not busy)
+        if pending and not busy:
+            self.recovery_toggle.setChecked(True)
         if launch_pending and self.offer is not None and not busy and not self.publication_pending:
             self.status.setText(self.pending_setup_guidance())
 

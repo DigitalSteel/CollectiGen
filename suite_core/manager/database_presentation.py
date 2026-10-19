@@ -7,6 +7,8 @@ from suite_core.database_actions import (
 
 MAX_DISPLAY_ROWS = 100
 MAX_DISPLAY_TEXT = 1024
+FIELD_LABELS = {'display': 'Name', 'category_id': 'Category', 'aliases': 'Aliases',
+                'minimum_rating': 'Minimum rating', 'classification_status': 'Classification'}
 APPLY_DISABLED = "Preview only. Apply is unavailable: native writing, backup, read-back and recovery are not connected or qualified."
 PREVIEW_DISABLED = "Catalog preview is not connected. You can review changes when a compatible catalog and preview service are available."
 REASONS = {
@@ -127,11 +129,22 @@ def project_database_review(controller=None, review=None):
     else:
         def change(row):
             fields = ("display", "category_id", "aliases", "minimum_rating", "classification_status")
-            values = tuple("Field " + name + ": before " + _field(getattr(row.before, name, None)) + "; proposed " + _field(getattr(row.proposed, name, None)) for name in fields)
-            return "Stable ID: " + _text(row.tag_id) + "\n" + "\n".join(values)
+            values = []
+            for name in fields:
+                before, proposed = getattr(row.before, name, None), getattr(row.proposed, name, None)
+                if row.before is None:
+                    if proposed is None or name == 'display':
+                        continue  # Unknown optional facts are not invented.
+                    value = _field(proposed) or '(none)'
+                else:
+                    value = 'before ' + (_field(before) or '(none)') + '; proposed ' + (_field(proposed) or '(none)')
+                values.append(FIELD_LABELS[name] + ': ' + value)
+            title = getattr(row.proposed, 'display', None) or getattr(row.before, 'display', None) or row.tag_id
+            return 'Tag: ' + _text(title) + '\n' + '\n'.join(values) + '\nStable ID: ' + _text(row.tag_id)
         def protected(row):
-            fields = tuple("Field " + _text(name) + ": before " + _field(getattr(row.before, name, None)) + "; proposed " + _field(getattr(row.proposed, name, None)) for name in row.protected_fields)
-            return "Stable ID: " + _text(row.tag_id) + "\nProtected fields retained:\n" + "\n".join(fields)
+            fields = tuple(FIELD_LABELS.get(name, _text(name).replace('_', ' ')) + ": local " + _field(getattr(row.before, name, None)) + "; proposed result " + _field(getattr(row.proposed, name, None)) for name in row.protected_fields)
+            title = getattr(row.before, 'display', None) or row.tag_id
+            return 'Tag: ' + _text(title) + "\nProtected local fields retained:\n" + "\n".join(fields) + '\nStable ID: ' + _text(row.tag_id)
         def conflict(row): return _explain(row.reason) + "\nExact IDs: " + (_field(row.tag_ids) or "not supplied")
         def assignment(row):
             original = row.original
