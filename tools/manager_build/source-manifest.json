@@ -4018,8 +4018,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 178066,
-      "sha256": "757a76e8b64b09295a6f39b4b17a19f2d04485ba37d692866f770ad464f413e3"
+      "bytes": 178088,
+      "sha256": "b861d769b65d66650d25a9650cd9fc5ff44dd6df2155f665827cee2d282dea1c"
     },
     {
       "path": "suite_core/media_examples.py",

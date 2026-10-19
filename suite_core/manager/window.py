@@ -657,7 +657,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if self.tag_database_pane is not None:
                 status = ("Use Databases to connect a catalog, review content and recover interrupted work."
                     if self.tag_database_pane.controller.settings_path is not None else
-                    "Approved Tag catalog connected; review each change before Apply."
+                    "Tag catalog connected. Current operation and recovery status appear in this workspace."
                     if self.tag_database_pane.controller.apply_authorized else
                     "Tag catalog review connected; Apply requires explicit host permission.")
             else:
