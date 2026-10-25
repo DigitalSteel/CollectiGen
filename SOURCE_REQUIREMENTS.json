@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "component": "collectigen.suite-manager",
+  "software_version": "0.6.2-alpha.1",
+  "base_public_source_commit": "7928d22c4b07f989c2e113810de069d747f87d38",
+  "base_inventory_sha256": "fb551720b958c92f64763f5de9ce49c41c219cfc9efb93bd6da9ac491b17ed31",
+  "omitted_catalog_resources": [
+    {
+      "path": "data/defaults/public-defaults.json",
+      "sha256": "b7a18af77cb9bd400d2a69505e40f57cb23c264a0038f98272f6097fd6bd5e89",
+      "size_bytes": 61
+    },
+    {
+      "path": "data/defaults/release-trust.json",
+      "sha256": "ef58994610d2684cbfbb97ddb29b171d27e4d76aa51339a11a0964367a97b826",
+      "size_bytes": 724
+    }
+  ],
+  "runtime_requirement": "Separate admitted Python/PySide runtime and unchanged original component resource companions are required. No binary is supplied or newly qualified.",
+  "qualification_limit": "Focused source tests and explicitly pinned source-entry status observations; broader journey and all newly compiled package gates remain open.",
+  "developer_harness": "Explicit pinned generated input receipt and already admitted interpreter; native opt-in only. Full-workspace registry/UI validator integration is a separate pinned delta, not supplied as a runnable subsystem."
+}
