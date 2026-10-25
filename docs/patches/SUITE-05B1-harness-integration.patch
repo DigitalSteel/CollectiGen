@@ -1,0 +1,112 @@
+--- a/tools/test_suites.py
++++ b/tools/test_suites.py
+@@ -34,7 +34,7 @@
+         ("tests/test_acceptance_runner.py", "tests/test_acceptance_windows_native.py", "tests/test_suite_harness.py",
+          "tests/test_reader_progress_acceptance.py", "tests/test_organizer_source_startup_acceptance.py",
+          "tests/test_organizer_package_probe.py", "tests/test_organizer_runtime_exiftool.py",
+-         "tests/test_organizer_runtime_guidance.py"),
++         "tests/test_organizer_runtime_guidance.py", "tests/test_manager_catalog_recipe.py"),
+     ),
+     "suite-hosted-journeys": Suite(
+         "Original hosted source-entry driver, bounded failure/cancellation/wait and submission controls; full native route requires an explicit synthetic profile.",
+--- a/tools/suite-harness.json
++++ b/tools/suite-harness.json
+@@ -27,7 +27,8 @@
+       "roadmap_ids": [
+         "SUITE-02",
+         "ALPHA-01",
+-        "UI-06"
++        "UI-06",
++        "SUITE-05B1"
+       ],
+       "suites": [
+         "suite-component-lifecycle",
+@@ -95,6 +96,15 @@
+           ],
+           "requires": "Exact allowlisted source/artifact/runtime, admitted component profiles, native startup/Close, saved completion, original Job/EOF/worker retirement and update/rollback. Build-only results are insufficient.",
+           "mode": "package_producer"
++        },
++        {
++          "level": "source_entry",
++          "harnesses": [
++            "tools/acceptance/manager_catalog_recipe.py",
++            "tests/test_manager_catalog_recipe.py"
++          ],
++          "requires": "Explicit pinned default-free Manager export, generated input receipt and interpreter; fresh disjoint workspace fixture. Original main constructs its host/controller. Windows Qt source stale-review route only; no controller injection, desktop control, model or packaged acceptance. Default test run skips native execution without explicit admission.",
++          "mode": "source_entry"
+         }
+       ],
+       "limitations": [
+--- a/tools/ui_journey_contract.py
++++ b/tools/ui_journey_contract.py
+@@ -174,7 +174,7 @@
+     result_pins = execution.get("result_pins")
+     before_errors = len(errors)
+     pinned(result_pins, "execution result_pins")
+-    passed: set[str] = set()
++    passed: set[tuple[str, str]] = set()
+     if isinstance(result_pins, dict) and len(errors) == before_errors:
+         for name in result_pins:
+             file = root / name
+@@ -183,8 +183,10 @@
+                     raise ValueError("result exceeds evidence bound")
+                 for case in ET.fromstring(file.read_bytes()).iter("testcase"):
+                     if any(case.find(tag) is not None for tag in ("failure", "error", "skipped")): continue
+-                    module = case.get("classname", "").replace(".", "/")
+-                    passed.add(module + ".py::" + case.get("name", "").split("[", 1)[0])
++                    # Dots in directories such as .tmp cannot be decoded as
++                    # separators. Compare the declared path's JUnit spelling;
++                    # never fall back to a matching basename from another path.
++                    passed.add((case.get("classname", ""), case.get("name", "").split("[", 1)[0]))
+             except (ET.ParseError, ValueError) as error:
+                 errors.append(f"invalid pinned JUnit result: {error}")
+     tests = execution.get("tests")
+@@ -203,7 +205,8 @@
+         if match is not None:
+             if match.group("path") not in sources:
+                 errors.append("referenced test source must be in reviewed pins")
+-            if match.group("path") + "::" + match.group("test").split("[", 1)[0] not in passed:
++            identity = (match.group("path")[:-3].replace("/", "."), match.group("test").split("[", 1)[0])
++            if identity not in passed:
+                 errors.append("referenced test lacks a passing pinned result")
+     if review.get("status") != "accepted":
+         errors.append("review not accepted; preserve partial/incomplete disposition")
+--- a/tests/test_ui_journey_contract.py
++++ b/tests/test_ui_journey_contract.py
+@@ -67,6 +67,36 @@
+     assert "does not establish usability" in result["limitation"]
+ 
+ 
++@pytest.mark.parametrize('classname,accepted', [
++    ('.tmp.bounded.test_state', True),
++    ('tmp.bounded.test_state', False),
++    ('other.test_state', False),
++    ('prefix..tmp.bounded.test_state', False),
++])
++def test_review_preserves_literal_dot_path_and_full_junit_identity(tmp_path,classname,accepted):
++    review=_review_fixture(tmp_path)
++    relative='.tmp/bounded/test_state.py'
++    target=tmp_path/relative;target.parent.mkdir(parents=True)
++    target.write_bytes((tmp_path/'test_state.py').read_bytes())
++    review['source_pins'].pop('test_state.py')
++    review['source_pins'][relative]=hashlib.sha256(target.read_bytes()).hexdigest()
++    binding=hashlib.sha256(json.dumps({k:review[k] for k in ('source_pins','artifact_pins')},sort_keys=True,separators=(',',':')).encode()).hexdigest()
++    review['acceptance_finding']['reviewed_pins_sha256']=binding
++    reference=relative+'::test_delayed_state'
++    for phase in review['delayed_phases']:
++        for check in DELAYED_CHECKS:phase[check]=reference
++    (tmp_path/'results.xml').write_text('<testsuites><testsuite><testcase classname="'+classname+'" name="test_delayed_state"/></testsuite></testsuites>',encoding='utf-8')
++    execution=json.loads((tmp_path/'execution.json').read_bytes())
++    execution.update(reviewed_pins_sha256=binding,tests=[reference],result_pins={
++        'results.xml':hashlib.sha256((tmp_path/'results.xml').read_bytes()).hexdigest()})
++    (tmp_path/'execution.json').write_text(json.dumps(execution),encoding='utf-8')
++    review['execution_pins']={'execution.json':hashlib.sha256((tmp_path/'execution.json').read_bytes()).hexdigest()}
++    path=tmp_path/'review.json';path.write_text(json.dumps(review),encoding='utf-8')
++    result=audit_review(path,root=tmp_path)
++    assert (result['status']=='accepted') is accepted
++    if not accepted:assert any('lacks a passing pinned result' in e for e in result['errors'])
++
++
+ @pytest.mark.parametrize("gap", ["silent_wait", "misleading_first_check", "button_pile",
+     "technical_cluster", "uninspected_capture", "untested_phase", "missing_reviewer",
+     "stale_pin", "fake_study", "package_relabel"])

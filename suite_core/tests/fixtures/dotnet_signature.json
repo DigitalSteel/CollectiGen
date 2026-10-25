@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "algorithm": "rsa-pkcs1v15-sha256",
+  "key_id": "disposable-test-only",
+  "manifest_sha256": "3c53c90c6582b92c32ebe0199fb2016a28394659c91604281e6c48603ac4b2bb",
+  "signature": "p96dWuryUZHaZU9igd5hlfPvCxhddVDi7ingoauEr4zqOPU9fhUBA6yIjdk1W7/IxmKV8ZY1H/7UX5ins1dclRyPptN5anZpGDgbopnJ5HgbUe9n40hdvao+TlHsFHcRhF+TqzEgGBRkXrazXKT0EFckZ515pj2/u8/jbO/FYfn7eP+xT8xwGeAXJp+f+K9gza/PJd3SZFUtpm3Gp6ikoKW4S2BCx6NeUjzvwESZPjfDMCupDM1gkSFEFvXOMgRslaXE6eJhPIGYF5ewJT47Evvk3eygaeaiFt0nOtJ7lps7+IVW7SfQZXZ/hvWKFRZt7HE3CF6rkQdRygm8XMHLjA=="
+}

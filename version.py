@@ -1,0 +1,8 @@
+VERSION = "0.102.3-alpha.1"
+PRODUCT_NAME = "CollectiGen"
+PRODUCT_TAGLINE = "Collect. Identify. Organize. Generate."
+PUBLIC_REPOSITORY = "DigitalSteel/CollectiGen"
+PUBLIC_REPOSITORY_URL = f"https://github.com/{PUBLIC_REPOSITORY}"
+APP_TITLE = f"{PRODUCT_NAME} v{VERSION}"
+KNOWLEDGE_VERSION = "2026.07.15.3"
+SCHEMA_VERSION = 7

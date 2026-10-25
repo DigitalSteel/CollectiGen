@@ -1,0 +1,256 @@
+{
+  "schema_version": 1,
+  "module_id": "collectigen.suite-manager",
+  "releases": [
+    {
+      "software_version": "0.6.7-alpha.1",
+      "date": "2026-10-25",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Source-only saved-context/draft hierarchy; broader journey/package gates remain open."
+    },
+    {
+      "software_version": "0.6.6-alpha.1",
+      "date": "2026-10-25",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Source-only conditional connected-result guidance; full journey/package gates remain open."
+    },
+    {
+      "software_version": "0.6.5-alpha.1",
+      "date": "2026-10-25",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Source-only saved-open feedback and guarded Cancel; broader journey/package qualification stays open."
+    },
+    {
+      "software_version": "0.6.4-alpha.1",
+      "date": "2026-10-25",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Source-only bounded Databases action reachability; broader UI journey/package gates remain open."
+    },
+    {
+      "software_version": "0.6.3-alpha.1",
+      "date": "2026-10-25",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Source-only accepted connection context; no new binary or full-journey acceptance."
+    },
+    {
+      "software_version": "0.6.2-alpha.1",
+      "date": "2026-10-25",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Source-only connection-failure guidance; no new binary or full journey acceptance."
+    },
+    {
+      "software_version": "0.6.1-alpha.1",
+      "date": "2026-10-25",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Source-only stale-review guidance checkpoint; no new binary release or packaged acceptance."
+    },
+    {
+      "software_version": "0.6.0-alpha.1",
+      "date": "2026-10-18",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Unpublished legacy Reader handoff candidate. Packaged update and rollback qualification pending."
+    },
+    {
+      "software_version": "0.5.1-alpha.1",
+      "date": "2026-10-18",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Fresh Reader 0.3.1-only Alpha UI patch. Dashboard Reader visibility and Find reader / Install clarity; legacy Reader upgrade/rollback excluded; Organizer downloads and Manager self-update unavailable."
+    },
+    {
+      "software_version": "0.5.0-alpha.1",
+      "date": "2026-10-14",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unpublished consolidated candidate; isolated Organizer signed install/restart/visible Open/ordinary Close/healthy journal and Manager Close accepted; copy-only successor review/Cancel/Close and bounded viewport evidence accepted with explicit R17 carry-forward; production profiles inactive; corrected local Reader signing and isolated authenticated update/confirmed rollback passed; isolated packaged preparation/opening/update/confirmed-restoration/ordinary-Close progress passed; Reader public identity and final production composition remain pending; historical held tests retain original ownership; self-update unavailable and not a first-release gate; not full release readiness"
+    },
+    {
+      "software_version": "0.4.1-alpha.1",
+      "date": "2026-10-12",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "reviewed unsigned corrected source candidate; missing shared interface dependency and frozen closure guards corrected; native startup recheck and full workflow acceptance pending; acquisition/update profiles inactive"
+    },
+    {
+      "software_version": "0.4.0-alpha.1",
+      "date": "2026-10-12",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "held a.0.4.0 frozen candidate: normal startup failed because qt_app.components was omitted; original artifacts/reports retained; source UI evidence remains separate"
+    },
+    {
+      "software_version": "0.3.2-alpha.1",
+      "date": "2026-10-11",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unsigned local candidate; portable reader settings binding fixed; native workflow and clean-machine acceptance pending; update/acquisition profiles inactive"
+    },
+    {
+      "software_version": "0.2.1-alpha.16",
+      "date": "2026-10-11",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased source; ordinary developer entry connection/create/reopen, Foundation apply/recovery/reload and Close qualified with reviewed candidate and disposable recipient; portable and public release unqualified"
+    },
+    {
+      "software_version": "0.2.1-alpha.15",
+      "date": "2026-10-10",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unsigned private manual candidate; synthetic512 streaming verified; actual512 replies, ordinary startup/navigation/Close, GPU, clean-machine, native updates and public release unqualified"
+    },
+    {
+      "software_version": "0.2.1-alpha.14",
+      "date": "2026-10-10",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased alpha; bounded exact Qwen CPU32 native lifecycle proof; manual artifact32 startup/navigation/Close unverified, failed ledger preserved after development cleanup"
+    },
+    {
+      "software_version": "0.2.1-alpha.13",
+      "date": "2026-10-10",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased connected existing-backend chat source integration; streaming transport/native inference and direct GGUF qualification pending"
+    },
+    {
+      "software_version": "0.2.1-alpha.12",
+      "date": "2026-10-10",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased explicit Tag failed-entry recovery integration; private connected qualification pending; production host and native updates remain separate"
+    },
+    {
+      "software_version": "0.2.1-alpha.11",
+      "date": "2026-10-10",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased explicitly supplied Tag host window integration and Organizer source details; synthetic connected acceptance passed; owned failed-entry Tag host and native self-update remain separately qualified"
+    },
+    {
+      "software_version": "0.2.1-alpha.10",
+      "date": "2026-10-10",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased owned-runner recovery fixes; exact private existing-key lifecycle acceptance passed; production, live Install, updates, distribution and model/Hermes remain separately qualified"
+    },
+    {
+      "software_version": "0.2.1-alpha.9",
+      "date": "2026-10-09",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased compatible owned-runner fixes; private lifecycle/UI verified; production descriptors, live Install, automatic updates, distribution and model/Hermes actions remain unqualified"
+    },
+    {
+      "software_version": "0.2.1-alpha.8",
+      "date": "2026-10-09",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased verified cached-model runtime source checkpoint; exact host/cache admission required; packaged controls, automatic updates, distribution and Hermes remain unqualified"
+    },
+    {
+      "software_version": "0.2.1-alpha.7",
+      "date": "2026-10-09",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased owned Ollama controls source integration; exact host admission required; production package selection, packaged and real GUI qualification pending; models/Hermes unavailable"
+    },
+    {
+      "software_version": "0.2.1-alpha.6",
+      "date": "2026-10-09",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased Ollama Applications onboarding source checkpoint; inert source workflow reviewed; packaged and real-provider qualification pending; installation unavailable"
+    },
+    {
+      "software_version": "0.2.1-alpha.5",
+      "date": "2026-10-08",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased presentation source checkpoint; installation and managed execution unavailable"
+    },
+    {
+      "software_version": "0.2.1-alpha.4",
+      "date": "2026-10-08",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unapplied Applications organization source candidate; native UI, visible workflows and recovery untested; installation and managed execution unavailable"
+    },
+    {
+      "software_version": "0.2.1-alpha.3",
+      "date": "2026-10-08",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased source integration; native UI and recovery qualification pending; installation and managed execution unavailable"
+    },
+    {
+      "software_version": "0.2.1-alpha.2",
+      "date": "2026-10-08",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "isolated composite source candidate; full independent review pending; default component execution unavailable"
+    },
+    {
+      "software_version": "0.2.1-alpha.1",
+      "date": "2026-10-08",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "historical isolated UI source and experimental alpha9 artifact; not prior canonical integration"
+    },
+    {
+      "software_version": "0.2.0-alpha.1",
+      "date": "2026-10-07",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "historical isolated production-r2 source baseline; native production qualification pending"
+    },
+    {
+      "software_version": "0.1.0-alpha.22",
+      "date": "2026-10-08",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased source checkpoint; no new user-visible capability; default application launch unavailable; native and portable qualification pending"
+    },
+    {
+      "software_version": "0.1.0-alpha.21",
+      "date": "2026-10-07",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "UI source candidate; native and visual acceptance pending"
+    },
+    {
+      "software_version": "0.1.0-alpha.20",
+      "date": "2026-10-06",
+      "date_timezone": "America/New_York",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased source candidate; diagnostics provider, UI and lifetime qualification pending"
+    },
+    {
+      "software_version": "0.1.0-alpha.19",
+      "date": "2026-10-06",
+      "date_timezone": "America/New_York",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased development source; visible/native runtime qualification pending"
+    },
+    {
+      "software_version": "0.1.0-alpha.18",
+      "date": "2026-10-06",
+      "notes": "WHATS_NEW.md",
+      "status": "unreleased development source; runtime/GUI qualification pending"
+    },
+    {
+      "software_version": "0.1.0-alpha.17",
+      "date": "2026-10-06",
+      "notes": "WHATS_NEW.md",
+      "status": "developer source; injected/offscreen behavior qualified; live/runtime qualification pending"
+    }
+  ]
+}
