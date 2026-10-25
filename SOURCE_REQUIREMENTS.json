@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "software_version": "0.4.8-alpha.1",
+  "tested_package_sha256": "2db6a735b62bcfb05fdc5d6c01c59f49c2259a9ebee22b9f23f60a2bc05527ac",
+  "application_source_receipt_sha256": "1ef3b47fad01c035f36f0c7ef7de3ded77fe737158a2ec3a64bf4fbec74afede",
+  "application_source_files": 769,
+  "runtime_profile": "organizer-image",
+  "runtime_pins_sha256": "10134b91d387b32c345f6af0f18941ee2abbad27a3b751a2ce3bbe807d5d9407",
+  "runtime_lock_sha256": "4fd01c7e2bf4e808d7f20848c5c5c54754de6c45cb6f575e8a4a1dcc7d1a1c92",
+  "omitted_package_inputs": [
+    {
+      "destination": "assets/defaults/categories.json",
+      "sha256": "a85dabd49128f8facae5861989690eaab09e14d373b9967272d9310669a6838c",
+      "size_bytes": 120233
+    },
+    {
+      "destination": "assets/defaults/characters.json",
+      "sha256": "dcf1a7fa8dddd78782dd24da006b8c5abb58b0344e26cae3847aae81d5d0a944",
+      "size_bytes": 1226807
+    },
+    {
+      "destination": "assets/defaults/community_tags.json",
+      "sha256": "08e37a5c9b8e90eac12d7ac6877001ea030b2ee7db6c6a5a400c6f83d813985d",
+      "size_bytes": 6261591
+    },
+    {
+      "destination": "assets/defaults/concepts.json",
+      "sha256": "82b4dcb42df974b8826955c51c7f475b6cdfbc1f4fcae798f2c56ff2940dec2c",
+      "size_bytes": 7785
+    },
+    {
+      "destination": "assets/defaults/consumer_policies.json",
+      "sha256": "e851ece9ac512b4f5f7cd6f9e525d0eacfc5e6144a412d268333db6e38e7f368",
+      "size_bytes": 155765
+    },
+    {
+      "destination": "assets/defaults/foundation_tags.json",
+      "sha256": "0f1dd6a647863d28909b8ba8ae5f8d182876ff931342d77dae5e0f6b8865b33f",
+      "size_bytes": 3755
+    },
+    {
+      "destination": "assets/defaults/modifiers.json",
+      "sha256": "87c3c3dbf2c4e6686aed774be94dd55505aa6bf26c31fada499b769a6895696d",
+      "size_bytes": 2055
+    },
+    {
+      "destination": "assets/defaults/outfits.json",
+      "sha256": "c8e4007d3966cc8fd2346821816eefff431cf54721e74e79b265a3992c4a044c",
+      "size_bytes": 44688
+    },
+    {
+      "destination": "assets/defaults/patterns.json",
+      "sha256": "abe7544106a7f0f718512c22bbbf8f83bb026f9cdee1430c83ae756c97eb936d",
+      "size_bytes": 19510
+    },
+    {
+      "destination": "assets/defaults/promoted_tags.json",
+      "sha256": "337183bc596e9970ad8c235491d493b551d16dc9d6020da3e0a40e5feb7c3eda",
+      "size_bytes": 22067436
+    },
+    {
+      "destination": "assets/defaults/relationships.json",
+      "sha256": "79baa72cf3a2e61e96211d13578ad6755e97213c8c6ce9283584793a6bc04cfe",
+      "size_bytes": 27162797
+    },
+    {
+      "destination": "assets/defaults/series.json",
+      "sha256": "9f80207d63f83654bd692ad007f61b6ce7acb5230ea6befff3876ea1c91493ed",
+      "size_bytes": 127298
+    },
+    {
+      "destination": "assets/defaults/tag_aliases.json",
+      "sha256": "08cbf6c40689836333cf65405b925c3a56a349a04c4f3a77990d9195e49e48c5",
+      "size_bytes": 1195544
+    },
+    {
+      "destination": "assets/defaults/tag_appearance.json",
+      "sha256": "00dfe66859d2122bd14b8f2eb0b0ddaed91e6916c48393ea1d2fba2e2ae876e7",
+      "size_bytes": 1328
+    },
+    {
+      "destination": "DEFAULT_ASSETS.json",
+      "sha256": "bf58fdf8a6288315e291aaccefc6b657d33a4df430d071fc5e4ff5c407601806",
+      "size_bytes": 2169
+    },
+    {
+      "destination": "tools/OrganizerPrerequisites.exe",
+      "sha256": "bb719b74563a08c3c82123ed547112fb3c52e003b24c95ab75360e9824071f48",
+      "size_bytes": 740352
+    }
+  ],
+  "companion_requirement": "Exact approved resources and runtime are separate inputs. This export is not a complete binary source/notices companion or a runnable distribution.",
+  "repair_execution": "Unavailable in the tested package; source tests use explicit synthetic script fixtures and do not qualify real repair."
+}

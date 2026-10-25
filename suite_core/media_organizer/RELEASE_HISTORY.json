@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "releases": [
+    {
+      "software_version": "0.4.8-alpha.1",
+      "numeric_version": "0.4.8",
+      "maturity": "alpha",
+      "date": "2026-10-25",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "unpublished selected-runtime guidance checkpoint; whole-product acceptance pending",
+      "scope": "Explain missing, unreadable or invalid selected runtime policy files without automatic repair or fallback. No new runtime or model support."
+    },
+    {
+      "software_version": "0.4.7-alpha.1",
+      "numeric_version": "0.4.7",
+      "maturity": "alpha",
+      "date": "2026-10-25",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "unpublished runtime-binding qualification checkpoint; whole-product acceptance pending",
+      "scope": "Use the explicitly admitted Organizer runtime ExifTool when no tool is configured; preserve configured tool precedence and full-app defaults. No metadata-write or optional model qualification."
+    },
+    {
+      "software_version": "0.4.6-alpha.1",
+      "numeric_version": "0.4.6",
+      "maturity": "alpha",
+      "date": "2026-10-14",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "proposed unbuilt development source identity; independent metadata review and canonical adoption pending",
+      "scope": "Compatible Organizer handoff completion/Close and native workflow parity corrections after the distinct published a.0.4.5 source; no new supported Video/AI or execution capability claim."
+    },
+    {
+      "date": "2026-10-13",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "maturity": "alpha",
+      "numeric_version": "0.4.5",
+      "software_version": "0.4.5-alpha.1",
+      "scope": "Four-category guided setup, preserved choices and configuration-only Finish; retained a044 runtime/image workflow.",
+      "status": "published prerelease; retained seven-asset public download and signature verification passed; native/clean-machine acceptance not claimed",
+      "published_provenance": {
+        "tag": "collectigen.media-organizer/v0.4.5-alpha.1",
+        "tag_commit": "76641598d1330e55ae8c7b7a433310f0cee99c33",
+        "release_id": 412282122,
+        "published_at": "2026-10-14T02:38:06Z",
+        "manifest_finalized_at": "2026-10-14T02:15:32Z",
+        "assets": [
+          {
+            "name": "MediaOrganizer-a.0.4.5-source-notices.zip",
+            "bytes": 1676618685,
+            "sha256": "cff10bf497b539053f225ad4a3831799c3372e0e5047f96877fee35a96c66570",
+            "public_download_verified": true
+          },
+          {
+            "name": "MediaOrganizer-a.0.4.5-source-notices.zip.sha256",
+            "bytes": 108,
+            "sha256": "cd58898f930c0731cce05e9698c8353e3642d5ae64195dfe7d74425514ff172e",
+            "public_download_verified": true
+          },
+          {
+            "name": "MediaOrganizer-a.0.4.5-windows-x64.zip",
+            "bytes": 117704933,
+            "sha256": "82c8e71ff1802da686ba376b25f4ac5c22cc5d9e69456f466af412bdfc648a40",
+            "public_download_verified": true
+          },
+          {
+            "name": "MediaOrganizer-a.0.4.5-windows-x64.zip.sha256",
+            "bytes": 105,
+            "sha256": "ab40588482637f6d6a7c491ee6d5a45b4e83cbd10af22f0c6dd2f0778ee22e8d",
+            "public_download_verified": true
+          },
+          {
+            "name": "release-manifest.json",
+            "bytes": 3091,
+            "sha256": "ae00e10394da60f0c29288662ae38b299f2ab6026b3838cda56f5c2bf965540a",
+            "public_download_verified": true
+          },
+          {
+            "name": "release-manifest.json.sig",
+            "bytes": 731,
+            "sha256": "c08264f56b278e69dc3099fc38caa0c06df07245d7e67de83b9a3180f9ccf51c",
+            "public_download_verified": true
+          },
+          {
+            "name": "SOURCE_DELIVERY_SUPPLEMENT.md",
+            "bytes": 3477,
+            "sha256": "03dfa346f12f3979074c386a24e0b3d8ffd631361337a57ca28879ae6c776e6d",
+            "public_download_verified": true
+          }
+        ],
+        "source_date": "2026-10-13",
+        "source_timezone": "America/New_York"
+      },
+      "historical_frozen_input_status": "allocated exact source/metadata packet; no a045 build or native acceptance"
+    },
+    {
+      "date": "2026-10-13",
+      "interface_version": 1,
+      "maturity": "alpha",
+      "numeric_version": "0.4.4",
+      "scope": "Portable image launcher and concise exact-version guidance; unchanged accepted a.0.4.3 image implementation.",
+      "software_version": "0.4.4-alpha.1",
+      "status": "allocated source metadata checkpoint; no new runnable artifact/native acceptance",
+      "timezone": "America/New_York"
+    },
+    {
+      "software_version": "0.4.3-alpha.1",
+      "numeric_version": "0.4.3",
+      "maturity": "alpha",
+      "date": "2026-10-13",
+      "timezone": "America/New_York",
+      "status": "accepted lost-completion source checkpoint; new package and same-image acceptance pending",
+      "scope": "Open Ingest after Dataset initialization already finished without losing completion; retain failure/cancel/navigation and Close guards.",
+      "interface_version": 1
+    },
+    {
+      "software_version": "0.4.2-alpha.1",
+      "numeric_version": "0.4.2",
+      "maturity": "alpha",
+      "date": "2026-10-13",
+      "timezone": "America/New_York",
+      "status": "accepted source checkpoint; coherent package and actual workflow acceptance pending",
+      "scope": "First Image Knowledge save with deferred optional Metadata; safe queued content-safety Close; duplicate Tag review; loaded compound recommendation details.",
+      "interface_version": 1
+    },
+    {
+      "software_version": "0.4.1-alpha.1",
+      "numeric_version": "0.4.1",
+      "maturity": "alpha",
+      "date": "2026-10-13",
+      "timezone": "America/New_York",
+      "status": "integrated accepted source checkpoint; coherent package and visible acceptance pending",
+      "scope": "Organizer-specific About and What's New, and Setup limited to supported image workflows.",
+      "interface_version": 1
+    },
+    {
+      "software_version": "0.4.0-alpha.1",
+      "numeric_version": "0.4.0",
+      "maturity": "alpha",
+      "date": "2026-10-12",
+      "timezone": "America/New_York",
+      "status": "integrated source candidate; no package or native visible acceptance",
+      "scope": "Hosted local example-image entry, original scoped physical query/thumbnail drain and unchanged Tag/public data authority.",
+      "interface_version": 1
+    },
+    {
+      "software_version": "0.3.1-alpha.1",
+      "date": "2026-10-11",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "public-only unsigned portable candidate; exact frozen source and package contents verified; ordinary visible workflow and clean-machine acceptance unrun",
+      "scope": "Exclude private future-default teaching and development inbox from public runtime; retain local editing, prompt authoring and diagnostic-only startup recovery."
+    },
+    {
+      "software_version": "0.3.0-alpha.1",
+      "date": "2026-10-11",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "integrated source candidate; synthetic native prompt acceptance passed; package and user acceptance pending",
+      "scope": "Standalone reviewed prompt authoring from one Dataset image; unverified model writing guides, manual positive/negative transfer, retained session edits and close/cancellation guards."
+    },
+    {
+      "software_version": "0.2.1-alpha.1",
+      "date": "2026-10-10",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "unsigned development candidate; user acceptance pending",
+      "scope": "Correct workspace navigation for first-use Setup and exact Dataset package receipt review; preserve native leave guards and saved recovery context."
+    },
+    {
+      "software_version": "0.2.0-alpha.1",
+      "date": "2026-10-10",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "unsigned development candidate; user acceptance pending",
+      "scope": "Standalone profile binding and immutable default initialization; Organizer command scope and exact Dataset recovery navigation."
+    },
+    {
+      "software_version": "0.1.0-alpha.4",
+      "date": "2026-10-10",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "unpublished source; native workflow/distribution unqualified",
+      "scope": "Module callers can open native Add Images review, review the latest added images and view one included library image, with native page-leave and admission guards."
+    },
+    {
+      "software_version": "0.1.0-alpha.3",
+      "date": "2026-10-09",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "unpublished source; native workflow/distribution unqualified",
+      "scope": "Complete the Organizer contract seam for modular integration, preserving existing Ingest, Dataset, Tag editing and hosted example-image compatibility."
+    },
+    {
+      "software_version": "0.1.0-alpha.2",
+      "date": "2026-10-08",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "unpublished source; native workflow/distribution unqualified",
+      "scope": "Correct the Dataset ribbon action label and guidance for reopening saved drafts."
+    },
+    {
+      "software_version": "0.1.0-alpha.1",
+      "date": "2026-10-06",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "unpublished source; native workflow/distribution unqualified",
+      "scope": "Compose existing Library, Dataset, Ingest and Setup; exact Dataset package recovery; hosted Encyclopedia references"
+    }
+  ]
+}
