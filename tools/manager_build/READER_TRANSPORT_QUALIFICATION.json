@@ -1,0 +1,52 @@
+{
+  "status": "STOCK_PUBLIC_READER_TRANSPORT_QUALIFIED",
+  "source_inventory_sha256": "5734a07d56c885b0f8a6d50a03ca7ae4ada5e30ad84babb8fa812831f72bfb48",
+  "transport_source_sha256": "8e2fce2ddb6337712071c311d69875a9a9ba8ab51fed7a499cf3c52576e3ff97",
+  "asset_redirect_origins": [
+    "https://release-assets.githubusercontent.com"
+  ],
+  "exact_offer": {
+    "component_id": "collectigen.tag-encyclopedia",
+    "software_version": "0.3.1-alpha.1",
+    "channel": "beta",
+    "os": "windows",
+    "architecture": "x86_64",
+    "key_id": "tag-manager-release-2026",
+    "trust_sha256": "ef58994610d2684cbfbb97ddb29b171d27e4d76aa51339a11a0964367a97b826",
+    "repository_id": 1301951104,
+    "release_id": 416182097,
+    "tag": "collectigen.tag-encyclopedia/v0.3.1-alpha.1",
+    "manifest": {
+      "name": "collectigen-release.json",
+      "size_bytes": 1172,
+      "sha256": "19b7f269915316d501a5be87a7314205986647d4666790d5921085b75e8ecf2f",
+      "url": "https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/collectigen-release.json",
+      "asset_id": 652187365
+    },
+    "signature": {
+      "name": "collectigen-release.json.sig",
+      "size_bytes": 731,
+      "sha256": "ee00308337f3e65cfc973aea127cff85fb46a2a5202424b60aa4801a1a00ec54",
+      "url": "https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/collectigen-release.json.sig",
+      "asset_id": 652187375
+    },
+    "artifact": {
+      "name": "TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip",
+      "size_bytes": 45908104,
+      "sha256": "84293ad7d04c7354dd8e180296db5564815f0e34b32c2c29d9bfb04beee1815b",
+      "url": "https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip",
+      "asset_id": 652187393
+    },
+    "repository": "DigitalSteel/CollectiGen"
+  },
+  "trust_sha256": "ef58994610d2684cbfbb97ddb29b171d27e4d76aa51339a11a0964367a97b826",
+  "default_redirect_hold_preserved": true,
+  "stock_anonymous_discovery": true,
+  "stock_signed_artifact_acquisition": true,
+  "stock_old_version_update_discovery_and_revalidation": true,
+  "progress_event_count": 44,
+  "download_sha256": "84293ad7d04c7354dd8e180296db5564815f0e34b32c2c29d9bfb04beee1815b",
+  "installation": false,
+  "native_health": false,
+  "live_activation": false
+}
