@@ -12,7 +12,7 @@ import subprocess
 import sys
 
 
-def qualify(source, output, theme):
+def qualify(source, output, theme, scenario='protected'):
     source, output = Path(source).resolve(), Path(output).resolve()
     assert source.is_dir() and not output.exists(), "Explicit source and fresh output required"
     assert output != source and not source.is_relative_to(output)
@@ -83,9 +83,17 @@ def qualify(source, output, theme):
     service.controller = db
     supplied = TransactionReview(review, None, output / 'unused-pack.zip', 'component-only', 'supplied-review', ())
     service.current = supplied
+    receipts = tuple(catalog / 'backups' / run / 'recovery.json' for run in ('run-A', 'run-B'))
+    submissions = []
+    class DenyingExecutor:
+        def submit(self, *args, **kwargs):
+            submissions.append('forbidden_submission')
+            raise AssertionError('Receipt selection cannot start an operation')
     choice = TagDatabaseChoice('Synthetic selected catalog', service, base, available,
-                               output / 'unused-pack.zip', True)
-    controller = TagDatabaseController(choices=(choice,), apply_authorized=False)
+                               output / 'unused-pack.zip', True,
+                               recovery_receipts=receipts if scenario == 'receipts' else ())
+    controller = TagDatabaseController(choices=(choice,), apply_authorized=False,
+                                      executor=DenyingExecutor() if scenario == 'receipts' else None)
     # Explicit supplied-state setup, not application entry or a native preview.
     controller.review = supplied
     app = QApplication.instance() or QApplication([])
@@ -155,17 +163,67 @@ def qualify(source, output, theme):
     unknown = next(s for s in project_database_review().sections if s.title == 'Protected user edits')
     assert empty.total == 0 and 'None in this proposal' in empty.text()
     assert unknown.total is None and unknown.text() != empty.text()
+    receipt_facts = {}
+    extra_captures = {}
+    if scenario == 'receipts':
+        from dataclasses import replace
+        assert pane.receipts.isEnabled() and pane.receipts.count() == 2
+        assert not pane.recover.isEnabled() and not pane.apply.isEnabled()
+        reveal(pane.receipts)
+        QTest.keyClick(pane.receipts, Qt.Key_Home)
+        QTest.keyClick(pane.receipts, Qt.Key_Down)
+        settle()
+        assert pane.receipts.currentData() == receipts[1]
+        assert pane.receipts.currentText() == 'Import receipt: run-B'
+        # Reprojection is a component assertion, not a native-entry claim.
+        pane.render()
+        settle()
+        assert pane.receipts.currentData() == receipts[1]
+        reveal(pane.sections)
+        QTest.keyClick(pane.sections, Qt.Key_Up)
+        QTest.keyClick(pane.sections, Qt.Key_Down)
+        reveal(pane.receipts)
+        assert pane.receipts.currentData() == receipts[1]
+        selected = output / ('receipts-' + theme + '.png')
+        assert pane.grab().save(str(selected))
+        extra_captures[selected.name] = hashlib.sha256(selected.read_bytes()).hexdigest()
+        # Supply an explicit empty component state; never parse/invoke a receipt.
+        controller.choices = (replace(choice, recovery_receipts=()),)
+        pane.render()
+        settle()
+        assert not pane.receipts.isEnabled() and pane.receipts.currentData() is None
+        assert pane.receipts.currentText() == 'No approved recovery receipt supplied'
+        assert not pane.recover.isEnabled()
+        absent = output / ('no-receipts-' + theme + '.png')
+        assert pane.grab().save(str(absent))
+        extra_captures[absent.name] = hashlib.sha256(absent.read_bytes()).hexdigest()
+        rejected = []
+        for invalid in (catalog / 'outside.json', catalog / 'backups' / '..' / 'outside.json'):
+            try:
+                replace(choice, recovery_receipts=(invalid,))
+            except ValueError:
+                rejected.append(str(invalid))
+            else:
+                raise AssertionError('Strict receipt Path admission must reject ' + str(invalid))
+        assert len(rejected) == 2 and not calls and not submissions
+        assert controller.review is supplied and service.current is supplied and db.accepts(review)
+        assert before == (session.binding, controller.review, pane.catalog.currentIndex(),
+                          pane.source_directory.text(), pane.catalog_directory.text(), pane.confirm.isChecked())
+        receipt_facts = {'selected': str(receipts[1]), 'selected_label': 'Import receipt: run-B',
+                         'render_return_retained': True, 'empty_disabled': True,
+                         'strict_rejections': rejected, 'payload_files_created_or_read': False}
     pane.close()
     settle()
-    assert not pane.isVisible() and not controller.close_held and not calls
+    assert not pane.isVisible() and not controller.close_held and not calls and not submissions
     assert not list(catalog.iterdir()), 'No saved catalog writes allowed'
-    report = {'passed': True, 'level': 'source_component', 'theme': theme,
+    report = {'passed': True, 'level': 'source_component', 'theme': theme, 'scenario': scenario,
               'entry': 'explicit supplied-review Pane component precondition',
               'source': str(source), 'source_pins': loaded,
               'platform': app.platformName(), 'size': [pane.width(), pane.height()],
               'dpr': pane.devicePixelRatioF(), 'protected_count': section.total,
               'detail_text': text, 'host_calls': calls, 'unchanged_state': before == after,
               'empty_unknown_distinct': True, 'closed': True,
+              'receipt_selection': receipt_facts, 'submissions': submissions, 'extra_captures': extra_captures,
               'capture': capture.name, 'capture_sha256': hashlib.sha256(capture.read_bytes()).hexdigest()}
     (output / 'RESULT.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({'passed': True, 'theme': theme, 'report': str(output / 'RESULT.json')}))
@@ -173,13 +231,23 @@ def qualify(source, output, theme):
 
 def test_supplied_protected_review(tmp_path):
     """Opt-in native-font component check over an explicitly qualified export."""
+    _run_fixture(tmp_path, 'protected')
+
+
+def test_supplied_receipt_selection(tmp_path):
+    """Choose exact supplied identities with no receipt payload or recovery."""
+    _run_fixture(tmp_path, 'receipts')
+
+
+def _run_fixture(tmp_path, scenario):
     import pytest
     source = os.environ.get('COLLECTIGEN_PROTECTED_REVIEW_SOURCE')
     if not source:
         pytest.skip('Explicit immutable protected-review source export required')
     for theme in ('dark', 'light'):
         result = subprocess.run([sys.executable, '-I', '-B', str(Path(__file__).resolve()),
-                                 '--source', source, '--output', str(tmp_path / theme), '--theme', theme],
+                                 '--source', source, '--output', str(tmp_path / theme), '--theme', theme,
+                                 '--scenario', scenario],
                                 capture_output=True, encoding='utf-8', timeout=45,
                                 env={**os.environ, 'QT_QPA_PLATFORM': 'windows'})
         assert result.returncode == 0, result.stdout + result.stderr
@@ -190,5 +258,6 @@ if __name__ == '__main__':
     parser.add_argument('--source', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--theme', choices=('dark', 'light'), required=True)
+    parser.add_argument('--scenario', choices=('protected', 'receipts'), default='protected')
     args = parser.parse_args()
-    qualify(args.source, args.output, args.theme)
+    qualify(args.source, args.output, args.theme, args.scenario)

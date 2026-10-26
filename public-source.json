@@ -3494,8 +3494,8 @@
       "size_bytes": 17593
     },
     "suite_core/tests/protected_review_ui_fixture.py": {
-      "sha256": "f07e7a5fd07b54459695d04548e3e2f96a04e9e6fd1f54fee7ea8a815b555b30",
-      "size_bytes": 10762
+      "sha256": "df7f483a4d196503aac34ec03deba1494fb702fae55d52cbb4672db4fa5a2c49",
+      "size_bytes": 14631
     },
     "suite_core/tests/test_applications_reader_card.py": {
       "sha256": "57d4eb10b4a976f3215c1cd7974ba83a18d0415c2093bbd05fe231009d83a14e",
