@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1012,
+  "allowlisted_source_file_count": 1015,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1961,6 +1961,10 @@
       "sha256": "37850efef71e11e4b5bae5cef33ab7cc82099719f1f3b82424ea4dc85a4bed88",
       "size_bytes": 7084
     },
+    "docs/ROOT_RELEASE_VERIFIER.md": {
+      "sha256": "ea2e9d9be5d4addd569d39cbe22853142e2b3e4dc0aa7a9d8ca6b32693abb726",
+      "size_bytes": 2175
+    },
     "docs/STANDALONE_ENCYCLOPEDIA_SOURCE_LANDING.md": {
       "sha256": "1b3943495367c0a95ab4f855f7a50a694d59313bc6a21d0d7c0ec35f037d0ca5",
       "size_bytes": 17066
@@ -3793,6 +3797,10 @@
       "sha256": "70b408774b72d1ad08884416e637cabb5e6afd7a9366b8013140c6009ab1a69d",
       "size_bytes": 3479
     },
+    "tests/test_encyclopedia_root_release_verification.py": {
+      "sha256": "44bffe5c886c743310f1890e8e48007d998eef21b97f252b5b03e328fbebe6d1",
+      "size_bytes": 13551
+    },
     "tests/test_encyclopedia_update_check.py": {
       "sha256": "bbae796910e2c46bed83c3fd0d8dbbcfbba0ebf82db2e831e2218ef10c680645",
       "size_bytes": 5430
@@ -3950,8 +3958,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "1e9154a2dcb8ddaa6aabff0adc79ff810431d0fe7011bd2cc423e03872d4c1af",
-      "size_bytes": 41578
+      "sha256": "ade5398891665ee4bf2b9bfda8e36f2a73e513fb9955696339c44ecd56460081",
+      "size_bytes": 41724
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",
@@ -4060,6 +4068,10 @@
     "tools/test_suites.py": {
       "sha256": "f7161af6f6ae0d02bd14671f0926e2615bb4be791138fd80ecf5b213d5e03162",
       "size_bytes": 62717
+    },
+    "tools/verify_encyclopedia_root_release.py": {
+      "sha256": "722ed34e6bc7dbeba778c321754ef16b9b3dd6810555c7c77abba863b7e3ab47",
+      "size_bytes": 13281
     },
     "version.py": {
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48",
