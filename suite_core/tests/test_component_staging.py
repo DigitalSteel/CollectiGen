@@ -287,3 +287,133 @@ def test_retained_platform_mismatch_blocks_replacement(tmp_path):
     with pytest.raises(StagingHold, match="retained_inventory_platform"):
         activate(root, before, package(tmp_path))
     assert read_active(root) == before
+
+
+# Pure future-reference contract; no schema2 transaction entry is enabled.
+def reference_release(*, schema=2, maturity="alpha", version="0.1.0"):
+    from suite_core.discovery.component_release_signature import verify_component_release
+    channel = ("stable" if maturity == "stable" else "beta") if schema == 2 else ("beta" if "-" in version else "stable")
+    manifest = dict(schema_version=schema, product="collectigen", component_id=COMPONENT.value,
+        version=version, channel=channel, published_at="2026-10-26T00:00:00Z",
+        supported_from="0.0.0", release_notes="Contained reference identity only.",
+        platform=dict(os="windows", architecture="x86_64"), artifacts=[dict(name="inert.zip",
+        kind="component-package", sha256="a"*64, size_bytes=12, portable_manifest_sha256="b"*64)])
+    if schema == 2:
+        manifest["maturity"] = maturity
+    message = raw(manifest)
+    return verify_component_release(message, sign(message), TRUST, expected_component=COMPONENT,
+        expected_version=version, expected_channel=channel, expected_os="windows",
+        expected_architecture="x86_64", expected_maturity=maturity if schema == 2 else None)
+
+
+@pytest.fixture
+def pure_reference_guards(monkeypatch):
+    import suite_core.discovery.component_staging as staging
+    def forbidden(*args, **kwargs):
+        pytest.fail("Pure reference helper attempted an external effect")
+    for name in ("guard", "read_json", "atomic", "atomic_bytes", "verify_directory"):
+        monkeypatch.setattr(staging, name, forbidden)
+    monkeypatch.setattr(staging, "Path", forbidden)
+
+
+@pytest.mark.parametrize("maturity", ["alpha", "beta", "stable"])
+def test_pure_stage_reference_signed_roundtrip(pure_reference_guards, maturity):
+    from suite_core.discovery.component_staging import component_reference_from_release, validate_component_reference, canonical
+    release = reference_release(maturity=maturity)
+    reference = component_reference_from_release(release)
+    assert reference == dict(schema_version=2, release_schema=2, component_id=COMPONENT.value,
+        version="0.1.0", maturity=maturity, directory=f"Apps/{COMPONENT.value}/schema2/0.1.0/{maturity}",
+        inventory_sha256="b"*64, release_sha256=release.manifest_sha256)
+    returned = validate_component_reference(json.loads(canonical(reference)), COMPONENT, release=release)
+    assert returned == reference and returned is not reference
+    returned["version"] = "9.0.0"
+    assert reference["version"] == "0.1.0"
+
+
+@pytest.mark.parametrize("version", ["0.1.0-alpha.1", "0.1.0-beta.2", "0.1.0"])
+def test_pure_legacy_reference_bytes_unchanged(pure_reference_guards, version):
+    from suite_core.discovery.component_staging import component_reference_from_release, validate_component_reference, canonical
+    release = reference_release(schema=1, version=version)
+    expected = dict(component_id=COMPONENT.value, version=version,
+                    directory=f"Apps/{COMPONENT.value}/{version}", inventory_sha256="b"*64)
+    assert canonical(component_reference_from_release(release)) == raw(expected)
+    assert validate_component_reference(expected, COMPONENT, release=release) == expected
+
+
+def test_pure_stage_destinations_distinct_from_each_other_and_legacy(pure_reference_guards):
+    from suite_core.discovery.component_staging import component_reference_from_release
+    refs = [component_reference_from_release(reference_release(maturity=m)) for m in ("alpha", "beta", "stable")]
+    refs.append(component_reference_from_release(reference_release(schema=1)))
+    assert len({r["directory"] for r in refs}) == 4
+
+
+@pytest.mark.parametrize("field,value", [
+    ("schema_version", True), ("schema_version", 3), ("release_schema", True), ("release_schema", 1),
+    ("component_id", "collectigen.other"), ("version", "0.2.0"), ("version", 1),
+    ("maturity", "beta"), ("maturity", None), ("maturity", "Alpha"),
+    ("inventory_sha256", "c"*64), ("inventory_sha256", "B"*64),
+    ("release_sha256", "c"*64), ("release_sha256", "A"*64),
+    ("directory", "../escape"), ("directory", "C:/escape"), ("directory", "Apps/../escape"),
+    ("directory", "Apps/alias"), ("directory", f"Apps/{COMPONENT.value}/schema2/0.1.0/beta"),
+    ("directory", f"Apps/{COMPONENT.value}/schema2/0.1.0/alpha/"),
+])
+def test_pure_reference_rejects_tamper_without_mutation(pure_reference_guards, field, value):
+    from suite_core.discovery.component_staging import component_reference_from_release, validate_component_reference
+    release = reference_release(); ref = component_reference_from_release(release); ref[field] = value
+    before = dict(ref)
+    with pytest.raises(ValueError): validate_component_reference(ref, COMPONENT, release=release)
+    assert ref == before
+
+
+@pytest.mark.parametrize("schema", [1, 2])
+def test_pure_reference_exact_keys_and_schema_separation(pure_reference_guards, schema):
+    from suite_core.discovery.component_staging import component_reference_from_release, validate_component_reference
+    release = reference_release(schema=schema); ref = component_reference_from_release(release)
+    for key in ref:
+        changed = dict(ref); changed.pop(key)
+        with pytest.raises(ValueError): validate_component_reference(changed, COMPONENT, release=release)
+    for key, value in [("unknown", None), ("maturity", "alpha"), ("schema_version", 2)]:
+        if key not in ref:
+            with pytest.raises(ValueError): validate_component_reference(dict(ref, **{key:value}), COMPONENT, release=release)
+    opposite = component_reference_from_release(reference_release(schema=3-schema))
+    with pytest.raises(ValueError): validate_component_reference(opposite, COMPONENT, release=release)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("schema_version", True), ("schema_version", 3), ("component_id", "collectigen.suite-manager"),
+    ("software_version", "../bad"), ("software_version", "01.1.0"), ("software_version", "0.1.0-alpha.1"),
+    ("maturity", "Alpha"), ("maturity", None), ("maturity", True),
+    ("manifest_sha256", "A"*64), ("manifest_sha256", "bad"), ("manifest_sha256", None),
+    ("channel", "stable"), ("os", "other"), ("architecture", "other"), ("artifact", None),
+])
+def test_pure_reference_rejects_inconsistent_dto(pure_reference_guards, field, value):
+    from dataclasses import replace
+    from suite_core.discovery.component_staging import component_reference_from_release
+    with pytest.raises(ValueError): component_reference_from_release(replace(reference_release(), **{field:value}))
+
+
+@pytest.mark.parametrize("field,value", [("portable_manifest_sha256", "A"*64), ("portable_manifest_sha256", ""), ("kind", "other")])
+def test_pure_reference_rejects_bad_artifact_identity(pure_reference_guards, field, value):
+    from dataclasses import replace
+    from suite_core.discovery.component_staging import component_reference_from_release
+    release = reference_release()
+    with pytest.raises(ValueError): component_reference_from_release(replace(release, artifact=replace(release.artifact, **{field:value})))
+
+
+def test_pure_reference_requires_exact_typed_inputs(pure_reference_guards):
+    from suite_core.discovery.component_staging import component_reference_from_release, validate_component_reference
+    release = reference_release(); ref = component_reference_from_release(release)
+    for value in (None, {}, release.__dict__):
+        with pytest.raises(ValueError): component_reference_from_release(value)
+    with pytest.raises(ValueError): validate_component_reference(ref, COMPONENT.value, release=release)
+    with pytest.raises(ValueError): validate_component_reference(ref, ComponentId("collectigen.other"), release=release)
+    for value in (None, [], list(ref.items())):
+        with pytest.raises(ValueError): validate_component_reference(value, COMPONENT, release=release)
+
+
+def test_legacy_staging_still_refuses_new_reference(tmp_path):
+    from suite_core.discovery.component_staging import payload, component_reference_from_release
+    ref = component_reference_from_release(reference_release())
+    with pytest.raises(ValueError, match="reference_schema"):
+        payload(tmp_path, ref, COMPONENT)
+    assert list(tmp_path.iterdir()) == []

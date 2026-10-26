@@ -16,9 +16,10 @@ import stat
 from uuid import uuid4
 import zipfile
 
-from release_contract import safe_zip_members, sha256_file, verify_artifact, verify_release_manifest, ensure_supported_upgrade
+from core.component_release_identity import ComponentReleaseIdentity
+from release_contract import ReleaseArtifact, safe_zip_members, sha256_file, verify_artifact, verify_release_manifest, ensure_supported_upgrade
 from suite_core.installation import ComponentId, _relative, _path
-from .component_release_signature import verify_component_release, _json, _version, MAX_METADATA_BYTES, inventory_json
+from .component_release_signature import VerifiedComponentRelease, verify_component_release, _json, _version, MAX_METADATA_BYTES, inventory_json
 
 from .component_payload_policy import require_payload_policy, payload_relative
 
@@ -35,6 +36,68 @@ class StagingHold(ValueError):
 def require(ok, reason):
     if not ok:
         raise StagingHold(reason)
+
+
+
+def _reference_digest(value):
+    require(type(value) is str and len(value) == 64
+            and all(c in "0123456789abcdef" for c in value), "reference_digest")
+    return value
+
+
+def component_reference_from_release(release):
+    """Pure reference construction from an independently verified release DTO.
+
+    This validates identity consistency, not signature provenance or admission.
+    No production caller is wired here; original journal/owner validation remains
+    mandatory. Legacy references retain their exact four-key wire shape.
+    """
+    require(type(release) is VerifiedComponentRelease, "verified_release_dto_required")
+    require(type(release.component_id) is ComponentId, "reference_component")
+    require(type(release.schema_version) is int and release.schema_version in (1, 2),
+            "reference_release_schema")
+    require(type(release.software_version) is str, "reference_version")
+    _version(release.software_version)
+    require(type(release.os) is str and release.os in ("windows", "linux")
+            and type(release.architecture) is str and release.architecture in ("x86_64", "aarch64"),
+            "reference_release_platform")
+    require(type(release.artifact) is ReleaseArtifact and release.artifact.kind == "component-package",
+            "reference_component_artifact")
+    inventory = _reference_digest(release.artifact.portable_manifest_sha256)
+    digest = _reference_digest(release.manifest_sha256)
+    component, version = release.component_id.value, release.software_version
+    if release.schema_version == 1:
+        require(release.maturity is None, "legacy_reference_has_no_maturity")
+        channel = "beta" if "-" in version else "stable"
+        directory = f"Apps/{component}/{version}"
+        reference = dict(component_id=component, version=version,
+                         directory=directory, inventory_sha256=inventory)
+    else:
+        identity = ComponentReleaseIdentity(version, release.maturity)
+        channel = "stable" if identity.maturity == "stable" else "beta"
+        directory = f"Apps/{component}/schema2/{version}/{identity.maturity}"
+        reference = dict(schema_version=2, release_schema=2, component_id=component,
+                         version=version, maturity=identity.maturity, directory=directory,
+                         inventory_sha256=inventory, release_sha256=digest)
+    require(type(release.channel) is str and release.channel == channel, "reference_release_channel")
+    _relative(directory)
+    return reference
+
+
+def validate_component_reference(reference, component, *, release):
+    """Bind an exact serialized reference to the supplied verified release DTO.
+
+    Return a fresh canonical mapping; never mutate caller data or inspect a path.
+    A fabricated DTO is not a signature or original-host ownership capability.
+    """
+    require(type(component) is ComponentId, "reference_component")
+    expected = component_reference_from_release(release)
+    require(release.component_id == component, "reference_component_binding")
+    require(type(reference) is dict and set(reference) == set(expected), "reference_schema")
+    require(all(type(reference[key]) is type(value) for key, value in expected.items()),
+            "reference_field_type")
+    require(reference == expected, "reference_signed_identity_binding")
+    return expected
 
 
 def guard(path):

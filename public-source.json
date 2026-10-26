@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1020,
+  "allowlisted_source_file_count": 1021,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1953,6 +1953,10 @@
       "sha256": "f0449239bc230c1af2325631492ea5a5aa567496b1bbb99317de77a5daebce12",
       "size_bytes": 3708
     },
+    "docs/COMPONENT_INSTALLED_REFERENCES.md": {
+      "sha256": "f69855b113d4782f18ea777c09b7b2439ac2ee9034548e0643367d6253264579",
+      "size_bytes": 2524
+    },
     "docs/COMPONENT_MATURITY_ADMISSION.md": {
       "sha256": "4c871193ea28eb68d0f5c41d10ec2baac9663d8532255b3c586bfcee8a957c12",
       "size_bytes": 2761
@@ -2878,8 +2882,8 @@
       "size_bytes": 10371
     },
     "suite_core/discovery/component_staging.py": {
-      "sha256": "a44871d5c9bf079b40b67409d01199055afa0ed4dd92bd54622c4cdafbb4f170",
-      "size_bytes": 31566
+      "sha256": "403889de8108bcf2ec16c846d0945a2c42ff1204452b5b4b3fba8d36b00cfc77",
+      "size_bytes": 35100
     },
     "suite_core/discovery/github_component_releases.py": {
       "sha256": "783ab446660129e96c30cf7c9a68ab05ec3da7b7b0a56b8832447bd694530291",
@@ -3546,8 +3550,8 @@
       "size_bytes": 15428
     },
     "suite_core/tests/test_component_staging.py": {
-      "sha256": "37b16f2c7f512c4ec01a9a77cf84d56323f55fd0a9b3c275668011b264dc4668",
-      "size_bytes": 13769
+      "sha256": "ef3156f8c0cf6092dd16c848ee01238dee85ef0166cbbe7dd9f42ea6cc01c708",
+      "size_bytes": 21973
     },
     "suite_core/tests/test_dependency_status_ui.py": {
       "sha256": "102a48650fb151ef51bec00c7693e868cd95712ebe6e1e221f319ab79ebdb408",
@@ -3978,8 +3982,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "07f4b54f4125eb964727aa3cc3c189e3edcf29a89c92ccc5a9cf0d374671ff43",
-      "size_bytes": 41958
+      "sha256": "eae727bac73280fb723459a8b80ecb4693fe835b1dab5efc29df773dabb3d6fe",
+      "size_bytes": 42004
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",
