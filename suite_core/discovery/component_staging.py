@@ -16,8 +16,8 @@ import stat
 from uuid import uuid4
 import zipfile
 
-from core.component_release_identity import ComponentReleaseIdentity
-from release_contract import SemVer, ReleaseArtifact, safe_zip_members, sha256_file, verify_artifact, verify_release_manifest, ensure_supported_upgrade
+from core.component_release_identity import ComponentReleaseIdentity, require_component_maturity_upgrade
+from release_contract import ReleaseContractError, ReleaseArtifact, safe_zip_members, sha256_file, verify_artifact, verify_release_manifest, ensure_supported_upgrade
 from suite_core.installation import ComponentId, _relative, _path
 from .component_release_signature import VerifiedComponentRelease, verify_component_release, _json, _version, MAX_METADATA_BYTES, inventory_json
 
@@ -389,15 +389,14 @@ def _transaction_active(root, base, component, owner, trust_bytes, journal, plat
 def _require_stage_upgrade(before, release, manifest_bytes):
     if before is None:
         return
-    target = ComponentReleaseIdentity(release.software_version, release.maturity)
-    if before.get("schema_version") == 2:
-        require(target.compare(ComponentReleaseIdentity(before["version"], before["maturity"])) > 0,
-                "newer_component_identity_required")
-    else:
-        require(SemVer.parse(release.software_version).compare(_version(before["version"])) > 0,
-                "newer_component_identity_required")
-    floor = _version(_json(manifest_bytes, "component release")["supported_from"])
-    require(_version(before["version"]).compare(floor) >= 0, "supported_component_floor")
+    try:
+        require_component_maturity_upgrade(before["version"],
+            ComponentReleaseIdentity(release.software_version, release.maturity),
+            current_schema=2 if before.get("schema_version") == 2 else 1,
+            current_maturity=before.get("maturity"),
+            supported_from=_json(manifest_bytes, "component release")["supported_from"])
+    except ReleaseContractError as error:
+        raise StagingHold(str(error)) from error
 
 
 def stage_and_activate(root, archive_path, *, component, version, os_name, architecture,

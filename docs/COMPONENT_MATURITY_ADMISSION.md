@@ -39,3 +39,16 @@ execution, packaged functionality, migration or an actual rollback pair. Recover
 for this patch is a scoped source revert to its accepted parent; it never restores
 user catalog/Data bytes. Existing repository licensing applies; no dependency or
 new notice is bundled. No new runnable application checkpoint is delivered.
+
+## Schema2 staging floor alignment (F)
+
+The explicit schema2 transaction path now calls the same
+require_component_maturity_upgrade helper after signed target/current admission.
+Numeric supported_from includes legacy prereleases at that number, while a
+legacy-to-schema2 transition still requires a strictly higher numeric target.
+Below-floor, equal/downgrade and unsupported same-base transitions remain held.
+Schema1 continues through its unchanged SemVer/ensure_supported_upgrade branch.
+Canonical failures retain StagingHold with the original helper cause; no separate
+ordering/floor implementation remains in staging. Source checks retain real fixture
+signatures, immutable prior journal recovery and synthetic Data sentinels; they
+do not qualify actual native, binary rollback, profile or package execution.

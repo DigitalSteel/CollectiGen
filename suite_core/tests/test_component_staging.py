@@ -579,11 +579,40 @@ def test_explicit_stage_later_numeric_success_and_signed_floor(tmp_path):
     settle_stage(root,health_verified=True)
     pkg=list(stage_fixture_package(tmp_path,"alpha","0.2.0"));m=json.loads(pkg[1]);m["supported_from"]="0.1.1"
     pkg[1]=raw(m);pkg[2]=sign(pkg[1])
-    with pytest.raises(ValueError,match="supported_component_floor"):
+    with pytest.raises(ValueError,match="supported numeric floor"):
         stage_fixture(root,before,pkg,version="0.2.0")
     target=stage_fixture(root,before,stage_fixture_package(tmp_path,"alpha","0.2.0"),version="0.2.0")
     assert settle_stage(root,health_verified=True)==target
     assert settle_stage(root,rollback_approved=True)==before
+
+
+@pytest.mark.parametrize('legacy_version,target_version,floor,accepted',[
+    ('0.1.0-alpha.8','0.2.0','0.1.0',True),
+    ('0.1.0-beta.1','0.2.0','0.1.0',True),
+    ('0.1.0','0.2.0','0.1.0',True),
+    ('0.0.9','0.2.0','0.1.0',False),
+    ('0.1.0-alpha.8','0.1.0','0.0.0',False),
+    ('0.1.0','0.1.0','0.0.0',False),
+])
+def test_schema2_numeric_floor_and_legacy_boundary_are_shared(tmp_path,legacy_version,target_version,floor,accepted):
+    legacy_stage='alpha' if '-' in legacy_version else 'stable'
+    root=empty_stage_root(tmp_path);saved=data_hash(root)
+    prior=stage_fixture(root,None,stage_fixture_package(tmp_path,legacy_stage,legacy_version,1),
+        stage=legacy_stage,version=legacy_version,schema=1)
+    finish_or_recover(root,component=COMPONENT,trust_bytes=TRUST,health_verified=True)
+    base=root/'State'/COMPONENT.value;before=(base/'transaction.json').read_bytes()
+    pkg=list(stage_fixture_package(tmp_path,'alpha',target_version))
+    manifest=json.loads(pkg[1]);manifest['supported_from']=floor;pkg[1]=raw(manifest);pkg[2]=sign(pkg[1])
+    if accepted:
+        target=stage_fixture(root,prior,pkg,version=target_version)
+        assert target['release_schema']==2 and target['maturity']=='alpha'
+        assert settle_stage(root,health_verified=True)==target
+        assert settle_stage(root,rollback_approved=True)==prior
+        assert (base/'transaction.json').read_bytes()==before
+    else:
+        with pytest.raises(ValueError):stage_fixture(root,prior,pkg,version=target_version)
+        assert read_active(root)==prior and (base/'transaction.json').read_bytes()==before
+    assert data_hash(root)==saved
 
 
 @pytest.mark.parametrize("lose_owner",[False,True])

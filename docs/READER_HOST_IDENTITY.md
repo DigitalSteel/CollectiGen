@@ -169,9 +169,11 @@ cache retention, saved publication retry and original recovery. Host crypto/proc
 and HTTP delivery are injected where declared; separate acquisition tests use real
 fixture signatures. These are source/component results, not native/UI/package proof.
 
-The existing stager still refuses a legacy prerelease exactly on a numeric floor
-that metadata ordering admits; the explicit supported_component_floor refusal is
-retained under follow-up F. This patch changes no staging-floor rule and does not
-claim every displayed metadata offer is installable. Actual signed production
+Schema2 staging now reuses the same canonical numeric-floor/maturity upgrade gate
+as metadata admission. A legacy prerelease at that numeric floor is included when
+the target has a higher numeric version; below-floor, equal/downgrade and legacy
+same-number transitions refuse. Schema1 retains its original SemVer branch.
+StagingHold wraps the canonical cause; authenticated prior custody, artifact/Data
+checks and original recovery remain independent. Actual signed production
 artifacts/CDN/rollback, compiled root/profile/toolchain, real visible/saved/native/
 package acceptance remain open. No runnable application version is claimed.

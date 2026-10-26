@@ -984,11 +984,12 @@ def test_original_handoff_same_number_maturity_survives_publication(standalone):
 
 
 @pytest.mark.parametrize('standalone',[True],indirect=True)
-def test_original_handoff_retains_stricter_legacy_prerelease_floor_hold(standalone):
-    f,boot,_=standalone;boot.owner.begin_standalone_custody(boot.subject)
+def test_original_handoff_accepts_legacy_prerelease_at_numeric_floor(standalone):
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
     request=schema2_metadata_request(f,boot,floor='0.1.0')
-    before=boot.binding.current(),f.settings.read_bytes(),f.sentinel.read_bytes()
-    with pytest.raises(ValueError,match='supported_component_floor'):
-        boot.apply_confirmed_metadata(request)
-    assert (boot.binding.current(),f.settings.read_bytes(),f.sentinel.read_bytes())==before
-    assert boot.request is None
+    before=f.sentinel.read_bytes()
+    result=boot.apply_confirmed_metadata(request)
+    assert result.connection_saved and result.installed.selected.release_schema==2
+    assert result.installed.selected.maturity=='alpha' and f.sentinel.read_bytes()==before
+    launch_close(boot,actors)
+    assert boot.finish_target_health(request).phase=='healthy' and boot.request is None
