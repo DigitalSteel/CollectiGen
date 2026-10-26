@@ -234,6 +234,37 @@ class NativeTagCatalogAdapter:
             self.validate()
             return self.native.import_knowledge_pack(self.root, pack, plan=plan)
 
+    def review_completed_import(self, receipt):
+        """Review one explicitly supplied enrolled user import; never discover data."""
+        with self.guard():
+            state = self._state()
+            if not state.enrolled:
+                raise NativeTagHostHold("Completed import requires the selected enrolled catalog")
+            return self.native.review_completed_knowledge_pack_import(self.root, receipt,
+                catalog_identity_binding=self.identity_binding)
+
+    def undo_completed_import(self, review):
+        with self.guard():
+            self._state()
+            if review.catalog_identity_binding != self.identity_binding:
+                raise NativeTagHostHold("Completed review belongs to another selected catalog")
+            return self.native.undo_completed_knowledge_pack_import(self.root, review)
+
+    def observe_completed_inverse(self, receipt):
+        """Validate a selected durable B1 receipt without executing recovery."""
+        with self.guard():
+            self._state()
+            admission = import_module(self.package + ".catalog_admission")
+            with admission.selected_completed_pack_inverse(self.root, self.native,
+                    binding=self.identity_binding, receipt=receipt):
+                return self.native._read_pack_receipt(Path(receipt), self.root)[1][-1]
+
+    def recover_completed_inverse(self, receipt):
+        with self.guard():
+            self._state()
+            return self.native.recover_completed_knowledge_pack_inverse(self.root, receipt,
+                catalog_identity_binding=self.identity_binding)
+
     def recover(self, receipt):
         """Recover one exact selected legacy or identity-bound enrolled import.
 

@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1008,
+  "allowlisted_source_file_count": 1010,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -3026,8 +3026,8 @@
       "size_bytes": 17416
     },
     "suite_core/knowledge/native_tag_catalog_host.py": {
-      "sha256": "ce228e586e73d4044c72ef1aa59afb3e65b897e7e0e4a78f7c49cc4e5832374f",
-      "size_bytes": 18907
+      "sha256": "1886275c69d80dafa3953ee0e1ddd6482bc39d97178d3e281ec8b71e47a77bf2",
+      "size_bytes": 20538
     },
     "suite_core/knowledge/pack_container.py": {
       "sha256": "45e58cdaf5bc38e24d78a818f48fc4c9490424934feb7f62202565423c5130a6",
@@ -3334,8 +3334,8 @@
       "size_bytes": 15678
     },
     "suite_core/manager/tag_database_controller.py": {
-      "sha256": "ea9b50468164cc04d18714b12dae8cda31fcc717940b825badc89bdecd58747a",
-      "size_bytes": 35219
+      "sha256": "5d8bc1851696a7df57b09de51ef8c0e62e76e00a8b1587f7f8649875329cc080",
+      "size_bytes": 45391
     },
     "suite_core/manager/tag_database_ui.py": {
       "sha256": "80b6d4dd323ac6b3833f97d0032984a3a92fbf8dbfcc005905db2244a405bbe7",
@@ -3673,6 +3673,10 @@
       "sha256": "08a16ceb4ae9fccc521565cb5d5cc303a664aef56ab3fe23116952df14ba731e",
       "size_bytes": 18066
     },
+    "suite_core/tests/test_tag_database_epoch.py": {
+      "sha256": "bf668cb142dde6d7acdb89802a11b0e7989d26a87f0f019e32491e3a91203abc",
+      "size_bytes": 2023
+    },
     "suite_core/version.py": {
       "sha256": "2235cee9c44d591ec185ba44b85acef2c8be3ba0a8305c7b0762bf603db9b847",
       "size_bytes": 190
@@ -3680,6 +3684,10 @@
     "tests/organizer_synthetic_shell.py": {
       "sha256": "7977ec35989f93f2bf6c1b26d78816f257213776c3920f5e07f3a3b646597162",
       "size_bytes": 3827
+    },
+    "tests/test_completed_pack_host.py": {
+      "sha256": "b4e3181b8e097a694a3a54985c692b9c1ad218f35240d2a84fef4c59a23c2a4d",
+      "size_bytes": 15986
     },
     "tests/test_completed_pack_inverse.py": {
       "sha256": "fdefb87d72b539f817cff0b36b8d96dc264d81399596ab4d64f43b442a4cd64c",
@@ -3934,8 +3942,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "86933852e1cd4396ef9c2c72545eefbad82be6b9c0d5aa4a139b3010e87073a7",
-      "size_bytes": 41381
+      "sha256": "29fd7af5d00a486b09961f22958d35ed11dfd02e5aa5037808b68fd193636f83",
+      "size_bytes": 41473
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",

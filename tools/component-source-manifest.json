@@ -5,6 +5,8 @@
     "collectigen.suite-manager"
   ],
   "files": [
+    "tests/test_completed_pack_host.py",
+    "suite_core/tests/test_tag_database_epoch.py",
     "tests/test_completed_pack_inverse.py",
     "tests/test_completed_pack_review.py",
     "suite_core/tests/protected_review_ui_fixture.py",
