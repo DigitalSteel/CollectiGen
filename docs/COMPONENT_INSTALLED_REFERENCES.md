@@ -36,6 +36,7 @@ uses the existing relative-path validator without resolving or reading a path.
 No helper checks whether a directory exists, authenticates a saved connection,
 settles a journal or launches a process. The existing immutable destination guard
 and independently signed prior-history recovery remain mandatory at integration.
-Journal3 is available only through explicit backend opt-in. Connection2 and
-original-host freshness adapters remain future host integration work. No runnable app or schema migration is
+Journal3 is available only through explicit backend opt-in. Saved connection2 persistence is described in
+[Reader selection identity](READER_SELECTION_IDENTITY.md); original-host freshness
+and signed-state binding remain future host integration work. No runnable app or schema migration is
 published by this source contract; existing licensing applies.

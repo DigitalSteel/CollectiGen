@@ -138,3 +138,119 @@ def test_health_requires_original_visible_normal_exit_and_drain(tmp_path,monkeyp
     selected.program.write_bytes(b'changed after drain')
     if accepted:
         with pytest.raises(ValueError):owner.native_health(selected)
+
+
+def stage_selection(root, maturity="alpha"):
+    from dataclasses import replace
+    package(root)
+    path=root/"BOOTSTRAP_INVENTORY.json";value=json.loads(path.read_bytes())
+    value["software_version"]="0.1.0";path.write_text(json.dumps(value),encoding="utf-8")
+    legacy=review_directory(root)
+    return replace(legacy,release_schema=2,maturity=maturity,release_sha256="c"*64)
+
+
+@pytest.mark.parametrize("maturity",["alpha","beta","stable"])
+def test_stage_selection_saved_readback_and_reopened_identity(tmp_path,maturity):
+    selected=stage_selection(tmp_path/"package",maturity);path=tmp_path/"settings.json"
+    path.write_text(json.dumps({"future":{"keep":[1,2]}}),encoding="utf-8")
+    store=ReaderConnectionStore(path);saved=store.save(selected,expected=store.observe())
+    assert store.selected(saved)==selected
+    assert ReaderConnectionStore(path).selected(ReaderConnectionStore(path).observe())==selected
+    assert saved._payload["future"]=={"keep":[1,2]}
+    assert saved._payload[KEY]=={"schema_version":2,"release_schema":2,"directory":str(selected.directory),
+        "inventory_sha256":selected.inventory_sha256,"version":"0.1.0","maturity":maturity,"release_sha256":"c"*64}
+    assert review_directory(selected.directory,expected=selected)==selected
+    # The same inventory, without explicit expectation, does not establish stage.
+    assert review_directory(selected.directory).release_schema==1
+
+
+def test_stage_selection_maturity_is_part_of_equality_and_stale_guard(tmp_path):
+    from dataclasses import replace
+    selected=stage_selection(tmp_path/"package");store=ReaderConnectionStore(tmp_path/"settings.json")
+    saved=store.save(selected,expected=store.observe());promoted=replace(selected,maturity="beta",release_sha256="d"*64)
+    assert promoted!=selected
+    next_saved=store.save(promoted,expected=saved)
+    assert store.selected(next_saved)==promoted
+    with pytest.raises(EncyclopediaHold,match="Settings changed"):
+        store.save(selected,expected=saved)
+    assert store.selected(store.observe())==promoted
+
+
+@pytest.mark.parametrize("field,value",[("schema_version",True),("schema_version",3),("release_schema",True),
+    ("release_schema",1),("maturity",None),("maturity","Alpha"),("maturity",1),
+    ("version","0.1.0-alpha.1"),("version","01.1.0"),("inventory_sha256","A"*64),
+    ("inventory_sha256",None),("release_sha256","C"*64),("release_sha256",""),
+    ("directory","relative/package"),("directory",None)])
+def test_saved_stage_selection_rejects_malformed_identity(tmp_path,field,value):
+    selected=stage_selection(tmp_path/"package");row=selected.mapping();row[field]=value
+    path=tmp_path/"settings.json";path.write_text(json.dumps({KEY:row}),encoding="utf-8")
+    store=ReaderConnectionStore(path);before=path.read_bytes()
+    with pytest.raises(ValueError):store.selected(store.observe())
+    assert path.read_bytes()==before
+
+
+def test_saved_stage_selection_exact_fields_and_no_silent_unknown_pruning(tmp_path):
+    selected=stage_selection(tmp_path/"package");path=tmp_path/"settings.json";row=selected.mapping()
+    for key in row:
+        invalid=dict(row);invalid.pop(key);path.write_text(json.dumps({KEY:invalid}),encoding="utf-8")
+        store=ReaderConnectionStore(path)
+        with pytest.raises(ValueError):store.selected(store.observe())
+    invalid=dict(row,future_correction={"keep":7});path.write_text(json.dumps({KEY:invalid}),encoding="utf-8")
+    store=ReaderConnectionStore(path);before=path.read_bytes()
+    with pytest.raises(ValueError):store.save(selected,expected=store.observe())
+    assert path.read_bytes()==before
+
+
+def test_legacy_unknown_selection_fields_hold_format_promotion(tmp_path):
+    selected=stage_selection(tmp_path/"package");legacy=review_directory(selected.directory)
+    path=tmp_path/"settings.json";path.write_text(json.dumps({KEY:{**legacy.mapping(),"future_correction":7}}),encoding="utf-8")
+    store=ReaderConnectionStore(path);before=path.read_bytes()
+    with pytest.raises(EncyclopediaHold,match="Unknown saved reader fields"):
+        store.save(selected,expected=store.observe())
+    assert path.read_bytes()==before
+
+
+def test_explicit_stage_to_legacy_selection_retires_only_known_identity_fields(tmp_path):
+    selected=stage_selection(tmp_path/"package");path=tmp_path/"settings.json"
+    path.write_text(json.dumps({"future":{"keep":7}}),encoding="utf-8")
+    store=ReaderConnectionStore(path);saved=store.save(selected,expected=store.observe())
+    legacy=review_directory(selected.directory);restored=store.save(legacy,expected=saved)
+    assert restored._payload[KEY]==legacy.mapping() and restored._payload["future"]=={"keep":7}
+    assert store.selected(restored)==legacy
+    assert store.clear(expected=restored)._payload.get(KEY) is None
+
+
+def test_stage_helper_context_cannot_silently_drop_signed_stage_identity(tmp_path):
+    from core.encyclopedia_connection import RootReaderSelection
+    root=tmp_path/"root";selected=stage_selection(root/"package");path=root/"Data/settings.json"
+    path.parent.mkdir(parents=True);store=ReaderConnectionStore(path);store.save(selected,expected=store.observe())
+    selection=RootReaderSelection(root,path,selected)
+    with pytest.raises(EncyclopediaHold,match="awaits original-host integration"):
+        selection.context()
+
+
+@pytest.mark.parametrize("changes",[{"release_schema":True},{"release_schema":3},{"release_schema":1},
+    {"directory":Path("relative")},{"directory":Path("C:/one/../two")},
+    {"maturity":"a"},{"release_sha256":None},{"inventory_sha256":"bad"}])
+def test_stage_selection_constructor_refuses_partial_or_aliased_identity(tmp_path,changes):
+    from dataclasses import replace
+    selected=stage_selection(tmp_path/"package")
+    with pytest.raises(ValueError):replace(selected,**changes)
+
+
+def test_stage_selection_inventory_drift_cannot_save_or_update_expected_identity(tmp_path):
+    selected=stage_selection(tmp_path/"package");path=tmp_path/"settings.json";store=ReaderConnectionStore(path)
+    saved=store.save(selected,expected=store.observe());before=path.read_bytes()
+    inventory=selected.directory/"BOOTSTRAP_INVENTORY.json";value=json.loads(inventory.read_bytes())
+    value["software_version"]="0.2.0";inventory.write_text(json.dumps(value),encoding="utf-8")
+    with pytest.raises(ValueError):store.save(selected,expected=saved)
+    assert path.read_bytes()==before
+
+
+@pytest.mark.parametrize("bad",[[],[1],"unknown",{"schema_version":3}])
+def test_stage_save_refuses_malformed_previous_selection_without_writes(tmp_path,bad):
+    selected=stage_selection(tmp_path/"package");path=tmp_path/"settings.json"
+    path.write_text(json.dumps({KEY:bad}),encoding="utf-8");before=path.read_bytes();store=ReaderConnectionStore(path)
+    # Empty lists are malformed too, even though Python treats them as false.
+    with pytest.raises(ValueError):store.save(selected,expected=store.observe())
+    assert path.read_bytes()==before

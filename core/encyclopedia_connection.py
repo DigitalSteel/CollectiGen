@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 
+from core.component_release_identity import ComponentReleaseIdentity
 from core.backend_connection_settings import BackendConnectionSettings, MAX_SETTINGS_BYTES
 from core.settings import AppSettings, _settings_writer
 from suite_core.discovery.component_staging import verify_directory, guard
@@ -32,14 +33,37 @@ class ReaderConnection:
     directory: Path
     inventory_sha256: str
     version: str
+    release_schema: int = 1
+    maturity: str | None = None
+    release_sha256: str | None = None
+
+    def __post_init__(self):
+        if type(self.release_schema) is not int or self.release_schema not in (1, 2):
+            raise EncyclopediaHold("The reader release schema is unavailable.")
+        if self.release_schema == 1:
+            if self.maturity is not None or self.release_sha256 is not None:
+                raise EncyclopediaHold("Legacy reader selections have no separate stage identity.")
+            return
+        ComponentReleaseIdentity(self.version, self.maturity)
+        if (not isinstance(self.directory, Path) or not self.directory.is_absolute()
+                or ".." in self.directory.parts or "\0" in str(self.directory) or len(str(self.directory)) > 4096
+                or str(self.directory).startswith(("//", "\\\\"))
+                or any(type(value) is not str or len(value) != 64
+                       or any(c not in "0123456789abcdef" for c in value)
+                       for value in (self.inventory_sha256, self.release_sha256))):
+            raise EncyclopediaHold("The reader selection identity is incomplete.")
 
     @property
     def program(self):
         return self.directory / "TagEncyclopedia/TagEncyclopedia.exe"
 
     def mapping(self):
-        return {"schema_version": 1, "directory": str(self.directory),
-                "inventory_sha256": self.inventory_sha256, "version": self.version}
+        result = {"schema_version": 1, "directory": str(self.directory),
+                  "inventory_sha256": self.inventory_sha256, "version": self.version}
+        if self.release_schema == 2:
+            result.update(schema_version=2, release_schema=2, maturity=self.maturity,
+                          release_sha256=self.release_sha256)
+        return result
 
 
 def review_directory(directory, *, expected=None):
@@ -55,6 +79,11 @@ def review_directory(directory, *, expected=None):
     digest = hashlib.sha256(raw).hexdigest()
     profile = _json(raw, "component inventory")
     selected = ReaderConnection(directory, digest, profile.get("software_version"))
+    # Preserve an explicit expected identity; inventory bytes never establish stage
+    # or publisher provenance. Original signed-journal admission remains external.
+    if type(expected) is ReaderConnection and expected.release_schema == 2:
+        selected = ReaderConnection(directory, digest, profile.get("software_version"),
+                                    2, expected.maturity, expected.release_sha256)
     if expected is not None and selected != expected:
         raise EncyclopediaHold("The connected package changed. Review and save it again.")
     profile = verify_directory(directory, digest, COMPONENT, selected.version)
@@ -76,10 +105,20 @@ class ReaderConnectionStore:
         row = snapshot._payload.get(KEY)
         if row is None:
             return None
-        if (type(row) is not dict or row.get("schema_version") != 1
+        if (type(row) is not dict or type(row.get("schema_version")) is not int
+                or row["schema_version"] not in (1, 2)
                 or any(type(row.get(k)) is not str for k in ("directory", "inventory_sha256", "version"))):
             raise EncyclopediaHold("The saved reader connection is unavailable. Review a package again.")
-        return ReaderConnection(Path(row["directory"]), row["inventory_sha256"], row["version"])
+        if row["schema_version"] == 1:
+            return ReaderConnection(Path(row["directory"]), row["inventory_sha256"], row["version"])
+        required = {"schema_version", "directory", "inventory_sha256", "version",
+                    "release_schema", "maturity", "release_sha256"}
+        if (set(row) != required or type(row["release_schema"]) is not int
+                or row["release_schema"] != 2):
+            raise EncyclopediaHold("The saved reader identity is unsupported. Review its original owner.")
+        return ReaderConnection(Path(row["directory"]), row["inventory_sha256"], row["version"],
+                                2, row["maturity"], row["release_sha256"])
+
 
     def save(self, selected, *, expected):
         selected = review_directory(selected.directory, expected=selected)
@@ -88,8 +127,21 @@ class ReaderConnectionStore:
             if current.digest != expected.digest:
                 raise EncyclopediaHold("Settings changed. Reload the connection before saving.")
             payload = deepcopy(current._payload)
-            previous = payload.get(KEY) or {}
-            payload[KEY] = {**previous, **selected.mapping()}
+            previous = payload.get(KEY)
+            if selected.release_schema == 2 and previous is not None:
+                self.selected(current)
+            previous = previous or {}
+            if selected.release_schema == 2:
+                # Do not prune unknown legacy corrections while crossing formats.
+                legacy_keys = {"schema_version", "directory", "inventory_sha256", "version"}
+                if previous and previous.get("schema_version") == 1 and set(previous) - legacy_keys:
+                    raise EncyclopediaHold("Unknown saved reader fields require review before changing formats.")
+                payload[KEY] = selected.mapping()
+            elif previous.get("schema_version") == 2:
+                self.selected(current)  # only known new-format identity fields may be retired
+                payload[KEY] = selected.mapping()
+            else:
+                payload[KEY] = {**previous, **selected.mapping()}
             raw = (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
             if len(raw) > MAX_SETTINGS_BYTES:
                 raise EncyclopediaHold("Settings exceed their supported size.")
@@ -125,6 +177,8 @@ class RootReaderSelection:
 
     def context(self):
         self.validate()
+        if self.selected.release_schema == 2:
+            raise EncyclopediaHold("Stage-aware Reader helper identity awaits original-host integration.")
         return {"directory": str(self.selected.directory), "inventory_sha256": self.selected.inventory_sha256,
                 "version": self.selected.version, "program": str(self.selected.program),
                 "settings_path": str(self.settings_path)}

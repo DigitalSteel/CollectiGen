@@ -35,8 +35,10 @@ consistency, not provenance: callers must authenticate the original signed journ
 and root first. Same-number promotion uses ComponentReleaseIdentity ordering;
 numeric supported_from floors and schema regression hold remain explicit.
 
-No host saved connection, notification, original bootstrap, Manager settlement,
-acquisition transport or main updater is changed. Schema2 artifact acquire still
+Saved selection persistence is described separately in
+[Reader selection identity](READER_SELECTION_IDENTITY.md). Original-host snapshot,
+notification, bootstrap, Manager settlement, acquisition transport and main updater
+integration remain separate; no profile enables the new route. Schema2 artifact acquire still
 refuses before network/cache/transfer. Tests use inert archives/disposable signing
 keys and synthetic original-owner scopes; they are source evidence, not native
 health or real package qualification. Scoped source revert and retained exact
