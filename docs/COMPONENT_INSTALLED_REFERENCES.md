@@ -5,8 +5,8 @@
 existing component staging owner. The helpers remain pure; explicit schema2
 backend transactions now reuse them as described in
 [stage-aware recovery](COMPONENT_STAGE_IDENTITY_RECOVERY.md). Legacy defaults
-remain unchanged, and host saved-connection/notification consumers are not wired
-to the new format. Schema2 artifact acquisition remains unconditionally blocked.
+remain unchanged; explicit host binding is described below and no normal profile
+activates the new format. Schema2 artifact acquisition remains unconditionally blocked.
 
 Both helpers require an exact `VerifiedComponentRelease` DTO. Callers must obtain
 it by verifying the original manifest/signature with independently admitted trust
@@ -37,6 +37,7 @@ No helper checks whether a directory exists, authenticates a saved connection,
 settles a journal or launches a process. The existing immutable destination guard
 and independently signed prior-history recovery remain mandatory at integration.
 Journal3 is available only through explicit backend opt-in. Saved connection2 persistence is described in
-[Reader selection identity](READER_SELECTION_IDENTITY.md); original-host freshness
-and signed-state binding remain future host integration work. No runnable app or schema migration is
+[Reader selection identity](READER_SELECTION_IDENTITY.md); explicit
+[original-host binding](READER_HOST_IDENTITY.md) retains signed-state/current
+observation identity without enabling acquisition or compiled profiles. No runnable app or schema migration is
 published by this source contract; existing licensing applies.

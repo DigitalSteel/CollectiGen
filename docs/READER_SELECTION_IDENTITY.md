@@ -24,12 +24,12 @@ selection it returns the legacy inventory-only result, never an inferred stage.
 These DTOs and saved settings grant no publisher trust or installation authority;
 the future original-host adapter must compare independently signed journal state.
 
-RootReaderSelection.context explicitly holds schema2 until the original-host
-integration extends the existing Manager helper context with full identity. The
-legacy helper context is unchanged. No installer, snapshot/notification observer,
-Manager settlement, acquisition or profile is enabled by this persistence patch.
-Schema2 acquisition remains blocked. Saved-state fixture checks are source
-evidence, not native health, UI acceptance or package qualification.
+RootReaderSelection.context now retains the full selected identity through the
+existing strict Manager helper adapter; its inventory/manual selection authority
+is separate from publisher authentication. [Original-host identity](READER_HOST_IDENTITY.md)
+describes explicit signed-state binding and the remaining acquisition/activation
+holds. Legacy helper context remains exact. Fixture saved-state evidence does not
+establish native health, visible entry acceptance or package qualification.
 
 Existing licensing applies. Scoped source revert to the accepted preimages is
 code recovery; do not use it to relabel saved schema2 documents or overwrite Data.

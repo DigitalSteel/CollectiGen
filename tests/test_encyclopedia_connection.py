@@ -220,13 +220,15 @@ def test_explicit_stage_to_legacy_selection_retires_only_known_identity_fields(t
     assert store.clear(expected=restored)._payload.get(KEY) is None
 
 
-def test_stage_helper_context_cannot_silently_drop_signed_stage_identity(tmp_path):
+def test_stage_helper_context_preserves_selection_without_publisher_authority(tmp_path):
     from core.encyclopedia_connection import RootReaderSelection
     root=tmp_path/"root";selected=stage_selection(root/"package");path=root/"Data/settings.json"
     path.parent.mkdir(parents=True);store=ReaderConnectionStore(path);store.save(selected,expected=store.observe())
     selection=RootReaderSelection(root,path,selected)
-    with pytest.raises(EncyclopediaHold,match="awaits original-host integration"):
-        selection.context()
+    context=selection.context()
+    assert context == dict(directory=str(selected.directory),inventory_sha256=selected.inventory_sha256,
+        version=selected.version,program=str(selected.program),settings_path=str(path),
+        release_schema="2",maturity=selected.maturity,release_sha256=selected.release_sha256)
 
 
 @pytest.mark.parametrize("changes",[{"release_schema":True},{"release_schema":3},{"release_schema":1},
@@ -254,3 +256,28 @@ def test_stage_save_refuses_malformed_previous_selection_without_writes(tmp_path
     # Empty lists are malformed too, even though Python treats them as false.
     with pytest.raises(ValueError):store.save(selected,expected=store.observe())
     assert path.read_bytes()==before
+
+
+@pytest.mark.parametrize("change",[None,"schema","stage","digest","extra","missing"])
+def test_exact_manager_reader_context_shape_component_only(tmp_path,change):
+    from types import SimpleNamespace
+    from core.encyclopedia_connection import RootReaderSelection
+    from core.ollama_owned_windows import WindowsOwnedProcess
+    from suite_core.manager.bootstrap_entry import NormalEntrySession,EntryHelperAdapter
+    root=tmp_path/"root";selected=stage_selection(root/"package");path=root/"Data/settings.json";path.parent.mkdir(parents=True)
+    store=ReaderConnectionStore(path);store.save(selected,expected=store.observe())
+    context=RootReaderSelection(root,path,selected).context()
+    if change=="schema":context["release_schema"]="1"
+    if change=="stage":context["maturity"]="Alpha"
+    if change=="digest":context["release_sha256"]="C"*64
+    if change=="extra":context["future"]=1
+    if change=="missing":context.pop("maturity")
+    # Constructor/shape evidence only: no root lease, native process or entry proof.
+    session=object.__new__(NormalEntrySession);native=object.__new__(WindowsOwnedProcess)
+    session.binding=SimpleNamespace(owner_generation="fixture",channel_epoch="fixture")
+    session.wire=SimpleNamespace(proof=SimpleNamespace(binding_sha256="a"*64));session.helper_capabilities=[]
+    if change:
+        with pytest.raises(ValueError):EntryHelperAdapter(session,native,None,context,"a"*64,reader_context=True)
+    else:
+        adapter=EntryHelperAdapter(session,native,None,context,"a"*64,reader_context=True)
+        assert dict(adapter.reviewed)==context

@@ -65,7 +65,7 @@ def add_schema_package(f, version, contract=CONTRACT):
 
 
 @pytest.fixture
-def standalone(tmp_path, monkeypatch):
+def standalone(tmp_path, monkeypatch, request):
     synthetic_contract_vocabulary(monkeypatch)
     f = Fixture(tmp_path, monkeypatch)
     monkeypatch.setattr('core.encyclopedia_update_binding.verify_component_release', f.verify)
@@ -82,7 +82,8 @@ def standalone(tmp_path, monkeypatch):
         trust_sha256=sha256(f.trust).hexdigest(), max_artifact_bytes=staging.MAX_ARCHIVE)
     binding = admit_standalone_binding(root=f.root, data_root=f.data, settings_path=f.settings,
         bootstrap_sha256=sha256(bootstrap_program.read_bytes()).hexdigest(),
-        trust_bytes=f.trust, trust_sha256=sha256(f.trust).hexdigest())
+        trust_bytes=f.trust, trust_sha256=sha256(f.trust).hexdigest(),
+        schema2_identity=getattr(request,'param',False))
     owner = DeploymentOwner(f.root, data_root=f.data).acquire()
     actors = []
     monkeypatch.setattr('core.encyclopedia_connection._visible_reader_window', lambda _: True)
@@ -574,3 +575,24 @@ def test_compiled_factory_real_validator_refuses_untyped_profile_before_native(m
     with pytest.raises(ValueError, match="typed_explicit_compiled_profile_required"):
         bootstrap_entry.from_compiled_profile()
     assert calls == []
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+def test_original_identity_observation_tracks_current_settings_and_pending_request(standalone):
+    f,boot,actors=standalone
+    first=boot.update_observation();assert first.release_schema==1 and first.maturity is None
+    assert boot.installed_offer_context()==first.installed_context()
+    settings=json.loads(f.settings.read_bytes());settings['future_observation_field']=7;f.settings.write_text(json.dumps(settings))
+    second=boot.update_observation();assert second.identity!=first.identity
+    boot.owner.begin_standalone_custody(boot.subject)
+    request=confirm_next(f,boot)
+    assert boot.update_observation().pending and boot.installed_offer_context().pending
+    boot.cancel_update(request)
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+def test_opted_host_legacy_update_retains_original_native_settlement(standalone):
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    request=confirm_next(f,boot);result=boot.apply_confirmed(request)
+    assert result.installed.phase=='activated'
+    launch_close(boot,actors);assert boot.finish_target_health(request).phase=='healthy'

@@ -66,6 +66,38 @@ class ReaderConnection:
         return result
 
 
+def connection_from_reference(root, reference):
+    """Map an already authenticated reference; never grants provenance/ownership."""
+    from suite_core.discovery.component_staging import require
+    from suite_core.installation import _relative
+    from suite_core.discovery.component_release_signature import _version
+    root = Path(root)
+    require(root.is_absolute(), "reader_reference_root")
+    require(type(reference) is dict and reference.get("component_id") == COMPONENT.value,
+            "reader_reference_component")
+    _version(reference.get("version"))
+    _relative(reference.get("directory"))
+    if "schema_version" not in reference:
+        require(set(reference) == {"component_id", "version", "directory", "inventory_sha256"}, "reader_reference_schema")
+        require(reference["directory"] == f"Apps/{COMPONENT.value}/{reference['version']}", "reader_reference_path")
+        return ReaderConnection(Path(root) / reference["directory"], reference["inventory_sha256"], reference["version"])
+    require(set(reference) == {"schema_version", "release_schema", "component_id", "version", "maturity",
+                              "directory", "inventory_sha256", "release_sha256"}
+            and type(reference["schema_version"]) is int and reference["schema_version"] == 2
+            and type(reference["release_schema"]) is int and reference["release_schema"] == 2,
+            "reader_reference_schema")
+    selected = ReaderConnection(Path(root) / reference["directory"], reference["inventory_sha256"],
+        reference["version"], 2, reference["maturity"], reference["release_sha256"])
+    require(reference["directory"] == f"Apps/{COMPONENT.value}/schema2/{selected.version}/{selected.maturity}",
+            "reader_reference_path")
+    return selected
+
+
+def connection_from_release(root, release):
+    from suite_core.discovery.component_staging import component_reference_from_release
+    return connection_from_reference(root, component_reference_from_release(release))
+
+
 def review_directory(directory, *, expected=None):
     directory = Path(directory)
     if not directory.is_absolute():
@@ -177,11 +209,15 @@ class RootReaderSelection:
 
     def context(self):
         self.validate()
-        if self.selected.release_schema == 2:
-            raise EncyclopediaHold("Stage-aware Reader helper identity awaits original-host integration.")
-        return {"directory": str(self.selected.directory), "inventory_sha256": self.selected.inventory_sha256,
+        result = {"directory": str(self.selected.directory), "inventory_sha256": self.selected.inventory_sha256,
                 "version": self.selected.version, "program": str(self.selected.program),
                 "settings_path": str(self.settings_path)}
+        if self.selected.release_schema == 2:
+            # Selected identity only. Signed installed origin is independently
+            # authenticated by StandaloneEncyclopediaBinding, never this context.
+            result.update(release_schema="2", maturity=self.selected.maturity,
+                          release_sha256=self.selected.release_sha256)
+        return result
 
     @property
     def program_sha256(self):

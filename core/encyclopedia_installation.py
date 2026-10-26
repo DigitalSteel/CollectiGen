@@ -10,11 +10,11 @@ from uuid import uuid4
 
 from core.component_acquisition import ComponentOffer
 from suite_core.discovery.component_payload_policy import FROZEN_PAYLOAD_POLICY, require_payload_policy
-from core.encyclopedia_connection import COMPONENT, ReaderConnection, review_directory
+from core.encyclopedia_connection import COMPONENT, ReaderConnection, review_directory, connection_from_reference, connection_from_release
 from suite_core.discovery.component_staging import (
     ComponentStageAdmission, active, active_token, canonical, read_json,
     validate_journal, prior_journal_bytes, stage_and_activate_admitted, finish_or_recover_admitted,
-    MAX_ARCHIVE, require, atomic, guard,
+    MAX_ARCHIVE, require, atomic, guard, _signed_reference_release,
 )
 
 
@@ -59,7 +59,7 @@ class EncyclopediaInstallation:
     connection_type = ReaderConnection
     review_selected = staticmethod(review_directory)
 
-    def __init__(self, acquisition, connection_store, *, admission=None, native_health=None, standalone_compatibility=False):
+    def __init__(self, acquisition, connection_store, *, admission=None, native_health=None, standalone_compatibility=False, schema2_identity=False):
         require_payload_policy(self.payload_policy, self.component)
         require(acquisition.maximum <= self.payload_policy.max_archive_bytes, "staging_archive_bound_required")
         require(admission is None or type(admission) is ComponentStageAdmission, "original_root_admission_required")
@@ -67,6 +67,10 @@ class EncyclopediaInstallation:
         self.admission, self.native_health = admission, native_health
         require(type(standalone_compatibility) is bool, "explicit_standalone_compatibility_mode_required")
         self.standalone_compatibility = standalone_compatibility
+        require(type(schema2_identity) is bool, "explicit_reader_identity_mode")
+        require(not schema2_identity or (self.component == COMPONENT and self.connection_type is ReaderConnection),
+                "reader_identity_scope_required")
+        self.schema2_identity = schema2_identity
         self._review = None
 
     @property
@@ -77,15 +81,29 @@ class EncyclopediaInstallation:
         require(self.admission is not None, "Installation awaits the original Manager root's qualified transaction admission.")
         return self.admission.transaction(self.component)
 
+    def _connection(self, root, reference):
+        if reference is None:
+            return None
+        if self.schema2_identity:
+            return connection_from_reference(root, reference)
+        return self.connection_type(root / reference["directory"], reference["inventory_sha256"], reference["version"])
+
+    def _destination(self, root, release):
+        if release.schema_version == 2:
+            require(self.schema2_identity, "reader_identity_mode_required")
+            return connection_from_release(root, release).directory
+        return root / "Apps" / self.component.value / release.software_version
+
     def _observe(self, root, base, owner):
         platform = {"os": "windows", "architecture": "x86_64"}
-        reference = active(root, base, self.component, platform, payload_policy=self.payload_policy)
+        options = {"allow_schema2": True} if self.schema2_identity else {}
+        reference = (read_json(base / "active.json") if (base / "active.json").exists() else None) if self.schema2_identity else active(root, base, self.component, platform, payload_policy=self.payload_policy)
         journal_path = base / "transaction.json"
         pending = (base / "pending-transaction.json").exists()
         journal = read_json(journal_path) if journal_path.exists() else None
         if journal is not None:
-            validate_journal(journal, self.component, owner, self.acquisition.trust)
-            prior_journal_bytes(base, journal, self.component, owner, self.acquisition.trust)
+            validate_journal(journal, self.component, owner, self.acquisition.trust, **options)
+            prior_journal_bytes(base, journal, self.component, owner, self.acquisition.trust, **options)
             phase = journal["phase"]
             expected = journal["target"] if phase in ("healthy", "activated") else journal["before"]
             # Interrupted handoffs require explicit recovery, never adoption.
@@ -96,8 +114,10 @@ class EncyclopediaInstallation:
         else:
             require(reference is None, "authenticated_installed_origin_required")
             phase = "absent"
-        selected = None if reference is None else self.connection_type(
-            root / reference["directory"], reference["inventory_sha256"], reference["version"])
+        if self.schema2_identity and reference is not None:
+            release = _signed_reference_release(reference, journal, base, self.component, owner, self.acquisition.trust)
+            active(root, base, self.component, platform, payload_policy=self.payload_policy, release=release)
+        selected = self._connection(root, reference)
         if selected is not None:
             self.review_selected(selected.directory, expected=selected)
         # Preview the exact authenticated journal recovery will consume, including
@@ -106,8 +126,8 @@ class EncyclopediaInstallation:
         pending_path = base / "pending-transaction.json"
         if pending_path.exists():
             recovery = read_json(pending_path)
-            validate_journal(recovery, self.component, owner, self.acquisition.trust)
-            prior_journal_bytes(base, recovery, self.component, owner, self.acquisition.trust)
+            validate_journal(recovery, self.component, owner, self.acquisition.trust, **options)
+            prior_journal_bytes(base, recovery, self.component, owner, self.acquisition.trust, **options)
         available = recovery is not None and (pending or recovery["phase"] not in ("rolled_back", "abandoned"))
         before = None if recovery is None else recovery["before"]
         return InstalledEncyclopedia(selected, phase, active_token(reference),
@@ -141,10 +161,18 @@ class EncyclopediaInstallation:
             require(not installed.pending and installed.phase != "activated", "Finish launch checking or recover the current installation first.")
             require(not (base / "connection-pending.json").exists(), "Retry the pending connection publication before another install.")
             require(offer.current_version == (None if installed.selected is None else installed.selected.version), "stale_installed_offer")
+            if offer.release.schema_version == 2:
+                require(self.acquisition.schema2_metadata and offer.installed_context is not None,
+                        "original_metadata_observation_required")
+                context = offer.installed_context
+                selected = installed.selected
+                require((context.version, context.schema_version, context.maturity) ==
+                        ((None, None, None) if selected is None else
+                         (selected.version, selected.release_schema, selected.maturity)), "stale_installed_identity")
             settings = self.store.observe()
             saved = self.store.selected(settings)
             require(saved is None or saved == installed.selected, "The saved reader is externally managed. Review its managed origin before installing.")
-            destination = root / "Apps" / self.component.value / offer.release.software_version
+            destination = self._destination(root, offer.release)
             check()
             self._review = InstallationReview(offer, installed, settings, destination)
             return self._review
@@ -178,7 +206,7 @@ class EncyclopediaInstallation:
         # exactly the same original owners and stale tokens before any mutation.
         with self._scope() as (root, base, owner, check):
             self._unchanged(reviewed, root, base, owner)
-            require(root / "Apps" / self.component.value / reviewed.offer.release.software_version == reviewed.destination,
+            require(self._destination(root, reviewed.offer.release) == reviewed.destination,
                     "changed_install_destination")
             check()
         def handoff(phase):
@@ -201,7 +229,8 @@ class EncyclopediaInstallation:
             version=offer.release.software_version, os_name="windows", architecture="x86_64",
             manifest_bytes=offer.manifest_bytes, signature_bytes=offer.signature_bytes,
             trust_bytes=self.acquisition.trust, expected_active_token=reviewed.installed.active_sha256,
-            failpoint=handoff, preflight=lambda root, base, owner: self._unchanged(reviewed, root, base, owner), payload_policy=self.payload_policy)
+            failpoint=handoff, preflight=lambda root, base, owner: self._unchanged(reviewed, root, base, owner), payload_policy=self.payload_policy,
+            **({"release_schema": offer.release.schema_version, "maturity": offer.release.maturity} if self.schema2_identity else {}))
         phase('Saving the reader connection')
         return self._publish_connection(expected=reviewed.settings)
 
@@ -224,8 +253,7 @@ class EncyclopediaInstallation:
                 if not restoring:
                     journal = read_json(base / "transaction.json")
                     before = journal["before"]
-                    prior = None if before is None else self.connection_type(root / before["directory"],
-                        before["inventory_sha256"], before["version"])
+                    prior = self._connection(root, before)
                     require(previous in (None, prior, installed.selected), "Saved reader changed independently; publication held.")
                 intent = {"schema": 1, "journal_sha256": installed.journal_sha256,
                           "target": target, "prior_selection": None if previous is None else previous.mapping()}
@@ -274,7 +302,8 @@ class EncyclopediaInstallation:
         require(self.native_health(installed.selected) is True, "native_reader_health_held")
         finish_or_recover_admitted(self.admission, component=self.component,
             trust_bytes=self.acquisition.trust, health_verified=True,
-            preflight=lambda root, base, owner: require(self._observe(root, base, owner) == installed, "changed_health_selection"), payload_policy=self.payload_policy)
+            preflight=lambda root, base, owner: require(self._observe(root, base, owner) == installed, "changed_health_selection"), payload_policy=self.payload_policy,
+            **({"allow_schema2": True} if self.schema2_identity else {}))
         return self.observe()
 
     def reconcile_launch(self):
@@ -292,6 +321,9 @@ class EncyclopediaInstallation:
         if installed.connection_pending:
             return InstallationResult(installed, False,
                 "The executable transaction is saved. Retry save connection before continuing setup.")
+        if self.schema2_identity and installed.selected is not None and not connected:
+            return InstallationResult(installed, False,
+                "Saved reader identity differs from the installed reader. Review its original owner before launch.")
         if installed.phase == "activated" and connected:
             if callable(self.native_health) and self.native_health(installed.selected) is True:
                 installed = self.confirm_health()
@@ -315,11 +347,11 @@ class EncyclopediaInstallation:
             require(self.store.observe().digest == expected.digest, "Settings changed before recovery.")
             path = base / "pending-transaction.json"
             journal = read_json(path if path.exists() else base / "transaction.json")
-            validate_journal(journal, self.component, owner, self.acquisition.trust)
+            validate_journal(journal, self.component, owner, self.acquisition.trust, **({"allow_schema2": True} if self.schema2_identity else {}))
             allowed = [None]
             for reference in (journal["before"], journal["target"]):
                 if reference is not None:
-                    allowed.append(self.connection_type(root / reference["directory"], reference["inventory_sha256"], reference["version"]))
+                    allowed.append(self._connection(root, reference))
             require(self.store.selected(expected) in allowed,
                     "Saved reader changed independently. Review its connection before recovery.")
             pending = base / "connection-pending.json"
@@ -327,14 +359,14 @@ class EncyclopediaInstallation:
             if pending.exists():
                 intent = read_json(pending)
                 current = read_json(base / "transaction.json")
-                validate_journal(current, self.component, owner, self.acquisition.trust)
+                validate_journal(current, self.component, owner, self.acquisition.trust, **({"allow_schema2": True} if self.schema2_identity else {}))
                 require(set(intent) == {"schema", "journal_sha256", "target", "prior_selection"}
                         and intent["schema"] == 1 and intent["journal_sha256"] == sha256(canonical(current)).hexdigest()
                         and intent["target"] in [None if value is None else value.mapping() for value in allowed],
                         "unknown_connection_recovery_intent")
                 old_publication[0] = pending.read_bytes()
         reference = finish_or_recover_admitted(self.admission, component=self.component,
-            trust_bytes=self.acquisition.trust, rollback_approved=True, preflight=preflight, payload_policy=self.payload_policy)
+            trust_bytes=self.acquisition.trust, rollback_approved=True, preflight=preflight, payload_policy=self.payload_policy, **({"allow_schema2": True} if self.schema2_identity else {}))
         # A failed recovery save/clear is also resumable without repeating the
         # executable rollback. Persist its exact publication intent in State.
         with self._scope() as (root, base, owner, check):

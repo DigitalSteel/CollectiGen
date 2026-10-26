@@ -10,7 +10,7 @@ import base64
 import zipfile
 import re
 
-from core.encyclopedia_connection import COMPONENT, ReaderConnection, ReaderConnectionStore, review_directory
+from core.encyclopedia_connection import COMPONENT, ReaderConnection, ReaderConnectionStore, review_directory, connection_from_reference
 from core.component_acquisition import ComponentAcquisition, ComponentOffer
 from release_contract import safe_zip_members, sha256_file, verify_artifact
 from suite_core.installation import _path
@@ -77,15 +77,18 @@ class StandaloneEncyclopediaBinding:
     trust_bytes: bytes
     trust_sha256: str
     initial: EncyclopediaInstalledSnapshot
+    schema2_identity: bool = False
 
     @property
     def identity(self):
         return sha256(canonical(dict(root=str(self.root), data=str(self.data_root),
             settings=str(self.settings_path), bootstrap=str(self.bootstrap_program),
             bootstrap_sha256=self.bootstrap_sha256, trust_sha256=self.trust_sha256,
-            initial=self.initial.selected.mapping()))).hexdigest()
+            initial=self.initial.selected.mapping(), **({"schema2_identity": True} if self.schema2_identity else {})))).hexdigest()
 
     def validate_static(self):
+        require(type(self.schema2_identity) is bool, 'explicit_reader_identity_mode')
+        require(self.schema2_identity or self.initial.selected.release_schema == 1, 'reader_identity_mode_required')
         require(_path(self.root) == self.root and _path(self.data_root) == self.data_root,
                 'exact_original_component_roots_required')
         component_origin(self.root, self.data_root, COMPONENT)
@@ -101,14 +104,16 @@ class StandaloneEncyclopediaBinding:
 
     def current(self):
         self.validate_static()
-        return _installed(self.root, self.data_root, self.settings_path, self.trust_bytes)
+        return _installed(self.root, self.data_root, self.settings_path, self.trust_bytes, schema2_identity=self.schema2_identity)
 
     def revalidate_initial(self):
         require(self.current() == self.initial, 'initial_component_installation_changed')
         return self.initial
 
 
-def _installed(root, data, settings, trust):
+def _installed(root, data, settings, trust, *, schema2_identity=False):
+    require(type(schema2_identity) is bool, "explicit_reader_identity_mode")
+    options = {"allow_schema2": True} if schema2_identity else {}
     base = root / 'State' / COMPONENT.value
     require(read_json(base / 'component-origin.json') == component_origin(root, data, COMPONENT),
             'authenticated_enrolled_component_origin_required')
@@ -116,10 +121,10 @@ def _installed(root, data, settings, trust):
             'recover_original_component_transaction_first')
     owner = component_stage_owner(root, data, COMPONENT)
     journal = read_json(base / 'transaction.json')
-    validate_journal(journal, COMPONENT, owner, trust)
-    previous = prior_journal_bytes(base, journal, COMPONENT, owner, trust)
+    validate_journal(journal, COMPONENT, owner, trust, **options)
+    previous = prior_journal_bytes(base, journal, COMPONENT, owner, trust, **options)
     require(journal['phase'] in ('healthy', 'activated', 'rolled_back'), 'settled_component_baseline_required')
-    reference = active(root, base, COMPONENT, {'os': 'windows', 'architecture': 'x86_64'})
+    reference = (read_json(base / 'active.json') if (base / 'active.json').exists() else None) if schema2_identity else active(root, base, COMPONENT, {'os': 'windows', 'architecture': 'x86_64'})
     expected = journal['target'] if journal['phase'] in ('healthy', 'activated') else journal['before']
     require(reference is not None and reference == expected, 'signed_current_component_reference_required')
     # Rollback references need their own retained signed origin, not just the new
@@ -130,13 +135,15 @@ def _installed(root, data, settings, trust):
             break
         require(previous is not None, 'independently_signed_prior_component_required')
         signed = _json(previous, 'prior component transaction')
-        validate_journal(signed, COMPONENT, owner, trust)
-        previous = prior_journal_bytes(base, signed, COMPONENT, owner, trust)
+        validate_journal(signed, COMPONENT, owner, trust, **options)
+        previous = prior_journal_bytes(base, signed, COMPONENT, owner, trust, **options)
     else:
         raise ValueError('bounded_component_history_required')
     require(signed['target'] == reference, 'signed_current_component_reference_required')
-    selected = review_directory(root / reference['directory'], expected=ReaderConnection(
-        root / reference['directory'], reference['inventory_sha256'], reference['version']))
+    if schema2_identity:
+        verified = validate_journal(signed, COMPONENT, owner, trust, **options)
+        active(root, base, COMPONENT, {'os': 'windows', 'architecture': 'x86_64'}, release=verified)
+    selected = review_directory(root / reference['directory'], expected=connection_from_reference(root, reference))
     store = ReaderConnectionStore(settings)
     observed = store.observe()
     require(store.selected(observed) == selected, 'original_saved_component_selection_required')
@@ -146,13 +153,13 @@ def _installed(root, data, settings, trust):
 
 
 def admit_standalone_binding(*, root, data_root, settings_path, bootstrap_sha256,
-                             trust_bytes, trust_sha256):
+                             trust_bytes, trust_sha256, schema2_identity=False):
     root, data, settings = _path(Path(root)), _path(Path(data_root)), _path(Path(settings_path))
     require(type(trust_bytes) is bytes and sha256(trust_bytes).hexdigest() == trust_sha256,
             'explicit_pinned_component_trust_required')
-    initial = _installed(root, data, settings, trust_bytes)
+    initial = _installed(root, data, settings, trust_bytes, schema2_identity=schema2_identity)
     binding = StandaloneEncyclopediaBinding(root, data, settings, root / 'TagEncyclopedia.exe',
-        bootstrap_sha256, trust_bytes, trust_sha256, initial)
+        bootstrap_sha256, trust_bytes, trust_sha256, initial, schema2_identity)
     binding.validate_static()
     return binding
 
@@ -174,6 +181,7 @@ class ConfirmedEncyclopediaUpdate:
             settings=self.current.settings_sha256, current=self.current.selected.mapping(),
             current_release_sha256=self.current.release_sha256,
             target=self.offer.release.software_version, release_sha256=self.offer.release.manifest_sha256,
+            **({'target_schema': 2, 'target_maturity': self.offer.release.maturity} if self.offer.release.schema_version == 2 else {}),
             target_inventory_sha256=self.offer.release.artifact.portable_manifest_sha256,
             normal_close_attempt=self.normal_close_attempt,
             data_obligations_sha256=sha256(canonical({'reads': self.data_obligations.required_read_contracts,
@@ -193,10 +201,18 @@ def admit_confirmed_offer(binding, subject, acquisition, offer, generation):
             'exact_current_encyclopedia_update_required')
     require(acquisition.trust == binding.trust_bytes and acquisition.trust_pin == binding.trust_sha256,
             'original_component_trust_required')
+    require(binding.schema2_identity or offer.release.schema_version == 1, 'reader_identity_mode_required')
+    require(offer.release.schema_version == 1 or acquisition.schema2_metadata, 'original_metadata_observation_required')
+    if acquisition.schema2_metadata:
+        context = offer.installed_context
+        require(context is not None and context.component_id == COMPONENT
+                and (context.version, context.schema_version, context.maturity) ==
+                (current.selected.version, current.selected.release_schema, current.selected.maturity),
+                'exact_installed_identity_required')
     acquisition.revalidate_offer(offer)
     verified = verify_component_release(offer.manifest_bytes, offer.signature_bytes, binding.trust_bytes,
         expected_component=COMPONENT, expected_version=offer.release.software_version,
-        expected_channel=offer.release.channel, expected_os='windows', expected_architecture='x86_64')
+        expected_channel=offer.release.channel, expected_os='windows', expected_architecture='x86_64', expected_maturity=offer.release.maturity)
     require(verified == offer.release, 'signed_target_component_changed')
     require(binding.current() == current, 'current_component_changed_during_review')
     obligations = installed_data_contract(current.selected)

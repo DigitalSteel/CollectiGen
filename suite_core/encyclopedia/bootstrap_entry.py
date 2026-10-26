@@ -11,7 +11,7 @@ import base64
 from hashlib import sha256
 
 from core.component_acquisition import ComponentAcquisition
-from core.encyclopedia_connection import COMPONENT, ReaderConnection, ReaderConnectionStore, review_directory
+from core.encyclopedia_connection import COMPONENT, ReaderConnection, ReaderConnectionStore, review_directory, connection_from_reference, connection_from_release
 from core.encyclopedia_installation import EncyclopediaInstallation
 from core.encyclopedia_update_binding import (
     StandaloneEncyclopediaBinding, installed_data_contract, require_target_compatibility,
@@ -54,9 +54,9 @@ class StandaloneEncyclopediaBootstrap:
         self._operation = None
         self.cancel = Event()
         self._installation = EncyclopediaInstallation(acquisition, ReaderConnectionStore(binding.settings_path),
-            admission=ComponentStageAdmission(self._hold), native_health=self._native_health)
+            admission=ComponentStageAdmission(self._hold), native_health=self._native_health, schema2_identity=binding.schema2_identity)
         self.update_check = EncyclopediaUpdateCheck(acquisition, self.update_observation,
-            channel='beta' if '-' in binding.initial.selected.version else 'stable')
+            channel=('stable' if binding.initial.selected.maturity == 'stable' else 'beta') if binding.initial.selected.release_schema == 2 else ('beta' if '-' in binding.initial.selected.version else 'stable'))
         # Issue last: all fallible service construction precedes the owner state
         # handoff. No child is created, entry forwarded or profile activated here.
         self.subject = (owner.arm_standalone_encyclopedia(binding) if _enrollment_subject is None
@@ -97,8 +97,20 @@ class StandaloneEncyclopediaBootstrap:
                 ownership = 'unknown'
             else:
                 ownership = 'manager'
-        return EncyclopediaUpdateObservation(current.selected.version, ownership, self.binding.identity,
-            current.phase == 'activated' or self.request is not None)
+        identity = self.binding.identity
+        if self.binding.schema2_identity:
+            identity = sha256(canonical(dict(binding=identity, active=current.active_sha256,
+                journal=current.journal_sha256, settings=current.settings_sha256,
+                release=current.release_sha256, selected=current.selected.mapping(),
+                trust=self.binding.trust_sha256, owner=self.owner.record['owner'], ownership=ownership,
+                delegate=None if self.delegate is None else self.delegate.manager_generation))).hexdigest()
+        return EncyclopediaUpdateObservation(current.selected.version, ownership, identity,
+            current.phase == 'activated' or self.request is not None,
+            current.selected.release_schema, current.selected.maturity)
+
+    def installed_offer_context(self):
+        """Original host observer for explicitly composed metadata acquisition."""
+        return self.update_observation().installed_context()
 
     def launch_current(self):
         return self.owner.launch_standalone_encyclopedia(self.subject)
@@ -226,14 +238,12 @@ class StandaloneEncyclopediaBootstrap:
                 'exact_original_publication_request_required')
         require(record['phase'] in ('applying', 'recovering'), 'original_publication_operation_required')
         recovering = record['phase'] == 'recovering'
-        expected = request.current.selected if recovering else ReaderConnection(
-            root / 'Apps' / COMPONENT.value / request.offer.release.software_version,
-            request.offer.release.artifact.portable_manifest_sha256, request.offer.release.software_version)
+        expected = request.current.selected if recovering else connection_from_release(root, request.offer.release)
         installed = self._installation._observe(root, base, owner)
         require(not installed.pending and installed.selected == expected,
                 'original_publication_code_selection_changed')
         journal = read_json(base / 'transaction.json')
-        validate_journal(journal, COMPONENT, owner, self.binding.trust_bytes)
+        validate_journal(journal, COMPONENT, owner, self.binding.trust_bytes, **({"allow_schema2": True} if self.binding.schema2_identity else {}))
         expected_release = request.current.release_sha256 if recovering else request.offer.release.manifest_sha256
         require(sha256(base64.b64decode(journal['manifest'], validate=True)).hexdigest() == expected_release,
                 'original_publication_release_changed')
@@ -244,8 +254,7 @@ class StandaloneEncyclopediaBootstrap:
         if pending.exists():
             intent = read_json(pending)
             target = expected.mapping()
-            offered = ReaderConnection(root / 'Apps' / COMPONENT.value / request.offer.release.software_version,
-                request.offer.release.artifact.portable_manifest_sha256, request.offer.release.software_version).mapping()
+            offered = connection_from_release(root, request.offer.release).mapping()
             require(set(intent) == {'schema', 'journal_sha256', 'target', 'prior_selection'}
                     and type(intent['schema']) is int and intent['schema'] == 1 and intent['target'] == target
                     and intent['journal_sha256'] == sha256(canonical(journal)).hexdigest()
@@ -274,14 +283,14 @@ class StandaloneEncyclopediaBootstrap:
         pending = base / 'pending-transaction.json'
         journal = read_json(pending if pending.exists() else base / 'transaction.json')
         validate_journal(journal, COMPONENT,
-            component_stage_owner(self.binding.root, self.binding.data_root, COMPONENT), self.binding.trust_bytes)
+            component_stage_owner(self.binding.root, self.binding.data_root, COMPONENT), self.binding.trust_bytes,
+            **({"allow_schema2": True} if self.binding.schema2_identity else {}))
         require(base64.b64decode(journal['manifest'], validate=True) == request.offer.manifest_bytes
                 and base64.b64decode(journal['signature'], validate=True) == request.offer.signature_bytes,
                 'original_target_recovery_transaction_required')
         target = self.binding.root / journal['target']['directory']
         if target.exists():
-            selected = review_directory(target, expected=ReaderConnection(target,
-                journal['target']['inventory_sha256'], journal['target']['version']))
+            selected = review_directory(target, expected=connection_from_reference(self.binding.root, journal['target']))
             require(installed_data_contract(request.current.selected) == request.data_obligations,
                     'original_data_obligations_changed')
             require_code_only_obligation_equality(request.data_obligations, installed_data_contract(selected))

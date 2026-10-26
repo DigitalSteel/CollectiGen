@@ -1020,7 +1020,9 @@
     "docs/COMPONENT_AUTHENTICATED_OFFERS.md",
     "docs/COMPONENT_INSTALLED_REFERENCES.md",
     "docs/COMPONENT_STAGE_IDENTITY_RECOVERY.md",
-    "docs/READER_SELECTION_IDENTITY.md"
+    "docs/READER_SELECTION_IDENTITY.md",
+    "docs/READER_HOST_IDENTITY.md",
+    "tests/test_encyclopedia_update_data_contract.py"
   ],
   "reviewed_defaults": [],
   "required_provenance": []

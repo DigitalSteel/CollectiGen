@@ -2071,10 +2071,11 @@ class DeploymentOwner:
             raise LaunchHold('original_standalone_update_required')
         current = subject.binding.current()
         recovering = self.record.get('standalone_update', {}).get('phase') == 'recovering'
-        expected = request.current.selected.version if recovering else request.offer.release.software_version
+        from core.encyclopedia_connection import connection_from_release
+        expected = request.current.selected if recovering else connection_from_release(subject.binding.root, request.offer.release)
         release = request.current.release_sha256 if recovering else request.offer.release.manifest_sha256
         inventory = request.current.selected.inventory_sha256 if recovering else request.offer.release.artifact.portable_manifest_sha256
-        if (current.phase not in ('healthy', 'rolled_back') or current.selected.version != expected
+        if (current.phase not in ('healthy', 'rolled_back') or current.selected != expected
                 or current.release_sha256 != release or current.selected.inventory_sha256 != inventory
                 or not self.poll_standalone_encyclopedia(subject)
                 or not subject.reader.native_health(current.selected)):

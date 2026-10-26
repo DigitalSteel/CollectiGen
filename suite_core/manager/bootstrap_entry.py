@@ -814,6 +814,14 @@ class EntryHelperAdapter:
                     {'descriptor_sha256','runtime_inventory_sha256','runtime_version_sha256','model_resource_id','program',
                     'working_directory','environment_sha256','command_kind','port','argv_sha256'} if direct_context else
                     {'installation_id', 'lifecycle_identity', 'program','publication_manifest_sha256', 'prepared_inventory_sha256'})
+        if reader_context and type(reviewed) is dict and 'release_schema' in reviewed:
+            from core.component_release_identity import ComponentReleaseIdentity
+            require(set(reviewed) == required | {'release_schema', 'maturity', 'release_sha256'}
+                    and reviewed['release_schema'] == '2', 'exact_reader_identity_context_required')
+            ComponentReleaseIdentity(reviewed['version'], reviewed['maturity'])
+            require(type(reviewed['release_sha256']) is str and re.fullmatch('[0-9a-f]{64}', reviewed['release_sha256']),
+                    'exact_reader_release_digest_required')
+            required = required | {'release_schema', 'maturity', 'release_sha256'}
         require(type(reviewed) is dict and set(reviewed) == required
                 and all(type(v) is str and 0 < len(v) <= 4096 for v in reviewed.values()),
                 'frozen_reviewed_helper_context_required')

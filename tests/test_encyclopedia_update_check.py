@@ -128,3 +128,27 @@ def test_scoped_notification_still_holds_invalid_target(tmp_path, fault):
     assert notice.status == 'held' and notice.offer is None
     assert not any('collectigen.unrelated' in url for url, *_rest in feed.calls)
     assert not any(url.endswith('.zip') for url, *_rest in feed.calls)
+
+
+@pytest.mark.parametrize('stage',['alpha','beta','stable'])
+def test_full_identity_notification_observation_with_contained_metadata(tmp_path,stage):
+    from core.encyclopedia_update_check import EncyclopediaUpdateObservation
+    from tests.test_component_acquisition import MaturityFeed,maturity_service
+    observation=EncyclopediaUpdateObservation('0.4.0','standalone','original-full-snapshot',False,2,stage)
+    feed=MaturityFeed();feed.add_maturity(version='0.5.0',stage=stage)
+    acquisition,state=maturity_service(tmp_path,feed,context=observation.installed_context())
+    check=EncyclopediaUpdateCheck(acquisition,lambda:observation,channel='stable' if stage=='stable' else 'beta')
+    notice=check.check();assert notice.status=='available' and notice.offer.installed_context==observation.installed_context()
+    assert not any(url.endswith('.zip') for url,*_ in feed.calls)
+
+
+def test_same_number_stage_promotion_notification_and_snapshot_drift(tmp_path):
+    from core.encyclopedia_update_check import EncyclopediaUpdateObservation
+    from tests.test_component_acquisition import MaturityFeed,maturity_service
+    first=EncyclopediaUpdateObservation('0.4.0','standalone','snapshot-1',False,2,'alpha')
+    feed=MaturityFeed();feed.add_maturity(version='0.4.0',stage='beta')
+    acquisition,state=maturity_service(tmp_path,feed,context=first.installed_context())
+    check=EncyclopediaUpdateCheck(acquisition,lambda:first,channel='beta');assert check.check().status=='available'
+    observations=iter([first,replace(first,identity='snapshot-2')]);check.observe=lambda:next(observations)
+    assert check.check().status=='held' and check.notice.offer is None
+    assert not any(url.endswith('.zip') for url,*_ in feed.calls)

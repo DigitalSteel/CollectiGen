@@ -8,7 +8,8 @@ qualified manual package review. No downloader, installer or background retry.
 from dataclasses import dataclass
 
 from core.application_update import UpdateServiceError
-from core.component_acquisition import ComponentAcquisition, ComponentOffer
+from core.component_acquisition import ComponentAcquisition, ComponentOffer, InstalledOfferContext
+from core.component_release_identity import ComponentReleaseIdentity
 from core.encyclopedia_connection import COMPONENT
 from suite_core.discovery.component_staging import require
 from suite_core.discovery.github_component_releases import _version
@@ -20,13 +21,24 @@ class EncyclopediaUpdateObservation:
     owner: str
     identity: str
     pending: bool = False
+    release_schema: int = 1
+    maturity: str | None = None
 
     def __post_init__(self):
-        _version(self.version)
+        require(type(self.release_schema) is int and self.release_schema in (1, 2), 'explicit_observation_schema')
+        if self.release_schema == 2:
+            ComponentReleaseIdentity(self.version, self.maturity)
+        else:
+            require(self.maturity is None, 'legacy_observation_has_no_maturity')
+            _version(self.version)
         require(self.owner in ('standalone', 'manager', 'unknown', 'conflict'),
                 'explicit_update_owner_required')
         require(type(self.identity) is str and bool(self.identity), 'installation_identity_required')
         require(type(self.pending) is bool, 'pending_state_required')
+
+    def installed_context(self):
+        return InstalledOfferContext(COMPONENT, self.version, self.release_schema,
+                                     self.maturity, self.identity, self.pending)
 
 
 @dataclass(frozen=True)
@@ -62,6 +74,7 @@ class EncyclopediaUpdateCheck:
             require(type(before) is EncyclopediaUpdateObservation, 'exact_update_observation_required')
             require(before.owner in ('standalone', 'manager') and not before.pending,
                     'installation_ownership_or_recovery_held')
+            require(self.acquisition.schema2_metadata or before.release_schema == 1, 'reader_metadata_mode_required')
             offers = self.acquisition.discover(channel=self.channel, component_id=COMPONENT,
                 installed_versions={COMPONENT.value: before.version}, should_cancel=should_cancel)
             after = self.observe()
@@ -71,6 +84,8 @@ class EncyclopediaUpdateCheck:
             require(len(selected) <= 1, 'single_encyclopedia_offer_required')
             if selected:
                 offer = selected[0]
+                if self.acquisition.schema2_metadata:
+                    require(offer.installed_context == before.installed_context(), 'exact_observed_identity_required')
                 require(offer.current_version == before.version and offer.operation == 'update',
                         'exact_installed_update_required')
                 result = EncyclopediaUpdateNotice('available', 'signed_update_available',

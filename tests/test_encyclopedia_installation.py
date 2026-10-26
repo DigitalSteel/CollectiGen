@@ -460,3 +460,108 @@ def test_first_install_undo_allows_explicit_reinstall_without_overwriting_retain
     assert repeated.connection_saved and repeated.installed.selected == first.installed.selected
     assert {str(p.relative_to(directory)): (p.read_bytes(), p.stat().st_mtime_ns) for p in directory.rglob("*") if p.is_file()} == retained
     assert f.sentinel.read_bytes() == b'{"unknown_future":[1,2]}\n'
+
+
+def stage_identity_fixture(f,monkeypatch,stage="alpha",version="0.1.0"):
+    from dataclasses import replace
+    f.add(version)
+    row=f.rows[-1];assets={a['name']:a for a in row['assets']}
+    original=f.resources[assets['collectigen-release.json']['browser_download_url']]
+    value=dict(version=version,supported_from="0.0.0",maturity=stage)
+    message=json.dumps(value).encode();release=replace(f.registry[original],schema_version=2,maturity=stage,
+        channel="stable" if stage=="stable" else "beta",manifest_sha256=sha256(message).hexdigest())
+    f.registry[message]=release
+    archive=next(a for a in row['assets'] if a['name'].endswith('.zip'))
+    path=f.cache/("identity-"+stage+".zip");path.write_bytes(f.resources[archive['browser_download_url']])
+    f.service=EncyclopediaInstallation(f.acquisition,f.store,admission=f.admission,schema2_identity=True)
+    # Existing injected verifier/typed original scope: this is not signing/native evidence.
+    with f.admission.transaction(COMPONENT) as (root,base,owner,check):
+        active=staging.read_json(base/'active.json') if (base/'active.json').exists() else None
+    target=staging.stage_and_activate_admitted(f.admission,path,component=COMPONENT,version=version,
+        os_name="windows",architecture="x86_64",manifest_bytes=message,signature_bytes=b"UNSIGNED INERT CONTRACT",
+        trust_bytes=f.trust,expected_active_token=staging.active_token(active),release_schema=2,maturity=stage)
+    return target
+
+
+def test_identity_host_observe_save_reopen_health_and_prior_recovery(fixture,monkeypatch):
+    f=fixture;data=f.sentinel.read_bytes();target=stage_identity_fixture(f,monkeypatch)
+    before=f.store.observe();result=f.service._publish_connection(expected=before)
+    assert result.connection_saved and result.installed.selected.maturity=="alpha"
+    assert f.store.selected(f.store.observe()).release_sha256==target['release_sha256']
+    f.service.native_health=lambda selected: True  # fixture-only outcome
+    f.service.confirm_health()
+    prior=f.store.selected(f.store.observe())
+    stage_identity_fixture(f,monkeypatch,"beta")
+    result=f.service._publish_connection(expected=f.store.observe())
+    assert result.installed.selected.version==prior.version and result.installed.selected!=prior
+    restored=f.service.recover(confirmed=True)
+    assert restored.connection_saved and f.store.selected(f.store.observe())==prior
+    assert f.service.observe().selected==prior and f.sentinel.read_bytes()==data
+
+
+def test_identity_host_publication_retry_saves_only_and_refuses_forged_stage(fixture,monkeypatch):
+    from dataclasses import replace
+    f=fixture;stage_identity_fixture(f,monkeypatch);save=f.store.save
+    monkeypatch.setattr(f.store,'save',lambda *a,**kw:(_ for _ in ()).throw(OSError('INJECTED SAVE')))
+    held=f.service._publish_connection(expected=f.store.observe());assert not held.connection_saved
+    monkeypatch.setattr(f.store,'save',save);calls=list(f.calls)
+    result=f.service.retry_connection();assert result.connection_saved and f.calls==calls
+    snapshot=f.store.observe();selected=f.store.selected(snapshot)
+    f.store.save(replace(selected,maturity='stable'),expected=snapshot)
+    # Signed installation observation does not adopt the saved claim.
+    assert f.service.observe().selected.maturity=='alpha'
+    held=f.service.reconcile_launch();assert not held.connection_saved and "identity differs" in held.reason
+    from core.encyclopedia_update_binding import _installed
+    with pytest.raises(ValueError,match="original_saved_component_selection"):
+        _installed(f.root,f.data,f.settings,f.trust,schema2_identity=True)
+
+
+def test_identity_host_default_mode_refuses_new_reference(fixture,monkeypatch):
+    f=fixture;stage_identity_fixture(f,monkeypatch)
+    old=EncyclopediaInstallation(f.acquisition,f.store,admission=f.admission)
+    with pytest.raises(ValueError):old.observe()
+
+
+def test_full_signed_snapshot_reopens_exact_stage_and_refuses_changed_digest(fixture,monkeypatch):
+    from core.encyclopedia_update_binding import _installed
+    from dataclasses import replace
+    f=fixture;target=stage_identity_fixture(f,monkeypatch)
+    f.service._publish_connection(expected=f.store.observe());f.service.native_health=lambda _:True;f.service.confirm_health()
+    current=_installed(f.root,f.data,f.settings,f.trust,schema2_identity=True)
+    assert current.selected.release_schema==2 and current.selected.maturity=='alpha'
+    assert current.release_sha256==current.selected.release_sha256==target['release_sha256']
+    assert _installed(f.root,f.data,f.settings,f.trust,schema2_identity=True)==current
+    f.store.save(replace(current.selected,release_sha256='d'*64),expected=f.store.observe())
+    with pytest.raises(ValueError,match='original_saved_component_selection'):
+        _installed(f.root,f.data,f.settings,f.trust,schema2_identity=True)
+
+
+@pytest.mark.parametrize('recovering',[False,True])
+def test_full_identity_publication_request_and_retry_bind_exact_target_component_only(fixture,monkeypatch,recovering):
+    from types import SimpleNamespace
+    from core.encyclopedia_update_binding import _installed
+    from suite_core.encyclopedia.bootstrap_entry import StandaloneEncyclopediaBootstrap
+    f=fixture;stage_identity_fixture(f,monkeypatch)
+    f.service._publish_connection(expected=f.store.observe());f.service.native_health=lambda _:True;f.service.confirm_health()
+    prior=_installed(f.root,f.data,f.settings,f.trust,schema2_identity=True)
+    target=stage_identity_fixture(f,monkeypatch,'beta')
+    f.service._publish_connection(expected=f.store.observe())
+    journal=json.loads((f.root/'State'/COMPONENT.value/'transaction.json').read_bytes())
+    message=__import__('base64').b64decode(journal['manifest']);release=f.registry[message]
+    offer=SimpleNamespace(release=release)
+    request=SimpleNamespace(current=prior,offer=offer,identity={'fixture':'original-request'})
+    if recovering:f.service.recover(confirmed=True)
+    # This exercises publication identity/state only. The owner hook is a fixture;
+    # existing original-owner regressions separately cover actual custody logic.
+    owner=SimpleNamespace(record={'standalone_update':{'identity':request.identity,'phase':'recovering' if recovering else 'applying'}},
+        _standalone_encyclopedia_owned=lambda subject:None,_standalone_encyclopedia_update=request)
+    boot=object.__new__(StandaloneEncyclopediaBootstrap);boot.owner=owner;boot.subject=object();boot.request=request
+    boot.binding=SimpleNamespace(root=f.root,trust_bytes=f.trust,schema2_identity=True);boot._installation=f.service
+    with f.admission.transaction(COMPONENT) as (root,base,original_owner,check):
+        boot._verify_publication_request(request,root,base,original_owner)
+    snapshot=f.store.observe();selected=f.store.selected(snapshot)
+    from dataclasses import replace
+    f.store.save(replace(selected,maturity='stable'),expected=snapshot)
+    with f.admission.transaction(COMPONENT) as (root,base,original_owner,check):
+        with pytest.raises(ValueError,match='publication_readback'):
+            boot._verify_publication_request(request,root,base,original_owner)
