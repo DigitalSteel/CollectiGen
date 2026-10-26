@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1017,
+  "allowlisted_source_file_count": 1019,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1953,6 +1953,10 @@
       "sha256": "4c871193ea28eb68d0f5c41d10ec2baac9663d8532255b3c586bfcee8a957c12",
       "size_bytes": 2761
     },
+    "docs/COMPONENT_MATURITY_LOCATORS.md": {
+      "sha256": "ba621bf038fea5f155dd8ef4aeb642efb23f9035297f39e76322c71552fbaf3d",
+      "size_bytes": 3111
+    },
     "docs/COMPONENT_PRODUCER_IDENTITY.md": {
       "sha256": "48d1cf80999481cde5604aab257691ada37f6fc50c68d5d31ca95c8a688c3d74",
       "size_bytes": 3440
@@ -2874,8 +2878,8 @@
       "size_bytes": 31566
     },
     "suite_core/discovery/github_component_releases.py": {
-      "sha256": "b18b23ba7b4b96df22e1659801694c28742f32ac79651c72416fe354f0263c08",
-      "size_bytes": 9575
+      "sha256": "783ab446660129e96c30cf7c9a68ab05ec3da7b7b0a56b8832447bd694530291",
+      "size_bytes": 13416
     },
     "suite_core/discovery/manager_bootstrap.py": {
       "sha256": "b53e8b5b0e9672863787331297b7718022cb969e0641a48021cb02d662b68c0a",
@@ -3641,6 +3645,10 @@
       "sha256": "f885fdb4a9d9ac64e9b52a65b0d4e68c9d6f41a638b2120b5dcf98c926194e2e",
       "size_bytes": 7709
     },
+    "suite_core/tests/test_github_component_releases.py": {
+      "sha256": "cb8b0a7c137f5a8a785f055252649a883987f4bef787eb7b94f49528c727edee",
+      "size_bytes": 18329
+    },
     "suite_core/tests/test_legacy_reader_handoff_ui.py": {
       "sha256": "f9be320e1cfd41656b531d3a4212c6d905eb0ec005444c8d5af5337b0d0037b3",
       "size_bytes": 8104
@@ -3966,8 +3974,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "d630154bac44785a8ee0b56aff6e0eb4e97ea97084ed93578fe3b9ce66ba7cc9",
-      "size_bytes": 41811
+      "sha256": "a79cf2e6e0dcc950c806e4b866fb81be3e3526cb690342b776227debd0e2b67f",
+      "size_bytes": 41912
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",

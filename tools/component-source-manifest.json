@@ -1014,7 +1014,9 @@
     "tests/test_encyclopedia_root_release_verification.py",
     "docs/ROOT_RELEASE_VERIFIER.md",
     "docs/COMPONENT_MATURITY_ADMISSION.md",
-    "docs/COMPONENT_PRODUCER_IDENTITY.md"
+    "docs/COMPONENT_PRODUCER_IDENTITY.md",
+    "docs/COMPONENT_MATURITY_LOCATORS.md",
+    "suite_core/tests/test_github_component_releases.py"
   ],
   "reviewed_defaults": [],
   "required_provenance": []
