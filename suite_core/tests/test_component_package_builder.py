@@ -1,5 +1,6 @@
 """Tiny inert packaging outputs, canonical inventory and signed pair admission."""
 from hashlib import sha256
+from pathlib import Path
 import json
 import subprocess
 import sys
@@ -12,6 +13,200 @@ from suite_core.discovery.offline_component_producer import PackageInput, qualif
 from suite_core.discovery.component_release_signature import verify_component_release
 from suite_core.installation import ComponentId
 from suite_core.tests.test_component_staging import COMPONENT, TRUST, sign
+
+
+def producer_identity_packet(tmp_path, stage='alpha', baseline_schema=1):
+    from suite_core.tests.test_component_release_signature import manifest, raw, signature, trust
+    version = '0.2.0'; root = payload(tmp_path, version); source = tmp_path / 'source'
+    source.mkdir(); wrapped = root / 'App'; module_path = wrapped / '_internal/MODULE_MANIFEST.json'
+    module = json.loads(module_path.read_bytes())
+    module.update(numeric_version=version, maturity=stage, release_date='2026-10-06', release_timezone='UTC')
+    module_path.write_bytes(raw(module))
+    runtime_path = wrapped / 'RUNTIME_MANIFEST.json'; runtime = json.loads(runtime_path.read_bytes())
+    runtime['maturity'] = stage
+    for row in runtime['files']:
+        data = (wrapped / row['path']).read_bytes(); row.update(size_bytes=len(data), sha256=sha256(data).hexdigest())
+    runtime_path.write_bytes(raw(runtime))
+    assignments = dict(SOFTWARE_VERSION=version, NUMERIC_VERSION=version, MATURITY=stage,
+        RELEASE_DATE='2026-10-06', RELEASE_TIMEZONE='UTC')
+    (source / 'version.py').write_bytes(('\n'.join(k+' = '+repr(v) for k,v in assignments.items())+'\n').encode())
+    (source / 'MODULE_MANIFEST.json').write_bytes(raw(module))
+    (source / 'history.json').write_bytes(raw(dict(schema_version=1, releases=[dict(
+        software_version=version, numeric_version=version, maturity=stage, date='2026-10-06', timezone='UTC')])))
+    display = ('a.' if stage=='alpha' else 'b.' if stage=='beta' else '') + version
+    notes = f'# {display} - 2026-10-06\r\n\r\nINERT approved fixture notes.\r\n'
+    (source / 'notes.md').write_bytes(notes.encode())
+    old = manifest(); old.update(component_id=COMPONENT.value, version='0.1.0-alpha.9', supported_from='0.1.0-alpha.9',
+        platform=dict(os='windows', architecture='x86_64'))
+    if baseline_schema==2: old.update(schema_version=2, version='0.1.0', supported_from='0.1.0', maturity='alpha')
+    for name, data in [('baseline.json', raw(old)), ('baseline.sig', raw(signature(raw(old)))), ('trust.json', raw(trust()))]:
+        (tmp_path / name).write_bytes(data)
+    def pin(p): return dict(path=str(p), sha256=sha256(p.read_bytes()).hexdigest())
+    descriptor = dict(schema_version=1, purpose='COMPONENT_SCHEMA2_PRODUCER_INPUTS', component_id=COMPONENT.value,
+        version=version, maturity=stage, source_version=pin(source/'version.py'), source_module=pin(source/'MODULE_MANIFEST.json'),
+        release_history=pin(source/'history.json'), release_notes=pin(source/'notes.md'),
+        baseline=dict(manifest=pin(tmp_path/'baseline.json'), signature=pin(tmp_path/'baseline.sig'), trust=pin(tmp_path/'trust.json')))
+    (source/'public-source.json').write_bytes(raw(dict(schema_version=1, export_scope='component-source',
+        fresh_history_required=True, manifest_excludes_self=True, files={p.name:dict(size_bytes=p.stat().st_size,
+        sha256=sha256(p.read_bytes()).hexdigest()) for p in source.iterdir()})))
+    descriptor['source_inventory'] = pin(source/'public-source.json')
+    inputs = tmp_path/'identity.json'; inputs.write_bytes(raw(descriptor))
+    args = options(root, tmp_path/'output', version=version)
+    args.update(supported_from='0.1.0', release_notes=notes, identity_inputs=inputs)
+    return args, descriptor
+
+
+def rebind_identity_packet(args, descriptor, *, source=True):
+    """Only synthetic fixtures may refresh approved pins after deliberate changes."""
+    from suite_core.tests.test_component_release_signature import raw
+    if source:
+        inventory_path = Path(descriptor['source_inventory']['path']); inventory = json.loads(inventory_path.read_bytes())
+        for role in ('source_version', 'source_module', 'release_history', 'release_notes'):
+            p=Path(descriptor[role]['path']); data=p.read_bytes(); descriptor[role]['sha256']=sha256(data).hexdigest()
+            inventory['files'][p.name]=dict(size_bytes=len(data), sha256=sha256(data).hexdigest())
+        inventory_path.write_bytes(raw(inventory)); descriptor['source_inventory']['sha256']=sha256(inventory_path.read_bytes()).hexdigest()
+    Path(args['identity_inputs']).write_bytes(raw(descriptor))
+
+
+@pytest.mark.parametrize('stage', ['alpha','beta','stable'])
+@pytest.mark.parametrize('baseline_schema', [1,2])
+def test_schema2_producer_binds_static_identity_and_b1_admission(tmp_path, stage, baseline_schema):
+    args, descriptor=producer_identity_packet(tmp_path, stage, baseline_schema)
+    before=snapshot(Path(args['payload_root'])); receipt=build_package(**args)
+    envelope=(args['output_root']/'release-manifest.input.json').read_bytes()
+    verified=verify_component_release(envelope, sign(envelope), TRUST, expected_component=COMPONENT,
+        expected_version='0.2.0', expected_maturity=stage, expected_channel='stable' if stage=='stable' else 'beta',
+        expected_os='windows', expected_architecture='x86_64')
+    assert verified.schema_version==2 and verified.maturity==stage
+    assert receipt['release_identity']['maturity']==stage and receipt['release_schema_version']==2
+    assert all(not receipt[k] for k in ('signed','native_health_verified','production_install_authorized'))
+    assert snapshot(Path(args['payload_root']))==before
+    assert json.loads(envelope)['release_notes']==args['release_notes'] and '\r\n' in args['release_notes']
+    assert not any(str(tmp_path) in key for key in receipt['release_identity']['input_sha256'])
+
+
+@pytest.mark.parametrize('mutation', ['missing_constant','computed_constant','duplicate_constant','dynamic_target',
+    'module_maturity','source_module_bytes','runtime_maturity','history_duplicate','history_date','source_numeric',
+    'notes_heading','notes_second_heading','notes_bom','notes_content','source_hash','inventory_hash','unknown_key',
+    'relative_path','alias','path_alias','source_escape','timezone','naive_stamp','equal_baseline','lower_target','floor','signature','private_trust'])
+def test_schema2_producer_refuses_mismatch_before_output(tmp_path, mutation):
+    from suite_core.tests.test_component_release_signature import raw, signature
+    args, d=producer_identity_packet(tmp_path)
+    version=Path(d['source_version']['path']); notes=Path(d['release_notes']['path']); history=Path(d['release_history']['path'])
+    if mutation=='missing_constant': version.write_bytes(version.read_bytes().replace(b"MATURITY = 'alpha'\n",b''))
+    elif mutation=='computed_constant': version.write_bytes(version.read_bytes().replace(b"MATURITY = 'alpha'",b"MATURITY = str('alpha')"))
+    elif mutation=='duplicate_constant': version.write_bytes(version.read_bytes()+b"MATURITY = 'alpha'\n")
+    elif mutation=='dynamic_target': version.write_bytes(version.read_bytes()+b"globals()['MATURITY'] = 'beta'\n")
+    elif mutation=='source_numeric': version.write_bytes(version.read_bytes().replace(b"NUMERIC_VERSION = '0.2.0'",b"NUMERIC_VERSION = '0.2.1'"))
+    elif mutation in ('module_maturity','source_module_bytes'):
+        p=Path(d['source_module']['path']); m=json.loads(p.read_bytes()); m['maturity']='beta'; p.write_bytes(raw(m))
+        if mutation=='module_maturity':
+            staged=Path(args['payload_root'])/'App/_internal/MODULE_MANIFEST.json'; staged.write_bytes(p.read_bytes())
+            runtime_path=Path(args['payload_root'])/'App/RUNTIME_MANIFEST.json'; runtime=json.loads(runtime_path.read_bytes())
+            for row in runtime['files']:
+                data=(Path(args['payload_root'])/'App'/row['path']).read_bytes();row.update(size_bytes=len(data),sha256=sha256(data).hexdigest())
+            runtime_path.write_bytes(raw(runtime))
+    elif mutation=='runtime_maturity':
+        p=Path(args['payload_root'])/'App/RUNTIME_MANIFEST.json'; m=json.loads(p.read_bytes()); m.pop('maturity');p.write_bytes(raw(m))
+    elif mutation in ('history_duplicate','history_date'):
+        h=json.loads(history.read_bytes())
+        if mutation=='history_duplicate':h['releases'].append(h['releases'][0])
+        else:h['releases'][0]['date']='2026-10-07'
+        history.write_bytes(raw(h))
+    elif mutation in ('notes_heading','notes_second_heading','notes_bom'):
+        content=notes.read_bytes()
+        content=(content.replace(b'a.0.2.0',b'b.0.2.0') if mutation=='notes_heading' else
+            content+b'# Another heading\n' if mutation=='notes_second_heading' else b'\xef\xbb\xbf'+content)
+        notes.write_bytes(content); args['release_notes']=content.decode('utf-8')
+    elif mutation=='notes_content': args['release_notes']='Different free text'
+    elif mutation=='unknown_key':d['unknown']=1
+    elif mutation=='relative_path':d['source_version']['path']='version.py'
+    elif mutation=='path_alias':d['source_version']['path']=str(version.parent/'..'/'source'/'version.py')
+    elif mutation=='alias':d['release_notes']=dict(d['source_version'])
+    elif mutation=='source_escape':
+        outside=tmp_path/'outside.py';outside.write_bytes(version.read_bytes());d['source_version']['path']=str(outside)
+    elif mutation=='timezone':version.write_bytes(version.read_bytes().replace(b"'UTC'",b"'Missing/FixtureZone'"))
+    elif mutation=='naive_stamp':args['published_at']='2026-10-06T00:00:00'
+    elif mutation=='floor':args['supported_from']='0.1.1'
+    elif mutation in ('equal_baseline','lower_target'):
+        p=Path(d['baseline']['manifest']['path']);m=json.loads(p.read_bytes());m.update(schema_version=2,version='0.2.0' if mutation=='equal_baseline' else '0.3.0',supported_from='0.1.0',maturity='alpha');p.write_bytes(raw(m))
+        s=Path(d['baseline']['signature']['path']);s.write_bytes(raw(signature(raw(m))))
+        for role in ('manifest','signature'):d['baseline'][role]['sha256']=sha256(Path(d['baseline'][role]['path']).read_bytes()).hexdigest()
+    elif mutation=='signature':
+        p=Path(d['baseline']['signature']['path']);p.write_bytes(b'{}');d['baseline']['signature']['sha256']=sha256(p.read_bytes()).hexdigest()
+    elif mutation=='private_trust':
+        p=Path(d['baseline']['trust']['path']);t=json.loads(p.read_bytes());t['keys'][0]['private_exponent']='NOT A KEY';p.write_bytes(raw(t));d['baseline']['trust']['sha256']=sha256(p.read_bytes()).hexdigest()
+    if mutation not in ('relative_path','alias','path_alias','source_escape'):rebind_identity_packet(args,d)
+    else:rebind_identity_packet(args,d,source=False)
+    if mutation=='source_hash':d['source_version']['sha256']='0'*64;rebind_identity_packet(args,d,source=False)
+    if mutation=='inventory_hash':d['source_inventory']['sha256']='0'*64;rebind_identity_packet(args,d,source=False)
+    with pytest.raises((ValueError,KeyError,UnicodeError)):
+        build_package(**args)
+    assert not args['output_root'].exists()
+
+
+def test_schema2_identity_mutation_before_output_refuses_without_marker(tmp_path, monkeypatch):
+    import tools.build_component_package as producer
+    args,d=producer_identity_packet(tmp_path);original=producer.produce_inventory
+    def change(*a,**k):
+        result=original(*a,**k);p=Path(d['source_version']['path']);p.write_bytes(p.read_bytes()+b'# changed\n');return result
+    monkeypatch.setattr(producer,'produce_inventory',change)
+    with pytest.raises(ValueError,match='producer_input_changed'):build_package(**args)
+    assert not args['output_root'].exists()
+
+
+def test_schema2_identity_drift_after_archive_retains_incomplete_output(tmp_path, monkeypatch):
+    import tools.build_component_package as producer
+    args,d=producer_identity_packet(tmp_path);original=producer.zipfile.ZipFile
+    def changed(file,*a,**k):
+        result=original(file,*a,**k)
+        if isinstance(file,Path) and file.suffix=='.zip' and not a and not k:
+            p=Path(d['source_version']['path']);p.write_bytes(p.read_bytes()+b'# drift\n')
+        return result
+    monkeypatch.setattr(producer.zipfile,'ZipFile',changed)
+    with pytest.raises(ValueError,match='producer_input_changed'):build_package(**args)
+    assert (args['output_root']/'INCOMPLETE.json').exists()
+    assert len(list(args['output_root'].glob('*.zip')))==1
+
+
+@pytest.mark.parametrize('stamp,allowed', [('2026-10-05T23:30:00-01:00',True),('2026-10-06T23:30:00-01:00',False)])
+def test_schema2_publication_offset_uses_declared_date(tmp_path, stamp, allowed):
+    args,d=producer_identity_packet(tmp_path);args['published_at']=stamp
+    if allowed:assert build_package(**args)['release_schema_version']==2
+    else:
+        with pytest.raises(ValueError,match='date'):build_package(**args)
+        assert not args['output_root'].exists()
+
+
+def test_schema2_missing_iana_data_holds_without_install_fallback(tmp_path, monkeypatch):
+    import zoneinfo
+    args,d=producer_identity_packet(tmp_path)
+    def missing(*a,**k):raise zoneinfo.ZoneInfoNotFoundError('Synthetic missing IANA data')
+    monkeypatch.setattr(zoneinfo,'ZoneInfo',missing)
+    version=Path(d['source_version']['path']);version.write_bytes(version.read_bytes().replace(b"'UTC'",b"'America/New_York'"))
+    rebind_identity_packet(args,d)
+    with pytest.raises(ValueError):build_package(**args)
+    assert not args['output_root'].exists()
+
+
+def test_schema2_cli_keeps_canonical_crlf_notes(tmp_path):
+    args,d=producer_identity_packet(tmp_path);argv=[]
+    for key,value in args.items():
+        if key!='release_notes':argv.extend(('--'+key.replace('_','-'),str(value)))
+    argv.extend(('--release-notes-file',d['release_notes']['path']))
+    result=subprocess.run([sys.executable,'-B','tools/build_component_package.py',*argv],capture_output=True,text=True)
+    assert result.returncode==0,result.stderr
+    envelope=json.loads((args['output_root']/'release-manifest.input.json').read_bytes())
+    assert envelope['release_notes']==args['release_notes'] and '\r\n' in envelope['release_notes']
+
+
+@pytest.mark.parametrize('wire', ['duplicate','oversized','nonfinite'])
+def test_schema2_descriptor_wire_limits_leave_no_output(tmp_path, wire):
+    args,d=producer_identity_packet(tmp_path);p=Path(args['identity_inputs'])
+    p.write_bytes(b'{"schema_version":1,"schema_version":1}' if wire=='duplicate' else
+        b' '*(128*1024+1) if wire=='oversized' else b'{"schema_version":NaN}')
+    with pytest.raises(ValueError):build_package(**args)
+    assert not args['output_root'].exists()
 
 
 def payload(tmp_path, version='0.1.0-alpha.9', component='collectigen.suite-manager'):

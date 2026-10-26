@@ -15,7 +15,7 @@ if str(ROOT) not in sys.path:
 
 from suite_core.installation import ComponentId, _relative
 from suite_core.discovery.component_release_signature import _json, _version, MAX_METADATA_BYTES, inventory_json
-from suite_core.discovery.component_staging import INVENTORY, MAX_ARCHIVE, MAX_UNPACKED, guard, canonical, require
+from suite_core.discovery.component_staging import INVENTORY, MAX_ARCHIVE, MAX_UNPACKED, guard, canonical, require, read_metadata_bytes
 from suite_core.discovery.offline_component_producer import produce_inventory
 from suite_core.discovery.component_payload_policy import select_payload_policy, payload_relative
 
@@ -279,10 +279,96 @@ def assemble_organizer_interpreter(runtime_root,source_inputs_root,output_root,*
         raise
 
 
+def _producer_identity_inputs(reference, *, component_id, software_version, os_name,
+        architecture, supported_from, published_at, release_notes, module_bytes, runtime):
+    """Read only explicitly pinned public preparation inputs; never scan a cohort."""
+    from core.component_release_identity import validate_producer_source_identity, require_component_maturity_upgrade, ComponentReleaseIdentity
+    from suite_core.discovery.component_release_signature import verify_component_release
+    held = {}
+
+    def read(path, limit=MAX_METADATA_BYTES):
+        require(type(path) is str and Path(path).is_absolute(), 'identity_absolute_path')
+        p = Path(path); guard(p)
+        parts = path.replace('\\', '/').split('/')
+        require(all(t not in ('.', '..') and (bool(t) or i == 0 and path.startswith('/'))
+            for i,t in enumerate(parts)), 'identity_path_alias')
+        require(not any(t.casefold() in MUTABLE | {'state'} for t in p.parts), 'identity_mutable_path')
+        require(p.is_file() and p.stat().st_size <= limit, 'identity_input_bounds')
+        with p.open('rb') as stream: content = stream.read(limit + 1)
+        require(len(content) <= limit, 'identity_input_bounds'); guard(p)
+        key = str(p.resolve()).casefold()
+        require(key not in {str(v[0].resolve()).casefold() for v in held.values()}, 'identity_input_alias')
+        held[path] = (p, content)
+        return content
+
+    def pinned(row, limit=MAX_METADATA_BYTES):
+        require(type(row) is dict and set(row) == {'path', 'sha256'}, 'identity_pin_schema')
+        require(type(row['sha256']) is str and len(row['sha256']) == 64
+            and all(c in '0123456789abcdef' for c in row['sha256']), 'identity_sha256')
+        value = read(row['path'], limit)
+        require(sha256(value).hexdigest() == row['sha256'], 'identity_input_pin_changed')
+        return value
+
+    descriptor = read(str(reference) if isinstance(reference, Path) else reference)
+    value = _json(descriptor, 'producer identity inputs')
+    require(set(value) == {'schema_version', 'purpose', 'component_id', 'version', 'maturity',
+        'source_version', 'source_module', 'source_inventory', 'release_history', 'release_notes', 'baseline'}
+        and type(value['schema_version']) is int and value['schema_version'] == 1
+        and value['purpose'] == 'COMPONENT_SCHEMA2_PRODUCER_INPUTS', 'identity_inputs_schema')
+    require(value['component_id'] == component_id and value['version'] == software_version, 'producer_identity_binding')
+    identity = ComponentReleaseIdentity(value['version'], value['maturity'])
+    inventory = inventory_json(pinned(value['source_inventory'], 1024*1024), max_bytes=1024*1024)
+    inventory_path = Path(value['source_inventory']['path'])
+    require(inventory_path.name == 'public-source.json' and type(inventory.get('schema_version')) is int
+        and inventory['schema_version'] == 1 and type(inventory.get('files')) is dict
+        and inventory.get('export_scope') == 'component-source'
+        and inventory.get('fresh_history_required') is True and inventory.get('manifest_excludes_self') is True,
+        'source_inventory_schema')
+    cohort = inventory_path.parent.resolve()
+    content = {}
+    for role in ('source_version', 'source_module', 'release_history', 'release_notes'):
+        row = value[role]; data = pinned(row)
+        source = Path(row['path']).resolve()
+        require(source.is_relative_to(cohort), 'identity_source_escape')
+        name = source.relative_to(cohort).as_posix(); entry = inventory['files'].get(name)
+        require(type(entry) is dict and set(entry) == {'sha256', 'size_bytes'}
+            and type(entry['size_bytes']) is int and entry['size_bytes'] == len(data)
+            and entry['sha256'] == sha256(data).hexdigest(), 'identity_source_not_in_inventory')
+        content[role] = data
+    require(content['source_module'] == module_bytes, 'staged_source_module_drift')
+    require(content['release_notes'].decode('utf-8') == release_notes, 'canonical_notes_changed')
+    details = validate_producer_source_identity(content['source_version'], _json(module_bytes, 'source module'),
+        _json(content['release_history'], 'source history'), runtime, component_id=component_id,
+        version=software_version, maturity=identity.maturity, published_at=published_at, notes=content['release_notes'])
+    baseline = value['baseline']
+    require(type(baseline) is dict and set(baseline) == {'manifest', 'signature', 'trust'}, 'baseline_inputs_schema')
+    message, signature, trust = (pinned(baseline[k]) for k in ('manifest', 'signature', 'trust'))
+    untrusted = _json(message, 'baseline manifest')
+    require(type(untrusted.get('schema_version')) is int and untrusted['schema_version'] in (1, 2), 'baseline_schema')
+    verified = verify_component_release(message, signature, trust, expected_component=ComponentId(component_id),
+        expected_version=untrusted.get('version'), expected_channel=untrusted.get('channel'), expected_os=os_name,
+        expected_architecture=architecture, expected_maturity=untrusted.get('maturity') if untrusted['schema_version']==2 else None)
+    require_component_maturity_upgrade(verified.software_version, identity, current_schema=verified.schema_version,
+        current_maturity=verified.maturity, supported_from=supported_from)
+    details.update(source_inventory_sha256=value['source_inventory']['sha256'],
+        baseline_manifest_sha256=verified.manifest_sha256,
+        input_sha256=dict(identity_inputs=sha256(descriptor).hexdigest(),
+            **{role:value[role]['sha256'] for role in ('source_inventory', 'source_version', 'source_module', 'release_history', 'release_notes')},
+            **{'baseline_'+role:baseline[role]['sha256'] for role in ('manifest', 'signature', 'trust')}))
+
+    def recheck():
+        for p, expected in held.values():
+            guard(p)
+            require(p.is_file() and p.stat().st_size == len(expected), 'producer_input_changed')
+            with p.open('rb') as stream: observed = stream.read(len(expected)+1)
+            require(observed == expected, 'producer_input_changed')
+    return details, recheck
+
+
 def build_package(payload_root, output_root, *, runtime_manifest, module_manifest,
                   component_id, software_version, os_name, architecture, artifact_name,
                   supported_from, published_at, release_notes, require_update_data_contract=False,
-                  runtime_kind="frozen-portable"):
+                  runtime_kind="frozen-portable", identity_inputs=None):
     """Fail closed on mismatched inventory/identity; output is unsigned and inactive."""
     require(component_id in COMPONENTS, 'suite_component_required')
     policy=select_payload_policy(ComponentId(component_id),os_name,architecture,runtime_kind)
@@ -365,6 +451,12 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
                 and tuple(sorted(declared)) == snapshots and type(maximum) is int
                 and maximum == max(snapshots), 'update_snapshot_declaration_mismatch')
         update_contract_validated = True  # schema only, never installed-data health
+    identity = recheck_identity = None
+    if identity_inputs is not None:
+        identity, recheck_identity = _producer_identity_inputs(identity_inputs, component_id=component_id,
+            software_version=software_version, os_name=os_name, architecture=architecture,
+            supported_from=supported_from, published_at=published_at, release_notes=release_notes,
+            module_bytes=by_name[module_manifest], runtime=runtime)
     rows = runtime.get('files')
     require(type(rows) is list and 0 < len(rows) <= policy.max_inventory_members, 'runtime_file_rows')
     base = Path(runtime_manifest).parent.as_posix()
@@ -386,6 +478,7 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
     require(all((source / n).is_file() and (source / n).read_bytes() == v for n, v in members), 'payload_changed')
     require({p.relative_to(source).as_posix() for p in source.rglob('*') if p.is_file()} == set(by_name),
             'payload_closure_changed')
+    if recheck_identity is not None: recheck_identity()
     output.mkdir()  # no force/overwrite, no deletion or alteration of input
     incomplete = output / 'INCOMPLETE.json'
     incomplete.write_bytes(canonical({'state': 'incomplete', 'production_install_authorized': False}))
@@ -401,12 +494,17 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
     with zipfile.ZipFile(archive) as z:
         require(z.namelist() == sorted((*by_name, INVENTORY)), 'output_closure')
         require(all(z.read(n) == v for n, v in (*members, (INVENTORY, inventory))), 'output_readback')
-    envelope = canonical({'schema_version': 1, 'product': 'collectigen', 'component_id': component_id,
+    envelope_value = {'schema_version': 1, 'product': 'collectigen', 'component_id': component_id,
         'version': software_version, 'channel': 'beta' if version.prerelease else 'stable',
         'published_at': published_at, 'supported_from': supported_from, 'release_notes': release_notes,
         'platform': {'os': os_name, 'architecture': architecture},
         'artifacts': [{'name': artifact_name, 'kind': 'component-package', 'size_bytes': archive.stat().st_size,
-            'sha256': sha256(archive.read_bytes()).hexdigest(), 'portable_manifest_sha256': sha256(inventory).hexdigest()}]})
+            'sha256': sha256(archive.read_bytes()).hexdigest(), 'portable_manifest_sha256': sha256(inventory).hexdigest()}]}
+    if identity is not None:
+        recheck_identity()
+        envelope_value.update(schema_version=2, maturity=identity['maturity'],
+            channel='stable' if identity['maturity']=='stable' else 'beta')
+    envelope = canonical(envelope_value)
     require(len(envelope) <= MAX_METADATA_BYTES, 'envelope_size')
     (output / 'release-manifest.input.json').write_bytes(envelope)
     (output / INVENTORY).write_bytes(inventory)
@@ -415,7 +513,9 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
         'manifest_sha256': sha256(envelope).hexdigest(), 'inventory_sha256': sha256(inventory).hexdigest(),
         'production_install_authorized': False, 'native_health_verified': False, 'signed': False,
         'update_data_contract_schema_validated': update_contract_validated}
+    if identity is not None: receipt.update(release_schema_version=2, release_identity=identity)
     (output / 'packaging-receipt.json').write_bytes(canonical(receipt))
+    if recheck_identity is not None: recheck_identity()
     incomplete.unlink()  # only the exact marker just created in this fresh output
     return receipt
 
@@ -429,9 +529,10 @@ def main():
     parser.add_argument('--runtime-kind',choices=('frozen-portable','interpreter-portable'),default='frozen-portable')
     parser.add_argument('--require-update-data-contract', action='store_true',
         help='Require the existing Encyclopedia module compatibility schema; does not attest data compatibility.')
+    parser.add_argument('--identity-inputs', help='Explicit pinned schema2 producer identity inputs; no legacy fallback.')
     values = vars(parser.parse_args())
     notes = Path(values.pop('release_notes_file'))
-    values['release_notes'] = notes.read_text(encoding='utf-8')
+    values['release_notes'] = read_metadata_bytes(notes).decode('utf-8') if values['identity_inputs'] is not None else notes.read_text(encoding='utf-8')
     print(canonical(build_package(**values)).decode())
 
 

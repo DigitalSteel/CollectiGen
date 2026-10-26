@@ -1013,7 +1013,8 @@
     "tools/verify_encyclopedia_root_release.py",
     "tests/test_encyclopedia_root_release_verification.py",
     "docs/ROOT_RELEASE_VERIFIER.md",
-    "docs/COMPONENT_MATURITY_ADMISSION.md"
+    "docs/COMPONENT_MATURITY_ADMISSION.md",
+    "docs/COMPONENT_PRODUCER_IDENTITY.md"
   ],
   "reviewed_defaults": [],
   "required_provenance": []

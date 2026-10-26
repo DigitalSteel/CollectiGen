@@ -73,6 +73,79 @@ def require_component_maturity_upgrade(current_version: str, target: ComponentRe
         raise ReleaseContractError("Require a newer component identity; equal or downgrade held.")
 
 
+def validate_producer_source_identity(version_source: bytes, module: dict, history: dict,
+        runtime: dict, *, component_id: str, version: str, maturity: str,
+        published_at: str, notes: bytes) -> dict:
+    """Pure literal-source/date/notes agreement; no source execution or I/O."""
+    import ast
+    from datetime import date, datetime, timezone
+    from zoneinfo import ZoneInfo
+
+    identity = ComponentReleaseIdentity(version, maturity)
+    required = {"SOFTWARE_VERSION", "NUMERIC_VERSION", "MATURITY", "RELEASE_DATE", "RELEASE_TIMEZONE"}
+    try:
+        tree = ast.parse(version_source.decode("utf-8"))
+        for statement in tree.body:
+            if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Constant) and type(statement.value.value) is str:
+                continue
+            if (not isinstance(statement, (ast.Assign, ast.AnnAssign))
+                    or not isinstance(statement.value, ast.Constant)
+                    or (isinstance(statement, ast.AnnAssign)
+                        and not isinstance(statement.annotation, ast.Name))):
+                raise ReleaseContractError("Literal source declarations only.")
+            targets = statement.targets if isinstance(statement, ast.Assign) else [statement.target]
+            if len(targets) != 1 or not isinstance(targets[0], ast.Name):
+                raise ReleaseContractError("Simple literal source assignments required.")
+        declarations = {}
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                names = {n.id for t in targets for n in ast.walk(t) if isinstance(n, ast.Name)} & required
+                for name in names:
+                    if (name in declarations or node not in tree.body
+                            or not isinstance(node, (ast.Assign, ast.AnnAssign))
+                            or len(targets) != 1 or not isinstance(targets[0], ast.Name)
+                            or not isinstance(node.value, ast.Constant) or type(node.value.value) is not str):
+                        raise ReleaseContractError("Unique literal source identity required.")
+                    declarations[name] = node.value.value
+        if set(declarations) != required:
+            raise ReleaseContractError("Missing literal source identity.")
+        expected = dict(SOFTWARE_VERSION=version, NUMERIC_VERSION=version, MATURITY=maturity)
+        if any(declarations[k] != v for k, v in expected.items()):
+            raise ReleaseContractError("Source identity mismatch.")
+        day, zone = declarations["RELEASE_DATE"], declarations["RELEASE_TIMEZONE"]
+        if date.fromisoformat(day).isoformat() != day:
+            raise ReleaseContractError("Canonical release date required.")
+        stamp = datetime.fromisoformat(published_at)
+        resolved_zone = timezone.utc if zone == "UTC" else ZoneInfo(zone)
+        if stamp.tzinfo is None or stamp.utcoffset() is None or stamp.astimezone(resolved_zone).date().isoformat() != day:
+            raise ReleaseContractError("Publication timezone/date mismatch.")
+        if (module.get("module_id") != component_id or module.get("software_version") != version
+                or module.get("numeric_version") != version or module.get("maturity") != maturity
+                or module.get("release_date") != day or module.get("release_timezone") != zone
+                or runtime.get("feature_version") != version or runtime.get("maturity") != maturity):
+            raise ReleaseContractError("Module/runtime/source identity mismatch.")
+        if (type(history) is not dict or type(history.get("schema_version")) is not int
+                or history["schema_version"] != 1 or type(history.get("releases")) is not list
+                or len(history["releases"]) > 256 or not all(type(r) is dict for r in history["releases"])):
+            raise ReleaseContractError("Release history schema.")
+        matches = [r for r in history["releases"] if r.get("software_version") == version and r.get("maturity") == maturity]
+        if len(matches) != 1 or any(matches[0].get(k) != v for k, v in
+                dict(numeric_version=version, date=day, timezone=zone).items()):
+            raise ReleaseContractError("Unique matching release history required.")
+        text = notes.decode("utf-8")
+        lines = text.splitlines(); nonempty = [line for line in lines if line.strip()]
+        if (text.startswith("\ufeff") or not nonempty
+                or nonempty[0] != f"# {identity.display_version} - {day}"
+                or sum(line.startswith("# ") for line in lines) != 1):
+            raise ReleaseContractError("Canonical notes identity/date heading required.")
+        return dict(version=version, maturity=maturity, release_date=day, release_timezone=zone)
+    except (SyntaxError, UnicodeError, ValueError, KeyError, TypeError, RecursionError) as exc:
+        if isinstance(exc, ReleaseContractError):
+            raise
+        raise ReleaseContractError("Invalid producer source/date/notes input.") from exc
+
+
 def validate_legacy_display_mapping(
     entries: Iterable[tuple[str, str, ComponentReleaseIdentity]],
 ) -> dict[tuple[str, str], ComponentReleaseIdentity]:

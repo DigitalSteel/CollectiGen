@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1016,
+  "allowlisted_source_file_count": 1017,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -282,8 +282,8 @@
       "size_bytes": 21343
     },
     "core/component_release_identity.py": {
-      "sha256": "60a8a70bc03d6c44c2da44924d95ee1a841be9d0ba2a0034f16413cb2ccc7d1c",
-      "size_bytes": 10452
+      "sha256": "88eb34384b97551a634e07b05f8e255864766fee4884703f88bf24c52c6d03fa",
+      "size_bytes": 15613
     },
     "core/component_release_transport.py": {
       "sha256": "8e2fce2ddb6337712071c311d69875a9a9ba8ab51fed7a499cf3c52576e3ff97",
@@ -1953,6 +1953,10 @@
       "sha256": "4c871193ea28eb68d0f5c41d10ec2baac9663d8532255b3c586bfcee8a957c12",
       "size_bytes": 2761
     },
+    "docs/COMPONENT_PRODUCER_IDENTITY.md": {
+      "sha256": "48d1cf80999481cde5604aab257691ada37f6fc50c68d5d31ca95c8a688c3d74",
+      "size_bytes": 3440
+    },
     "docs/MANAGER_CATALOG_RECIPE.md": {
       "sha256": "39bab5b0a39bad7a5c99595be33fcb237ff29e7a6d7778bbb218c633b7c3ac52",
       "size_bytes": 16315
@@ -3522,8 +3526,8 @@
       "size_bytes": 25238
     },
     "suite_core/tests/test_component_package_builder.py": {
-      "sha256": "3087b4a0de3a537441299a1e34fa28dd9fd0078ea5ba3c8a3a130a26a29de5fe",
-      "size_bytes": 11381
+      "sha256": "aae467c533dc074004da045b325bcd17bc3e947721805abe6a7f5cd9cb19e396",
+      "size_bytes": 25610
     },
     "suite_core/tests/test_component_payload_policy.py": {
       "sha256": "9a1a13cda05388b8fbfe790f578dc4b477e5ea9c46d5845498b647cd324ae3bc",
@@ -3946,8 +3950,8 @@
       "size_bytes": 16221
     },
     "tools/build_component_package.py": {
-      "sha256": "d15cfc4a19b5da19ccc0f3590d24fdd5a74bfddb4b103b011ec089b78e7a0459",
-      "size_bytes": 27445
+      "sha256": "0cbb81ec66e28c0860777b60cc301f3ab5c04afd52b6b6857383885a1e577663",
+      "size_bytes": 34870
     },
     "tools/build_manager_distribution.py": {
       "sha256": "a7a0637c4e404aede6f8a2e22991f06485ea78a485dbcbe967f60d716f686659",
@@ -3962,8 +3966,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "34134ea9e51ede91f8259708a549055c5156e36e31b903535f87c08e58dc3b41",
-      "size_bytes": 41768
+      "sha256": "d630154bac44785a8ee0b56aff6e0eb4e97ea97084ed93578fe3b9ce66ba7cc9",
+      "size_bytes": 41811
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",
