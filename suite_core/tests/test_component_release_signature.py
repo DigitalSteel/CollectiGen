@@ -179,7 +179,8 @@ def test_raw_metadata_holds(position, bad):
             expected_channel="beta", expected_os="linux", expected_architecture="x86_64")
 
 
-def test_verification_does_not_read_trust_paths_or_write_or_network(monkeypatch):
+@pytest.mark.parametrize("schema", [1, 2])
+def test_verification_does_not_read_trust_paths_or_write_or_network(monkeypatch, schema):
     import builtins
     import socket
     def deny(*a, **kw):
@@ -188,7 +189,7 @@ def test_verification_does_not_read_trust_paths_or_write_or_network(monkeypatch)
     monkeypatch.setattr(Path, "read_bytes", deny)
     monkeypatch.setattr(Path, "write_bytes", deny)
     monkeypatch.setattr(socket, "socket", deny)
-    assert verify().production_install_authorized is False
+    assert (verify() if schema == 1 else verify_maturity()).production_install_authorized is False
 
 
 @pytest.mark.parametrize("version", ["0.1.0-alpha.\u0665", "0.1\u0660.0-alpha.5"])
@@ -227,3 +228,100 @@ def test_both_digest_fields_covered_by_exact_signature():
         m["artifacts"][0][field] = "b" * 64
         with pytest.raises(ReleaseContractError, match="digest"):
             verify(m=m, s=s)
+
+
+def maturity_manifest(stage="alpha"):
+    value = manifest()
+    value.update(schema_version=2, version="0.4.0", supported_from="0.3.1",
+        maturity=stage, channel="stable" if stage == "stable" else "beta")
+    return value
+
+
+def verify_maturity(m=None, **expected):
+    value = maturity_manifest() if m is None else m
+    defaults = dict(expected_version="0.4.0", expected_maturity=value.get("maturity"),
+        expected_channel=value["channel"])
+    defaults.update(expected)
+    return verify(m=value, **defaults)
+
+
+@pytest.mark.parametrize("stage", ["alpha", "beta", "stable"])
+def test_explicit_signed_numeric_maturity_admission(stage):
+    value = maturity_manifest(stage)
+    result = verify_maturity(value)
+    assert (result.schema_version, result.software_version, result.maturity) == (2, "0.4.0", stage)
+    assert result.channel == value["channel"]
+    assert result.manifest_sha256 == sha256(raw(value)).hexdigest()
+    assert result.production_install_authorized is False
+    # Existing calls carry no maturity expectation and must not gain schema2.
+    with pytest.raises(ReleaseContractError, match="maturity"):
+        verify(m=value, expected_version="0.4.0", expected_channel=value["channel"])
+
+
+def test_default_root_and_main_app_verifier_do_not_admit_component_schema2():
+    from release_contract import verify_release_manifest
+    message = raw(maturity_manifest())
+    with pytest.raises(ReleaseContractError, match="schema"):
+        verify_release_manifest(message, raw(signature(message)), trust(), expected_channel="beta")
+    old = verify()
+    assert (old.schema_version, old.maturity) == (1, None)
+    with pytest.raises(ReleaseContractError, match="schema1"):
+        verify(expected_maturity="alpha")
+
+
+@pytest.mark.parametrize("change", [
+    {"schema_version": 3}, {"schema_version": True}, {"extra": "unknown"},
+    {"version": "0.4.0-alpha.1"}, {"version": "a.0.4.0"}, {"version": "0.4.0+build1"},
+    {"version": " 0.4.0"}, {"version": "0.4.\u0660"}, {"maturity": "Alpha"},
+    {"maturity": None}, {"channel": "stable"}, {"supported_from": "0.4.1"},
+    {"supported_from": "0.3.1-alpha.1"}, {"supported_from": "0.3.1+build1"},
+    {"supported_from": " 0.3.1"}, {"product": "other"},
+    {"component_id": "collectigen.suite-manager"},
+])
+def test_resigned_schema2_identity_envelope_refusals(change):
+    value = maturity_manifest(); value.update(change)
+    with pytest.raises(ReleaseContractError):
+        verify_maturity(value)
+
+
+@pytest.mark.parametrize("expected", [
+    {"expected_maturity": None}, {"expected_maturity": "beta"}, {"expected_maturity": True},
+    {"expected_channel": "stable"}, {"expected_version": "0.4.1"},
+    {"expected_component": ComponentId("collectigen.suite-manager")},
+    {"expected_os": "windows"}, {"expected_architecture": "aarch64"},
+])
+def test_schema2_exact_expectations_do_not_follow_signed_different_target(expected):
+    with pytest.raises(ReleaseContractError):
+        verify_maturity(**expected)
+
+
+@pytest.mark.parametrize("field", ["maturity", "sha256", "portable_manifest_sha256"])
+def test_schema2_signature_covers_maturity_and_both_artifact_pins(field):
+    value = maturity_manifest(); signed = signature(raw(value))
+    if field == "maturity":
+        value[field] = "beta"
+    else:
+        value["artifacts"][0][field] = "b" * 64
+    with pytest.raises(ReleaseContractError, match="digest"):
+        verify(m=value, s=signed, expected_version="0.4.0", expected_maturity=value["maturity"])
+
+
+@pytest.mark.parametrize("failure", ["key", "signature", "artifact_kind", "artifact_size", "trust"])
+def test_schema2_reuses_signature_trust_and_artifact_guards(failure):
+    value = maturity_manifest(); signed = signature(raw(value)); public = trust()
+    if failure == "key": signed["key_id"] = "unknown"
+    elif failure == "signature": signed["signature"] = base64.b64encode(b"\0" * 256).decode()
+    elif failure == "artifact_kind": value["artifacts"][0]["kind"] = "portable-windows-x64"
+    elif failure == "artifact_size": value["artifacts"][0]["size_bytes"] = True
+    else: public["keys"][0]["status"] = "retired"
+    with pytest.raises(ReleaseContractError):
+        verify(m=value, s=signed, t=public, expected_version="0.4.0", expected_maturity="alpha")
+
+
+def test_schema2_original_bytes_are_verified_without_reserialization():
+    message = raw(maturity_manifest()) + b"\n"
+    kwargs = dict(expected_component=COMPONENT, expected_version="0.4.0", expected_maturity="alpha",
+        expected_channel="beta", expected_os="linux", expected_architecture="x86_64")
+    with pytest.raises(ReleaseContractError, match="digest"):
+        verify_component_release(message, raw(signature(message.rstrip())), raw(trust()), **kwargs)
+    assert verify_component_release(message, raw(signature(message)), raw(trust()), **kwargs).schema_version == 2

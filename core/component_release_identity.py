@@ -1,4 +1,4 @@
-"""Presentation identities; signed legacy wire versions remain unchanged.
+"""Structured component identities; signed legacy wire versions remain unchanged.
 
 Callers supply an audited legacy mapping. No prerelease counter is implicitly
 converted into a patch number, and these values do not authorize an update.
@@ -40,6 +40,37 @@ class ComponentReleaseIdentity:
         if type(other) is not ComponentReleaseIdentity:
             raise TypeError("Require a component release identity.")
         return (self.sort_key > other.sort_key) - (self.sort_key < other.sort_key)
+
+
+def require_component_maturity_upgrade(current_version: str, target: ComponentReleaseIdentity,
+        *, current_schema: int, current_maturity: str | None = None, supported_from: str) -> None:
+    """Pure schema-2 ordering gate, not signature, feed or install authority.
+
+    The numeric floor includes all stages. Legacy same-base transitions hold;
+    no legacy display mapping or build ID establishes a newer signed identity.
+    """
+    if (type(target) is not ComponentReleaseIdentity
+            or type(current_schema) is not int or current_schema not in (1, 2)):
+        raise ReleaseContractError("Require explicit component identity schemas.")
+    floor = ComponentReleaseIdentity(supported_from, "alpha").sort_key[:3]
+    if target.sort_key[:3] < floor:
+        raise ReleaseContractError("Target precedes supported numeric floor.")
+    if current_schema == 1:
+        if (current_maturity is not None or type(current_version) is not str
+                or not current_version.isascii() or len(current_version) > 96
+                or current_version != current_version.strip() or "+" in current_version):
+            raise ReleaseContractError("Require exact legacy identity without inferred maturity.")
+        parsed = SemVer.parse(current_version)
+        current_number = (parsed.major, parsed.minor, parsed.patch)
+        newer = target.sort_key[:3] > current_number
+    else:
+        current = ComponentReleaseIdentity(current_version, current_maturity)
+        current_number = current.sort_key[:3]
+        newer = target.compare(current) > 0
+    if current_number < floor:
+        raise ReleaseContractError("Installed version precedes supported numeric floor.")
+    if not newer:
+        raise ReleaseContractError("Require a newer component identity; equal or downgrade held.")
 
 
 def validate_legacy_display_mapping(

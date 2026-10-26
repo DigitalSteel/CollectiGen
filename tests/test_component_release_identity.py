@@ -3,6 +3,48 @@ import pytest
 from core.component_release_identity import ComponentReleaseIdentity, validate_legacy_display_mapping
 from core.component_release_identity import display_component_version
 from release_contract import ReleaseContractError, SemVer
+from core.component_release_identity import require_component_maturity_upgrade
+
+
+@pytest.mark.parametrize("old,new,allowed", [
+    ("alpha", "beta", True), ("alpha", "stable", True), ("beta", "stable", True),
+    ("alpha", "alpha", False), ("beta", "beta", False), ("stable", "stable", False),
+    ("beta", "alpha", False), ("stable", "alpha", False), ("stable", "beta", False),
+])
+def test_signed_stage_promotions_equal_and_downgrade_boundary(old, new, allowed):
+    args = dict(current_schema=2, current_maturity=old, supported_from="0.4.0")
+    target = ComponentReleaseIdentity("0.4.0", new)
+    if allowed:
+        require_component_maturity_upgrade("0.4.0", target, **args)
+    else:
+        with pytest.raises(ReleaseContractError, match="newer"):
+            require_component_maturity_upgrade("0.4.0", target, **args)
+
+
+@pytest.mark.parametrize("version,schema,maturity,floor,allowed", [
+    ("0.3.1-alpha.1", 1, None, "0.3.1", True),
+    ("0.3.1", 1, None, "0.3.1", True),
+    ("0.4.0-alpha.1", 1, None, "0.3.0", False),
+    ("0.4.0", 1, None, "0.3.0", False),
+    ("0.3.0", 1, None, "0.3.1", False),
+    ("0.4.0", 2, None, "0.3.0", False),
+    ("0.3.1", 2, "stable", "0.3.1", True),
+    ("0.3.1", 2, "alpha", "0.3.1", True),
+    ("0.5.0", 2, "alpha", "0.3.0", False),
+    ("0.3.1", 2, "stable", "0.4.1", False),
+    ("0.3.1", 2, "stable", "0.3.1-alpha.1", False),
+    ("0.3.1+build1", 1, None, "0.3.1", False),
+    ("0.3.1", 1, "stable", "0.3.1", False),
+    ("0.3.1", True, None, "0.3.1", False),
+])
+def test_numeric_floor_and_explicit_legacy_transition(version, schema, maturity, floor, allowed):
+    target = ComponentReleaseIdentity("0.4.0", "alpha")
+    args = dict(current_schema=schema, current_maturity=maturity, supported_from=floor)
+    if allowed:
+        require_component_maturity_upgrade(version, target, **args)
+    else:
+        with pytest.raises(ReleaseContractError):
+            require_component_maturity_upgrade(version, target, **args)
 
 
 @pytest.mark.parametrize("maturity,display", [("alpha", "a.0.3.0"), ("beta", "b.0.3.0"), ("stable", "0.3.0")])

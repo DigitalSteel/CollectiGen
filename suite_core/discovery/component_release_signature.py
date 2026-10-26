@@ -10,9 +10,10 @@ import re
 
 from release_contract import (
     ReleaseContractError, ReleaseArtifact, SIGNATURE_ALGORITHM, SemVer,
-    verify_release_manifest, verify_artifact,
+    verify_release_manifest, _verify_release_manifest, verify_artifact,
 )
 from suite_core.installation import ComponentId
+from core.component_release_identity import ComponentReleaseIdentity
 
 ADAPTER_VERSION = "0.1.0-alpha.1"
 MAX_METADATA_BYTES = 128 * 1024
@@ -124,6 +125,8 @@ class VerifiedComponentRelease:
     artifact: ReleaseArtifact
     key_id: str
     manifest_sha256: str
+    schema_version: int = 1
+    maturity: str | None = None
 
     @property
     def production_install_authorized(self):
@@ -132,7 +135,7 @@ class VerifiedComponentRelease:
 
 def verify_component_release(manifest_bytes, signature_bytes, trust_bytes, *,
                              expected_component, expected_version, expected_channel,
-                             expected_os, expected_architecture):
+                             expected_os, expected_architecture, expected_maturity=None):
     """Verify exact signed identity/platform/artifact metadata, not installation.
 
     The signature envelope, trust schema, algorithm and raw-byte hashing are
@@ -146,16 +149,28 @@ def verify_component_release(manifest_bytes, signature_bytes, trust_bytes, *,
     _require(expected_os in ("linux", "windows") and expected_architecture in ("x86_64", "aarch64"), "platform expectation")
     manifest = _json(manifest_bytes, "manifest")
     signature = _json(signature_bytes, "signature")
-    _require(set(manifest) == {"schema_version", "product", "version", "channel", "published_at",
-        "supported_from", "release_notes", "artifacts", "component_id", "platform"}, "component manifest schema")
-    _require(type(manifest["schema_version"]) is int and manifest["schema_version"] == 1
+    schema = manifest.get("schema_version")
+    _require(type(schema) is int and schema in (1, 2), "component manifest schema")
+    fields = {"schema_version", "product", "version", "channel", "published_at",
+        "supported_from", "release_notes", "artifacts", "component_id", "platform"}
+    _require(set(manifest) == fields | ({"maturity"} if schema == 2 else set())
              and manifest["product"] == "collectigen", "component manifest schema")
+    if schema == 2:
+        identity = ComponentReleaseIdentity(manifest["version"], manifest["maturity"])
+        ComponentReleaseIdentity(manifest["supported_from"], "alpha")
+        _require(type(expected_maturity) is str and expected_maturity == identity.maturity,
+                 "explicit maturity binding")
+        maturity = identity.maturity
+    else:
+        _require(expected_maturity is None, "schema1 has no maturity expectation")
+        maturity = None
     _require(manifest["component_id"] == expected_component.value and type(manifest["component_id"]) is str, "component binding")
     version = _version(manifest["version"])
     supported = _version(manifest["supported_from"])
     _require(manifest["version"] == expected_version and supported.compare(version) <= 0, "version binding")
     _require(manifest["channel"] == expected_channel and type(manifest["channel"]) is str
-             and bool(version.prerelease) == (expected_channel == "beta"), "channel binding")
+             and (bool(version.prerelease) if schema == 1 else maturity != "stable")
+                 == (expected_channel == "beta"), "channel binding")
     platform = manifest["platform"]
     _require(type(platform) is dict and set(platform) == {"os", "architecture"}
              and platform == {"os": expected_os, "architecture": expected_architecture}, "platform binding")
@@ -176,9 +191,14 @@ def verify_component_release(manifest_bytes, signature_bytes, trust_bytes, *,
     _require(type(signature["manifest_sha256"]) is str and HASH.fullmatch(signature["manifest_sha256"]), "signature digest")
     _require(type(signature["signature"]) is str and len(signature["signature"]) <= 1400, "signature size")
     trust = _trust(trust_bytes)
-    verified = verify_release_manifest(manifest_bytes, signature_bytes, trust, expected_channel=expected_channel)
+    if schema == 1:
+        verified = verify_release_manifest(manifest_bytes, signature_bytes, trust, expected_channel=expected_channel)
+    else:
+        verified = _verify_release_manifest(manifest_bytes, signature_bytes, trust,
+            expected_channel=expected_channel, expected_schema=2)
     return VerifiedComponentRelease(expected_component, verified.version, verified.channel,
-        expected_os, expected_architecture, verified.artifacts[0], verified.key_id, verified.manifest_sha256)
+        expected_os, expected_architecture, verified.artifacts[0], verified.key_id,
+        verified.manifest_sha256, schema, maturity)
 
 
 def verify_component_artifact(path, release):

@@ -214,6 +214,14 @@ def verify_release_manifest(
     *,
     expected_channel: str | None = None,
 ) -> VerifiedReleaseManifest:
+    # Public/default admission stays schema 1 for roots and the main app.
+    return _verify_release_manifest(manifest_bytes, signature_bytes, trust_store,
+        expected_channel=expected_channel, expected_schema=RELEASE_MANIFEST_SCHEMA)
+
+
+def _verify_release_manifest(manifest_bytes, signature_bytes, trust_store, *,
+                             expected_channel, expected_schema):
+    """Shared exact-byte crypto; component schema 2 requires its strict adapter."""
     manifest = _load_json_object(manifest_bytes, "Release manifest")
     signature = _load_json_object(signature_bytes, "Release signature")
     if isinstance(trust_store, (str, Path)):
@@ -224,7 +232,7 @@ def verify_release_manifest(
         raise ReleaseContractError("Release trust store is invalid.")
     if trust.get("schema_version") != 1:
         raise ReleaseContractError("Release trust store schema is unsupported.")
-    if manifest.get("schema_version") != RELEASE_MANIFEST_SCHEMA or manifest.get("product") != PRODUCT_ID:
+    if manifest.get("schema_version") != expected_schema or manifest.get("product") != PRODUCT_ID:
         raise ReleaseContractError("Release manifest schema or product is unsupported.")
     if signature.get("schema_version") != RELEASE_SIGNATURE_SCHEMA:
         raise ReleaseContractError("Release signature schema is unsupported.")
