@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1007,
+  "allowlisted_source_file_count": 1008,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -150,8 +150,8 @@
       "size_bytes": 11582
     },
     "core/catalog_admission.py": {
-      "sha256": "18da458a79a2ec5c7b7373b0d01eb0067a2c33e64ce61717b135b65ecc0b3ef4",
-      "size_bytes": 26671
+      "sha256": "1349fbfc42953aeda94a2bcdc8b95b90632a5d08460f50833352ccc77cda8d5c",
+      "size_bytes": 37080
     },
     "core/catalog_identity_codec.py": {
       "sha256": "6f75f8e5b3ffe07052e7ad768b74aaee6ec8265e70dcefde779395ec588d1159",
@@ -786,8 +786,8 @@
       "size_bytes": 23215
     },
     "core/knowledge_pack.py": {
-      "sha256": "3e408e3f13642e9a2b530270ec96cceb1b46ba3798821f448584c115400349fd",
-      "size_bytes": 253479
+      "sha256": "cf035b2f9b963ab5dd3c8be8d65a490ec248e434f0a0aa57055a72ea88891b62",
+      "size_bytes": 257914
     },
     "core/knowledge_relationships.py": {
       "sha256": "3e5e05b21e6f3d8e72f6cf5a156417481d59ee0af0f85592eef73602d7f81695",
@@ -3681,6 +3681,10 @@
       "sha256": "7977ec35989f93f2bf6c1b26d78816f257213776c3920f5e07f3a3b646597162",
       "size_bytes": 3827
     },
+    "tests/test_completed_pack_inverse.py": {
+      "sha256": "fdefb87d72b539f817cff0b36b8d96dc264d81399596ab4d64f43b442a4cd64c",
+      "size_bytes": 16362
+    },
     "tests/test_completed_pack_review.py": {
       "sha256": "b5ccfb4ea56b66c745219ec0cb5b51cc4855fffde3cc79800a30bc7d72d6903b",
       "size_bytes": 8622
@@ -3930,8 +3934,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "86c58b684bfaeec2e1f3e7fc4e93eec2e4653d61912ab159038ffdbf09d0ae14",
-      "size_bytes": 41337
+      "sha256": "86933852e1cd4396ef9c2c72545eefbad82be6b9c0d5aa4a139b3010e87073a7",
+      "size_bytes": 41381
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",

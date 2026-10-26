@@ -4302,6 +4302,7 @@ def _restore_pack_transaction(
         raise RuntimeError("Knowledge Pack recovery receipt changed. Recovery remains pending.")
     if "foundation_transition" in durable:
         _require_foundation_authority(app_root, durable, phase="before")
+    checkpoint_catalog_admission()
     finalized = dict(durable, status="restored", restored_at=_utc_now())
     try:
         _atomic_json(manifest_path, finalized)
@@ -4309,6 +4310,9 @@ def _restore_pack_transaction(
         saved, _state = _read_pack_receipt(manifest_path, app_root)
         if saved != finalized:
             raise
+    saved, _state = _read_pack_receipt(manifest_path, app_root)
+    if saved != finalized:
+        raise RuntimeError("Knowledge Pack recovery final receipt read-back failed; retain selected evidence.")
     return True
 
 
@@ -5281,6 +5285,75 @@ def review_completed_knowledge_pack_import(app_root, receipt, *, catalog_identit
         return CompletedPackImportReview(str(root), path.relative_to(root).as_posix(),
             tuple(sorted(admission.binding.items())), stamp[-1], admission.receipt_epoch,
             tuple(tuple(row) for row in value["default_authority_fingerprints"]), observed)
+
+
+class CompletedPackInverseFailure(RuntimeError):
+    """Retain the single reserved inverse identity after an uncertain outcome."""
+    def __init__(self, receipt):
+        self.receipt = Path(receipt)
+        super().__init__("Completed inverse did not settle; retain and inspect exact receipt: " + str(receipt))
+
+
+def undo_completed_knowledge_pack_import(app_root, review):
+    """Explicit native inverse of one unchanged reviewed user import; no UI wiring."""
+    from .catalog_admission import COMPLETED_PACK_UNDO_RECEIPT, selected_completed_pack_inverse
+    if type(review) is not CompletedPackImportReview:
+        raise TypeError("Exact immutable completed import review required")
+    root = Path(app_root)
+    with selected_completed_pack_inverse(root, sys.modules[__name__],
+            binding=review.catalog_identity_binding, review=review) as admission:
+        source = root / admission.undo_of["receipt_relative"]
+        original = admission.baseline
+        inverse = source.parent.parent / ("completed-pack-undo-" + uuid4().hex) / "recovery.json"
+        try:
+            prepared = _prepare_pack_restore(source, original, root)
+            if any(row[4] is None or row[4][-1] != row[2] for row in prepared):
+                raise RuntimeError("Newer or restored participant bytes block completed inverse")
+            inverse.parent.mkdir(exist_ok=False)
+            for entry, row in zip(original["files"], prepared):
+                if entry["existed"]:
+                    backup = inverse.parent / entry["backup"]
+                    _atomic_bytes(backup, row[3])
+                    if _recovery_bytes(backup)[0] != row[3]:
+                        raise RuntimeError("Completed inverse backup read-back failed")
+            fresh = _prepare_pack_restore(source, original, root)
+            if any(row[4] is None or row[4][-1] != row[2] for row in fresh):
+                raise RuntimeError("Catalog changed before completed inverse publication")
+            pending = dict(schema_version=COMPLETED_PACK_UNDO_RECEIPT,
+                operation_kind="completed_pack_undo", identity_bound_operation="completed_pack_undo",
+                operation_id=inverse.parent.name, status="pending", undo_of=dict(admission.undo_of),
+                catalog_identity_binding=original["catalog_identity_binding"],
+                catalog_receipt_epoch=admission.prior_epoch, files=original["files"],
+                default_authority_fingerprints=original["default_authority_fingerprints"])
+            admission.begin(inverse, pending)
+            _atomic_json(inverse, pending)
+            if _read_pack_receipt(inverse, root)[0] != pending:
+                raise RuntimeError("Completed inverse pending receipt read-back failed")
+            _restore_pack_transaction(inverse, pending, root)
+            if _read_pack_receipt(inverse, root)[0]["status"] != "restored":
+                raise RuntimeError("Completed inverse result is unconfirmed")
+        except Exception as exc:
+            raise CompletedPackInverseFailure(inverse) from exc
+        return inverse
+
+
+def recover_completed_knowledge_pack_inverse(app_root, receipt, *, catalog_identity_binding):
+    """Resume only this exact schema-7 intent; no automatic retry or new inverse."""
+    from .catalog_admission import selected_completed_pack_inverse
+    root, receipt = Path(app_root), Path(receipt)
+    with selected_completed_pack_inverse(root, sys.modules[__name__],
+            binding=catalog_identity_binding, receipt=receipt) as admission:
+        try:
+            durable, _stamp = _read_pack_receipt(admission.owned_receipt, root)
+            if durable["status"] == "restored":
+                admission.checkpoint()
+                return False
+            result = _restore_pack_transaction(admission.owned_receipt, durable, root)
+            if _read_pack_receipt(admission.owned_receipt, root)[0]["status"] != "restored":
+                raise RuntimeError("Completed inverse recovery result is unconfirmed")
+            return result
+        except Exception as exc:
+            raise CompletedPackInverseFailure(receipt) from exc
 
 
 def _require_pack_sandbox(sandbox):

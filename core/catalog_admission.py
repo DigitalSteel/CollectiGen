@@ -13,6 +13,7 @@ from .catalog_identity_codec import inverse_catalog_binding, require_inverse_cat
 
 ENROLLED_PACK_RECEIPT = 5  # Native identity-bound Pack import receipt; same physical schema.
 ENROLLED_INVERSE_RECEIPT = 6  # Synthetic inverse remains unactivated.
+COMPLETED_PACK_UNDO_RECEIPT = 7  # Distinct native completed-user-Pack inverse.
 HEADER = "data/user/catalog_identity.json"
 _ACTIVE = ContextVar("catalog_native_admission_candidate", default=None)
 
@@ -31,7 +32,7 @@ def _observed(root, native):
     enrolled = state is not None
     for _path, value, _digest in rows:
         intent = value.get("intent")
-        enrolled |= value.get("schema_version") in {ENROLLED_PACK_RECEIPT, ENROLLED_INVERSE_RECEIPT}
+        enrolled |= value.get("schema_version") in {ENROLLED_PACK_RECEIPT, ENROLLED_INVERSE_RECEIPT, COMPLETED_PACK_UNDO_RECEIPT}
         enrolled |= "catalog_identity_binding" in value
         if isinstance(intent, dict):
             files = intent.get("files")
@@ -491,6 +492,170 @@ class _SelectedPackAdmission(CatalogAdmissionState):
             raise RuntimeError("Selected Pack receipt changed before restoration")
         prepared = self.native._prepare_pack_restore(self.owned_receipt, durable, self.root)
         return durable, stamp, prepared
+
+
+class _CompletedPackInverseAdmission(_SelectedPackAdmission):
+    """Native schema-7 authority; synthetic constructors and checks stay intact."""
+    def __init__(self, root, native, binding, *, review=None, receipt=None):
+        self.native = native
+        self.sandbox = self.marker = self.selection = None
+        self.operation = "undo" if review is not None else "inverse_recovery"
+        self.restore_entered = False
+        self.receipt_stamp = None
+        CatalogAdmissionState.__init__(self, root, native)
+        if (not self.enrolled or type(binding) is not tuple
+                or tuple(sorted(self.binding.items())) != binding):
+            raise RuntimeError("Completed inverse belongs to a stale catalog identity")
+        require_inverse_catalog(native._recovery_bytes(root / HEADER)[0], dict(binding))
+        if review is not None:
+            if type(review) is not native.CompletedPackImportReview or review.catalog_root != str(root):
+                raise RuntimeError("Exact completed import review required")
+            # No selected context is active yet. Shared exclusion is reentrant.
+            fresh = native.review_completed_knowledge_pack_import(root, root / review.receipt_relative,
+                catalog_identity_binding=binding)
+            if fresh != review:
+                raise RuntimeError("Completed import review changed before inverse admission")
+            self.undo_of = {"receipt_relative": review.receipt_relative, "receipt_sha256": review.receipt_sha256}
+            self.prior_epoch = review.receipt_epoch
+        else:
+            self.owned_receipt = Path(receipt)
+            value, self.receipt_stamp = native._read_pack_receipt(self.owned_receipt, root)
+            self.undo_of = value.get("undo_of")
+            self.prior_epoch = value.get("catalog_receipt_epoch")
+            self.owned_seal, self.owned_published = _intent_seal(value), True
+        self.baseline = self._source_value()
+        if review is None:
+            self._validate_owned(value)
+        self.checkpoint()
+
+    def _source_value(self):
+        selected = self.undo_of
+        if (type(selected) is not dict or set(selected) != {"receipt_relative", "receipt_sha256"}
+                or any(type(v) is not str for v in selected.values())):
+            raise RuntimeError("Malformed completed inverse source binding")
+        relative = Path(selected["receipt_relative"])
+        if (relative.is_absolute() or ".." in relative.parts
+                or selected["receipt_relative"] != relative.as_posix()):
+            raise RuntimeError("Unsafe completed inverse source receipt")
+        source = self.root / relative
+        value, stamp = self.native._read_pack_receipt(source, self.root)
+        if (stamp[-1] != selected["receipt_sha256"] or type(value.get("schema_version")) is not int
+                or value["schema_version"] != ENROLLED_PACK_RECEIPT or value["status"] != "complete"
+                or value.get("identity_bound_operation") != "pack_import" or "foundation_transition" in value):
+            raise RuntimeError("Completed inverse source changed or is unsupported")
+        require_inverse_catalog(self.native._recovery_bytes(self.root / HEADER)[0], value.get("catalog_identity_binding"))
+        self.native._require_default_baseline(self.root, value)
+        return value
+
+    def _validate_owned(self, value):
+        source = self._source_value()
+        if (type(value.get("schema_version")) is not int or value["schema_version"] != COMPLETED_PACK_UNDO_RECEIPT
+                or value.get("operation_kind") != "completed_pack_undo"
+                or value.get("identity_bound_operation") != "completed_pack_undo"
+                or value.get("status") not in {"pending", "restored"}
+                or self.owned_receipt is None or value.get("operation_id") != self.owned_receipt.parent.name
+                or value.get("undo_of") != self.undo_of
+                or value.get("catalog_receipt_epoch") != self.prior_epoch
+                or value.get("catalog_identity_binding") != source.get("catalog_identity_binding")
+                or value.get("files") != source.get("files")
+                or value.get("default_authority_fingerprints") != source.get("default_authority_fingerprints")):
+            raise RuntimeError("Completed inverse intent differs from its exact source")
+
+    def checkpoint(self, *, ordinary=False):
+        if ordinary:
+            raise RuntimeError("Selected completed inverse holds ordinary admission")
+        CatalogAdmissionState.checkpoint(self, ordinary=False)
+        rows = _receipts(self.root, self.native)
+        others = _pins(rows, self.owned_receipt)
+        epoch = sha256(json.dumps(others, separators=(",", ":")).encode()).hexdigest()
+        if type(self.prior_epoch) is not str or epoch != self.prior_epoch:
+            raise RuntimeError("Completed inverse receipt history changed")
+        for path, value, _stamp in rows:
+            indicated = (value.get("schema_version") == COMPLETED_PACK_UNDO_RECEIPT
+                or value.get("operation_kind") == "completed_pack_undo"
+                or value.get("identity_bound_operation") == "completed_pack_undo")
+            if path != self.owned_receipt and indicated:
+                if (type(value.get("schema_version")) is not int
+                        or value["schema_version"] != COMPLETED_PACK_UNDO_RECEIPT
+                        or value.get("operation_kind") != "completed_pack_undo"
+                        or value.get("identity_bound_operation") != "completed_pack_undo"
+                        or value.get("operation_id") != path.parent.name
+                        or value.get("status") not in {"pending", "restored"}):
+                    raise RuntimeError("Malformed prior completed inverse envelope")
+                claim = value.get("undo_of")
+                if (type(claim) is not dict or set(claim) != {"receipt_relative", "receipt_sha256"}
+                        or any(type(v) is not str for v in claim.values())):
+                    raise RuntimeError("Malformed prior completed inverse source binding")
+                relative = Path(claim["receipt_relative"])
+                candidate = self.root / relative
+                if (relative.is_absolute() or ".." in relative.parts
+                        or claim["receipt_relative"] != relative.as_posix()
+                        or candidate.name != "recovery.json"
+                        or candidate.parent.parent != self.root / "backups/knowledge-pack-import"):
+                    raise RuntimeError("Unsafe prior completed inverse source binding")
+                require_inverse_catalog(self.native._recovery_bytes(self.root / HEADER)[0], value.get("catalog_identity_binding"))
+                if (candidate == self.root / self.undo_of["receipt_relative"]
+                        or claim["receipt_sha256"] == self.undo_of["receipt_sha256"]):
+                    raise RuntimeError("An inverse already names this completed import; select that exact receipt")
+        source = self._source_value()
+        # Never reenter admission-aware preparation from checkpoint.
+        self.native._prepare_pack_restore_verified(self.root / self.undo_of["receipt_relative"],
+            dict(source, schema_version=2), self.root)
+        if self.owned_receipt is not None and self.owned_receipt.exists():
+            value, stamp = self.native._read_pack_receipt(self.owned_receipt, self.root)
+            self._validate_owned(value)
+            if value["status"] == "pending":
+                if self.receipt_stamp is not None and stamp != self.receipt_stamp:
+                    raise RuntimeError("Selected pending inverse changed")
+                self.receipt_stamp = stamp
+            rows = self.native._prepare_pack_restore_verified(self.owned_receipt, dict(value, schema_version=2), self.root)
+            if value["status"] == "restored" and any(
+                    (row[4][-1] if row[4] is not None else "missing") != row[1] for row in rows):
+                raise RuntimeError("Completed inverse result differs from declared before state")
+
+    def admit_manifest(self, path, value):
+        path = Path(path).absolute()
+        durable, _stamp = self.native._read_pack_receipt(path, self.root)
+        if type(value) is not dict or value != durable:
+            raise RuntimeError("Completed inverse requires its durable physical receipt")
+        if path == self.owned_receipt:
+            self._validate_owned(durable)
+        elif self.operation == "undo" and path == self.root / self.undo_of["receipt_relative"]:
+            if durable != self._source_value():
+                raise RuntimeError("Completed inverse source changed")
+        else:
+            raise RuntimeError("Prepare belongs to a nonselected completed inverse")
+        return dict(durable, schema_version=2)
+
+
+@contextmanager
+def selected_completed_pack_inverse(root, native, *, binding, review=None, receipt=None):
+    from . import knowledge_pack as canonical
+    root = Path(root)
+    if (native is not canonical or not root.is_absolute() or ".." in root.parts
+            or _ACTIVE.get() is not None or (review is None) == (receipt is None)):
+        raise RuntimeError("Select one exact non-nested canonical completed inverse operation")
+    native._check_export_path(root)
+    native._check_export_path(root / "data/user")
+    if not (root / "data/user").is_dir():
+        raise RuntimeError("Select an existing enrolled catalog")
+    if receipt is not None:
+        receipt = Path(receipt)
+        if not receipt.is_absolute() or ".." in receipt.parts:
+            raise RuntimeError("Select an absolute nontraversing inverse receipt")
+        native._check_export_path(receipt)
+    with native.RulePairAdmission(root / "data/user").admit():
+        state = _CompletedPackInverseAdmission(root, native, binding, review=review, receipt=receipt)
+        token = _ACTIVE.set(state)
+        try:
+            yield state
+            state.checkpoint()
+        except Exception as exc:
+            if state.owned_receipt is not None and not isinstance(exc, canonical.CompletedPackInverseFailure):
+                raise canonical.CompletedPackInverseFailure(state.owned_receipt) from exc
+            raise
+        finally:
+            _ACTIVE.reset(token)
 
 
 @contextmanager
