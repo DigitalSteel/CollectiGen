@@ -2,9 +2,11 @@
 
 `component_reference_from_release(release)` and
 `validate_component_reference(reference, component, *, release)` live with the
-existing component staging owner. They are pure future-contract helpers. Current
-payload, installation, journal, saved connection and recovery entrypoints do not
-call them. Schema2 artifact acquisition remains unconditionally blocked.
+existing component staging owner. The helpers remain pure; explicit schema2
+backend transactions now reuse them as described in
+[stage-aware recovery](COMPONENT_STAGE_IDENTITY_RECOVERY.md). Legacy defaults
+remain unchanged, and host saved-connection/notification consumers are not wired
+to the new format. Schema2 artifact acquisition remains unconditionally blocked.
 
 Both helpers require an exact `VerifiedComponentRelease` DTO. Callers must obtain
 it by verifying the original manifest/signature with independently admitted trust
@@ -34,6 +36,6 @@ uses the existing relative-path validator without resolving or reading a path.
 No helper checks whether a directory exists, authenticates a saved connection,
 settles a journal or launches a process. The existing immutable destination guard
 and independently signed prior-history recovery remain mandatory at integration.
-Journal3, connection2 and original-host freshness adapters are future work under
-the installed-identity integration plan. No runnable app or schema migration is
+Journal3 is available only through explicit backend opt-in. Connection2 and
+original-host freshness adapters remain future host integration work. No runnable app or schema migration is
 published by this source contract; existing licensing applies.
