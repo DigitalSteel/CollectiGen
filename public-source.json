@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1021,
+  "allowlisted_source_file_count": 1022,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1969,6 +1969,10 @@
       "sha256": "48d1cf80999481cde5604aab257691ada37f6fc50c68d5d31ca95c8a688c3d74",
       "size_bytes": 3440
     },
+    "docs/COMPONENT_STAGE_IDENTITY_RECOVERY.md": {
+      "sha256": "a16da9145972ec4cb7851360d6a32dd891182f9ac4ac992d9e6bf686bc5d5b08",
+      "size_bytes": 2952
+    },
     "docs/MANAGER_CATALOG_RECIPE.md": {
       "sha256": "39bab5b0a39bad7a5c99595be33fcb237ff29e7a6d7778bbb218c633b7c3ac52",
       "size_bytes": 16315
@@ -2882,8 +2886,8 @@
       "size_bytes": 10371
     },
     "suite_core/discovery/component_staging.py": {
-      "sha256": "403889de8108bcf2ec16c846d0945a2c42ff1204452b5b4b3fba8d36b00cfc77",
-      "size_bytes": 35100
+      "sha256": "663129b2da4f6776c5172d5a8031a53d526ad3ee6cef4c463feb147bac7e287b",
+      "size_bytes": 41560
     },
     "suite_core/discovery/github_component_releases.py": {
       "sha256": "783ab446660129e96c30cf7c9a68ab05ec3da7b7b0a56b8832447bd694530291",
@@ -3550,8 +3554,8 @@
       "size_bytes": 15428
     },
     "suite_core/tests/test_component_staging.py": {
-      "sha256": "ef3156f8c0cf6092dd16c848ee01238dee85ef0166cbbe7dd9f42ea6cc01c708",
-      "size_bytes": 21973
+      "sha256": "2c67adfcc84078a882fa7e40fb6305a55b8925871b5704c9572e47f2e664a067",
+      "size_bytes": 35197
     },
     "suite_core/tests/test_dependency_status_ui.py": {
       "sha256": "102a48650fb151ef51bec00c7693e868cd95712ebe6e1e221f319ab79ebdb408",
@@ -3982,8 +3986,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "eae727bac73280fb723459a8b80ecb4693fe835b1dab5efc29df773dabb3d6fe",
-      "size_bytes": 42004
+      "sha256": "853598177c75ae3f81c131940fdca26deb4089c62928ab5c0245ac3d82db206f",
+      "size_bytes": 42053
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",

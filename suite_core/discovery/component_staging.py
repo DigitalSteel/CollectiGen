@@ -17,7 +17,7 @@ from uuid import uuid4
 import zipfile
 
 from core.component_release_identity import ComponentReleaseIdentity
-from release_contract import ReleaseArtifact, safe_zip_members, sha256_file, verify_artifact, verify_release_manifest, ensure_supported_upgrade
+from release_contract import SemVer, ReleaseArtifact, safe_zip_members, sha256_file, verify_artifact, verify_release_manifest, ensure_supported_upgrade
 from suite_core.installation import ComponentId, _relative, _path
 from .component_release_signature import VerifiedComponentRelease, verify_component_release, _json, _version, MAX_METADATA_BYTES, inventory_json
 
@@ -192,15 +192,20 @@ def read_json(path):
     return _json(read_metadata_bytes(path), "component state")
 
 
-def payload(root, reference, component, platform=None, *, payload_policy=None):
-    require(type(reference) is dict and set(reference) == {"component_id", "version", "directory", "inventory_sha256"}, "reference_schema")
-    _version(reference["version"])
-    require(reference["component_id"] == component.value
-            and reference["directory"] == f"Apps/{component.value}/{reference['version']}", "reference_identity")
+def payload(root, reference, component, platform=None, *, payload_policy=None, release=None):
+    if release is not None:
+        validate_component_reference(reference, component, release=release)
+    else:
+        require(type(reference) is dict and set(reference) == {"component_id", "version", "directory", "inventory_sha256"}, "reference_schema")
+        _version(reference["version"])
+        require(reference["component_id"] == component.value
+                and reference["directory"] == f"Apps/{component.value}/{reference['version']}", "reference_identity")
     _relative(reference["directory"])
     directory = root / reference["directory"]
     guard(directory)
     profile = verify_directory(directory, reference["inventory_sha256"], component, reference["version"], payload_policy=payload_policy)
+    if release is not None:
+        require(profile["platform"] == {"os": release.os, "architecture": release.architecture}, "signed_inventory_platform")
     if platform is not None:
         require(profile["platform"] == platform, "retained_inventory_platform")
     return directory
@@ -256,11 +261,11 @@ def verify_directory(directory, expected_hash, component, version, *, payload_po
     return profile
 
 
-def active(root, base, component, platform=None, *, payload_policy=None):
+def active(root, base, component, platform=None, *, payload_policy=None, release=None):
     path = base / "active.json"
     value = read_json(path) if path.exists() else None
     if value is not None:
-        payload(root, value, component, platform, payload_policy=payload_policy)
+        payload(root, value, component, platform, payload_policy=payload_policy, release=release)
     return value
 
 
@@ -341,21 +346,84 @@ class ComponentStageAdmission:
             binding.check()
 
 
+
+def _stage_expectations(release_schema, maturity):
+    require(type(release_schema) is int and release_schema in (1, 2), "explicit_release_schema")
+    require(maturity is None if release_schema == 1 else type(maturity) is str
+            and maturity in ("alpha", "beta", "stable"), "explicit_release_maturity")
+
+
+def _verify_stage_release(manifest_bytes, signature_bytes, trust_bytes, *, component,
+                          version, os_name, architecture, release_schema, maturity):
+    _stage_expectations(release_schema, maturity)
+    channel = ("stable" if maturity == "stable" else "beta") if release_schema == 2 else ("beta" if "-" in version else "stable")
+    verified = verify_component_release(manifest_bytes, signature_bytes, trust_bytes,
+        expected_component=component, expected_version=version, expected_channel=channel,
+        expected_os=os_name, expected_architecture=architecture, expected_maturity=maturity)
+    require(verified.schema_version == release_schema, "transaction_release_schema")
+    return verified
+
+
+def _signed_reference_release(reference, journal, base, component, owner, trust_bytes):
+    """Resolve a retained selection through the original bounded signed history."""
+    require(journal is not None, "independently_signed_prior_component_required")
+    for _ in range(32):
+        verified = validate_journal(journal, component, owner, trust_bytes, allow_schema2=True)
+        if journal["target"] == reference:
+            validate_component_reference(reference, component, release=verified)
+            return verified
+        previous = prior_journal_bytes(base, journal, component, owner, trust_bytes, allow_schema2=True)
+        require(previous is not None, "independently_signed_prior_component_required")
+        journal = _json(previous, "prior component transaction")
+    raise StagingHold("bounded_component_history_required")
+
+
+def _transaction_active(root, base, component, owner, trust_bytes, journal, platform, policy, *, allow_schema2):
+    path = base / "active.json"
+    reference = read_json(path) if path.exists() else None
+    verified = (_signed_reference_release(reference, journal, base, component, owner, trust_bytes)
+                if allow_schema2 and reference is not None else None)
+    return active(root, base, component, platform, payload_policy=policy, release=verified)
+
+
+def _require_stage_upgrade(before, release, manifest_bytes):
+    if before is None:
+        return
+    target = ComponentReleaseIdentity(release.software_version, release.maturity)
+    if before.get("schema_version") == 2:
+        require(target.compare(ComponentReleaseIdentity(before["version"], before["maturity"])) > 0,
+                "newer_component_identity_required")
+    else:
+        require(SemVer.parse(release.software_version).compare(_version(before["version"])) > 0,
+                "newer_component_identity_required")
+    floor = _version(_json(manifest_bytes, "component release")["supported_from"])
+    require(_version(before["version"]).compare(floor) >= 0, "supported_component_floor")
+
+
 def stage_and_activate(root, archive_path, *, component, version, os_name, architecture,
                        manifest_bytes, signature_bytes, trust_bytes, expected_active_token,
-                       operator_approved=False, idle=False, failpoint=lambda phase: None, payload_policy=None):
+                       operator_approved=False, idle=False, failpoint=lambda phase: None, payload_policy=None, release_schema=1, maturity=None):
     """Exercise real writes only under the synthetic root marker, never execute ZIP code."""
+    _stage_expectations(release_schema, maturity)
+    if release_schema == 2:
+        _verify_stage_release(manifest_bytes, signature_bytes, trust_bytes, component=component, version=version,
+            os_name=os_name, architecture=architecture, release_schema=release_schema, maturity=maturity)
     require(operator_approved is True and idle is True, "explicit_approval_and_idle_required")
     root, base, owner = owned(root, component)
     return _stage_and_activate(root, base, owner, archive_path, component=component, version=version,
         os_name=os_name, architecture=architecture, manifest_bytes=manifest_bytes,
         signature_bytes=signature_bytes, trust_bytes=trust_bytes,
-        expected_active_token=expected_active_token, failpoint=failpoint, payload_policy=payload_policy)
+        expected_active_token=expected_active_token, failpoint=failpoint, payload_policy=payload_policy,
+        release_schema=release_schema, maturity=maturity)
 
 
 def stage_and_activate_admitted(admission, archive_path, *, component, version, os_name,
         architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token,
-        failpoint=lambda phase: None, preflight=lambda root, base, owner: None, payload_policy=None):
+        failpoint=lambda phase: None, preflight=lambda root, base, owner: None, payload_policy=None, release_schema=1, maturity=None):
+    _stage_expectations(release_schema, maturity)
+    if release_schema == 2:
+        _verify_stage_release(manifest_bytes, signature_bytes, trust_bytes, component=component, version=version,
+            os_name=os_name, architecture=architecture, release_schema=release_schema, maturity=maturity)
     require(type(admission) is ComponentStageAdmission, "original_root_admission_required")
     with admission.transaction(component, enroll=True) as (root, base, owner, check):
         preflight(root, base, owner)
@@ -366,7 +434,8 @@ def stage_and_activate_admitted(admission, archive_path, *, component, version, 
         return _stage_and_activate(root, base, owner, archive_path, component=component,
             version=version, os_name=os_name, architecture=architecture,
             manifest_bytes=manifest_bytes, signature_bytes=signature_bytes, trust_bytes=trust_bytes,
-            expected_active_token=expected_active_token, failpoint=handoff, payload_policy=payload_policy)
+            expected_active_token=expected_active_token, failpoint=handoff, payload_policy=payload_policy,
+            release_schema=release_schema, maturity=maturity)
 
 
 def extract_component_archive(archive_path, destination, *, member_extracted=lambda: None, payload_policy=None):
@@ -416,29 +485,32 @@ def extract_component_archive(archive_path, destination, *, member_extracted=lam
 
 
 def _stage_and_activate(root, base, owner, archive_path, *, component, version, os_name,
-        architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token, failpoint, payload_policy=None):
+        architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token, failpoint, payload_policy=None, release_schema=1, maturity=None):
     policy = require_payload_policy(payload_policy, component, {"os": os_name, "architecture": architecture})
     with lock(base):
         journal_path = base / "transaction.json"
         pending_path = base / "pending-transaction.json"
         require(not pending_path.exists(), "recover_pending_transaction_first")
         previous_bytes = None
+        previous = None
         if journal_path.exists():
             previous = read_json(journal_path)
             require(previous.get("phase") in ("healthy", "rolled_back", "abandoned"), "recover_pending_transaction_first")
             previous_bytes = journal_path.read_bytes()
         platform = {"os": os_name, "architecture": architecture}
-        before = active(root, base, component, platform, payload_policy=policy)
+        before = _transaction_active(root, base, component, owner, trust_bytes, previous, platform, policy, allow_schema2=release_schema == 2)
         require(active_token(before) == expected_active_token, "stale_active_reference")
         if previous_bytes is not None:
-            validate_journal(previous, component, owner, trust_bytes)
+            validate_journal(previous, component, owner, trust_bytes, allow_schema2=release_schema == 2)
             prior_reference = previous["target"] if previous["phase"] == "healthy" else previous["before"]
             require(prior_reference == before, "prior_current_reference_mismatch")
         _version(version)
-        verified = verify_component_release(manifest_bytes, signature_bytes, trust_bytes,
-            expected_component=component, expected_version=version,
-            expected_channel="beta" if "-" in version else "stable", expected_os=os_name, expected_architecture=architecture)
-        if before is not None:
+        verified = _verify_stage_release(manifest_bytes, signature_bytes, trust_bytes,
+            component=component, version=version, os_name=os_name, architecture=architecture,
+            release_schema=release_schema, maturity=maturity)
+        if release_schema == 2:
+            _require_stage_upgrade(before, verified, manifest_bytes)
+        elif before is not None:
             upgrade = verify_release_manifest(manifest_bytes, signature_bytes,
                 _json(trust_bytes, "trust"), expected_channel=verified.channel)
             ensure_supported_upgrade(before["version"], upgrade)
@@ -448,10 +520,13 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         verify_artifact(archive_path, verified.artifact)
         target = {"component_id": component.value, "version": version,
                   "directory": f"Apps/{component.value}/{version}", "inventory_sha256": verified.artifact.portable_manifest_sha256}
+        if release_schema == 2:
+            target = component_reference_from_release(verified)
         destination = root / target["directory"]
         guard(destination)
         reuse = destination.exists()
         if reuse:
+            require(release_schema == 1, "immutable_version_already_exists")
             require(previous_bytes is not None and before != target,
                     "immutable_version_already_exists")
             profile = verify_directory(destination, target["inventory_sha256"], component, version, payload_policy=policy)
@@ -459,7 +534,7 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         stage_name = "staging-" + uuid4().hex
         staging = base / stage_name
         guard(staging)
-        journal = {"schema": 2, "owner": owner, "component_id": component.value, "phase": "staging",
+        journal = {"schema": 3 if release_schema == 2 else 2, "owner": owner, "component_id": component.value, "phase": "staging",
             "stage": stage_name, "before": before, "target": target, "os": os_name, "architecture": architecture,
             "manifest": base64.b64encode(manifest_bytes).decode(), "signature": base64.b64encode(signature_bytes).decode(),
             "prior_journal": None}
@@ -477,7 +552,7 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         journal["phase"] = "activation_pending"
         atomic(pending_path, journal)
         failpoint("before_version_publish")
-        require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_handoff")
+        require(_transaction_active(root, base, component, owner, trust_bytes, previous, platform, policy, allow_schema2=release_schema == 2) == before, "active_changed_before_handoff")
         if previous_bytes is not None:
             require(journal_path.exists() and journal_path.read_bytes() == previous_bytes, "current_journal_changed")
             history = base / ("transaction-" + uuid4().hex + ".json")
@@ -500,33 +575,35 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         else:
             os.replace(staging, destination)  # same filesystem; absent immutable destination
         failpoint("version_published")
-        require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_commit")
+        require(_transaction_active(root, base, component, owner, trust_bytes, previous, platform, policy, allow_schema2=release_schema == 2) == before, "active_changed_before_commit")
         atomic(base / "active.json", target)
         failpoint("active_reference_replaced")
         journal["phase"] = "activated"
         atomic(journal_path, journal)
-        require(active(root, base, component, payload_policy=policy) == target, "activation_readback")
+        require(active(root, base, component, payload_policy=policy, release=verified if release_schema == 2 else None) == target, "activation_readback")
         return target
 
 
-def finish_or_recover(root, *, component, trust_bytes, health_verified=False, rollback_approved=False, payload_policy=None):
+def finish_or_recover(root, *, component, trust_bytes, health_verified=False, rollback_approved=False, payload_policy=None, allow_schema2=False):
     """Real metadata recovery/readback; never assert native health on its own."""
+    require(type(allow_schema2) is bool, "explicit_schema2_recovery_mode")
     root, base, owner = owned(root, component)
     return _finish_or_recover(root, base, owner, component=component, trust_bytes=trust_bytes,
-        health_verified=health_verified, rollback_approved=rollback_approved, payload_policy=payload_policy)
+        health_verified=health_verified, rollback_approved=rollback_approved, payload_policy=payload_policy, allow_schema2=allow_schema2)
 
 
 def finish_or_recover_admitted(admission, *, component, trust_bytes,
-        health_verified=False, rollback_approved=False, preflight=lambda root, base, owner: None, payload_policy=None):
+        health_verified=False, rollback_approved=False, preflight=lambda root, base, owner: None, payload_policy=None, allow_schema2=False):
+    require(type(allow_schema2) is bool, "explicit_schema2_recovery_mode")
     require(type(admission) is ComponentStageAdmission, "original_root_admission_required")
     with admission.transaction(component) as (root, base, owner, check):
         preflight(root, base, owner)
         check()
         return _finish_or_recover(root, base, owner, component=component, trust_bytes=trust_bytes,
-            health_verified=health_verified, rollback_approved=rollback_approved, payload_policy=payload_policy)
+            health_verified=health_verified, rollback_approved=rollback_approved, payload_policy=payload_policy, allow_schema2=allow_schema2)
 
 
-def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_verified, rollback_approved, payload_policy=None):
+def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_verified, rollback_approved, payload_policy=None, allow_schema2=False):
     policy = require_payload_policy(payload_policy, component)
     with lock(base):
         current_journal_path = base / "transaction.json"
@@ -536,10 +613,10 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
         current_bytes = read_metadata_bytes(current_journal_path) if current_journal_path.exists() else None
         current_record = _json(current_bytes, "component state") if current_bytes is not None else None
         if current_record is not None:
-            validate_journal(current_record, component, owner, trust_bytes)
+            validate_journal(current_record, component, owner, trust_bytes, allow_schema2=allow_schema2)
         journal_path = pending_path if pending_path.exists() else current_journal_path
         j = read_json(journal_path) if journal_path == pending_path or current_record is None else current_record
-        validate_journal(j, component, owner, trust_bytes)
+        target_release = validate_journal(j, component, owner, trust_bytes, allow_schema2=allow_schema2)
         pending_only = journal_path == pending_path and current_bytes != pending_path.read_bytes()
         completed_handoff = journal_path == pending_path and not pending_only
         if journal_path == pending_path and not pending_only:
@@ -556,8 +633,13 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
                 terminal_reference = (current_record["target"] if current_record["phase"] == "healthy"
                                       else current_record["before"])
                 require(terminal_reference == current, "pending_current_reference_mismatch")
-                prior_journal_bytes(base, current_record, component, owner, trust_bytes)
-        prior_bytes = prior_journal_bytes(base, j, component, owner, trust_bytes)
+                prior_journal_bytes(base, current_record, component, owner, trust_bytes, allow_schema2=allow_schema2)
+        prior_bytes = prior_journal_bytes(base, j, component, owner, trust_bytes, allow_schema2=allow_schema2)
+        before_release = None
+        if allow_schema2 and j["before"] is not None:
+            origin = j if j.get("prior_journal") is not None else (current_record if pending_only else None)
+            before_release = _signed_reference_release(j["before"], origin, base, component, owner, trust_bytes)
+        current_release = (target_release if current == j["target"] else before_release) if allow_schema2 else None
         if completed_handoff:
             pending_path.unlink()  # validated exact current bytes prove metadata handoff occurred
         if j["phase"] == "healthy":
@@ -566,14 +648,14 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
             require(current == j["before"], "recovered_reference_mismatch")
         if health_verified is True:
             require(j["phase"] == "activated" and current == j["target"], "health_phase")
-            payload(root, current, component, payload_policy=policy)
+            payload(root, current, component, payload_policy=policy, release=current_release)
             j["phase"] = "healthy"
         elif j["phase"] == "healthy" and rollback_approved is not True:
-            payload(root, current, component, payload_policy=policy)
+            payload(root, current, component, payload_policy=policy, release=current_release)
             return current
         else:
             if j["before"] is not None:
-                payload(root, j["before"], component, {"os": j["os"], "architecture": j["architecture"]}, payload_policy=policy)
+                payload(root, j["before"], component, {"os": j["os"], "architecture": j["architecture"]}, payload_policy=policy, release=before_release)
             staging = base / j["stage"]
             guard(staging)
             if staging.exists():
@@ -588,7 +670,8 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
                 atomic(current_path, j["before"])
             j["phase"] = "abandoned" if current == j["before"] else "rolled_back"
         atomic(journal_path, j)
-        result = active(root, base, component, payload_policy=policy)
+        result = active(root, base, component, payload_policy=policy,
+            release=(target_release if j["phase"] == "healthy" else before_release) if allow_schema2 else None)
         require(result == (j["target"] if j["phase"] == "healthy" else j["before"]), "recovery_readback")
         if pending_only:
             require((current_journal_path.read_bytes() if current_journal_path.exists() else None) == current_bytes,
@@ -603,24 +686,35 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
         return result
 
 
-def validate_journal(j, component, owner, trust_bytes):
+def validate_journal(j, component, owner, trust_bytes, *, allow_schema2=False):
+    require(type(allow_schema2) is bool, "explicit_schema2_recovery_mode")
+    require(type(j) is dict, "journal_ownership_schema")
     keys = {"schema", "owner", "component_id", "phase", "stage", "before", "target", "os", "architecture", "manifest", "signature"}
     require(type(j.get("schema")) is int and ((j["schema"] == 1 and set(j) == keys)
-            or (j["schema"] == 2 and set(j) == keys | {"prior_journal"}))
+            or (j["schema"] in ((2, 3) if allow_schema2 else (2,)) and set(j) == keys | {"prior_journal"}))
             and j["owner"] == owner and j["component_id"] == component.value, "journal_ownership_schema")
     require(j["phase"] in ("staging", "activation_pending", "activated", "healthy", "rolled_back", "abandoned"), "journal_phase")
     require(type(j["stage"]) is str and len(j["stage"]) == 40 and j["stage"].startswith("staging-")
             and all(c in "0123456789abcdef" for c in j["stage"][8:]), "journal_stage_identity")
-    verified = verify_component_release(base64.b64decode(j["manifest"], validate=True),
-        base64.b64decode(j["signature"], validate=True), trust_bytes, expected_component=component,
-        expected_version=j["target"]["version"], expected_channel="beta" if "-" in j["target"]["version"] else "stable",
-        expected_os=j["os"], expected_architecture=j["architecture"])
-    require(j["target"] == {"component_id": component.value, "version": verified.software_version,
-        "directory": f"Apps/{component.value}/{verified.software_version}",
-        "inventory_sha256": verified.artifact.portable_manifest_sha256}, "journal_target_binding")
+    require(type(j["target"]) is dict, "journal_target_binding")
+    schema = 2 if j["schema"] == 3 else 1
+    maturity = j["target"].get("maturity") if schema == 2 else None
+    verified = _verify_stage_release(base64.b64decode(j["manifest"], validate=True),
+        base64.b64decode(j["signature"], validate=True), trust_bytes, component=component,
+        version=j["target"]["version"], release_schema=schema, maturity=maturity,
+        os_name=j["os"], architecture=j["architecture"])
+    if schema == 2:
+        validate_component_reference(j["target"], component, release=verified)
+    else:
+        require(j["target"] == {"component_id": component.value, "version": verified.software_version,
+            "directory": f"Apps/{component.value}/{verified.software_version}",
+            "inventory_sha256": verified.artifact.portable_manifest_sha256}, "journal_target_binding")
+    return verified
 
 
-def prior_journal_bytes(base, journal, component, owner, trust_bytes):
+
+def prior_journal_bytes(base, journal, component, owner, trust_bytes, *, allow_schema2=False):
+    require(type(allow_schema2) is bool, "explicit_schema2_recovery_mode")
     prior = journal.get("prior_journal")
     if prior is None:
         return None
@@ -632,7 +726,7 @@ def prior_journal_bytes(base, journal, component, owner, trust_bytes):
     previous = read_json(path)
     raw = path.read_bytes()
     require(sha256(raw).hexdigest() == prior["sha256"], "prior_journal_hash")
-    validate_journal(previous, component, owner, trust_bytes)
+    validate_journal(previous, component, owner, trust_bytes, allow_schema2=allow_schema2)
     reference = previous["target"] if previous["phase"] == "healthy" else previous["before"]
     require(previous["phase"] in ("healthy", "abandoned", "rolled_back") and reference == journal["before"],
             "prior_journal_reference")

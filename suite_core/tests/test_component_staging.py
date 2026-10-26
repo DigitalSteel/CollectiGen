@@ -417,3 +417,222 @@ def test_legacy_staging_still_refuses_new_reference(tmp_path):
     with pytest.raises(ValueError, match="reference_schema"):
         payload(tmp_path, ref, COMPONENT)
     assert list(tmp_path.iterdir()) == []
+
+
+# Explicit new-mode transactions use inert packages and original staging only.
+def stage_fixture_package(folder, stage="alpha", version="0.1.0", schema=2):
+    directory = folder / ("package-" + version + "-" + stage)
+    directory.mkdir(exist_ok=True)
+    archive, message, _ = package(directory, version=version)
+    value = json.loads(message)
+    value.update(schema_version=schema, channel=("stable" if stage == "stable" else "beta"), supported_from="0.0.0")
+    if schema == 2:
+        value["maturity"] = stage
+    message = raw(value)
+    return archive, message, sign(message)
+
+
+def empty_stage_root(tmp_path):
+    root = create_disposable_root(tmp_path / "signed-stage-root")
+    data = root / "Data/catalogs"; data.mkdir(parents=True)
+    (data / "own-catalog.txt").write_bytes(b"SYNTHETIC DATA MUST SURVIVE")
+    return root
+
+
+def stage_fixture(root, before, pkg, *, stage="alpha", version="0.1.0", schema=2, **kw):
+    return stage_and_activate(root, pkg[0], component=COMPONENT, version=version,
+        os_name="windows", architecture="x86_64", manifest_bytes=pkg[1], signature_bytes=pkg[2],
+        trust_bytes=TRUST, expected_active_token=active_token(before), operator_approved=True,
+        idle=True, release_schema=schema, maturity=stage if schema == 2 else None, **kw)
+
+
+def settle_stage(root, **kw):
+    return finish_or_recover(root, component=COMPONENT, trust_bytes=TRUST, allow_schema2=True, **kw)
+
+
+def test_explicit_schema2_same_number_promotions_and_saved_recovery(tmp_path):
+    root = empty_stage_root(tmp_path); saved = data_hash(root); before = None; retained = []
+    for stage in ("alpha", "beta", "stable"):
+        target = stage_fixture(root, before, stage_fixture_package(tmp_path, stage), stage=stage)
+        assert target["maturity"] == stage and target["directory"].endswith("/0.1.0/"+stage)
+        assert settle_stage(root, health_verified=True) == target
+        retained.append(target); before = target
+    assert settle_stage(root, rollback_approved=True) == retained[1]
+    assert settle_stage(root) == retained[1]
+    assert all((root/r["directory"]).exists() for r in retained) and data_hash(root) == saved
+
+
+def test_explicit_legacy_to_schema2_and_signed_legacy_rollback(tmp_path):
+    root = empty_stage_root(tmp_path)
+    prior = stage_fixture(root, None, stage_fixture_package(tmp_path, "stable", "0.0.1", 1), stage="stable", version="0.0.1", schema=1)
+    assert finish_or_recover(root, component=COMPONENT, trust_bytes=TRUST, health_verified=True) == prior
+    prior_bytes = (root/"State"/COMPONENT.value/"transaction.json").read_bytes()
+    target = stage_fixture(root, prior, stage_fixture_package(tmp_path))
+    assert target["release_schema"] == 2
+    assert settle_stage(root, rollback_approved=True) == prior
+    assert (root/"State"/COMPONENT.value/"transaction.json").read_bytes() == prior_bytes
+    assert settle_stage(root) == prior
+
+
+@pytest.mark.parametrize("phase", ["staging_created", "member_extracted", "before_version_publish",
+    "prior_journal_preserved", "new_journal_established", "version_published", "active_reference_replaced"])
+def test_explicit_stage_failure_recovers_independent_signed_prior(tmp_path, phase):
+    root = empty_stage_root(tmp_path); saved=data_hash(root)
+    before = stage_fixture(root, None, stage_fixture_package(tmp_path))
+    settle_stage(root, health_verified=True)
+    prior_bytes=(root/"State"/COMPONENT.value/"transaction.json").read_bytes()
+    def failpoint(at):
+        if at == phase: raise InterruptedError("INJECTED CANCELLATION")
+    with pytest.raises(InterruptedError):
+        stage_fixture(root, before, stage_fixture_package(tmp_path, "beta"), stage="beta", failpoint=failpoint)
+    assert settle_stage(root) == before
+    assert settle_stage(root) == before
+    assert (root/"State"/COMPONENT.value/"transaction.json").read_bytes() == prior_bytes
+    assert data_hash(root) == saved
+
+
+@pytest.mark.parametrize("schema,maturity", [(True,None),(3,None),(1,"alpha"),(2,None),(2,"Alpha"),(2,True)])
+def test_explicit_stage_partial_options_hold_before_writes(tmp_path,schema,maturity):
+    root=empty_stage_root(tmp_path);pkg=stage_fixture_package(tmp_path)
+    before=sorted(str(p.relative_to(root)) for p in root.rglob("*"))
+    with pytest.raises(ValueError):
+        stage_and_activate(root,pkg[0],component=COMPONENT,version="0.1.0",os_name="windows",architecture="x86_64",
+            manifest_bytes=pkg[1],signature_bytes=pkg[2],trust_bytes=TRUST,expected_active_token=active_token(None),
+            operator_approved=True,idle=True,release_schema=schema,maturity=maturity)
+    assert sorted(str(p.relative_to(root)) for p in root.rglob("*"))==before
+
+
+def test_schema2_recovery_and_payload_require_explicit_context(tmp_path):
+    from suite_core.discovery.component_staging import payload, validate_journal, owned
+    root=empty_stage_root(tmp_path);target=stage_fixture(root,None,stage_fixture_package(tmp_path))
+    _,base,owner=owned(root,COMPONENT);journal=json.loads((base/"transaction.json").read_bytes())
+    for call in (lambda: finish_or_recover(root,component=COMPONENT,trust_bytes=TRUST),
+                 lambda: validate_journal(journal,COMPONENT,owner,TRUST),lambda:payload(root,target,COMPONENT)):
+        with pytest.raises(ValueError): call()
+    release=validate_journal(journal,COMPONENT,owner,TRUST,allow_schema2=True)
+    assert payload(root,target,COMPONENT,release=release)==root/target["directory"]
+    for value in (None,1,"yes"):
+        with pytest.raises(ValueError): finish_or_recover(root,component=COMPONENT,trust_bytes=TRUST,allow_schema2=value)
+
+
+@pytest.mark.parametrize("stage,version",[("alpha","0.1.0"),("beta","0.1.0"),("stable","0.0.1")])
+def test_explicit_equal_downgrade_and_numeric_regression_hold(tmp_path,stage,version):
+    root=empty_stage_root(tmp_path);before=stage_fixture(root,None,stage_fixture_package(tmp_path,"beta"),stage="beta")
+    settle_stage(root,health_verified=True)
+    journal=(root/"State"/COMPONENT.value/"transaction.json").read_bytes()
+    with pytest.raises(ValueError): stage_fixture(root,before,stage_fixture_package(tmp_path,stage,version),stage=stage,version=version)
+    assert read_active(root)==before and (root/"State"/COMPONENT.value/"transaction.json").read_bytes()==journal
+
+
+def test_explicit_later_numeric_upgrade_and_occupied_target_refusal(tmp_path):
+    root=empty_stage_root(tmp_path);before=stage_fixture(root,None,stage_fixture_package(tmp_path,"stable"),stage="stable")
+    settle_stage(root,health_verified=True)
+    pkg=stage_fixture_package(tmp_path,"alpha","0.2.0")
+    destination=root/"Apps"/COMPONENT.value/"schema2/0.2.0/alpha";destination.mkdir(parents=True)
+    (destination/"retained.txt").write_bytes(b"MUST NOT OVERWRITE")
+    with pytest.raises(ValueError,match="immutable_version_already_exists"):
+        stage_fixture(root,before,pkg,stage="alpha",version="0.2.0")
+    assert (destination/"retained.txt").read_bytes()==b"MUST NOT OVERWRITE" and read_active(root)==before
+
+
+@pytest.mark.parametrize("mutation", ["signature","stage","digest","platform","floor","stale"])
+def test_explicit_stage_rejects_changed_signed_inputs(tmp_path,mutation):
+    root=empty_stage_root(tmp_path);before=stage_fixture(root,None,stage_fixture_package(tmp_path))
+    settle_stage(root,health_verified=True)
+    pkg=list(stage_fixture_package(tmp_path,"beta"));value=json.loads(pkg[1]); passed_before=before
+    if mutation=="signature": pkg[2]=sign(pkg[1]+b"changed")
+    elif mutation=="stage": value["maturity"]="stable";pkg[1]=raw(value);pkg[2]=sign(pkg[1])
+    elif mutation=="digest": value["artifacts"][0]["sha256"]="c"*64;pkg[1]=raw(value);pkg[2]=sign(pkg[1])
+    elif mutation=="platform": value["platform"]["os"]="linux";pkg[1]=raw(value);pkg[2]=sign(pkg[1])
+    elif mutation=="floor": value["supported_from"]="0.1.1";pkg[1]=raw(value);pkg[2]=sign(pkg[1])
+    else: passed_before=None
+    journal=(root/"State"/COMPONENT.value/"transaction.json").read_bytes()
+    with pytest.raises(ValueError): stage_fixture(root,passed_before,pkg,stage="beta")
+    assert read_active(root)==before and (root/"State"/COMPONENT.value/"transaction.json").read_bytes()==journal
+
+
+@pytest.mark.parametrize("tamper",["missing","hash","stage","owner"])
+def test_explicit_recovery_refuses_tampered_prior_custody(tmp_path,tamper):
+    root=empty_stage_root(tmp_path);before=stage_fixture(root,None,stage_fixture_package(tmp_path))
+    settle_stage(root,health_verified=True);target=stage_fixture(root,before,stage_fixture_package(tmp_path,"beta"),stage="beta")
+    base=root/"State"/COMPONENT.value;j=json.loads((base/"transaction.json").read_bytes());prior=base/j["prior_journal"]["name"]
+    if tamper=="missing": prior.unlink()
+    elif tamper=="hash": prior.write_bytes(prior.read_bytes()+b" ")
+    else:
+        old=json.loads(prior.read_bytes())
+        if tamper=="stage": old["target"]["maturity"]="stable"
+        else: old["owner"]="f"*32
+        prior.write_bytes(raw(old));j["prior_journal"]["sha256"]=sha256(prior.read_bytes()).hexdigest();(base/"transaction.json").write_bytes(raw(j))
+    with pytest.raises((ValueError,OSError)): settle_stage(root,rollback_approved=True)
+    assert read_active(root)==target
+
+
+def test_explicit_transition_requires_independent_legacy_origin(tmp_path):
+    root,before,_=setup_root(tmp_path);pkg=stage_fixture_package(tmp_path)
+    with pytest.raises(ValueError,match="independently_signed_prior"):
+        stage_fixture(root,before,pkg)
+    assert read_active(root)==before
+
+
+def test_explicit_stage_later_numeric_success_and_signed_floor(tmp_path):
+    root=empty_stage_root(tmp_path);before=stage_fixture(root,None,stage_fixture_package(tmp_path,"stable"),stage="stable")
+    settle_stage(root,health_verified=True)
+    pkg=list(stage_fixture_package(tmp_path,"alpha","0.2.0"));m=json.loads(pkg[1]);m["supported_from"]="0.1.1"
+    pkg[1]=raw(m);pkg[2]=sign(pkg[1])
+    with pytest.raises(ValueError,match="supported_component_floor"):
+        stage_fixture(root,before,pkg,version="0.2.0")
+    target=stage_fixture(root,before,stage_fixture_package(tmp_path,"alpha","0.2.0"),version="0.2.0")
+    assert settle_stage(root,health_verified=True)==target
+    assert settle_stage(root,rollback_approved=True)==before
+
+
+@pytest.mark.parametrize("lose_owner",[False,True])
+def test_schema2_existing_admission_scope_rechecks_original_owner(tmp_path,lose_owner):
+    from contextlib import contextmanager
+    from suite_core.discovery.component_staging import (ComponentStageAdmission,ComponentStageBinding,
+        component_stage_owner,stage_and_activate_admitted,finish_or_recover_admitted)
+    root=tmp_path/"ordinary-fixture-root";root.mkdir();data=tmp_path/"separate-fixture-data";data.mkdir()
+    owner=component_stage_owner(root,data,COMPONENT);checks=[]
+    def check():
+        checks.append(True)
+        if lose_owner and len(checks)>3: raise ValueError("ORIGINAL OWNER LOST")
+    @contextmanager
+    def hold(component):
+        assert component==COMPONENT
+        yield ComponentStageBinding(root,owner,check,data)
+    admission=ComponentStageAdmission(hold);pkg=stage_fixture_package(tmp_path)
+    options=dict(component=COMPONENT,version="0.1.0",os_name="windows",architecture="x86_64",
+        manifest_bytes=pkg[1],signature_bytes=pkg[2],trust_bytes=TRUST,expected_active_token=active_token(None),
+        release_schema=2,maturity="alpha")
+    with pytest.raises(ValueError,match="original_root_admission"):
+        stage_and_activate_admitted(None,pkg[0],**options)
+    if lose_owner:
+        with pytest.raises(ValueError,match="ORIGINAL OWNER LOST"):
+            stage_and_activate_admitted(admission,pkg[0],**options)
+        assert not (root/"State"/COMPONENT.value/"active.json").exists()
+    else:
+        target=stage_and_activate_admitted(admission,pkg[0],**options)
+        assert len(checks)>4
+        assert finish_or_recover_admitted(admission,component=COMPONENT,trust_bytes=TRUST,
+            health_verified=True,allow_schema2=True)==target
+
+
+def test_schema2_stage_cannot_regress_to_legacy_entry(tmp_path):
+    root=empty_stage_root(tmp_path);before=stage_fixture(root,None,stage_fixture_package(tmp_path))
+    settle_stage(root,health_verified=True)
+    pkg=stage_fixture_package(tmp_path,"stable","0.2.0",1)
+    with pytest.raises(ValueError): stage_fixture(root,before,pkg,stage="stable",version="0.2.0",schema=1)
+    assert read_active(root)==before
+
+
+def test_schema2_reference_provenance_walk_is_bounded(tmp_path):
+    from suite_core.discovery.component_staging import _signed_reference_release,owned
+    root=empty_stage_root(tmp_path);target=stage_fixture(root,None,stage_fixture_package(tmp_path))
+    _,base,owner=owned(root,COMPONENT);j=json.loads((base/"transaction.json").read_bytes())
+    j["phase"]="healthy";j["before"]=target
+    for index in range(34):
+        name="transaction-"+f"{index:032x}"+".json";message=raw(j);(base/name).write_bytes(message)
+        j=dict(j,prior_journal={"name":name,"sha256":sha256(message).hexdigest()})
+    unknown=dict(target,release_sha256="f"*64)
+    with pytest.raises(ValueError,match="bounded_component_history"):
+        _signed_reference_release(unknown,j,base,COMPONENT,owner,TRUST)
