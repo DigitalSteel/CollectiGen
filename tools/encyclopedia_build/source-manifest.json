@@ -113,8 +113,8 @@
     },
     {
       "path": "core/catalog_admission.py",
-      "bytes": 26671,
-      "sha256": "18da458a79a2ec5c7b7373b0d01eb0067a2c33e64ce61717b135b65ecc0b3ef4"
+      "bytes": 37080,
+      "sha256": "1349fbfc42953aeda94a2bcdc8b95b90632a5d08460f50833352ccc77cda8d5c"
     },
     {
       "path": "core/catalog_identity_codec.py",
@@ -598,8 +598,8 @@
     },
     {
       "path": "core/knowledge_pack.py",
-      "bytes": 249655,
-      "sha256": "4f8795f9aac7787afd1b11aea5e74cd1ecbaed2c0f6e0f1cdbde77f59deb2df3"
+      "bytes": 263687,
+      "sha256": "e8e82915ac8374ba2e97e03ea33290ebad863893a74483ac63789dd6eb3db670"
     },
     {
       "path": "core/knowledge_relationships.py",
@@ -1282,6 +1282,11 @@
       "sha256": "4a0181a7f7690b75c26fa0e677f1f0bba9e333fbf06a7692384520fd6acf7949"
     },
     {
+      "path": "qt_app/completed_pack_restore_dialog.py",
+      "bytes": 16789,
+      "sha256": "c0e04cb0501077085572404da48721a270c669faec0568bc5f7e509fcfc6e6d1"
+    },
+    {
       "path": "qt_app/components.py",
       "bytes": 62805,
       "sha256": "e904b9d93b469370974489ccc06205dbceedd53fd0d0ac1609b92a0f028a7f2a"
@@ -1568,8 +1573,8 @@
     },
     {
       "path": "suite_core/encyclopedia/MODULE_MANIFEST.json",
-      "bytes": 23813,
-      "sha256": "cad7eb946e25b84ced2d14bf7bc850f46d721f979672500145f89aba39a70fbc"
+      "bytes": 24161,
+      "sha256": "d4509d02f2b59a0e8e3b3d40900da68e2b139869b11ace1d25b4fb644796927b"
     },
     {
       "path": "suite_core/encyclopedia/README.md",
@@ -1608,13 +1613,13 @@
     },
     {
       "path": "suite_core/encyclopedia/browser.py",
-      "bytes": 38158,
-      "sha256": "21e3f60f172af22b33d1578a4240e51ba66254c157333783d6075e83fadb171a"
+      "bytes": 38617,
+      "sha256": "5807c43d310575f0a198ba56a7278efe81d63b4fe359d3a0ad9bc1ddb447a07c"
     },
     {
       "path": "suite_core/encyclopedia/catalog_ui.py",
-      "bytes": 79444,
-      "sha256": "894ab55c2e25509cd785adda1da03a775fcaaf515ce729304d9cb9499de3cf7f"
+      "bytes": 84515,
+      "sha256": "94a235fb45cf437840487fd4a6be545129f956d1037c233b9e8eb460da680a28"
     },
     {
       "path": "suite_core/encyclopedia/control_entry.py",
@@ -1718,8 +1723,8 @@
     },
     {
       "path": "suite_core/knowledge/native_tag_catalog_host.py",
-      "bytes": 18907,
-      "sha256": "ce228e586e73d4044c72ef1aa59afb3e65b897e7e0e4a78f7c49cc4e5832374f"
+      "bytes": 20538,
+      "sha256": "1886275c69d80dafa3953ee0e1ddd6482bc39d97178d3e281ec8b71e47a77bf2"
     },
     {
       "path": "suite_core/knowledge/pack_container.py",
@@ -1813,8 +1818,8 @@
     },
     {
       "path": "suite_core/manager/database_presentation.py",
-      "bytes": 11569,
-      "sha256": "4f5e20ba43ae95af61712b123712e7696a71224bd3613413f78bb286df1719cc"
+      "bytes": 12333,
+      "sha256": "87096cc7849c2ceaedf0dcfbd5faec0216416b87e89d957b7c045e14fcaf7fd7"
     },
     {
       "path": "suite_core/manager/database_preview_route.py",
@@ -1993,13 +1998,13 @@
     },
     {
       "path": "suite_core/manager/tag_database_controller.py",
-      "bytes": 33848,
-      "sha256": "b48f22136629495d44289408fd8b3758d90992024a79a3eaec9c03892ea1185e"
+      "bytes": 47208,
+      "sha256": "b2f71db97bd4d556226c5a22916d55a8db20f9344d0ff95cd4315abe04496202"
     },
     {
       "path": "suite_core/manager/tag_database_ui.py",
-      "bytes": 27524,
-      "sha256": "08a8faaa7508c267fdd834f41284868d4b7031f4e5c27370b5ab3e270ed93ffa"
+      "bytes": 32660,
+      "sha256": "c17a4631e0522ea9be2f3cba5db5b5b43b9f513f38c32db1616258c5feeccc94"
     },
     {
       "path": "suite_core/manager/tag_entry_recovery.py",
@@ -2023,13 +2028,13 @@
     },
     {
       "path": "suite_core/manager/version.py",
-      "bytes": 281,
-      "sha256": "835b973b1a79394eb3a696889dce18b740e14c4263aee533b8e87882094475f0"
+      "bytes": 274,
+      "sha256": "06bc8feb6ff520d15794ed00d4038d2004ed5f53b021b76c8f5eb4f23d490551"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 179461,
-      "sha256": "ea7343fcdc3d4d8929aef1ac5e7d3d82a1853a3d390389bc231db9f40663c7ac"
+      "bytes": 179539,
+      "sha256": "32db432e47c09e1da23038909d78cfe193794447862d033d25394d5f36371358"
     },
     {
       "path": "suite_core/media_examples.py",

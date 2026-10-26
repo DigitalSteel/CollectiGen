@@ -2898,8 +2898,8 @@
       "size_bytes": 191
     },
     "suite_core/encyclopedia/MODULE_MANIFEST.json": {
-      "sha256": "cad7eb946e25b84ced2d14bf7bc850f46d721f979672500145f89aba39a70fbc",
-      "size_bytes": 23813
+      "sha256": "d4509d02f2b59a0e8e3b3d40900da68e2b139869b11ace1d25b4fb644796927b",
+      "size_bytes": 24161
     },
     "suite_core/encyclopedia/README.md": {
       "sha256": "ef59e015617c234c4a72ceb37da9937f5410b7cf895b4a80c880022e9969af28",
@@ -3974,8 +3974,8 @@
       "size_bytes": 18369
     },
     "tools/encyclopedia_build/source-manifest.json": {
-      "sha256": "ad46de2be26d1623064c9e50af04872e9f5c552a400e130c9d099b18e0baa5c8",
-      "size_bytes": 70202
+      "sha256": "1e3f1d144aa8f9abe3a3a249458b4e9b20e3e9d3cf9ec821551fea9875a61d47",
+      "size_bytes": 70377
     },
     "tools/manager_build/CollectiGen.spec": {
       "sha256": "ed6a783bc61d1ebc2fbfa37fe2a2f8ba0b6e550579747d25f4bd742596c5f81e",
