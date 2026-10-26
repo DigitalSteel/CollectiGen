@@ -5216,6 +5216,73 @@ def _require_default_baseline(app_root, value):
             raise RuntimeError("Shipped defaults differ from the durable selected baseline")
 
 
+@dataclass(frozen=True)
+class CompletedPackImportReview:
+    """Immutable read evidence only; grants no Undo, recovery or enrollment."""
+    catalog_root: str
+    receipt_relative: str
+    catalog_identity_binding: tuple
+    receipt_sha256: str
+    receipt_epoch: str
+    default_authority_fingerprints: tuple
+    participants: tuple
+
+
+def review_completed_knowledge_pack_import(app_root, receipt, *, catalog_identity_binding):
+    """Inspect one enrolled completed user import without inverse authority.
+
+    Later mutations must obtain their own admission and revalidate all evidence.
+    Synthetic inverse, Foundation and legacy enrollment routes stay unchanged.
+    """
+    from .catalog_identity_codec import require_inverse_catalog
+    root, path = Path(app_root), Path(receipt)
+    if (not root.is_absolute() or not path.is_absolute()
+            or ".." in root.parts or ".." in path.parts):
+        raise ValueError("Select explicit absolute catalog and receipt paths without traversal")
+    _check_export_path(root)
+    _check_export_path(path)
+    if (not root.is_dir() or not (root / "data/user").is_dir()
+            or path.name != "recovery.json"
+            or path.parent.parent != root / "backups/knowledge-pack-import"):
+        raise ValueError("Select one receipt inside the existing catalog import zone")
+    if type(catalog_identity_binding) is not tuple:
+        raise TypeError("Explicit immutable catalog identity binding required")
+    expected = dict(catalog_identity_binding)
+    header = root / "data/user/catalog_identity.json"
+    require_inverse_catalog(_recovery_bytes(header)[0], expected)
+    with catalog_admission(root, sys.modules[__name__], role="completed-pack-review") as admission:
+        if not admission.enrolled or tuple(sorted(admission.binding.items())) != catalog_identity_binding:
+            raise RuntimeError("Completed import review belongs to a stale catalog identity")
+        value, stamp = _read_pack_receipt(path, root)
+        if (type(value.get("schema_version")) is not int
+                or value["schema_version"] != ENROLLED_PACK_RECEIPT
+                or value["status"] != "complete"
+                or value.get("identity_bound_operation") != "pack_import"):
+            raise RuntimeError("Select an exact completed identity-bound user import")
+        if "foundation_transition" in value:
+            raise RuntimeError("Completed Foundation Undo requires separate inverse authority qualification")
+        require_inverse_catalog(_recovery_bytes(header)[0], value.get("catalog_identity_binding"))
+        _require_default_baseline(root, value)
+        prepared = _prepare_pack_restore(path, value, root)
+        if any(row[4] is None or row[4][-1] != row[2] for row in prepared):
+            raise RuntimeError("Newer or restored participant bytes block completed import review")
+
+        def observations(rows):
+            return tuple((str(row[0].relative_to(root)), row[1], row[2], row[4]) for row in rows)
+
+        observed = observations(prepared)
+        fresh, fresh_stamp = _read_pack_receipt(path, root)
+        if fresh != value or fresh_stamp != stamp:
+            raise RuntimeError("Selected completed receipt changed during review")
+        _require_default_baseline(root, fresh)
+        if observations(_prepare_pack_restore(path, fresh, root)) != observed:
+            raise RuntimeError("Catalog participants changed during completed import review")
+        admission.checkpoint(ordinary=True)
+        return CompletedPackImportReview(str(root), path.relative_to(root).as_posix(),
+            tuple(sorted(admission.binding.items())), stamp[-1], admission.receipt_epoch,
+            tuple(tuple(row) for row in value["default_authority_fingerprints"]), observed)
+
+
 def _require_pack_sandbox(sandbox):
     from suite_core.completed_pack_undo_candidate import SyntheticPackUndoSandbox
     if type(sandbox) is not SyntheticPackUndoSandbox or sandbox.native is not sys.modules[__name__]:
