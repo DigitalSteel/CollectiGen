@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1005,
+  "allowlisted_source_file_count": 1006,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -3493,6 +3493,10 @@
       "sha256": "1af0e1d7b675212f1c62b7260d2a17a1fe48d211f99237d8d223cd0ef99733bb",
       "size_bytes": 17593
     },
+    "suite_core/tests/protected_review_ui_fixture.py": {
+      "sha256": "f07e7a5fd07b54459695d04548e3e2f96a04e9e6fd1f54fee7ea8a815b555b30",
+      "size_bytes": 10762
+    },
     "suite_core/tests/test_applications_reader_card.py": {
       "sha256": "57d4eb10b4a976f3215c1cd7974ba83a18d0415c2093bbd05fe231009d83a14e",
       "size_bytes": 13633
@@ -3922,8 +3926,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "c8b37da3a0ba2d7e034a942154fd899e0c8b9a61709b5eabd247d322b47f6ce9",
-      "size_bytes": 41239
+      "sha256": "e834bf9179d01842cf4823c93c6b12fef9a8324a50b337f1a4b2d5ec3db4733f",
+      "size_bytes": 41294
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",

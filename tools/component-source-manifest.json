@@ -5,6 +5,7 @@
     "collectigen.suite-manager"
   ],
   "files": [
+    "suite_core/tests/protected_review_ui_fixture.py",
     "LICENSE",
     "LICENSES.md",
     "PRIVACY.md",
