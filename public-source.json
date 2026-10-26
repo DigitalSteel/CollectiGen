@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1019,
+  "allowlisted_source_file_count": 1020,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -278,16 +278,16 @@
       "size_bytes": 4938
     },
     "core/component_acquisition.py": {
-      "sha256": "04304db96f595b6d7a1a9f62e6645c506a3ea9ae642d73b2c2efec22172b93ce",
-      "size_bytes": 21343
+      "sha256": "d076984d5f0d75b692ec17e6d3c48ed210d20241e8982d0863f209d8b1640b72",
+      "size_bytes": 33400
     },
     "core/component_release_identity.py": {
       "sha256": "88eb34384b97551a634e07b05f8e255864766fee4884703f88bf24c52c6d03fa",
       "size_bytes": 15613
     },
     "core/component_release_transport.py": {
-      "sha256": "8e2fce2ddb6337712071c311d69875a9a9ba8ab51fed7a499cf3c52576e3ff97",
-      "size_bytes": 5619
+      "sha256": "7d08de43450d4f0a51f4989c1d85d6e2ea830f8772d69cf1c0fc98df84e78402",
+      "size_bytes": 6257
     },
     "core/concept_groups.py": {
       "sha256": "01096664ffcf4ab812e019b80723d5cdada7018c70e2b655150737461786d48e",
@@ -1948,6 +1948,10 @@
     "data/defaults/public-defaults.json": {
       "sha256": "b7a18af77cb9bd400d2a69505e40f57cb23c264a0038f98272f6097fd6bd5e89",
       "size_bytes": 61
+    },
+    "docs/COMPONENT_AUTHENTICATED_OFFERS.md": {
+      "sha256": "f0449239bc230c1af2325631492ea5a5aa567496b1bbb99317de77a5daebce12",
+      "size_bytes": 3708
     },
     "docs/COMPONENT_MATURITY_ADMISSION.md": {
       "sha256": "4c871193ea28eb68d0f5c41d10ec2baac9663d8532255b3c586bfcee8a957c12",
@@ -3726,8 +3730,8 @@
       "size_bytes": 8622
     },
     "tests/test_component_acquisition.py": {
-      "sha256": "7ca5d83ef01fcdf43554f0fa7db039c4ebd7735ea50e48aa7edf226e91a516c9",
-      "size_bytes": 17646
+      "sha256": "c9366aa286df98a8308d283e0e51773565b8a7e5e33bca87207e3a06c9cf4805",
+      "size_bytes": 34794
     },
     "tests/test_component_release_identity.py": {
       "sha256": "f12dc6414d855e4967302d4bb70add0c6841075d722ac54f8d19e9c461b275db",
@@ -3974,8 +3978,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "a79cf2e6e0dcc950c806e4b866fb81be3e3526cb690342b776227debd0e2b67f",
-      "size_bytes": 41912
+      "sha256": "07f4b54f4125eb964727aa3cc3c189e3edcf29a89c92ccc5a9cf0d374671ff43",
+      "size_bytes": 41958
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",

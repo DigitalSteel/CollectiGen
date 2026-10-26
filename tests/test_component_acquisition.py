@@ -10,7 +10,7 @@ from urllib.parse import quote
 
 import pytest
 from core.application_update import UpdateServiceError
-from core.component_acquisition import ComponentAcquisition, ExactComponentOffer, ExactOfferHold
+from core.component_acquisition import ComponentAcquisition, ExactComponentOffer, ExactOfferHold, InstalledOfferContext, ExactOfferAsset
 from suite_core.discovery.github_component_releases import discover_releases, discover_component_ids, DiscoveryHold
 from suite_core.discovery import component_staging as staging
 from suite_core.installation import ComponentId
@@ -372,3 +372,298 @@ def test_metadata_response_bound_before_parse(tmp_path):
     s.transport.opener=lambda request,timeout:Response(b' '*(1024*1024+1))
     with pytest.raises(UpdateServiceError,match='safety limit'):offers(s)
     assert list(s.root.iterdir())==[s._marker]
+
+
+REPO_API='https://api.github.com/repos/DigitalSteel/CollectiGen'
+METADATA_NAMES=('collectigen-release.json','collectigen-release.json.sig')
+
+
+class MaturityFeed(FakeFeed):
+    def __init__(self):
+        super().__init__();self.resources[REPO_API]=raw(dict(id=4321,full_name='DigitalSteel/CollectiGen'))
+
+    def add_maturity(self,version='0.4.0',stage='alpha',**changes):
+        tag=ID+'/releases/schema2/'+version+'/'+stage
+        base='https://github.com/DigitalSteel/CollectiGen/releases/download/'+quote(tag,safe='')+'/'
+        name='reader-'+version+'-'+stage+'.zip'
+        m=dict(schema_version=2,product='collectigen',component_id=ID,version=version,maturity=stage,
+            channel='stable' if stage=='stable' else 'beta',published_at='2026-10-26T00:00:00Z',
+            supported_from='0.1.0',release_notes='SIGNED: static maturity fixture',platform=dict(os='windows',architecture='x86_64'),
+            artifacts=[dict(name=name,kind='component-package',size_bytes=len(PAYLOAD),sha256=sha256(PAYLOAD).hexdigest(),portable_manifest_sha256='a'*64)])
+        m.update(changes);message=raw(m)
+        self.resources[base+METADATA_NAMES[0]]=message;self.resources[base+METADATA_NAMES[1]]=raw(signature(message))
+        self.resources[base+name]=PAYLOAD
+        rid=int(sha256(tag.encode()).hexdigest()[:10],16)
+        self.rows.append(dict(id=rid,tag_name=tag,prerelease=stage!='stable',draft=False,
+            assets=[dict(id=rid*100+i+1,name=n,size=len(self.resources[base+n]),browser_download_url=base+n)
+                for i,n in enumerate((*METADATA_NAMES,name))]))
+        return base,name
+
+
+def maturity_service(tmp_path,feed,context=None,**kwargs):
+    from types import SimpleNamespace
+    from core.component_release_transport import ComponentReleaseTransport,ReleaseTransportPolicy
+    state=[context or InstalledOfferContext(ComponentId(ID),None,None,None,'original-root-observation')]
+    transport=ComponentReleaseTransport(ReleaseTransportPolicy(schema2_metadata_assets=METADATA_NAMES))
+    transport._opener=SimpleNamespace(open=feed)
+    values=dict(schema2_metadata=True,observe_installed=lambda:state[0],expected_repository_id=4321,opener=transport)
+    values.update(kwargs)
+    return service(tmp_path,feed,**values),state
+
+
+def maturity_offers(s,context,channel='beta',**kwargs):
+    return s.discover(channel=channel,component_id=ComponentId(ID),
+        installed_versions={} if context.version is None else {ID:context.version},**kwargs)
+
+
+@pytest.mark.parametrize('stage',['alpha','beta','stable'])
+def test_signed_maturity_metadata_has_no_artifact_authority(tmp_path,stage):
+    f=MaturityFeed();base,name=f.add_maturity(stage=stage);s,state=maturity_service(tmp_path,f)
+    o,=maturity_offers(s,state[0],channel='stable' if stage=='stable' else 'beta')
+    assert (o.release.schema_version,o.release.maturity,o.installed_context,o.discovery_epoch)==(2,stage,state[0],1)
+    assert not o.production_install_authorized
+    assert all(url!=base+name for url,_,_ in f.calls)
+    before=tuple(f.calls);tree=set(s.root.iterdir())
+    with pytest.raises(ValueError,match='schema2_installation_not_admitted'):s.acquire(o)
+    assert tuple(f.calls)==before and set(s.root.iterdir())==tree
+    s._acquired[o.release.manifest_sha256]=tmp_path/'fabricated-cache'
+    with pytest.raises(ValueError,match='schema2_installation_not_admitted'):s.acquire(o)
+    assert tuple(f.calls)==before and set(s.root.iterdir())==tree
+
+
+def test_same_number_promotion_authenticates_every_stage_then_selects(tmp_path):
+    f=MaturityFeed();f.add_maturity(stage='alpha');f.add_maturity(stage='beta')
+    c=InstalledOfferContext(ComponentId(ID),'0.4.0',2,'alpha','original-selected-identity')
+    s,state=maturity_service(tmp_path,f,c);o,=maturity_offers(s,c)
+    assert o.release.maturity=='beta' and o.operation=='update'
+    assert sum(url.endswith('.sig') for url,_,_ in f.calls)==2
+    f.rows.reverse();s.revalidate_offer(o)
+
+
+@pytest.mark.parametrize('schema,version,stage,allowed',[(1,'0.3.1-alpha.1',None,True),(1,'0.4.0-alpha.1',None,False),
+    (2,'0.4.0','alpha',False),(2,'0.4.0','beta',False),(2,'0.0.9','stable',False)])
+def test_maturity_upgrade_and_floor_boundary(tmp_path,schema,version,stage,allowed):
+    f=MaturityFeed();f.add_maturity();c=InstalledOfferContext(ComponentId(ID),version,schema,stage,'original-context')
+    s,state=maturity_service(tmp_path,f,c)
+    if allowed:assert maturity_offers(s,c)[0].release.maturity=='alpha'
+    else:
+        with pytest.raises(ValueError):maturity_offers(s,c)
+        assert not s._offers
+
+
+@pytest.mark.parametrize('failure',['signature','key','channel','platform','stage','artifact','size','repository','missing_ids'])
+def test_wrong_signed_or_exact_metadata_cannot_publish_offer(tmp_path,failure):
+    f=MaturityFeed();changes={}
+    if failure=='channel':changes['channel']='stable'
+    if failure=='platform':changes['platform']=dict(os='linux',architecture='x86_64')
+    if failure=='stage':changes['maturity']='beta'
+    base,name=f.add_maturity(**changes)
+    if failure in ('signature','key'):
+        signed=json.loads(f.resources[base+METADATA_NAMES[1]])
+        signed['signature' if failure=='signature' else 'key_id']='invalid'
+        f.resources[base+METADATA_NAMES[1]]=raw(signed)
+        f.rows[0]['assets'][1]['size']=len(f.resources[base+METADATA_NAMES[1]])
+    if failure=='artifact':f.rows[0]['assets'][2]['size']+=1
+    if failure=='size':f.rows[0]['assets'][0]['size']+=1
+    if failure=='repository':f.resources[REPO_API]=raw(dict(id=999,full_name='DigitalSteel/CollectiGen'))
+    if failure=='missing_ids':f.rows[0]['assets'][0].pop('id')
+    s,state=maturity_service(tmp_path,f)
+    with pytest.raises(ValueError):maturity_offers(s,state[0])
+    assert s._offers=={} and all(url!=base+name for url,_,_ in f.calls)
+
+
+def test_bad_highest_numeric_group_never_falls_back(tmp_path):
+    f=MaturityFeed();lower,_=f.add_maturity('0.3.0');higher,_=f.add_maturity('0.4.0')
+    f.resources[higher+METADATA_NAMES[1]]=b'{}';f.rows[1]['assets'][1]['size']=2
+    s,state=maturity_service(tmp_path,f)
+    with pytest.raises(ValueError):maturity_offers(s,state[0])
+    assert not s._offers and not any(url.startswith(lower) for url,_,_ in f.calls)
+
+
+def test_revalidation_without_exact_expectation_is_fresh_and_failure_clears_epoch(tmp_path):
+    f=MaturityFeed();base,_=f.add_maturity();s,state=maturity_service(tmp_path,f);o,=maturity_offers(s,state[0])
+    before=len(f.calls);s.revalidate_offer(o);assert len(f.calls)>before
+    state[0]=replace(state[0],observation_id='changed-original-identity')
+    with pytest.raises(ValueError):s.revalidate_offer(o)
+    assert not s._offers
+
+
+def test_exact_reviewed_schema_stage_and_asset_pins_revalidate(tmp_path):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f);o,=maturity_offers(s,state[0])
+    expected=ExactComponentOffer.from_reviewed_offer(o,repository_id=4321)
+    assert expected.schema_version==2 and all(a.schema_version==2 for a in (expected.manifest,expected.signature,expected.artifact))
+    other,context=maturity_service(tmp_path,f,expected_offer=expected);approved,=maturity_offers(other,context[0]);other.revalidate_offer(approved)
+    with pytest.raises(ValueError):replace(expected,maturity='beta')
+    with pytest.raises(ValueError):replace(expected.artifact,schema_version=1)
+    with pytest.raises(ValueError):replace(expected,release_id=expected.release_id+1).check_offer(approved)
+
+
+def test_new_epoch_rejects_old_offer_object_without_reusing_it(tmp_path):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f);old,=maturity_offers(s,state[0]);new,=maturity_offers(s,state[0])
+    assert new.discovery_epoch>old.discovery_epoch and new is not old
+    with pytest.raises(ValueError):s.revalidate_offer(old)
+    s.revalidate_offer(new)
+
+
+@pytest.mark.parametrize('point',list(range(1,13)))
+def test_opted_in_cancellation_never_publishes_prior_or_partial_offer(tmp_path,point):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f);maturity_offers(s,state[0])
+    count=0
+    def cancel():
+        nonlocal count
+        count+=1;return count==point
+    with pytest.raises(InterruptedError):maturity_offers(s,state[0],should_cancel=cancel)
+    assert not s._offers and not any(p.name.startswith('attempt-') for p in s.root.iterdir())
+
+
+def test_observer_change_during_fetch_cannot_publish(tmp_path):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f)
+    def mutate(url):
+        if url.endswith('.sig'):state[0]=replace(state[0],observation_id='changed-during-io')
+        return False
+    f.failure=mutate
+    with pytest.raises(ValueError):maturity_offers(s,state[0])
+    assert not s._offers
+
+
+def test_final_publication_check_cannot_miss_changed_context(tmp_path):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f);original=state[0];calls=0
+    def check():
+        nonlocal calls
+        calls+=1
+        if calls==12:state[0]=replace(state[0],observation_id='changed-before-publish')
+        return False
+    with pytest.raises(ValueError):maturity_offers(s,original,should_cancel=check)
+    assert not s._offers
+
+
+@pytest.mark.parametrize('bad',[None,'missing',True])
+def test_missing_typed_context_holds_before_fetch(tmp_path,bad):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f);state[0]=bad
+    with pytest.raises(ValueError):s.discover(channel='beta',component_id=ComponentId(ID),installed_versions={})
+    assert f.calls==[] and not s._offers
+
+
+def test_pending_and_wrong_component_context_hold_before_fetch(tmp_path):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f)
+    for change in (dict(pending=True),dict(component_id=ComponentId('collectigen.suite-manager'))):
+        state[0]=replace(InstalledOfferContext(ComponentId(ID),None,None,None,'ctx'),**change)
+        with pytest.raises(ValueError):s.discover(channel='beta',component_id=ComponentId(ID),installed_versions={})
+    assert f.calls==[]
+
+
+@pytest.mark.parametrize('config',[dict(schema2_metadata=1),dict(schema2_metadata=True),dict(observe_installed=lambda:None),
+    dict(expected_repository_id=4321),dict(schema2_metadata=True,observe_installed=lambda:None,expected_repository_id=True),
+    dict(schema2_metadata=True,observe_installed=lambda:None,expected_repository_id=4321,manifest_name='arbitrary.json')])
+def test_invalid_metadata_constructor_does_not_create_owner_marker(tmp_path,config):
+    root=tmp_path/'empty';root.mkdir()
+    with pytest.raises(ValueError):ComponentAcquisition(cache_root=root,cache_owner='test',opener=FakeFeed(),host_version='0.1.0',**config)
+    assert list(root.iterdir())==[]
+
+
+def test_metadata_only_policy_never_admits_package_or_unqualified_redirect(tmp_path):
+    from core.component_release_transport import ReleaseTransportPolicy,TransportHold
+    f=MaturityFeed();base,name=f.add_maturity();policy=ReleaseTransportPolicy(schema2_metadata_assets=METADATA_NAMES)
+    assert all(policy.admit_initial(base+n)=='asset' for n in METADATA_NAMES)
+    with pytest.raises(TransportHold):policy.admit_initial(base+name)
+    with pytest.raises(TransportHold):policy.admit_redirect(base+METADATA_NAMES[0],'https://evil.example/file',1)
+    qualified=ReleaseTransportPolicy(asset_redirect_origins=('https://release-assets.githubusercontent.com',),schema2_metadata_assets=METADATA_NAMES)
+    qualified.admit_redirect(base+METADATA_NAMES[0],'https://release-assets.githubusercontent.com/file',1)
+    with pytest.raises(TransportHold):qualified.admit_redirect(base+METADATA_NAMES[0],'https://release-assets.githubusercontent.com/file',5)
+    for names in (list(METADATA_NAMES),('*.json','*.sig'),(name,),tuple(reversed(METADATA_NAMES))):
+        with pytest.raises(TransportHold):ReleaseTransportPolicy(schema2_metadata_assets=names)
+
+
+def test_beta_to_stable_same_number_promotion(tmp_path):
+    f=MaturityFeed();f.add_maturity(stage='stable');c=InstalledOfferContext(ComponentId(ID),'0.4.0',2,'beta','original-context')
+    s,state=maturity_service(tmp_path,f,c);o,=maturity_offers(s,c,channel='stable');assert o.release.maturity=='stable'
+
+
+@pytest.mark.parametrize('change',[dict(version='0.4.0',schema_version=None,maturity='alpha'),
+    dict(version='0.4.0',schema_version=True,maturity='alpha'),dict(version='0.4.0',schema_version=2,maturity=None),
+    dict(version='0.4.0-alpha.1',schema_version=2,maturity='alpha'),dict(version=None,schema_version=1),
+    dict(observation_id=''),dict(observation_id='x'*1025),dict(observation_id='x\0y'),dict(pending=1)])
+def test_installed_context_cannot_guess_schema_or_stage(change):
+    values=dict(component_id=ComponentId(ID),version=None,schema_version=None,maturity=None,observation_id='ctx')
+    values.update(change)
+    with pytest.raises(ValueError):InstalledOfferContext(**values)
+
+
+def add_identified_legacy(feed,version):
+    base,name=feed.add(version=version);row=feed.rows[-1];row['id']=8765
+    for i,a in enumerate(row['assets']):a['id']=876500+i
+    return base,name
+
+
+def test_mixed_same_base_and_schema_regression_hold(tmp_path):
+    mixed=MaturityFeed();mixed.add_maturity();add_identified_legacy(mixed,'0.4.0-alpha.1')
+    s,state=maturity_service(tmp_path,mixed)
+    with pytest.raises(ValueError,match='mixed_schema'):maturity_offers(s,state[0])
+    old=MaturityFeed();add_identified_legacy(old,'0.5.0-alpha.1')
+    c=InstalledOfferContext(ComponentId(ID),'0.4.0',2,'alpha','ctx');other,state=maturity_service(tmp_path,old,c)
+    with pytest.raises(ValueError,match='schema_regression'):maturity_offers(other,c)
+
+
+def test_same_group_bad_stage_clears_previous_offer_not_partial_success(tmp_path):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f);maturity_offers(s,state[0])
+    base,_=f.add_maturity(stage='beta');f.resources[base+METADATA_NAMES[1]]=b'{}';f.rows[-1]['assets'][1]['size']=2
+    with pytest.raises(ValueError):maturity_offers(s,state[0])
+    assert not s._offers
+
+
+@pytest.mark.parametrize('change',['signed_notes','asset_id','new_highest','trust','installed_stage'])
+def test_revalidation_detects_fresh_metadata_or_authority_change(tmp_path,change):
+    f=MaturityFeed();base,_=f.add_maturity();s,state=maturity_service(tmp_path,f);o,=maturity_offers(s,state[0])
+    if change=='signed_notes':
+        m=json.loads(f.resources[base+METADATA_NAMES[0]]);m['release_notes']='SIGNED: changed';message=raw(m)
+        f.resources[base+METADATA_NAMES[0]]=message;f.resources[base+METADATA_NAMES[1]]=raw(signature(message))
+        for a in f.rows[0]['assets']:a['size']=len(f.resources[a['browser_download_url']])
+    elif change=='asset_id':f.rows[0]['assets'][2]['id']+=1
+    elif change=='new_highest':f.add_maturity('0.5.0')
+    elif change=='trust':s.trust=b'{}'
+    else:state[0]=InstalledOfferContext(ComponentId(ID),'0.4.0',2,'beta','changed-inst')
+    with pytest.raises(ValueError):s.revalidate_offer(o)
+    assert not s._offers
+
+
+@pytest.mark.parametrize('point',[1,7,12])
+def test_cancelled_fresh_revalidation_discards_offer(tmp_path,point):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f);o,=maturity_offers(s,state[0]);count=0
+    def cancel():
+        nonlocal count
+        count+=1;return count==point
+    with pytest.raises(InterruptedError):s.revalidate_offer(o,should_cancel=cancel)
+    assert not s._offers
+
+
+def test_opted_in_pagination_requires_empty_third_page(tmp_path):
+    f=MaturityFeed();f.rows=[{} for _ in range(100)];s,state=maturity_service(tmp_path,f)
+    f.failure=lambda url:url==API+'3'
+    with pytest.raises(UpdateServiceError):maturity_offers(s,state[0])
+    assert not s._offers
+    f.failure=None;assert maturity_offers(s,state[0])==()
+    assert all(r.closed for r in f.responses)
+
+
+def test_metadata_scope_and_repository_expectation_cannot_silently_change(tmp_path):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f)
+    with pytest.raises(ValueError):s.discover(channel='beta',installed_versions={})
+    assert not f.calls
+    with pytest.raises(ValueError):s.discover(channel='beta',installed_versions={ID:'0.3.0'},component_id=ComponentId(ID))
+    assert not f.calls
+    o,=maturity_offers(s,state[0]);expected=ExactComponentOffer.from_reviewed_offer(o,repository_id=4321)
+    root=tmp_path/'wrong-repository';root.mkdir()
+    with pytest.raises(ValueError):ComponentAcquisition(cache_root=root,cache_owner='ctx',opener=f,host_version='0.1.0',
+        schema2_metadata=True,observe_installed=lambda:state[0],expected_repository_id=999,expected_offer=expected)
+    assert list(root.iterdir())==[]
+
+
+def test_changed_cache_owner_at_publication_does_not_publish_metadata(tmp_path):
+    f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f);calls=0
+    def change_owner():
+        nonlocal calls
+        calls+=1
+        if calls==12:s._marker.write_bytes(b'foreign owner')
+        return False
+    with pytest.raises(ValueError):maturity_offers(s,state[0],should_cancel=change_owner)
+    assert not s._offers and s._marker.read_bytes()==b'foreign owner'

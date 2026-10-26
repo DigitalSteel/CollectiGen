@@ -37,8 +37,12 @@ def _https(url):
 class ReleaseTransportPolicy:
     asset_redirect_origins: tuple[str, ...] = ()
     max_redirects: int = 4
+    schema2_metadata_assets: tuple[str, ...] = ()
 
     def __post_init__(self):
+        if type(self.schema2_metadata_assets) is not tuple or self.schema2_metadata_assets not in (
+                (),('collectigen-release.json','collectigen-release.json.sig')):
+            raise TransportHold("canonical_schema2_metadata_assets")
         if type(self.max_redirects) is not int or not 0 <= self.max_redirects <= 8:
             raise TransportHold("redirect_bound")
         if type(self.asset_redirect_origins) is not tuple:
@@ -64,6 +68,14 @@ class ReleaseTransportPolicy:
             pass
         else:
             return "asset"
+        if self.schema2_metadata_assets:
+            try:
+                tag,name=release_asset_identity(url,include_schema2=True)
+            except ValueError:
+                pass
+            else:
+                if '/releases/schema2/' in tag and name in self.schema2_metadata_assets:
+                    return 'asset'
         raise TransportHold("first_party_release_locator_required")
 
     def admit_redirect(self, initial_url, url, hops):

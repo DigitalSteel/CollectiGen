@@ -1016,7 +1016,8 @@
     "docs/COMPONENT_MATURITY_ADMISSION.md",
     "docs/COMPONENT_PRODUCER_IDENTITY.md",
     "docs/COMPONENT_MATURITY_LOCATORS.md",
-    "suite_core/tests/test_github_component_releases.py"
+    "suite_core/tests/test_github_component_releases.py",
+    "docs/COMPONENT_AUTHENTICATED_OFFERS.md"
   ],
   "reviewed_defaults": [],
   "required_provenance": []

@@ -7,10 +7,11 @@ from pathlib import Path
 from uuid import uuid4
 from release_contract import verify_release_manifest, ensure_supported_upgrade
 
+from core.component_release_identity import ComponentReleaseIdentity, require_component_maturity_upgrade
 from core.application_update import ApplicationUpdateService, ReleaseAssetSource, MANIFEST_ASSET, SIGNATURE_ASSET
 from suite_core.discovery.github_component_releases import (
     REPOSITORY, MAX_BYTES, MAX_RELEASES, ReleaseLocator, release_asset_identity,
-    discover_component_ids, discover_releases, _pairs, _constant, _version,
+    discover_component_ids, discover_releases, discover_candidates, _pairs, _constant, _version,
 )
 from suite_core.discovery.component_release_signature import (
     verify_component_release, verify_component_artifact, MAX_METADATA_BYTES, VerifiedComponentRelease,
@@ -27,18 +28,45 @@ class ExactOfferHold(ValueError):
 
 
 @dataclass(frozen=True)
+class InstalledOfferContext:
+    """Original-observer adapter value, never a lease or ownership proof."""
+    component_id: ComponentId
+    version: str | None
+    schema_version: int | None
+    maturity: str | None
+    observation_id: str
+    pending: bool = False
+
+    def __post_init__(self):
+        require(type(self.component_id) is ComponentId and type(self.pending) is bool, "installed_context_type")
+        require(type(self.observation_id) is str and 0 < len(self.observation_id.encode('utf-8')) <= 1024
+            and "\0" not in self.observation_id, "installed_observation_token")
+        if self.version is None:
+            require(self.schema_version is None and self.maturity is None, "explicit_first_install_context")
+        else:
+            require(type(self.schema_version) is int and self.schema_version in (1,2), "installed_context_schema")
+            if self.schema_version == 1:
+                _version(self.version); require(self.maturity is None, "legacy_context_maturity")
+            else:
+                ComponentReleaseIdentity(self.version, self.maturity)
+
+
+@dataclass(frozen=True)
 class ExactOfferAsset:
     name: str
     size_bytes: int
     sha256: str
     url: str
     asset_id: int
+    schema_version: int = 1
 
     def __post_init__(self):
         require(type(self.size_bytes) is int and 0 < self.size_bytes <= 2**40, "exact_asset_size")
         require(type(self.asset_id) is int and 0 < self.asset_id < 2**63, "exact_asset_id")
         require(type(self.sha256) is str and re.fullmatch('[0-9a-f]{64}', self.sha256), "exact_asset_hash")
-        require(release_asset_identity(self.url)[1] == self.name, "exact_asset_url")
+        require(type(self.schema_version) is int and self.schema_version in (1,2), "exact_asset_schema")
+        tag, name = release_asset_identity(self.url, include_schema2=self.schema_version==2)
+        require(name == self.name and ("/releases/schema2/" in tag) == (self.schema_version==2), "exact_asset_url")
 
 
 @dataclass(frozen=True)
@@ -58,12 +86,21 @@ class ExactComponentOffer:
     signature: ExactOfferAsset
     artifact: ExactOfferAsset
     repository: str = REPOSITORY
+    schema_version: int = 1
+    maturity: str | None = None
 
     def __post_init__(self):
         require(type(self.component_id) is ComponentId and self.repository == REPOSITORY, "exact_offer_repository_component")
         version = _version(self.software_version)
-        require(bool(version.prerelease) == (self.channel == "beta"), "exact_offer_channel_version")
-        require(self.tag == self.component_id.value + '/v' + self.software_version, "exact_offer_tag")
+        require(type(self.schema_version) is int and self.schema_version in (1,2), "exact_offer_schema")
+        if self.schema_version == 2:
+            identity = ComponentReleaseIdentity(self.software_version, self.maturity)
+            require((identity.maturity!='stable') == (self.channel=='beta'), "exact_offer_channel_version")
+            tag = self.component_id.value + '/releases/schema2/' + identity.version + '/' + identity.maturity
+        else:
+            require(self.maturity is None and bool(version.prerelease) == (self.channel == "beta"), "exact_offer_channel_version")
+            tag = self.component_id.value + '/v' + self.software_version
+        require(self.tag == tag, "exact_offer_tag")
         require(self.channel in ('beta', 'stable') and self.os in ('windows', 'linux')
                 and self.architecture in ('x86_64', 'aarch64'), "exact_offer_platform_channel")
         require(type(self.key_id) is str and 0 < len(self.key_id) <= 128
@@ -74,7 +111,9 @@ class ExactComponentOffer:
         assets = (self.manifest, self.signature, self.artifact)
         require(all(type(a) is ExactOfferAsset for a in assets), "exact_offer_assets")
         require(len({a.name for a in assets}) == 3 and len({a.asset_id for a in assets}) == 3, "exact_offer_unique_assets")
-        require(all(release_asset_identity(a.url) == (self.tag, a.name) for a in assets), "exact_offer_asset_tag")
+        require(all(a.schema_version == self.schema_version and
+            release_asset_identity(a.url,include_schema2=self.schema_version==2) == (self.tag,a.name)
+            for a in assets), "exact_offer_asset_tag")
 
     @classmethod
     def from_reviewed_offer(cls, offer, *, repository_id):
@@ -84,19 +123,19 @@ class ExactComponentOffer:
         def pin(name, raw=None):
             a = assets[name]
             digest = offer.release.artifact.sha256 if raw is None else sha256(raw).hexdigest()
-            return ExactOfferAsset(name, a.declared_size, digest, a.url, a.asset_id)
+            return ExactOfferAsset(name, a.declared_size, digest, a.url, a.asset_id, offer.release.schema_version)
         return cls(offer.release.component_id, offer.release.software_version, offer.release.channel,
             offer.release.os, offer.release.architecture, offer.release.key_id, offer.trust_sha256,
             repository_id, offer.locator.release_id, offer.locator.tag,
-            pin(release_asset_identity(offer.manifest_url)[1], offer.manifest_bytes),
-            pin(release_asset_identity(offer.signature_url)[1], offer.signature_bytes),
-            pin(offer.release.artifact.name))
+            pin(release_asset_identity(offer.manifest_url,include_schema2=offer.release.schema_version==2)[1], offer.manifest_bytes),
+            pin(release_asset_identity(offer.signature_url,include_schema2=offer.release.schema_version==2)[1], offer.signature_bytes),
+            pin(offer.release.artifact.name), schema_version=offer.release.schema_version, maturity=offer.release.maturity)
 
     def check_locator(self, locator):
         expected = {a.name: (a.url, a.size_bytes, a.asset_id) for a in (self.manifest, self.signature, self.artifact)}
         if (type(locator) is not ReleaseLocator or
-                (locator.component_id, locator.software_version, locator.channel, locator.tag, locator.release_id) !=
-                (self.component_id, self.software_version, self.channel, self.tag, self.release_id)):
+                (locator.component_id, locator.software_version, locator.channel, locator.tag, locator.release_id, locator.schema_version, locator.maturity) !=
+                (self.component_id, self.software_version, self.channel, self.tag, self.release_id, self.schema_version, self.maturity)):
             raise ExactOfferHold(EXACT_OFFER_HOLD)
         # Reuse stock validation for every locator, including ancillary assets.
         # Only the three selected assets confer exact package/metadata authority.
@@ -105,9 +144,14 @@ class ExactComponentOffer:
                 prerelease=locator.channel == 'beta', assets=[dict(name=a.name,
                     browser_download_url=a.url, size=a.declared_size, id=a.asset_id)
                     for a in locator.assets])
-            checked = discover_releases(json.dumps([row]).encode(),
-                component_id=self.component_id, channel=self.channel,
-                current_version=None, complete=True).candidate
+            if self.schema_version == 2:
+                rows = discover_candidates(json.dumps([row]).encode(),component_id=self.component_id,
+                    channel=self.channel,complete=True,include_schema2=True)
+                require(len(rows)==1,"exact_locator_required"); checked=rows[0]
+            else:
+                checked = discover_releases(json.dumps([row]).encode(),
+                    component_id=self.component_id, channel=self.channel,
+                    current_version=None, complete=True).candidate
         except (ValueError, TypeError, AttributeError):
             raise ExactOfferHold(EXACT_OFFER_HOLD) from None
         selected = {a.name: (a.url, a.declared_size, a.asset_id)
@@ -118,8 +162,8 @@ class ExactComponentOffer:
     def check_offer(self, offer):
         self.check_locator(offer.locator)
         r = offer.release
-        if ((r.component_id, r.software_version, r.channel, r.os, r.architecture, r.key_id) !=
-                (self.component_id, self.software_version, self.channel, self.os, self.architecture, self.key_id) or
+        if ((r.component_id, r.software_version, r.channel, r.os, r.architecture, r.key_id, r.schema_version, r.maturity) !=
+                (self.component_id, self.software_version, self.channel, self.os, self.architecture, self.key_id, self.schema_version, self.maturity) or
                 offer.repository_id != self.repository_id or offer.trust_sha256 != self.trust_sha256 or
                 r.manifest_sha256 != self.manifest.sha256 or
                 sha256(offer.manifest_bytes).hexdigest() != self.manifest.sha256 or len(offer.manifest_bytes) != self.manifest.size_bytes or
@@ -144,6 +188,8 @@ class ComponentOffer:
     current_version: str | None
     locator: ReleaseLocator | None = None
     repository_id: int | None = None
+    installed_context: InstalledOfferContext | None = None
+    discovery_epoch: int | None = None
 
     @property
     def production_install_authorized(self):
@@ -171,8 +217,20 @@ class ComponentAcquisition:
                  trust_bytes=None, trust_sha256=None, os_name="windows",
                  architecture="x86_64", max_artifact_bytes=512 * 1024 * 1024,
                  max_cache_bytes=1024 * 1024 * 1024,
-                 manifest_name=MANIFEST_ASSET, signature_name=SIGNATURE_ASSET, expected_offer=None):
+                 manifest_name=MANIFEST_ASSET, signature_name=SIGNATURE_ASSET, expected_offer=None,
+                 schema2_metadata=False, observe_installed=None, expected_repository_id=None):
         require(expected_offer is None or type(expected_offer) is ExactComponentOffer, "typed_exact_offer_required")
+        require(type(schema2_metadata) is bool,"explicit_schema2_metadata_mode")
+        if schema2_metadata:
+            require(callable(observe_installed) and type(expected_repository_id) is int
+                and 0 < expected_repository_id < 2**63,"explicit_metadata_context_repository")
+            require((manifest_name,signature_name)==(MANIFEST_ASSET,SIGNATURE_ASSET),"canonical_schema2_metadata_assets")
+            require(expected_offer is None or expected_offer.repository_id==expected_repository_id,"exact_repository_mismatch")
+        else:
+            require(observe_installed is None and expected_repository_id is None
+                and (expected_offer is None or expected_offer.schema_version==1),"metadata_optin_required")
+        self.schema2_metadata, self._observe_installed = schema2_metadata, observe_installed
+        self._repository_id, self._offer_epoch = expected_repository_id, 0
         self._expected_offer = expected_offer
         require(callable(opener), "explicit_transport_required")
         root = Path(cache_root)
@@ -220,11 +278,11 @@ class ComponentAcquisition:
 
     def _listing(self, should_cancel):
         repository_id = None
-        if self._expected_offer is not None:
+        if self._expected_offer is not None or self.schema2_metadata:
             raw = self._fetch(f"https://api.github.com/repos/{REPOSITORY}", should_cancel, MAX_BYTES)
             value = json.loads(raw.decode('utf-8'), object_pairs_hook=_pairs, parse_constant=_constant)
             repository_id = value.get('id') if type(value) is dict else None
-            if type(repository_id) is not int or repository_id != self._expected_offer.repository_id or value.get('full_name') != REPOSITORY:
+            if type(repository_id) is not int or repository_id != (self._repository_id if self.schema2_metadata else self._expected_offer.repository_id) or value.get('full_name') != REPOSITORY:
                 raise ExactOfferHold(EXACT_OFFER_HOLD)
         rows = []
         # 50 + 50 + empty: explicit completion, never silently truncate at 100.
@@ -250,6 +308,8 @@ class ComponentAcquisition:
         Scope precedes candidate platform checks; selected offers retain the same
         complete listing, signature, trust, compatibility and artifact admission.
         """
+        if self.schema2_metadata:
+            return self._discover_metadata(channel,installed_versions,component_id,should_cancel)
         self._trust()
         require(type(installed_versions) is dict, "explicit_installed_versions")
         require(component_id is None or type(component_id) is ComponentId, "explicit_component_scope")
@@ -296,8 +356,117 @@ class ComponentAcquisition:
         self._offers = {o.release.manifest_sha256: o for o in offers}
         return tuple(offers)
 
+    def _installed_context(self, component, version):
+        context = self._observe_installed()
+        require(type(context) is InstalledOfferContext and context.component_id==component
+            and context.version==version and not context.pending,"installed_context_held_or_changed")
+        return context
+
+    def _select_metadata(self, channel, component, context, cancel):
+        """Shared read-only selection; caller alone owns epoch/cache publication."""
+        self._trust(); trust_before=(self.trust,self.trust_pin)
+        listing, repository_id = self._listing(cancel)
+        locators = discover_candidates(listing,component_id=component,channel=channel,complete=True,include_schema2=True)
+        def number(value):
+            parsed=_version(value);return parsed.major,parsed.minor,parsed.patch
+        candidates=[]
+        if locators:
+            highest=max(number(l.software_version) for l in locators)
+            if context.version is None or highest>=number(context.version):
+                for locator in locators:
+                    if number(locator.software_version)!=highest:continue
+                    self._check(cancel)
+                    require(type(locator.release_id) is int and all(type(a.asset_id) is int for a in locator.assets),"metadata_github_ids_required")
+                    assets={a.name:a for a in locator.assets}
+                    require(self.manifest_name in assets and self.signature_name in assets,"signed_asset_pair_required")
+                    m,s=assets[self.manifest_name],assets[self.signature_name]
+                    message=self._fetch(m.url,cancel);signature=self._fetch(s.url,cancel)
+                    require(len(message)==m.declared_size and len(signature)==s.declared_size,"metadata_asset_size_binding")
+                    verified=verify_component_release(message,signature,self.trust,expected_component=component,
+                        expected_version=locator.software_version,expected_channel=channel,expected_os=self.os,
+                        expected_architecture=self.arch,expected_maturity=locator.maturity)
+                    require((verified.schema_version,verified.maturity)==(locator.schema_version,locator.maturity),"metadata_schema_stage_binding")
+                    require(verified.artifact.size_bytes<=self.maximum,"artifact_bound")
+                    source=assets.get(verified.artifact.name)
+                    require(source is not None and source.declared_size==verified.artifact.size_bytes,"signed_asset_binding")
+                    candidates.append(ComponentOffer(verified,"install" if context.version is None else "update",
+                        json.loads(message.decode('utf-8-sig'))['release_notes'],message,signature,m.url,s.url,
+                        ReleaseAssetSource(source.name,source.url,source.declared_size),self.trust_pin,context.version,
+                        locator,repository_id,context,self._offer_epoch))
+        selected=None
+        if candidates:
+            require(len({o.release.schema_version for o in candidates})==1,"mixed_schema_candidate_group")
+            selected=candidates[0]
+            def compare(left,right):
+                if left.schema_version==2:
+                    return ComponentReleaseIdentity(left.software_version,left.maturity).compare(
+                        ComponentReleaseIdentity(right.software_version,right.maturity))
+                return _version(left.software_version).compare(_version(right.software_version))
+            for offer in candidates[1:]:
+                order=compare(offer.release,selected.release)
+                if order==0:
+                    require(offer.release==selected.release,"conflicting_equal_release_identity")
+                if order>0:selected=offer
+            release=selected.release
+            if context.version is not None:
+                if release.schema_version==2:
+                    floor=json.loads(selected.manifest_bytes.decode('utf-8-sig'))['supported_from']
+                    require_component_maturity_upgrade(context.version,ComponentReleaseIdentity(release.software_version,release.maturity),
+                        current_schema=context.schema_version,current_maturity=context.maturity,supported_from=floor)
+                else:
+                    require(context.schema_version==1,"schema_regression_not_admitted")
+                    verified=verify_release_manifest(selected.manifest_bytes,selected.signature_bytes,json.loads(self.trust),expected_channel=channel)
+                    ensure_supported_upgrade(context.version,verified)
+            if self._expected_offer is not None:self._expected_offer.check_offer(selected)
+        self._check(cancel);self._trust()
+        require((self.trust,self.trust_pin)==trust_before,"changed_metadata_trust")
+        require(self._installed_context(component,context.version)==context,"installed_context_held_or_changed")
+        return () if selected is None else (selected,)
+
+    def _discover_metadata(self, channel, versions, component, cancel):
+        self._offer_epoch+=1;self._offers={}
+        epoch=self._offer_epoch
+        self._check(cancel);self._trust()
+        require(type(versions) is dict and type(component) is ComponentId,"explicit_metadata_component_scope")
+        require(type(channel) is str and channel in ('stable','beta'),"explicit_metadata_channel")
+        if self._expected_offer is not None:
+            require((component,channel)==(self._expected_offer.component_id,self._expected_offer.channel),"exact_metadata_scope")
+        context=self._installed_context(component,versions.get(component.value))
+        offers=self._select_metadata(channel,component,context,cancel)
+        self._check(cancel)
+        require(self._offer_epoch==epoch and self._installed_context(component,context.version)==context,
+            "changed_metadata_publication_context")
+        self._trust()
+        require(all(o.trust_sha256==self.trust_pin for o in offers),"changed_metadata_trust")
+        self._check(None)
+        self._offers={o.release.manifest_sha256:o for o in offers}
+        return offers
+
+    def _revalidate_metadata(self, offer, should_cancel):
+        require(type(offer) is ComponentOffer and self._offers.get(offer.release.manifest_sha256) is offer,
+            "current_signed_offer_required")
+        try:
+            self._trust();self._check(should_cancel)
+            require(offer.discovery_epoch==self._offer_epoch and type(offer.installed_context) is InstalledOfferContext,"stale_offer_epoch")
+            context=self._installed_context(offer.release.component_id,offer.current_version)
+            require(context==offer.installed_context,"changed_installed_context")
+            selected=self._select_metadata(offer.release.channel,offer.release.component_id,context,should_cancel)
+            require(len(selected)==1 and selected[0]==offer,"changed_authenticated_offer")
+            self._check(should_cancel)
+            require(self._offer_epoch==offer.discovery_epoch and
+                self._installed_context(offer.release.component_id,offer.current_version)==context,
+                "changed_metadata_publication_context")
+            self._trust();require(offer.trust_sha256==self.trust_pin,"changed_metadata_trust")
+            self._check(None)
+            return
+        except BaseException:
+            self._offers={};self._offer_epoch+=1
+            raise
+
     def revalidate_offer(self, offer, *, should_cancel=None):
         """Before confirmation and acquisition: fresh identity, bytes and crypto."""
+        if self.schema2_metadata:
+            return self._revalidate_metadata(offer,should_cancel)
         self._trust()
         self._check(should_cancel)
         require(type(offer) is ComponentOffer and self._offers.get(offer.release.manifest_sha256) is offer,
@@ -322,6 +491,8 @@ class ComponentAcquisition:
         self._check(should_cancel)
 
     def acquire(self, offer, *, progress=None, should_cancel=None):
+        require(not (type(offer) is ComponentOffer and type(offer.release) is VerifiedComponentRelease
+            and offer.release.schema_version==2),"schema2_installation_not_admitted")
         self._trust()
         self._check(should_cancel)
         require(type(offer) is ComponentOffer and self._offers.get(offer.release.manifest_sha256) is offer,
