@@ -69,3 +69,43 @@ Injected boundary tests stop before native creation and exercise legacy/schema2,
 target/recovery, changed identity and held ownership. They do not activate schema2
 acquisition, compiled profiles or qualify a native/UI/package journey. Reverse
 source recovery uses the exact parent and retained patch, without changing Data.
+
+## Original-request metadata-only review (C1A)
+
+ComponentAcquisition.revalidate_exact_metadata(offer, *, check_current,
+should_cancel=None) requires explicit metadata mode and a callable. It reuses the
+registered original offer, epoch, trust, cache owner, immutable installed context
+and stock exact signed metadata selector. Owner checks bracket HTTP; service
+identity/cache/trust/cancellation are rechecked after callbacks. Any failure clears
+the service's offers and advances its epoch. Success returns None, never an
+execution permit, receipt or replacement offer. It reads no artifact/acquired cache
+and creates no attempt directory. A caller-provided callback alone proves no lease.
+
+DeploymentOwner.check_standalone_metadata_request(subject, request) checks original
+subject/lease/custody, registered request/generation/binding and exact applying
+record. No stage or Reader actor/attempt may remain unretired. Current signed
+installation/settings must equal the confirmed snapshot. A required normal Close
+receipt must still match its original generation, selection, drained phase and
+outcome. A fresh already-idle request does not adopt an old Close claim. This
+checker never begins/polls an operation, persists a phase or manufactures drain.
+
+StandaloneEncyclopediaBootstrap.revalidate_confirmed_metadata(request, *,
+delegate=None) composes the existing acquisition and owner checker. It requires
+explicit identity mode and the exact current request; original Manager delegation,
+if present, is checked using the existing short scope gate. Fresh full observation
+identity fields/token must match the offer's original context, with live pending
+remaining True. The acquisition observer must agree with that live observation.
+No new root lock spans HTTP; cancellation uses the existing Event. It never calls
+apply, acquire, install, profile creation or native launch.
+
+The shared selector now leaves live installed-context publication checks to its
+callers: ordinary discover/revalidate still perform them and refuse pending state.
+No observer is rewritten and no generic allow-pending mode exists. Schema2 acquire
+still refuses unconditionally before refresh/cache/artifact work, even after this
+review succeeds with a fake callback. Normal profiles remain inactive.
+
+Signed fake-feed tests and injected original-host crypto/process fixtures qualify
+only source behavior. Connected transfer activation, compiled root/child enrollment,
+real artifacts/rollback, native/UI/package completion remain separate admission
+gates. The next planning boundary is exact original-request acquisition admission;
+metadata success cannot substitute for it. No runnable app version is claimed.

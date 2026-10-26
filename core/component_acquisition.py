@@ -420,7 +420,6 @@ class ComponentAcquisition:
             if self._expected_offer is not None:self._expected_offer.check_offer(selected)
         self._check(cancel);self._trust()
         require((self.trust,self.trust_pin)==trust_before,"changed_metadata_trust")
-        require(self._installed_context(component,context.version)==context,"installed_context_held_or_changed")
         return () if selected is None else (selected,)
 
     def _discover_metadata(self, channel, versions, component, cancel):
@@ -489,6 +488,41 @@ class ComponentAcquisition:
             expected_channel=expected.channel, expected_os=expected.os, expected_architecture=expected.architecture)
         if verified != offer.release: raise ExactOfferHold(EXACT_OFFER_HOLD)
         self._check(should_cancel)
+
+    def revalidate_exact_metadata(self, offer, *, check_current, should_cancel=None):
+        """Read-only fresh metadata; callback supplies no installation capability.
+
+        The original host must bracket this operation with its own authority checks.
+        Ordinary discovery/revalidation retain their live pending-state rejection.
+        """
+        try:
+            require(self.schema2_metadata and callable(check_current), "explicit_metadata_review_required")
+
+            def current_offer():
+                self._check(should_cancel)
+                self._check(None)  # Recheck owner bytes after the cancellation callback.
+                self._trust()
+                require(type(offer) is ComponentOffer
+                    and self._offers.get(offer.release.manifest_sha256) is offer,
+                    "current_signed_offer_required")
+                require(offer.discovery_epoch == self._offer_epoch
+                    and type(offer.installed_context) is InstalledOfferContext
+                    and not offer.installed_context.pending, "stale_offer_epoch")
+                require(offer.trust_sha256 == self.trust_pin, "changed_metadata_trust")
+
+            current_offer()
+            check_current()
+            current_offer()
+            selected = self._select_metadata(offer.release.channel, offer.release.component_id,
+                                             offer.installed_context, should_cancel)
+            require(len(selected) == 1 and selected[0] == offer, "changed_authenticated_offer")
+            self._check(should_cancel)
+            check_current()
+            current_offer()
+        except BaseException:
+            self._offers = {}
+            self._offer_epoch += 1
+            raise
 
     def acquire(self, offer, *, progress=None, should_cancel=None):
         require(not (type(offer) is ComponentOffer and type(offer.release) is VerifiedComponentRelease

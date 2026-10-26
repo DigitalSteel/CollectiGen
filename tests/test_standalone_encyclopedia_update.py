@@ -661,3 +661,153 @@ def test_original_launch_projection_full_identity(admitted_standalone, monkeypat
             boot.launch_current()
         assert launches == [] and boot.owner.record['standalone_encyclopedia']['attempt'] == before
     assert actors == [] and f.sentinel.read_bytes() == b'{"unknown_future":[1,2]}\n'
+
+
+def confirmed_metadata_request(f, boot, *, delegate=None):
+    """Real service/owner orchestration; crypto and all process actors injected."""
+    from types import SimpleNamespace
+    from core.component_release_transport import ComponentReleaseTransport, ReleaseTransportPolicy
+    from tests.test_encyclopedia_installation import Response
+    add_schema_package(f, '0.1.0-alpha.9')
+    for i,row in enumerate(f.rows):
+        row['id']=100+i
+        for j,asset in enumerate(row['assets']):asset['id']=1000+i*10+j
+    def opener(request, timeout):
+        if request.full_url=='https://api.github.com/repos/DigitalSteel/CollectiGen':
+            f.calls.append((request.full_url,timeout,None))
+            return Response(json.dumps({'id':4321,'full_name':'DigitalSteel/CollectiGen'}).encode())
+        return f.opener(request,timeout)
+    transport=ComponentReleaseTransport(ReleaseTransportPolicy(
+        schema2_metadata_assets=('collectigen-release.json','collectigen-release.json.sig')))
+    transport._opener=SimpleNamespace(open=opener)
+    boot.acquisition.transport.opener=transport
+    boot.acquisition.schema2_metadata=True
+    boot.acquisition._observe_installed=boot.installed_offer_context
+    boot.acquisition._repository_id=4321
+    notice=boot.update_check.check()
+    assert notice.status=='available'
+    return boot.confirm_update(notice.offer,confirmed=True,delegate=delegate)
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+@pytest.mark.parametrize('running',[False,True])
+def test_original_metadata_review_keeps_pending_and_state(standalone,running):
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    if running:boot.launch_current();assert not boot.poll_reader()
+    request=confirmed_metadata_request(f,boot)
+    if running:
+        actors[-1].code=0;actors[-1].members=0;assert boot.poll_reader()
+    boot.owner.begin_standalone_encyclopedia_update(boot.subject,request)
+    before=(boot.owner.raw,f.settings.read_bytes(),boot.binding.current(),f.sentinel.read_bytes())
+    tree=set(boot.acquisition.root.iterdir());calls=len(f.calls)
+    assert boot.revalidate_confirmed_metadata(request) is None
+    assert len(f.calls)>calls and all(not url.endswith('.zip') for url,_,_ in f.calls[calls:])
+    assert boot.installed_offer_context().pending and boot.request is request
+    assert not boot.acquisition._acquired and set(boot.acquisition.root.iterdir())==tree
+    assert (boot.owner.raw,f.settings.read_bytes(),boot.binding.current(),f.sentinel.read_bytes())==before
+    # Normal notifications and revalidation still reject live pending state.
+    assert boot.update_check.check().status=='held'
+    with pytest.raises(ValueError,match='installed_context_held_or_changed'):
+        boot.acquisition.revalidate_offer(request.offer)
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+@pytest.mark.parametrize('fault',['request','phase','snapshot','cancel','delegate','generation',
+    'post_snapshot','post_delegate','post_acquisition','post_cancel','subject'])
+def test_original_metadata_review_rejects_changed_authority(standalone,monkeypatch,fault):
+    from copy import deepcopy
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    request=confirmed_metadata_request(f,boot)
+    boot.owner.begin_standalone_encyclopedia_update(boot.subject,request)
+    before=len(f.calls);argument=request;delegate=None
+    if fault=='request':argument=replace(request)
+    elif fault=='phase':
+        record=deepcopy(boot.owner.record);record['standalone_update']['phase']='waiting_for_close'
+        boot.owner._persist(record)
+    elif fault=='snapshot':
+        settings=json.loads(f.settings.read_bytes());settings['changed_since_confirmation']=True
+        f.settings.write_text(json.dumps(settings))
+    elif fault=='cancel':boot.cancel.set()
+    elif fault=='delegate':delegate=object()
+    elif fault=='generation':
+        argument=replace(request,owner_generation='foreign')
+        boot.request=boot.owner._standalone_encyclopedia_update=argument
+    elif fault=='subject':boot.subject=replace(boot.subject)
+    elif fault.startswith('post_'):
+        select=boot.acquisition._select_metadata
+        def changed(*args):
+            result=select(*args)
+            if fault=='post_snapshot':
+                settings=json.loads(f.settings.read_bytes());settings['changed_during_metadata']=True
+                f.settings.write_text(json.dumps(settings))
+            elif fault=='post_delegate':boot.delegate=object()
+            elif fault=='post_acquisition':boot.acquisition=object()
+            elif fault=='post_cancel':boot.cancel.set()
+            return result
+        monkeypatch.setattr(boot.acquisition,'_select_metadata',changed)
+    acquisition=boot.acquisition
+    with pytest.raises((ValueError,InterruptedError,LaunchHold)):
+        boot.revalidate_confirmed_metadata(argument,delegate=delegate)
+    assert not acquisition._offers and not acquisition._acquired
+    assert actors==[] and boot.request is not None
+    if not fault.startswith('post_'):assert len(f.calls)==before
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+@pytest.mark.parametrize('fault',['generation','outcome','selection','phase'])
+def test_metadata_checker_keeps_original_close_receipt(standalone,fault):
+    from copy import deepcopy
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    boot.launch_current();assert not boot.poll_reader()
+    request=confirmed_metadata_request(f,boot)
+    actors[-1].code=0;actors[-1].members=0;assert boot.poll_reader()
+    boot.owner.begin_standalone_encyclopedia_update(boot.subject,request)
+    assert boot.owner.check_standalone_metadata_request(boot.subject,request) is None
+    record=deepcopy(boot.owner.record);attempt=record['standalone_encyclopedia']['attempt']
+    if fault=='generation':attempt['generation']+=1
+    elif fault=='outcome':attempt['outcome']='abnormal_exit'
+    elif fault=='selection':attempt['selected']['inventory_sha256']='0'*64
+    else:attempt['phase']='running'
+    boot.owner._persist(record);before=boot.owner.raw
+    with pytest.raises(LaunchHold,match='original_normal_reader_close'):
+        boot.owner.check_standalone_metadata_request(boot.subject,request)
+    assert boot.owner.raw==before and boot.request is request
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+@pytest.mark.parametrize('fault',[None,'before','after'])
+def test_original_metadata_review_retains_typed_manager_delegate(standalone,original,monkeypatch,fault):
+    f,boot,_=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    _,route,counts=original
+    delegate=boot.delegate_to_manager(route,confirmed=True)
+    request=confirmed_metadata_request(f,boot,delegate=delegate)
+    boot.owner.begin_standalone_encyclopedia_update(boot.subject,request)
+    before=len(f.calls)
+    if fault=='before':counts[0]=0
+    elif fault=='after':
+        select=boot.acquisition._select_metadata
+        def changed(*args):
+            result=select(*args);counts[0]=0;return result
+        monkeypatch.setattr(boot.acquisition,'_select_metadata',changed)
+    if fault is None:
+        assert boot.revalidate_confirmed_metadata(request,delegate=delegate) is None
+        assert boot.installed_offer_context().pending
+    else:
+        with pytest.raises((LaunchHold,ValueError)):
+            boot.revalidate_confirmed_metadata(request,delegate=delegate)
+        assert not boot.acquisition._offers
+        if fault=='before':assert len(f.calls)==before
+    assert boot.request is request and not boot.acquisition._acquired
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+def test_fresh_idle_metadata_review_does_not_adopt_prior_abnormal_close(standalone):
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    launch_close(boot,actors,code=17)
+    request=confirmed_metadata_request(f,boot)
+    assert request.normal_close_attempt is None
+    boot.owner.begin_standalone_encyclopedia_update(boot.subject,request)
+    before=boot.owner.raw
+    assert boot.revalidate_confirmed_metadata(request) is None
+    assert boot.owner.raw==before
+    assert boot.owner.record['standalone_encyclopedia']['attempt']['outcome']=='abnormal_exit'

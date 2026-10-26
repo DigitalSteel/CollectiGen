@@ -658,6 +658,59 @@ def test_metadata_scope_and_repository_expectation_cannot_silently_change(tmp_pa
     assert list(root.iterdir())==[]
 
 
+def test_exact_metadata_review_keeps_pending_and_acquisition_guard(tmp_path):
+    f=MaturityFeed();base,name=f.add_maturity();s,state=maturity_service(tmp_path,f)
+    offer,=maturity_offers(s,state[0]);state[0]=replace(state[0],pending=True)
+    tree=set(s.root.iterdir());checks=[]
+    assert s.revalidate_exact_metadata(offer,check_current=lambda:checks.append(state[0])) is None
+    assert len(checks)==2 and all(c.pending for c in checks) and state[0].pending
+    assert not s._acquired and set(s.root.iterdir())==tree
+    assert not any(url==base+name for url,_,_ in f.calls)
+    before=list(f.calls)
+    with pytest.raises(ValueError,match='schema2_installation_not_admitted'):s.acquire(offer)
+    assert f.calls==before and not offer.production_install_authorized
+    with pytest.raises(ValueError,match='installed_context_held_or_changed'):s.revalidate_offer(offer)
+    assert not s._offers
+
+
+@pytest.mark.parametrize('fault',['callback_before','callback_after','cancel','epoch_before','epoch_after',
+    'cache_before','cache_after','trust_before','trust_after','signed_notes','asset_id','new_highest',
+    'offer_replay','mode','missing_callback','cancel_after','raw_signature',
+    'cancel_callback_trust','cancel_callback_cache'])
+def test_exact_metadata_review_invalidates_on_drift(tmp_path,fault):
+    f=MaturityFeed();base,name=f.add_maturity();s,state=maturity_service(tmp_path,f)
+    offer,=maturity_offers(s,state[0]);state[0]=replace(state[0],pending=True)
+    before=len(f.calls);calls=[]
+    def check():
+        calls.append(1)
+        point='before' if len(calls)==1 else 'after'
+        if fault=='callback_'+point:raise ValueError('synthetic owner changed')
+        if fault=='epoch_'+point:s._offer_epoch+=1
+        if fault=='cache_'+point:s._marker.write_bytes(b'foreign cache owner')
+        if fault=='trust_'+point:s.trust=b'{}'
+    if fault=='signed_notes':
+        m=json.loads(f.resources[base+METADATA_NAMES[0]]);m['release_notes']='SIGNED: different exact bytes'
+        message=raw(m);f.resources[base+METADATA_NAMES[0]]=message
+        f.resources[base+METADATA_NAMES[1]]=raw(signature(message))
+        for a in f.rows[0]['assets']:a['size']=len(f.resources[a['browser_download_url']])
+    elif fault=='asset_id':f.rows[0]['assets'][2]['id']+=1
+    elif fault=='new_highest':f.add_maturity('0.5.0')
+    elif fault=='offer_replay':offer=replace(offer)
+    elif fault=='mode':s.schema2_metadata=False
+    elif fault=='raw_signature':f.resources[base+METADATA_NAMES[1]]=b' ' * len(f.resources[base+METADATA_NAMES[1]])
+    def cancelled():
+        if len(calls)==2:
+            if fault=='cancel_callback_trust':s.trust=b'{}'
+            elif fault=='cancel_callback_cache':s._marker.write_bytes(b'changed by cancellation callback')
+        return fault=='cancel' or (fault=='cancel_after' and len(calls)==2)
+    with pytest.raises((ValueError,InterruptedError)):
+        s.revalidate_exact_metadata(offer,check_current=None if fault=='missing_callback' else check,
+                                   should_cancel=cancelled)
+    assert not s._offers and not s._acquired and state[0].pending
+    assert not any(url==base+name for url,_,_ in f.calls)
+    if fault in ('callback_before','cancel','epoch_before','cache_before','trust_before',
+                  'offer_replay','mode','missing_callback'):
+        assert len(f.calls)==before
 def test_changed_cache_owner_at_publication_does_not_publish_metadata(tmp_path):
     f=MaturityFeed();f.add_maturity();s,state=maturity_service(tmp_path,f);calls=0
     def change_owner():

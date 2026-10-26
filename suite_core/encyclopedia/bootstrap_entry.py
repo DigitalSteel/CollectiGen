@@ -173,6 +173,33 @@ class StandaloneEncyclopediaBootstrap:
     def request_cancel(self):
         self.cancel.set()  # Running transport cancellation does not claim rollback.
 
+    def revalidate_confirmed_metadata(self, request, *, delegate=None):
+        """Explicit original-request metadata review; never starts acquisition."""
+        acquisition, captured_delegate = self.acquisition, self.delegate
+
+        def check_current():
+            require(request is not None and request is self.request
+                    and self.acquisition is acquisition and self.delegate is captured_delegate,
+                    'exact_original_confirmed_update_required')
+            self.owner.check_standalone_metadata_request(self.subject, request)
+            require(self.binding.schema2_identity, 'reader_identity_mode_required')
+            if captured_delegate is not None:
+                self._manager_owned(delegate)
+            else:
+                require(delegate is None, 'standalone_has_no_manager_delegate')
+            context = request.offer.installed_context
+            live = self.installed_offer_context()
+            require(context is not None and not context.pending and live.pending
+                    and (live.component_id, live.version, live.schema_version, live.maturity, live.observation_id)
+                    == (context.component_id, context.version, context.schema_version,
+                        context.maturity, context.observation_id), 'confirmed_metadata_observation_changed')
+            require(acquisition._observe_installed() == live, 'original_metadata_observation_required')
+
+        # All owner work remains in short serialized checks, never across HTTP.
+        offer = request.offer if request is not None and request is self.request else None
+        return acquisition.revalidate_exact_metadata(offer, check_current=check_current,
+                                                     should_cancel=self.cancel.is_set)
+
     def apply_confirmed(self, request, *, progress=None, delegate=None):
         require(request is self.request and request is not None, 'exact_original_confirmed_update_required')
         if self.delegate is not None:

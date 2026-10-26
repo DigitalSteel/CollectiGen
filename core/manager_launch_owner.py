@@ -2058,6 +2058,33 @@ class DeploymentOwner:
         self._persist(next_record)
 
     @_serialized
+    def check_standalone_metadata_request(self, subject, request):
+        """Check original applying request without polling or changing any phase."""
+        from core.encyclopedia_update_binding import ConfirmedEncyclopediaUpdate
+        self._standalone_encyclopedia_owned(subject)
+        self.assert_standalone_custody(subject)
+        if (type(request) is not ConfirmedEncyclopediaUpdate
+                or request is not self._standalone_encyclopedia_update
+                or request.subject is not subject
+                or request.owner_generation != subject.owner_generation
+                or request.binding_sha256 != subject.binding.identity
+                or self.record.get('standalone_update') != {'identity': request.identity, 'phase': 'applying'}
+                or 'component_stage' in self.record or self._standalone_encyclopedia_attempt
+                or subject.reader.native is not None or self._standalone_encyclopedia_native is not None
+                or subject.reader.close_held):
+            raise LaunchHold('original_applying_metadata_request_required')
+        if subject.binding.current() != request.current:
+            raise LaunchHold('confirmed_standalone_installation_changed')
+        attempt = self.record['standalone_encyclopedia']['attempt']
+        if attempt is not None and attempt['phase'] != 'drained':
+            raise LaunchHold('original_normal_reader_close_required')
+        if request.normal_close_attempt is not None and (attempt is None
+                or attempt['generation'] != request.normal_close_attempt
+                or attempt['selected'] != request.current.selected.mapping()
+                or attempt.get('outcome') != 'normal_close'):
+            raise LaunchHold('original_normal_reader_close_required')
+
+    @_serialized
     def cancel_standalone_encyclopedia_update(self, subject, request):
         self._standalone_encyclopedia_owned(subject)
         if (request is None or request is not self._standalone_encyclopedia_update
