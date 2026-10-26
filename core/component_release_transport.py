@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from urllib.parse import urlsplit, parse_qs, unquote
 from urllib.request import Request, HTTPRedirectHandler, ProxyHandler, build_opener
 
+from core.application_update import ReleaseAssetSource
 from suite_core.discovery.github_component_releases import REPOSITORY, release_asset_identity
 
 
@@ -38,11 +39,27 @@ class ReleaseTransportPolicy:
     asset_redirect_origins: tuple[str, ...] = ()
     max_redirects: int = 4
     schema2_metadata_assets: tuple[str, ...] = ()
+    schema2_artifact_source: ReleaseAssetSource | None = None
 
     def __post_init__(self):
         if type(self.schema2_metadata_assets) is not tuple or self.schema2_metadata_assets not in (
                 (),('collectigen-release.json','collectigen-release.json.sig')):
             raise TransportHold("canonical_schema2_metadata_assets")
+        source = self.schema2_artifact_source
+        if source is not None:
+            if (type(source) is not ReleaseAssetSource or self.schema2_metadata_assets
+                    or type(source.name) is not str or not source.name
+                    or any(c in source.name for c in '*?[]')
+                    or type(source.size_bytes) is not int or not 0 < source.size_bytes <= 2**40):
+                raise TransportHold("exact_schema2_artifact_source_required")
+            _https(source.url)
+            try:
+                tag, name = release_asset_identity(source.url, include_schema2=True)
+            except ValueError as error:
+                raise TransportHold("exact_schema2_artifact_source_required") from error
+            if ('/releases/schema2/' not in tag or name != source.name
+                    or name in ('collectigen-release.json','collectigen-release.json.sig')):
+                raise TransportHold("exact_schema2_artifact_source_required")
         if type(self.max_redirects) is not int or not 0 <= self.max_redirects <= 8:
             raise TransportHold("redirect_bound")
         if type(self.asset_redirect_origins) is not tuple:
@@ -56,6 +73,10 @@ class ReleaseTransportPolicy:
 
     def admit_initial(self, url):
         parsed = _https(url)
+        if self.schema2_artifact_source is not None:
+            if url != self.schema2_artifact_source.url:
+                raise TransportHold("exact_artifact_url_required")
+            return 'asset'
         if url == f"https://api.github.com/repos/{REPOSITORY}":
             return "repository"
         if parsed.netloc == "api.github.com" and parsed.path == f"/repos/{REPOSITORY}/releases":
@@ -114,6 +135,15 @@ class ComponentReleaseTransport:
         self.policy = policy or ReleaseTransportPolicy()
         # Deliberate direct transport, normal HTTPS certificate verification.
         self._opener = build_opener(ProxyHandler({}), _ReleaseRedirects(self.policy))
+
+    def for_exact_artifact(self, source):
+        """New exclusive URL scope; source is no signature/installation authority."""
+        if type(source) is not ReleaseAssetSource:
+            raise TransportHold("exact_schema2_artifact_source_required")
+        return ComponentReleaseTransport(ReleaseTransportPolicy(
+            asset_redirect_origins=self.policy.asset_redirect_origins,
+            max_redirects=self.policy.max_redirects,
+            schema2_artifact_source=source))
 
     def __call__(self, request, *, timeout):
         if not isinstance(request, Request):

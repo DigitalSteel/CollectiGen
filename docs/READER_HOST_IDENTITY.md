@@ -109,3 +109,27 @@ only source behavior. Connected transfer activation, compiled root/child enrollm
 real artifacts/rollback, native/UI/package completion remain separate admission
 gates. The next planning boundary is exact original-request acquisition admission;
 metadata success cannot substitute for it. No runnable app version is claimed.
+
+## Exact artifact transport scope (C1B1T1)
+
+ReleaseTransportPolicy.schema2_artifact_source optionally accepts one exact stock
+ReleaseAssetSource. Type, positive bounded integer size, schema2 first-party URL/
+tag/name agreement and non-metadata/non-wildcard name are checked. Artifact mode
+is exclusive: only that initial URL is admitted; API, metadata, legacy, alternate
+archive/stage/tag/name and direct CDN URLs refuse. Artifact plus metadata mode is
+ambiguous and refuses. Existing default and metadata-only policies are unchanged.
+
+ComponentReleaseTransport.for_exact_artifact(source) returns a distinct transport,
+policy and redirect handler. It copies only already-validated redirect origins
+and hop bound, not metadata mode, an old scoped source/opener, credentials or
+global opener state. Existing GET/credential/timeout/redirect restrictions apply;
+unqualified origins still refuse, and constructing a transport performs no HTTP.
+
+The source DTO's size/api_digest and URL are not signature, lease, acquisition or
+installation authority. The original host must separately prove its exact request,
+signed source binding, cache/file hashes and original installation admission.
+This factory is not wired into acquisition, installation or a compiled profile.
+Ordinary acquire(schema2) remains held. C1B1's unpublished handoff still needs
+reconciliation with this accepted transport and complete refusal/recovery checks.
+Contained policy/opener tests qualify source only; no real CDN, artifact, rollback,
+toolchain, native/UI/package or production execution admission is implied.

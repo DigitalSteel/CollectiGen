@@ -286,8 +286,8 @@
       "size_bytes": 15613
     },
     "core/component_release_transport.py": {
-      "sha256": "7d08de43450d4f0a51f4989c1d85d6e2ea830f8772d69cf1c0fc98df84e78402",
-      "size_bytes": 6257
+      "sha256": "8f624efbc19f3f79945a5683bf61155c83c9c055a73c2895949e309e620254a2",
+      "size_bytes": 8071
     },
     "core/concept_groups.py": {
       "sha256": "01096664ffcf4ab812e019b80723d5cdada7018c70e2b655150737461786d48e",
@@ -1986,8 +1986,8 @@
       "size_bytes": 7084
     },
     "docs/READER_HOST_IDENTITY.md": {
-      "sha256": "f933f02aeea7e2608d740e09ef31c314a539c4ea262e50ac112223e8d227585b",
-      "size_bytes": 7431
+      "sha256": "fa4aac996db680f79e8fe4cca6bb320dbd3f9a588eb2f4be654c13e659d936b4",
+      "size_bytes": 9015
     },
     "docs/READER_SELECTION_IDENTITY.md": {
       "sha256": "a86fc201047d16bf95b2db7445026ee886067c1c2867f900ca059e0ea8f47c77",
@@ -3746,8 +3746,8 @@
       "size_bytes": 8622
     },
     "tests/test_component_acquisition.py": {
-      "sha256": "5fdbca5dfafc56e182d6830dcf8e2d8133b2094fa2c627b15146de5baac5cae9",
-      "size_bytes": 38166
+      "sha256": "ffabf23e1cfeca80ffe7af2e5d0c5e4fcd8ea20d93b31f60ba641d6061b76f74",
+      "size_bytes": 45925
     },
     "tests/test_component_release_identity.py": {
       "sha256": "f12dc6414d855e4967302d4bb70add0c6841075d722ac54f8d19e9c461b275db",

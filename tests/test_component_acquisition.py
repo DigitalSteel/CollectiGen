@@ -720,3 +720,113 @@ def test_changed_cache_owner_at_publication_does_not_publish_metadata(tmp_path):
         return False
     with pytest.raises(ValueError):maturity_offers(s,state[0],should_cancel=change_owner)
     assert not s._offers and s._marker.read_bytes()==b'foreign owner'
+
+
+def exact_transport_source(stage='alpha',name='reader.zip',version='0.4.0'):
+    from core.application_update import ReleaseAssetSource
+    tag=ID+'/releases/schema2/'+version+'/'+stage
+    return ReleaseAssetSource(name,'https://github.com/DigitalSteel/CollectiGen/releases/download/'+
+        quote(tag,safe='')+'/'+quote(name,safe=''),37)
+
+
+@pytest.mark.parametrize('other',['repository','listing','metadata','signature','legacy','cdn',
+    'stage','version','name','query','fragment'])
+def test_exact_transport_initial_url_is_exclusive(other):
+    from core.component_release_transport import ReleaseTransportPolicy,TransportHold
+    source=exact_transport_source();p=ReleaseTransportPolicy(schema2_artifact_source=source)
+    assert p.admit_initial(source.url)=='asset'
+    base=source.url.rsplit('/',1)[0]+'/'
+    urls={'repository':REPO_API,'listing':API+'1','metadata':base+METADATA_NAMES[0],
+        'signature':base+METADATA_NAMES[1],
+        'legacy':'https://github.com/DigitalSteel/CollectiGen/releases/download/'+quote(ID+'/v'+VERSION,safe='')+'/reader.zip',
+        'cdn':'https://release-assets.githubusercontent.com/reader.zip',
+        'stage':exact_transport_source('beta').url,'version':exact_transport_source(version='0.5.0').url,
+        'name':exact_transport_source(name='other.zip').url,'query':source.url+'?download=1','fragment':source.url+'#part'}
+    with pytest.raises(TransportHold):p.admit_initial(urls[other])
+
+
+@pytest.mark.parametrize('fault',['type','name','size_bool','size_zero','size_negative','size_float','size_huge',
+    'wildcard','metadata','signature','legacy','foreign','tag','relative','mismatch','ambiguous'])
+def test_exact_transport_rejects_invalid_source(fault):
+    from core.component_release_transport import ReleaseTransportPolicy,TransportHold
+    source=exact_transport_source();metadata=()
+    if fault=='type':source={'name':source.name,'url':source.url,'size_bytes':37}
+    elif fault=='name':source=replace(source,name='')
+    elif fault.startswith('size_'):
+        source=replace(source,size_bytes={'size_bool':True,'size_zero':0,'size_negative':-1,'size_float':37.0,'size_huge':2**40+1}[fault])
+    elif fault=='wildcard':source=exact_transport_source(name='*.zip')
+    elif fault in ('metadata','signature'):source=exact_transport_source(name=METADATA_NAMES[fault=='signature'])
+    elif fault=='legacy':source=replace(source,url='https://github.com/DigitalSteel/CollectiGen/releases/download/'+quote(ID+'/v'+VERSION,safe='')+'/reader.zip')
+    elif fault=='foreign':source=replace(source,url=source.url.replace('github.com','evil.example'))
+    elif fault=='tag':source=replace(source,url=source.url.replace('%2Falpha','%2Funknown'))
+    elif fault=='relative':source=replace(source,url='reader.zip')
+    elif fault=='mismatch':source=replace(source,name='other.zip')
+    else:metadata=METADATA_NAMES
+    with pytest.raises(ValueError):ReleaseTransportPolicy(schema2_artifact_source=source,schema2_metadata_assets=metadata)
+
+
+@pytest.mark.parametrize('prior_mode',['default','metadata','artifact'])
+def test_exact_transport_factory_creates_only_new_scope(prior_mode):
+    from core.component_release_transport import ReleaseTransportPolicy,ComponentReleaseTransport,TransportHold
+    origin=('https://release-assets.githubusercontent.com',)
+    options={'schema2_metadata_assets':METADATA_NAMES} if prior_mode=='metadata' else (
+        {'schema2_artifact_source':exact_transport_source('beta')} if prior_mode=='artifact' else {})
+    import urllib.request
+    global_opener=urllib.request._opener
+    old=ComponentReleaseTransport(ReleaseTransportPolicy(asset_redirect_origins=origin,max_redirects=2,**options))
+    before=old.policy,old._opener
+    new=old.for_exact_artifact(exact_transport_source())
+    assert new is not old and new._opener is not old._opener and new.policy is not old.policy
+    assert (old.policy,old._opener)==before and new.policy.schema2_metadata_assets==()
+    assert new.policy.schema2_artifact_source==exact_transport_source()
+    assert new.policy.asset_redirect_origins==origin and new.policy.max_redirects==2
+    assert new.policy.admit_initial(exact_transport_source().url)=='asset'
+    with pytest.raises(TransportHold):old.policy.admit_initial(exact_transport_source().url)
+    with pytest.raises(TransportHold):new.policy.admit_initial(exact_transport_source('beta').url)
+    with pytest.raises(TransportHold):old.for_exact_artifact(None)
+    old_redirect=next(h for h in old._opener.handlers if h.__class__.__name__=='_ReleaseRedirects')
+    new_redirect=next(h for h in new._opener.handlers if h.__class__.__name__=='_ReleaseRedirects')
+    assert old_redirect is not new_redirect and old_redirect.policy is old.policy and new_redirect.policy is new.policy
+    assert urllib.request._opener is global_opener
+
+
+def test_exact_transport_redirects_keep_origin_and_request_rules():
+    from core.component_release_transport import ReleaseTransportPolicy,ComponentReleaseTransport,TransportHold
+    from urllib.request import Request
+    from types import SimpleNamespace
+    source=exact_transport_source();origin='https://release-assets.githubusercontent.com'
+    policy=ReleaseTransportPolicy(schema2_artifact_source=source,asset_redirect_origins=(origin,),max_redirects=2)
+    policy.admit_redirect(source.url,origin+'/file?signature=synthetic',2)
+    for start,end,hops in ((source.url,origin+'/file',3),(source.url,'https://evil.example/file',1),
+                           (exact_transport_source('beta').url,origin+'/file',1)):
+        with pytest.raises(TransportHold):policy.admit_redirect(start,end,hops)
+    empty=ReleaseTransportPolicy(schema2_artifact_source=source)
+    empty.admit_redirect(source.url,source.url,1)
+    with pytest.raises(TransportHold):empty.admit_redirect(source.url,origin+'/file',1)
+    transport=ComponentReleaseTransport(policy);calls=[]
+    transport._opener=SimpleNamespace(open=lambda request,timeout:calls.append((request.full_url,timeout)))
+    transport(Request(source.url),timeout=20)
+    assert calls==[(source.url,20)]
+    for request,timeout in ((Request(source.url,method='POST'),20),(Request(source.url,data=b'x'),20),
+        (Request(source.url,headers={'Authorization':'synthetic'}),20),
+        (Request(source.url,headers={'Cookie':'synthetic'}),20),
+        (Request(source.url,headers={'Proxy-Authorization':'synthetic'}),20),
+        (Request(source.url),True),(Request(source.url),0),(Request(source.url),61)):
+        with pytest.raises(TransportHold):transport(request,timeout=timeout)
+    assert calls==[(source.url,20)]
+
+
+def test_exact_transport_redirect_handler_retains_pin_and_strips_credentials():
+    from core.component_release_transport import ReleaseTransportPolicy,ComponentReleaseTransport,TransportHold
+    from urllib.request import Request
+    source=exact_transport_source();origin='https://release-assets.githubusercontent.com'
+    transport=ComponentReleaseTransport(ReleaseTransportPolicy(
+        schema2_artifact_source=source,asset_redirect_origins=(origin,)))
+    handler=next(h for h in transport._opener.handlers if h.__class__.__name__=='_ReleaseRedirects')
+    request=Request(source.url,headers={'Authorization':'synthetic','Cookie':'synthetic',
+        'Proxy-Authorization':'synthetic','Range':'bytes=3-'})
+    redirected=handler.redirect_request(request,None,302,'Found',{},origin+'/file')
+    assert redirected._release_initial==source.url and redirected._release_hops==1
+    assert redirected.get_header('Range')=='bytes=3-'
+    assert not {'authorization','cookie','proxy-authorization'} & {k.lower() for k,_ in redirected.header_items()}
+    with pytest.raises(TransportHold):handler.redirect_request(redirected,None,302,'Found',{},'https://evil.example/file')
