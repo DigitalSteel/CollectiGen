@@ -54,3 +54,18 @@ native custody. Existing data-contract read obligations, root envelope, toolchai
 date and rollback gates remain open. No runnable app version or release tag is
 added. Existing licensing applies; scoped source revert retains exact preimages
 and never silently rewrites saved identity or Data.
+
+## Original launch target projection (B2R1)
+
+The original owner now derives the non-recovery launch target with
+connection_from_release from the exact registered confirmed request. Recovery
+retains that request's complete saved current selection. Missing, mismatched or
+waiting-for-Close requests refuse before reading the offer. Full selection and
+release-digest equality precede attempt persistence and actor creation; custody,
+Close/drain and native-health gates are unchanged. Legacy four-key selections
+remain compatible; schema2 keeps its stage, release digest and exact directory.
+
+Injected boundary tests stop before native creation and exercise legacy/schema2,
+target/recovery, changed identity and held ownership. They do not activate schema2
+acquisition, compiled profiles or qualify a native/UI/package journey. Reverse
+source recovery uses the exact parent and retained patch, without changing Data.

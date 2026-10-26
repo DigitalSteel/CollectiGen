@@ -596,3 +596,68 @@ def test_opted_host_legacy_update_retains_original_native_settlement(standalone)
     request=confirm_next(f,boot);result=boot.apply_confirmed(request)
     assert result.installed.phase=='activated'
     launch_close(boot,actors);assert boot.finish_target_health(request).phase=='healthy'
+
+
+@pytest.mark.parametrize('schema2', [False, True])
+@pytest.mark.parametrize('recovering', [False, True])
+@pytest.mark.parametrize('fault', [None, 'stage', 'digest', 'directory', 'release',
+                                   'missing', 'foreign', 'waiting', 'retained'])
+def test_original_launch_projection_full_identity(admitted_standalone, monkeypatch, schema2, recovering, fault):
+    """Injected launch boundary only; no schema2 acquisition/native acceptance."""
+    from core.encyclopedia_connection import connection_from_release
+    f, boot, actors = admitted_standalone
+    request = confirm_next(f, boot)
+    if schema2:
+        target = replace(request.offer.release, software_version='0.2.0', schema_version=2, maturity='alpha')
+        old = replace(request.current.selected, version='0.1.0', release_schema=2,
+                      maturity='beta', release_sha256=request.current.release_sha256)
+        request = replace(request, offer=replace(request.offer, release=target),
+                          current=replace(request.current, selected=old))
+    boot.owner._standalone_encyclopedia_update = request
+    expected = request.current.selected if recovering else connection_from_release(f.root, request.offer.release)
+    selected = expected
+    release = request.current.release_sha256 if recovering else request.offer.release.manifest_sha256
+    phase = 'recovering' if recovering else 'applying'
+    if fault == 'stage':
+        if schema2:
+            selected = replace(selected, maturity='stable')
+        else:
+            selected = replace(selected, version='0.3.0-alpha.1')
+    elif fault == 'digest':
+        selected = replace(selected, inventory_sha256='0' * 64)
+    elif fault == 'directory':
+        selected = replace(selected, directory=f.root / 'Apps/other-same-number')
+    elif fault == 'release':
+        release = '0' * 64
+    elif fault == 'missing':
+        boot.owner._standalone_encyclopedia_update = None
+    elif fault == 'foreign':
+        boot.owner._standalone_encyclopedia_update = replace(request, owner_generation='foreign')
+    elif fault == 'waiting':
+        phase = 'waiting_for_close'
+    elif fault == 'retained':
+        boot.owner._standalone_encyclopedia_attempt = True
+    from copy import deepcopy
+    record = deepcopy(boot.owner.record)
+    record['standalone_update'] = {'identity': request.identity, 'phase': phase}
+    boot.owner._persist(record)
+    monkeypatch.setattr(type(boot.binding), 'current', lambda self:
+                        replace(request.current, selected=selected, release_sha256=release))
+    launches = []
+    class ReachedOriginalLaunch(Exception): pass
+    def stop_before_native(self, selection):
+        launches.append(selection)
+        raise ReachedOriginalLaunch
+    monkeypatch.setattr(type(boot.subject.reader), 'launch', stop_before_native)
+    before = boot.owner.record['standalone_encyclopedia']['attempt']
+    if fault is None:
+        with pytest.raises(ReachedOriginalLaunch):
+            boot.launch_current()
+        assert launches == [expected]
+        assert boot.owner.record['standalone_encyclopedia']['attempt']['selected'] == expected.mapping()
+    else:
+        reason = 'standalone_reader_or_stage_still_owned' if fault == 'retained' else 'cancel_or_settle_original'
+        with pytest.raises(LaunchHold, match=reason):
+            boot.launch_current()
+        assert launches == [] and boot.owner.record['standalone_encyclopedia']['attempt'] == before
+    assert actors == [] and f.sentinel.read_bytes() == b'{"unknown_future":[1,2]}\n'

@@ -1922,15 +1922,18 @@ class DeploymentOwner:
         selected = current.selected
         update = self.record.get('standalone_update')
         if update is not None:
+            from core.encyclopedia_connection import connection_from_release
+            from core.encyclopedia_update_binding import ConfirmedEncyclopediaUpdate
             request = self._standalone_encyclopedia_update
+            if (type(request) is not ConfirmedEncyclopediaUpdate
+                    or update['identity'] != request.identity or update['phase'] == 'waiting_for_close'):
+                raise LaunchHold('cancel_or_settle_original_standalone_update_before_launch')
             recovering = update['phase'] == 'recovering'
             identity = update['identity']
-            expected = identity['current'] if recovering else {
-                'schema_version': 1, 'directory': str(self.root / 'Apps/collectigen.tag-encyclopedia' / identity['target']),
-                'version': identity['target'], 'inventory_sha256': identity['target_inventory_sha256']}
+            expected = (request.current.selected if recovering else
+                        connection_from_release(subject.binding.root, request.offer.release))
             release = identity['current_release_sha256'] if recovering else identity['release_sha256']
-            if (request is None or identity != request.identity or update['phase'] == 'waiting_for_close'
-                    or selected.mapping() != expected or current.release_sha256 != release):
+            if selected != expected or current.release_sha256 != release:
                 raise LaunchHold('cancel_or_settle_original_standalone_update_before_launch')
         # Persist the attempt BEFORE native creation; ambiguous failures retain it.
         next_record = deepcopy(self.record)

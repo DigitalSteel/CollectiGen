@@ -842,8 +842,8 @@
       "size_bytes": 7431
     },
     "core/manager_launch_owner.py": {
-      "sha256": "fe20bc0277a78a7f6ed579781e9ef124e51e1f1eb38074c13bd8313740a2bf61",
-      "size_bytes": 263097
+      "sha256": "5cb6b43e519b450002ba8ccb72601dd6efee370dd9eb741a9af1306bcb197c23",
+      "size_bytes": 263271
     },
     "core/manager_llamacpp_provider.py": {
       "sha256": "c49337020d7ee8e858a84aea638a2c20d266334e02902e7959ab3f57cf4e147a",
@@ -1986,8 +1986,8 @@
       "size_bytes": 7084
     },
     "docs/READER_HOST_IDENTITY.md": {
-      "sha256": "2436e4b83232de2d721135b4ea42611fecf34de88819a1dbb2ef0d173b66d257",
-      "size_bytes": 3831
+      "sha256": "c61002ae94615a9761c87c75abea5f0823aab4ffba12ff93ff1cbe4068ef68c3",
+      "size_bytes": 4745
     },
     "docs/READER_SELECTION_IDENTITY.md": {
       "sha256": "a86fc201047d16bf95b2db7445026ee886067c1c2867f900ca059e0ea8f47c77",
@@ -3918,8 +3918,8 @@
       "size_bytes": 4462
     },
     "tests/test_standalone_encyclopedia_update.py": {
-      "sha256": "1017ca7674acbb309bd6ba9357846abfec89890dd5099c9c83556abf502b2b53",
-      "size_bytes": 29698
+      "sha256": "129ce9c932c313e3c59545cd0ebd0092b00bcde6208af6a562e2f66a966dc008",
+      "size_bytes": 33319
     },
     "tests/test_tag_active_refinement.py": {
       "sha256": "6d483948ad375b097e6eb2ef18ea798936b45fd71467675de540c43f48e2bdd4",
