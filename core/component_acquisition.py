@@ -254,11 +254,13 @@ class ComponentAcquisition:
         self._marker = root / ".component-acquisition-owner.json"
         self._marker.write_bytes(self._owner)
         require(self._marker.read_bytes() == self._owner, "cache_owner_readback")
+        self._cache_binding = (self.root, self._marker, self._owner)
         # The default app trust path is never read: only transport methods are used.
         self.transport = ApplicationUpdateService(root, host_version, opener=opener)
         self._offers = {}
 
     def _check(self, cancel):
+        require((self.root, self._marker, self._owner) == self._cache_binding, "cache_owner_changed")
         guard(self.root)
         guard(self._marker)
         require(self._marker.stat().st_size == len(self._owner), "cache_owner_changed")
@@ -489,6 +491,18 @@ class ComponentAcquisition:
         if verified != offer.release: raise ExactOfferHold(EXACT_OFFER_HOLD)
         self._check(should_cancel)
 
+    def _metadata_offer_current(self, offer, should_cancel):
+        self._check(should_cancel)
+        self._check(None)  # Recheck owner bytes after the cancellation callback.
+        self._trust()
+        require(type(offer) is ComponentOffer
+            and self._offers.get(offer.release.manifest_sha256) is offer,
+            "current_signed_offer_required")
+        require(offer.discovery_epoch == self._offer_epoch
+            and type(offer.installed_context) is InstalledOfferContext
+            and not offer.installed_context.pending, "stale_offer_epoch")
+        require(offer.trust_sha256 == self.trust_pin, "changed_metadata_trust")
+
     def revalidate_exact_metadata(self, offer, *, check_current, should_cancel=None):
         """Read-only fresh metadata; callback supplies no installation capability.
 
@@ -497,28 +511,15 @@ class ComponentAcquisition:
         """
         try:
             require(self.schema2_metadata and callable(check_current), "explicit_metadata_review_required")
-
-            def current_offer():
-                self._check(should_cancel)
-                self._check(None)  # Recheck owner bytes after the cancellation callback.
-                self._trust()
-                require(type(offer) is ComponentOffer
-                    and self._offers.get(offer.release.manifest_sha256) is offer,
-                    "current_signed_offer_required")
-                require(offer.discovery_epoch == self._offer_epoch
-                    and type(offer.installed_context) is InstalledOfferContext
-                    and not offer.installed_context.pending, "stale_offer_epoch")
-                require(offer.trust_sha256 == self.trust_pin, "changed_metadata_trust")
-
-            current_offer()
+            self._metadata_offer_current(offer, should_cancel)
             check_current()
-            current_offer()
+            self._metadata_offer_current(offer, should_cancel)
             selected = self._select_metadata(offer.release.channel, offer.release.component_id,
                                              offer.installed_context, should_cancel)
             require(len(selected) == 1 and selected[0] == offer, "changed_authenticated_offer")
             self._check(should_cancel)
             check_current()
-            current_offer()
+            self._metadata_offer_current(offer, should_cancel)
         except BaseException:
             self._offers = {}
             self._offer_epoch += 1
@@ -533,18 +534,79 @@ class ComponentAcquisition:
                 "current_signed_offer_required")
         require(offer.trust_sha256 == self.trust_pin, "changed_trust_evidence")
         self.revalidate_offer(offer, should_cancel=should_cancel)
+        return self._acquire_artifact(offer, progress=progress, should_cancel=should_cancel)
+
+    def _acquire_original_metadata(self, offer, *, check_current, progress=None, should_cancel=None):
+        """Private host composition; callback/DTO alone is no installation authority."""
+        try:
+            self.revalidate_exact_metadata(offer, check_current=check_current, should_cancel=should_cancel)
+            def original():
+                check_current()
+                self._metadata_offer_current(offer, should_cancel)
+            download = self.transport.download_artifact
+            if offer.release.schema_version == 2:
+                from core.component_release_transport import ComponentReleaseTransport
+                require(type(self.transport.opener) is ComponentReleaseTransport,
+                        "original_scoped_artifact_transport_required")
+                original()
+                scoped = self.transport.opener.for_exact_artifact(offer.artifact_source)
+                download = ApplicationUpdateService(self.root, self.transport.current_version,
+                                                     opener=scoped).download_artifact
+            return self._acquire_artifact(offer, progress=progress, should_cancel=should_cancel,
+                                          check_current=original, download_artifact=download)
+        except BaseException:
+            self._offers = {}
+            self._offer_epoch += 1
+            raise
+
+    def _validate_acquired(self, acquired):
+        require(type(acquired) is AcquiredComponent, "original_acquired_component_required")
+        offer = acquired.offer
+        self._check(None); self._trust()
+        require(type(offer) is ComponentOffer
+            and self._offers.get(offer.release.manifest_sha256) is offer
+            and offer.trust_sha256 == self.trust_pin
+            and self._acquired.get(offer.release.manifest_sha256) == acquired.artifact,
+            "original_service_artifact_required")
+        self._owned_artifact_path(acquired.artifact, offer.release)
+        verify_component_artifact(acquired.artifact, offer.release)
+        self._check(None); self._trust()
+        require(self._offers.get(offer.release.manifest_sha256) is offer
+            and offer.trust_sha256 == self.trust_pin
+            and self._acquired.get(offer.release.manifest_sha256) == acquired.artifact,
+            "original_service_artifact_required")
+        if self.schema2_metadata:
+            self._metadata_offer_current(offer, None)
+
+    def _owned_artifact_path(self, artifact, release):
+        require(isinstance(artifact, Path) and artifact.parent.parent == self.root
+            and artifact.parent.name.startswith('attempt-') and artifact.name == release.artifact.name,
+            "cache_artifact_binding")
+        guard(artifact)
+
+    def _acquire_artifact(self, offer, *, progress, should_cancel, check_current=None, download_artifact=None):
+        def check():
+            if check_current is not None:
+                check_current()
+            self._check(should_cancel); self._check(None); self._trust()
+            require(self._offers.get(offer.release.manifest_sha256) is offer
+                and offer.trust_sha256 == self.trust_pin, "changed_inflight_offer")
+        check()
         # Fresh exact metadata prevents mutation between review and transfer.
         require(self._fetch(offer.manifest_url, should_cancel) == offer.manifest_bytes
                 and self._fetch(offer.signature_url, should_cancel) == offer.signature_bytes,
                 "changed_offer_metadata")
         verified = verify_component_release(offer.manifest_bytes, offer.signature_bytes, self.trust,
             expected_component=offer.release.component_id, expected_version=offer.release.software_version,
-            expected_channel=offer.release.channel, expected_os=self.os, expected_architecture=self.arch)
+            expected_channel=offer.release.channel, expected_os=self.os, expected_architecture=self.arch,
+            expected_maturity=offer.release.maturity)
         require(verified == offer.release and verified.artifact.size_bytes <= self.maximum, "changed_verified_offer")
+        check()
         cached = self._acquired.get(verified.manifest_sha256)
         if cached is not None:
-            guard(cached)
+            self._owned_artifact_path(cached, verified)
             verify_component_artifact(cached, verified)
+            check()
             return AcquiredComponent(offer, cached)
         used = sum(path.stat().st_size for path in self._acquired.values())
         require(used + verified.artifact.size_bytes <= self.cache_maximum, "cache_bound")
@@ -552,7 +614,8 @@ class ComponentAcquisition:
         attempt.mkdir()
         names = [verified.artifact.name, verified.artifact.name + ".part", verified.artifact.name + ".part.rejected"]
         try:
-            artifact = self.transport.download_artifact(offer.artifact_source, verified.artifact,
+            download = self.transport.download_artifact if download_artifact is None else download_artifact
+            artifact = download(offer.artifact_source, verified.artifact,
                 cache_directory=attempt, progress=progress, should_cancel=should_cancel)
             self._check(should_cancel)
             self._trust()
@@ -561,6 +624,7 @@ class ComponentAcquisition:
             guard(artifact)
             require(artifact.parent == attempt and artifact.name == verified.artifact.name, "cache_artifact_binding")
             verify_component_artifact(artifact, verified)
+            check()
             self._acquired[verified.manifest_sha256] = artifact
             return AcquiredComponent(offer, artifact)
         except BaseException:

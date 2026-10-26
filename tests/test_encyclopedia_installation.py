@@ -565,3 +565,33 @@ def test_full_identity_publication_request_and_retry_bind_exact_target_component
     with f.admission.transaction(COMPONENT) as (root,base,original_owner,check):
         with pytest.raises(ValueError,match='publication_readback'):
             boot._verify_publication_request(request,root,base,original_owner)
+
+
+def test_original_acquired_installer_consumes_review_once_without_acquire(fixture,monkeypatch):
+    f=fixture;reviewed=f.reviewed();acquired=f.acquisition.acquire(reviewed.offer)
+    calls=list(f.calls);checks=[]
+    def original(candidate):
+        if candidate is not acquired:raise ValueError('exact original acquired result')
+        checks.append(candidate)
+    def deny(*args,**kwargs):pytest.fail('acquired handoff repeated acquisition')
+    monkeypatch.setattr(f.acquisition,'acquire',deny)
+    result=f.service._install_original_acquired(reviewed,acquired,check_original=original)
+    assert result.connection_saved and result.installed.phase=='activated'
+    assert len(checks)==2 and f.calls==calls
+    before=f.settings.read_bytes(),f.service.observe(),f.sentinel.read_bytes()
+    with pytest.raises(ValueError,match='explicit_current_installation_confirmation'):
+        f.service._install_original_acquired(reviewed,acquired,check_original=original)
+    assert (f.settings.read_bytes(),f.service.observe(),f.sentinel.read_bytes())==before
+
+
+@pytest.mark.parametrize('fault',['acquired_copy','review_copy','foreign_path'])
+def test_original_acquired_installer_refuses_substituted_inputs(fixture,fault):
+    f=fixture;reviewed=f.reviewed();acquired=f.acquisition.acquire(reviewed.offer)
+    before=f.settings.read_bytes(),f.service.observe(),f.sentinel.read_bytes()
+    def original(candidate):
+        if candidate is not acquired:raise ValueError('exact original acquired result')
+    candidate=replace(acquired) if fault=='acquired_copy' else acquired
+    if fault=='foreign_path':candidate=replace(acquired,artifact=f.root/'foreign.zip')
+    review=replace(reviewed) if fault=='review_copy' else reviewed
+    with pytest.raises(ValueError):f.service._install_original_acquired(review,candidate,check_original=original)
+    assert (f.settings.read_bytes(),f.service.observe(),f.sentinel.read_bytes())==before

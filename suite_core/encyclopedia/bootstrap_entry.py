@@ -52,6 +52,7 @@ class StandaloneEncyclopediaBootstrap:
         self.binding, self.acquisition, self.owner = binding, acquisition, owner
         self.request = self.acquired = self.delegate = None
         self._operation = None
+        self._original_install_check = None
         self.cancel = Event()
         self._installation = EncyclopediaInstallation(acquisition, ReaderConnectionStore(binding.settings_path),
             admission=ComponentStageAdmission(self._hold), native_health=self._native_health, schema2_identity=binding.schema2_identity)
@@ -64,11 +65,16 @@ class StandaloneEncyclopediaBootstrap:
 
     @contextmanager
     def _hold(self, component):
+        if self._operation == 'install_metadata':
+            require(callable(self._original_install_check), 'original_installation_handoff_required')
+            self._original_install_check()
         with self.owner.standalone_encyclopedia_stage_hold(self.subject, component) as original:
             def check():
                 original.check()
                 if self._operation == 'install' and self.delegate is not None:
                     self._manager_owned(self.delegate)
+                if self._operation == 'install_metadata':
+                    self._original_install_check()
                 if self._operation == 'retry_publication':
                     self._verify_publication_request(self.request, original.root,
                         original.root / 'State' / COMPONENT.value, original.owner)
@@ -173,13 +179,15 @@ class StandaloneEncyclopediaBootstrap:
     def request_cancel(self):
         self.cancel.set()  # Running transport cancellation does not claim rollback.
 
-    def revalidate_confirmed_metadata(self, request, *, delegate=None):
-        """Explicit original-request metadata review; never starts acquisition."""
+    def _confirmed_metadata_checker(self, request, delegate):
         acquisition, captured_delegate = self.acquisition, self.delegate
+        owner, subject, binding, installation = self.owner, self.subject, self.binding, self._installation
 
         def check_current():
             require(request is not None and request is self.request
-                    and self.acquisition is acquisition and self.delegate is captured_delegate,
+                    and self.acquisition is acquisition and self.delegate is captured_delegate
+                    and self.owner is owner and self.subject is subject and self.binding is binding
+                    and self._installation is installation,
                     'exact_original_confirmed_update_required')
             self.owner.check_standalone_metadata_request(self.subject, request)
             require(self.binding.schema2_identity, 'reader_identity_mode_required')
@@ -194,11 +202,76 @@ class StandaloneEncyclopediaBootstrap:
                     == (context.component_id, context.version, context.schema_version,
                         context.maturity, context.observation_id), 'confirmed_metadata_observation_changed')
             require(acquisition._observe_installed() == live, 'original_metadata_observation_required')
+        return check_current
 
+    def revalidate_confirmed_metadata(self, request, *, delegate=None):
+        """Explicit original-request metadata review; never starts acquisition."""
+        acquisition = self.acquisition
+        check_current = self._confirmed_metadata_checker(request, delegate)
         # All owner work remains in short serialized checks, never across HTTP.
         offer = request.offer if request is not None and request is self.request else None
         return acquisition.revalidate_exact_metadata(offer, check_current=check_current,
                                                      should_cancel=self.cancel.is_set)
+
+    def apply_confirmed_metadata(self, request, *, progress=None, delegate=None):
+        """Explicit original-request source route; no ordinary acquisition opt-in."""
+        require(request is not None and request is self.request, 'exact_original_confirmed_update_required')
+        acquisition, installation = self.acquisition, self._installation
+        owner, subject, binding, captured_delegate = self.owner, self.subject, self.binding, self.delegate
+        require(binding.schema2_identity and acquisition.schema2_metadata, 'original_metadata_mode_required')
+        if captured_delegate is not None:
+            self._manager_owned(delegate)
+        else:
+            require(delegate is None, 'standalone_has_no_manager_delegate')
+        phase = owner.record.get('standalone_update', {}).get('phase')
+        if phase == 'waiting_for_close':
+            owner.begin_standalone_encyclopedia_update(subject, request)
+        else:
+            owner.check_standalone_metadata_request(subject, request)
+        check_current = self._confirmed_metadata_checker(request, delegate)
+        self._operation = 'install_metadata'
+        self.acquired = None
+        try:
+            acquired = acquisition._acquire_original_metadata(request.offer, check_current=check_current,
+                progress=progress, should_cancel=self.cancel.is_set)
+            self.acquired = acquired
+            check_current()
+            require_target_compatibility(request.current.selected, acquired, original_contract=request.data_obligations)
+
+            def stage_check():
+                require(self.request is request and self.acquired is acquired and acquired.offer is request.offer
+                    and self.acquisition is acquisition and self._installation is installation
+                    and self.owner is owner and self.subject is subject and self.binding is binding
+                    and self.delegate is captured_delegate, 'original_installation_handoff_required')
+                owner.check_standalone_update_request(subject, request)
+                if captured_delegate is not None:
+                    self._manager_owned(delegate)
+                acquisition._metadata_offer_current(request.offer, None)
+
+            self._original_install_check = stage_check
+            reviewed = installation._review_local(request.offer)
+            require(reviewed.offer is request.offer and reviewed.installed.active_sha256 == request.current.active_sha256
+                and reviewed.installed.journal_sha256 == request.current.journal_sha256
+                and reviewed.settings.digest == request.current.settings_sha256, 'confirmed_installation_review_changed')
+            check_current()
+            def handoff_check(candidate):
+                require(candidate is acquired and self.acquired is acquired,
+                        'original_acquired_handoff_required')
+                check_current()
+            return installation._install_original_acquired(reviewed, acquired, check_original=handoff_check,
+                progress=progress, should_cancel=self.cancel.is_set)
+        except BaseException:
+            try:
+                owner.abandon_unpublished_standalone_update(subject, request)
+            except (LaunchHold, ValueError, OSError):
+                pass
+            else:
+                if self.request is request:
+                    self.request = None
+            raise
+        finally:
+            self._operation = None
+            self._original_install_check = None
 
     def apply_confirmed(self, request, *, progress=None, delegate=None):
         require(request is self.request and request is not None, 'exact_original_confirmed_update_required')

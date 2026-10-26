@@ -93,6 +93,17 @@ def standalone(tmp_path, monkeypatch, request):
     from tests.test_encyclopedia_entry_control import stock_native_double
     from suite_core.encyclopedia.control_entry import StandaloneControlActor
     _, state, api = stock_native_double(boot, monkeypatch)
+    # Inject only HTTP delivery behind the real, freshly scoped transport policy.
+    # Do not copy the metadata opener or weaken archive/redirect admission.
+    from types import SimpleNamespace
+    from core.component_release_transport import ComponentReleaseTransport
+    exact_factory = ComponentReleaseTransport.for_exact_artifact
+    def contained_factory(transport, source):
+        scoped = exact_factory(transport, source)
+        assert scoped.policy.admit_initial(source.url) == 'asset'
+        scoped._opener = SimpleNamespace(open=lambda request, timeout: f.opener(request, timeout))
+        return scoped
+    monkeypatch.setattr(ComponentReleaseTransport, 'for_exact_artifact', contained_factory)
     owner.enable_standalone_control(boot.subject)
     original_init = StandaloneControlActor.__init__
     def retained_actor(self, *args, **kwargs):
@@ -663,12 +674,13 @@ def test_original_launch_projection_full_identity(admitted_standalone, monkeypat
     assert actors == [] and f.sentinel.read_bytes() == b'{"unknown_future":[1,2]}\n'
 
 
-def confirmed_metadata_request(f, boot, *, delegate=None):
+def confirmed_metadata_request(f, boot, *, delegate=None, prepared=False):
     """Real service/owner orchestration; crypto and all process actors injected."""
     from types import SimpleNamespace
     from core.component_release_transport import ComponentReleaseTransport, ReleaseTransportPolicy
     from tests.test_encyclopedia_installation import Response
-    add_schema_package(f, '0.1.0-alpha.9')
+    if not prepared:
+        add_schema_package(f, '0.1.0-alpha.9')
     for i,row in enumerate(f.rows):
         row['id']=100+i
         for j,asset in enumerate(row['assets']):asset['id']=1000+i*10+j
@@ -685,7 +697,7 @@ def confirmed_metadata_request(f, boot, *, delegate=None):
     boot.acquisition._observe_installed=boot.installed_offer_context
     boot.acquisition._repository_id=4321
     notice=boot.update_check.check()
-    assert notice.status=='available'
+    assert notice.status=='available', notice
     return boot.confirm_update(notice.offer,confirmed=True,delegate=delegate)
 
 
@@ -811,3 +823,172 @@ def test_fresh_idle_metadata_review_does_not_adopt_prior_abnormal_close(standalo
     assert boot.revalidate_confirmed_metadata(request) is None
     assert boot.owner.raw==before
     assert boot.owner.record['standalone_encyclopedia']['attempt']['outcome']=='abnormal_exit'
+
+
+def schema2_metadata_request(f,boot,stage='alpha',floor='0.0.0'):
+    from urllib.parse import quote
+    add_schema_package(f,'0.2.0')
+    row=f.rows[-1]
+    old={a['name']:a['browser_download_url'] for a in row['assets']}
+    message=f.resources[old['collectigen-release.json']]
+    release=f.registry[message]
+    payload=json.loads(message);payload.update(maturity=stage,supported_from=floor)
+    raw=json.dumps(payload).encode()
+    f.registry[raw]=replace(release,schema_version=2,maturity=stage,manifest_sha256=sha256(raw).hexdigest())
+    row['tag_name']=COMPONENT.value+'/releases/schema2/0.2.0/'+stage
+    base='https://github.com/DigitalSteel/CollectiGen/releases/download/'+quote(row['tag_name'],safe='')+'/'
+    for asset in row['assets']:
+        url=base+asset['name']
+        f.resources[url]=raw if asset['name']=='collectigen-release.json' else f.resources[old[asset['name']]]
+        asset.update(browser_download_url=url,size=len(f.resources[url]))
+    return confirmed_metadata_request(f,boot,prepared=True)
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+@pytest.mark.parametrize('schema2',[False,True])
+@pytest.mark.parametrize('continuing',[False,True])
+def test_original_metadata_install_uses_one_begin_and_installer(standalone,monkeypatch,schema2,continuing):
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    request=schema2_metadata_request(f,boot) if schema2 else confirmed_metadata_request(f,boot)
+    begin=boot.owner.begin_standalone_encyclopedia_update;begins=[]
+    def counted(subject,original):
+        begins.append(original);return begin(subject,original)
+    monkeypatch.setattr(boot.owner,'begin_standalone_encyclopedia_update',counted)
+    if continuing:
+        counted(boot.subject,request)
+        boot.revalidate_confirmed_metadata(request)
+    calls=len(f.calls);before=f.sentinel.read_bytes();settings=f.settings.read_bytes()
+    opener=f.opener
+    def unlocked(request,timeout):
+        assert not boot.owner.dispatch_lock._is_owned(), 'root lock held across HTTP'
+        return opener(request,timeout)
+    monkeypatch.setattr(f,'opener',unlocked)
+    def forbidden(*args,**kwargs):pytest.fail('ordinary acquisition/network review called in original handoff')
+    monkeypatch.setattr(boot.acquisition,'acquire',forbidden)
+    monkeypatch.setattr(boot._installation,'review',forbidden)
+    result=boot.apply_confirmed_metadata(request)
+    assert result.connection_saved and result.installed.phase=='activated'
+    assert begins==[request] and sum(url.endswith('.zip') for url,_,_ in f.calls[calls:])==1
+    assert f.sentinel.read_bytes()==before and f.settings.read_bytes()!=settings
+    assert boot.owner.record['standalone_update']['identity']==request.identity
+    assert 'component_stage' not in boot.owner.record
+    if schema2:
+        selected=boot.binding.current().selected
+        assert (selected.release_schema,selected.maturity,selected.release_sha256)==(2,'alpha',request.offer.release.manifest_sha256)
+    launch_close(boot,actors)
+    assert boot.finish_target_health(request).phase=='healthy'
+    assert boot.close() and boot.owner.fd is None
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+@pytest.mark.parametrize('fault',['request','subject','generation','settings','cancel','delegate','reader'])
+def test_original_handoff_refuses_before_archive(standalone,monkeypatch,fault):
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    if fault=='reader':boot.launch_current();assert not boot.poll_reader()
+    request=schema2_metadata_request(f,boot);argument=request;delegate=None
+    before=f.sentinel.read_bytes();calls=len(f.calls)
+    if fault=='request':argument=replace(request)
+    elif fault=='subject':boot.subject=replace(boot.subject)
+    elif fault=='generation':
+        argument=replace(request,owner_generation='foreign')
+        boot.request=boot.owner._standalone_encyclopedia_update=argument
+    elif fault=='settings':
+        settings=json.loads(f.settings.read_bytes());settings['changed_before_begin']=True
+        f.settings.write_text(json.dumps(settings))
+    elif fault=='cancel':boot.cancel.set()
+    elif fault=='delegate':delegate=object()
+    with pytest.raises((ValueError,LaunchHold,InterruptedError)):
+        boot.apply_confirmed_metadata(argument,delegate=delegate)
+    assert not any(url.endswith('.zip') for url,_,_ in f.calls[calls:])
+    assert f.sentinel.read_bytes()==before
+    assert len(actors)==(1 if fault=='reader' else 0)
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+@pytest.mark.parametrize('fault',['acquired_copy','review_copy','cached_bytes','epoch','cancel','legacy_actor'])
+def test_original_handoff_rejects_changed_installer_input(standalone,monkeypatch,fault):
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    request=schema2_metadata_request(f,boot);before=boot.binding.current(),f.settings.read_bytes(),f.sentinel.read_bytes()
+    install=boot._installation._install_original_acquired
+    def changed(reviewed,acquired,**kwargs):
+        if fault=='acquired_copy':acquired=replace(acquired)
+        elif fault=='review_copy':reviewed=replace(reviewed)
+        elif fault=='cached_bytes':acquired.artifact.write_bytes(b'corrupt original cache')
+        elif fault=='epoch':boot.acquisition._offer_epoch+=1
+        elif fault=='legacy_actor':
+            from types import SimpleNamespace
+            boot.subject.reader.legacy_handoff=SimpleNamespace(close_held=True)
+        else:boot.cancel.set()
+        return install(reviewed,acquired,**kwargs)
+    monkeypatch.setattr(boot._installation,'_install_original_acquired',changed)
+    with pytest.raises((ValueError,LaunchHold,InterruptedError)) as held:
+        boot.apply_confirmed_metadata(request)
+    if fault=='acquired_copy':assert 'original_acquired_handoff' in str(held.value)
+    assert (boot.binding.current(),f.settings.read_bytes(),f.sentinel.read_bytes())==before
+    assert boot.request is None and actors==[] and 'component_stage' not in boot.owner.record
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+def test_original_handoff_cache_hit_is_fresh_and_uses_no_second_transfer(standalone):
+    f,boot,_=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    request=schema2_metadata_request(f,boot)
+    boot.owner.begin_standalone_encyclopedia_update(boot.subject,request)
+    cached=boot.acquisition._acquire_original_metadata(request.offer,
+        check_current=boot._confirmed_metadata_checker(request,None))
+    calls=len(f.calls)
+    result=boot.apply_confirmed_metadata(request)
+    assert result.connection_saved and len(f.calls)>calls
+    assert not any(url.endswith('.zip') for url,_,_ in f.calls[calls:])
+    assert boot.acquired.artifact==cached.artifact and boot.acquired is not cached
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+@pytest.mark.parametrize('recovering',[False,True])
+def test_original_handoff_publication_retry_and_recovery(standalone,monkeypatch,recovering):
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    old=boot.binding.current().selected;request=schema2_metadata_request(f,boot)
+    save=boot._installation.store.save
+    def fail(*args,**kwargs):raise PermissionError('synthetic original publication failure')
+    if recovering:
+        assert boot.apply_confirmed_metadata(request).connection_saved
+        launch_close(boot,actors,code=17)
+        monkeypatch.setattr(boot._installation.store,'save',fail)
+        result=boot.recover_update(request,confirmed=True);expected=old
+    else:
+        monkeypatch.setattr(boot._installation.store,'save',fail)
+        result=boot.apply_confirmed_metadata(request);expected=result.installed.selected
+    assert not result.connection_saved and boot.request is request
+    bytes_before=retained_component_bytes(f,expected);calls=list(f.calls)
+    monkeypatch.setattr(boot._installation.store,'save',save)
+    def deny(*args,**kwargs):pytest.fail('publication retry repeated metadata/acquisition')
+    monkeypatch.setattr(boot.acquisition,'_acquire_original_metadata',deny)
+    monkeypatch.setattr(boot.acquisition,'acquire',deny)
+    assert boot.retry_connection(request).connection_saved
+    assert f.calls==calls and retained_component_bytes(f,expected)==bytes_before
+    launch_close(boot,actors)
+    final=boot.finish_recovery_health(request) if recovering else boot.finish_target_health(request)
+    assert final.phase in ('healthy','rolled_back') and boot.request is None
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+def test_original_handoff_same_number_maturity_survives_publication(standalone):
+    f,boot,actors=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    alpha=schema2_metadata_request(f,boot);assert boot.apply_confirmed_metadata(alpha).connection_saved
+    launch_close(boot,actors);boot.finish_target_health(alpha)
+    beta=schema2_metadata_request(f,boot,'beta');assert boot.apply_confirmed_metadata(beta).connection_saved
+    selected=boot.binding.current().selected
+    assert selected.version=='0.2.0' and selected.maturity=='beta'
+    assert selected.release_sha256==beta.offer.release.manifest_sha256
+    assert boot._installation.store.selected(boot._installation.store.observe())==selected
+    launch_close(boot,actors);assert boot.finish_target_health(beta).phase=='healthy'
+
+
+@pytest.mark.parametrize('standalone',[True],indirect=True)
+def test_original_handoff_retains_stricter_legacy_prerelease_floor_hold(standalone):
+    f,boot,_=standalone;boot.owner.begin_standalone_custody(boot.subject)
+    request=schema2_metadata_request(f,boot,floor='0.1.0')
+    before=boot.binding.current(),f.settings.read_bytes(),f.sentinel.read_bytes()
+    with pytest.raises(ValueError,match='supported_component_floor'):
+        boot.apply_confirmed_metadata(request)
+    assert (boot.binding.current(),f.settings.read_bytes(),f.sentinel.read_bytes())==before
+    assert boot.request is None

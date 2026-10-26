@@ -133,3 +133,45 @@ Ordinary acquire(schema2) remains held. C1B1's unpublished handoff still needs
 reconciliation with this accepted transport and complete refusal/recovery checks.
 Contained policy/opener tests qualify source only; no real CDN, artifact, rollback,
 toolchain, native/UI/package or production execution admission is implied.
+
+## Original-request acquisition and installer handoff (C1B1)
+
+StandaloneEncyclopediaBootstrap.apply_confirmed_metadata(request, *, progress=None,
+delegate=None) is an explicit original-host source route. It requires the exact
+retained request, original subject/owner/binding/acquisition/installer/delegate,
+explicit identity/metadata mode and original custody. A waiting request begins
+once after Close/drain; an already-applying request continues without beginning
+again. Other or changed requests/installed snapshots refuse. No profile enables
+this entry automatically, and ordinary acquire(schema2) remains held.
+
+The service-private acquisition path reuses C1A fresh metadata and the existing
+bounded cache/download/hash/cleanup kernel. Schema2 uses T1's exclusive exact-asset
+opener in an ephemeral stock downloader; the metadata opener stays unchanged.
+Legacy acquisition retains its normal path. Signature revalidation includes exact
+maturity. Cache hits still revalidate metadata, ownership and file bytes. Cache
+root/marker/owner identity stays bound to construction; changed ownership forbids
+foreign cleanup. Owner/epoch/trust/cache/cancellation checks repeat after callbacks,
+download and hashing. None of these DTOs or callbacks independently grants a lease.
+
+The original bootstrap retains the exact acquired result. The private installer
+handoff binds that object to its original host check, consumes the original review
+once and rejoins the same installation body; no ordinary acquisition/network review
+is repeated. Local review, current signed selection/settings/destination and named
+Data compatibility stay checked. Shared request/custody/Close checks run in the
+existing component scope; no-stage/baseline metadata checks remain outside it.
+Pre-install baseline checks occur before mutation, not successful publication exit.
+No root or maintenance lock spans HTTP. Stop, unchanged-baseline abandonment,
+partial publication, Retry save and explicit recovery retain their existing owners.
+
+Source fixtures cover waiting/continuation, one transfer and fresh cache hits,
+same-number stage publication, changed/reconstructed inputs, cancellation, foreign
+cache retention, saved publication retry and original recovery. Host crypto/process
+and HTTP delivery are injected where declared; separate acquisition tests use real
+fixture signatures. These are source/component results, not native/UI/package proof.
+
+The existing stager still refuses a legacy prerelease exactly on a numeric floor
+that metadata ordering admits; the explicit supported_component_floor refusal is
+retained under follow-up F. This patch changes no staging-floor rule and does not
+claim every displayed metadata offer is installable. Actual signed production
+artifacts/CDN/rollback, compiled root/profile/toolchain, real visible/saved/native/
+package acceptance remain open. No runnable application version is claimed.

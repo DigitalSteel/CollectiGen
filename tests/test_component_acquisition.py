@@ -830,3 +830,92 @@ def test_exact_transport_redirect_handler_retains_pin_and_strips_credentials():
     assert redirected.get_header('Range')=='bytes=3-'
     assert not {'authorization','cookie','proxy-authorization'} & {k.lower() for k,_ in redirected.header_items()}
     with pytest.raises(TransportHold):handler.redirect_request(redirected,None,302,'Found',{},'https://evil.example/file')
+
+
+def original_transfer_fixture(tmp_path,monkeypatch):
+    """Real metadata crypto/policy/downloader, inert HTTP delivery; no install authority."""
+    from types import SimpleNamespace
+    from core.component_release_transport import ComponentReleaseTransport
+    feed=MaturityFeed();base,name=feed.add_maturity();service_,state=maturity_service(tmp_path,feed)
+    offer,=maturity_offers(service_,state[0]);state[0]=replace(state[0],pending=True)
+    factory=ComponentReleaseTransport.for_exact_artifact;scopes=[]
+    def contained(transport,source):
+        scoped=factory(transport,source);scopes.append(scoped)
+        scoped._opener=SimpleNamespace(open=feed)
+        return scoped
+    monkeypatch.setattr(ComponentReleaseTransport,'for_exact_artifact',contained)
+    return feed,service_,state,offer,base+name,scopes
+
+
+def test_original_transfer_cache_revalidates_and_does_not_enable_public_acquire(tmp_path,monkeypatch):
+    feed,s,state,offer,url,scopes=original_transfer_fixture(tmp_path,monkeypatch)
+    old=s.transport.opener,s.transport.opener.policy,s.transport.opener._opener
+    first=s._acquire_original_metadata(offer,check_current=lambda:None)
+    assert first.artifact.read_bytes()==PAYLOAD and not first.production_install_authorized
+    before=len(feed.calls)
+    second=s._acquire_original_metadata(offer,check_current=lambda:None)
+    assert second.artifact==first.artifact and len(feed.calls)>before
+    assert sum(u==url for u,_,_ in feed.calls)==1 and len(scopes)==2
+    assert (s.transport.opener,s.transport.opener.policy,s.transport.opener._opener)==old
+    assert all(t is not s.transport.opener and t.policy.schema2_artifact_source==offer.artifact_source for t in scopes)
+    before=list(feed.calls)
+    with pytest.raises(ValueError,match='schema2_installation_not_admitted'):s.acquire(offer)
+    assert feed.calls==before and state[0].pending
+    first.artifact.write_bytes(b'changed cache')
+    with pytest.raises(ValueError):s._acquire_original_metadata(offer,check_current=lambda:None)
+    assert not s._offers and first.artifact.read_bytes()==b'changed cache'
+    assert sum(u==url for u,_,_ in feed.calls)==1
+
+
+@pytest.mark.parametrize('fault',['owner_before','owner_after','epoch_after','trust_after','cache_after','cancel_after','cancel_progress','root_before','root_after'])
+def test_original_transfer_refuses_drift_and_retains_foreign_cache(tmp_path,monkeypatch,fault):
+    from core.application_update import ApplicationUpdateService
+    feed,s,state,offer,url,_=original_transfer_fixture(tmp_path,monkeypatch)
+    original=ApplicationUpdateService.download_artifact;downloaded=[];cancel=[False]
+    foreign=tmp_path/'foreign-cache';foreign.mkdir()
+    if fault=='root_before':s.root=foreign
+    def changed(self,*args,**kwargs):
+        path=original(self,*args,**kwargs);downloaded.append(path)
+        if fault=='epoch_after':s._offer_epoch+=1
+        elif fault=='trust_after':s.trust=b'{}'
+        elif fault=='cache_after':s._marker.write_bytes(b'foreign owner')
+        elif fault=='cancel_after':cancel[0]=True
+        elif fault=='root_after':s.root=foreign
+        return path
+    monkeypatch.setattr(ApplicationUpdateService,'download_artifact',changed)
+    def check():
+        assert state[0].pending
+        if fault=='owner_before' or fault=='owner_after' and downloaded:
+            raise ValueError('synthetic original owner changed')
+    with pytest.raises((ValueError,InterruptedError)):
+        s._acquire_original_metadata(offer,check_current=check,should_cancel=lambda:cancel[0],
+            progress=(lambda *args:cancel.__setitem__(0,True)) if fault=='cancel_progress' else None)
+    assert not s._offers and not s._acquired
+    if fault in ('owner_before','root_before'):assert not downloaded and not any(u==url for u,_,_ in feed.calls)
+    elif fault in ('cache_after','root_after'):
+        assert downloaded[0].exists()
+        if fault=='cache_after':assert s._marker.read_bytes()==b'foreign owner'
+    elif fault=='cancel_progress':assert set(s.root.iterdir())=={s._marker}
+    else:assert downloaded and not downloaded[0].exists()
+    assert list(foreign.iterdir())==[]
+
+
+@pytest.mark.parametrize('fault',['owner','epoch','cache','cancel','root'])
+def test_original_cache_hash_rechecks_authority_without_deleting_cache(tmp_path,monkeypatch,fault):
+    import core.component_acquisition as module
+    _,s,_,offer,_,_=original_transfer_fixture(tmp_path,monkeypatch)
+    first=s._acquire_original_metadata(offer,check_current=lambda:None)
+    verify=module.verify_component_artifact;hashed=[];cancel=[False]
+    def changed(path,release):
+        verify(path,release);hashed.append(path)
+        if fault=='epoch':s._offer_epoch+=1
+        elif fault=='cache':s._marker.write_bytes(b'foreign cache owner')
+        elif fault=='cancel':cancel[0]=True
+        elif fault=='root':s.root=tmp_path/'uncreated-foreign-cache'
+    monkeypatch.setattr(module,'verify_component_artifact',changed)
+    def owner():
+        if fault=='owner' and hashed:raise ValueError('original owner changed during hashing')
+    with pytest.raises((ValueError,InterruptedError)):
+        s._acquire_original_metadata(offer,check_current=owner,should_cancel=lambda:cancel[0])
+    assert hashed==[first.artifact] and first.artifact.read_bytes()==PAYLOAD
+    assert not s._offers

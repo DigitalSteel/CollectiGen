@@ -2058,8 +2058,8 @@ class DeploymentOwner:
         self._persist(next_record)
 
     @_serialized
-    def check_standalone_metadata_request(self, subject, request):
-        """Check original applying request without polling or changing any phase."""
+    def check_standalone_update_request(self, subject, request):
+        """Original request/custody/Close identity, including inside its stage scope."""
         from core.encyclopedia_update_binding import ConfirmedEncyclopediaUpdate
         self._standalone_encyclopedia_owned(subject)
         self.assert_standalone_custody(subject)
@@ -2069,12 +2069,11 @@ class DeploymentOwner:
                 or request.owner_generation != subject.owner_generation
                 or request.binding_sha256 != subject.binding.identity
                 or self.record.get('standalone_update') != {'identity': request.identity, 'phase': 'applying'}
-                or 'component_stage' in self.record or self._standalone_encyclopedia_attempt
+                or self._standalone_encyclopedia_attempt
                 or subject.reader.native is not None or self._standalone_encyclopedia_native is not None
-                or subject.reader.close_held):
+                or subject.reader.legacy_handoff is not None and subject.reader.legacy_handoff.close_held
+                ):
             raise LaunchHold('original_applying_metadata_request_required')
-        if subject.binding.current() != request.current:
-            raise LaunchHold('confirmed_standalone_installation_changed')
         attempt = self.record['standalone_encyclopedia']['attempt']
         if attempt is not None and attempt['phase'] != 'drained':
             raise LaunchHold('original_normal_reader_close_required')
@@ -2083,6 +2082,15 @@ class DeploymentOwner:
                 or attempt['selected'] != request.current.selected.mapping()
                 or attempt.get('outcome') != 'normal_close'):
             raise LaunchHold('original_normal_reader_close_required')
+
+    @_serialized
+    def check_standalone_metadata_request(self, subject, request):
+        """Strict no-stage, unchanged baseline wrapper for metadata/transfer."""
+        self.check_standalone_update_request(subject, request)
+        if 'component_stage' in self.record or subject.reader.close_held:
+            raise LaunchHold('original_applying_metadata_request_required')
+        if subject.binding.current() != request.current:
+            raise LaunchHold('confirmed_standalone_installation_changed')
 
     @_serialized
     def cancel_standalone_encyclopedia_update(self, subject, request):

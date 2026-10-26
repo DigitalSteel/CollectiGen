@@ -156,6 +156,14 @@ class EncyclopediaInstallation:
                 "exact_encyclopedia_offer_required")
         require(self.acquisition._offers.get(offer.release.manifest_sha256) is offer, "current_signed_offer_required")
         self.acquisition.revalidate_offer(offer)
+        return self._review_local(offer)
+
+    def _review_local(self, offer):
+        """Shared local policy; original host supplies fresh metadata separately."""
+        self._review = None
+        require(type(offer) is ComponentOffer and offer.release.component_id == self.component
+            and self.acquisition._offers.get(offer.release.manifest_sha256) is offer,
+            "current_signed_offer_required")
         with self._scope() as (root, base, owner, check):
             installed = self._observe(root, base, owner)
             require(not installed.pending and installed.phase != "activated", "Finish launch checking or recover the current installation first.")
@@ -187,6 +195,23 @@ class EncyclopediaInstallation:
         require(self.store.observe().digest == reviewed.settings.digest, "Settings changed. Review installation again.")
 
     def install(self, reviewed, *, confirmed=False, progress=None, should_cancel=None, phase_progress=None):
+        return self._install(reviewed, confirmed=confirmed, progress=progress, should_cancel=should_cancel,
+            phase_progress=phase_progress, acquire=lambda: self.acquisition.acquire(
+                reviewed.offer, progress=progress, should_cancel=should_cancel))
+
+    def _install_original_acquired(self, reviewed, acquired, *, check_original,
+                                   progress=None, should_cancel=None, phase_progress=None):
+        """Private original-host handoff, never a DTO/callback installation permit."""
+        def original():
+            check_original(acquired)
+            require(acquired.offer is reviewed.offer, "original_acquired_offer_required")
+            self.acquisition._validate_acquired(acquired)
+            check_original(acquired)
+            return acquired
+        return self._install(reviewed, confirmed=True, progress=progress, should_cancel=should_cancel,
+                             phase_progress=phase_progress, acquire=original)
+
+    def _install(self, reviewed, *, confirmed, progress, should_cancel, phase_progress, acquire):
         require(phase_progress is None or callable(phase_progress), 'phase_progress_callback_required')
         def phase(value):
             if phase_progress is not None:
@@ -199,7 +224,7 @@ class EncyclopediaInstallation:
             check()
         self._cancel(should_cancel)
         phase('Checking the reader download')
-        acquired = self.acquisition.acquire(reviewed.offer, progress=progress, should_cancel=should_cancel)
+        acquired = acquire()
         phase('Verifying the downloaded reader')
         self._cancel(should_cancel)
         # Network/cache work does not hold root maintenance exclusion. Re-admit
