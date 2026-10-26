@@ -294,6 +294,13 @@ class _Completion:
 class CompletedPackHostReview:
     native_review: object
     session_binding: object
+    comparison: tuple = ()
+
+
+@dataclass(frozen=True)
+class CompletedPackHostListing:
+    rows: tuple
+    session_binding: object
 
 
 @dataclass(frozen=True)
@@ -313,8 +320,18 @@ def _execute_completed(operation, choice, review, receipt):
         with adapter.guard():
             if operation.binding != service.session.binding:
                 raise RuntimeError("Selected catalog session changed before host admission")
-            if operation.kind == "completed_review":
-                result = CompletedPackHostReview(adapter.review_completed_import(receipt), service.session.binding)
+            if operation.kind == "completed_list":
+                fresh = _observe(choice, include_capabilities=False)
+                if fresh.completed_inverse_receipts:
+                    return _Completion(fresh, CompletedPackHostListing((), service.session.binding))
+                rows = adapter.native.list_completed_knowledge_pack_imports(adapter.root,
+                    catalog_identity_binding=adapter.identity_binding)
+                return _Completion(fresh, CompletedPackHostListing(rows, service.session.binding))
+            if operation.kind in {"completed_review", "completed_compare"}:
+                native_review = adapter.review_completed_import(receipt)
+                comparison = (adapter.native.compare_completed_knowledge_pack_import(adapter.root, native_review)
+                    if operation.kind == "completed_compare" else ())
+                result = CompletedPackHostReview(native_review, service.session.binding, comparison)
                 return _Completion(choice, result)
             if operation.kind == "completed_undo":
                 if type(review) is not CompletedPackHostReview or review.session_binding != service.session.binding:
@@ -365,6 +382,8 @@ class _Operation:
                 return False
             self.admitted = True
             self.phase = {
+                "completed_list": "Finding user imports in the selected catalog",
+                "completed_compare": "Comparing original and current saved data",
                 "completed_review": "Reviewing the exact completed user import",
                 "completed_undo": "Restoring reviewed user import; retain exact saved result",
                 "completed_recover": "Verifying the selected completed inverse and saved publication",
@@ -390,7 +409,7 @@ def _execute(operation, choice, action, review, receipt, ui_owner):
         raise RuntimeError("Native Tag operations require the host background executor")
     if not operation.enter():
         return None
-    if operation.kind in {"completed_review", "completed_undo", "completed_recover"}:
+    if operation.kind in {"completed_list", "completed_compare", "completed_review", "completed_undo", "completed_recover"}:
         return _execute_completed(operation, choice, review, receipt)
     service = choice.transactions
     saved_result = None
@@ -468,6 +487,7 @@ class TagDatabaseController:
         self.before_baseline_change = before_baseline_change
         self.connection_review = None
         self.completed_review = None
+        self.completed_listing = None
         self.index = 0 if choices else -1
         self.review = None
         self.result = None
@@ -485,6 +505,7 @@ class TagDatabaseController:
 
     def _invalidate_baseline(self):
         self.completed_review = None
+        self.completed_listing = None
         if self.before_baseline_change is not None:
             self.before_baseline_change()
 
@@ -608,19 +629,19 @@ class TagDatabaseController:
     def request_completed(self, kind, *, receipt=None, review=None, confirmed=False):
         """Backend-only entry; no ordinary UI command is activated here."""
         self._check_owner()
-        if kind not in {"review", "undo", "recover"}:
+        if kind not in {"list", "compare", "review", "undo", "recover"}:
             raise ValueError("Unknown completed import operation")
         if not self.can_request or type(self.choice.native_adapter) is not NativeTagCatalogAdapter:
             return False
         if getattr(self.executor, "close_held", False):
             self.reason = "Wait for retained host work to settle before selecting a completed import."
             return False
-        if kind != "review" and not self.apply_authorized:
+        if kind in {"undo", "recover"} and not self.apply_authorized:
             return False
         if kind == "undo" and (confirmed is not True or review is None or review is not self.completed_review):
             self.reason = "Confirm the exact current completed-import review."
             return False
-        if kind in {"review", "recover"}:
+        if kind in {"compare", "review", "recover"}:
             if not isinstance(receipt, Path) or not receipt.is_absolute() or ".." in receipt.parts:
                 raise ValueError("Select one exact absolute managed receipt")
         if kind == "recover" and receipt not in self.choice.completed_inverse_receipts:
@@ -715,19 +736,25 @@ class TagDatabaseController:
                 if operation.kind in {"connection_review", "connection_confirm", "connection_open"} else
                 "Operation held or interrupted. Review the reason, then refresh observations before requesting a fresh review.")
             return True
-        if operation.kind in {"completed_review", "completed_undo", "completed_recover"}:
+        if operation.kind in {"completed_list", "completed_compare", "completed_review", "completed_undo", "completed_recover"}:
             if result is None and operation.cancelled.is_set() and not operation.admitted:
                 self.reason = "Cancelled before admission. No native operation was started."
                 return True
-            if type(result) is not _Completion or (not result.error and
-                    ((operation.kind == "completed_review" and type(result.result) is not CompletedPackHostReview)
-                    or (operation.kind != "completed_review" and type(result.result) is not CompletedPackHostResult))):
+            expected = (CompletedPackHostListing if operation.kind == "completed_list" else
+                CompletedPackHostReview if operation.kind in {"completed_review", "completed_compare"} else CompletedPackHostResult)
+            if type(result) is not _Completion or (not result.error and type(result.result) is not expected):
                 self.faulted = self._unconfirmed = True
                 self.reason = "Completed-import delivery is unknown; retain operation evidence."
                 return True
             rows = list(self.choices); rows[self.index] = result.choice; self.choices = tuple(rows)
             self.error = result.error
-            if operation.kind == "completed_review":
+            if operation.kind == "completed_list":
+                self.completed_listing = (result.result if not result.error and not operation.cancelled.is_set()
+                    and self.choice.transactions.session.binding == self._binding else None)
+                self.reason = ("Choose a completed user import to review its changes." if not result.error
+                    else "Import list held. Review the reason; nothing was restored.")
+                return True
+            if operation.kind in {"completed_review", "completed_compare"}:
                 if (not result.error and not operation.cancelled.is_set() and not self.closed
                         and self.choice.transactions.session.binding == self._binding):
                     self.completed_review = result.result

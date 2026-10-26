@@ -212,6 +212,9 @@ class EncyclopediaWindow(QMainWindow):
             UiCommand("encyclopedia:open-database", "Open Tag Database", "Home", callback=self.choose_database, enabled=idle),
             UiCommand("encyclopedia:refresh", "Refresh", "Home", callback=self.refresh,
                       enabled=lambda: idle() and self.publication is not None),
+            UiCommand("encyclopedia:completed-import", "Review completed user import…", "Home",
+                      callback=self.review_completed_import,
+                      enabled=lambda: idle() and self.catalog_host is not None and self.catalog_host._write_actions_allowed()),
             UiCommand("encyclopedia:defaults", "Use optional default tags", "Home", callback=self.review_defaults, enabled=idle),
             UiCommand("encyclopedia:open-export", "Open exported tag catalog", "Home", callback=self._choose_snapshot, enabled=idle),
             UiCommand("encyclopedia:copy", "Copy Tag Name", "Home", callback=self.copy_tag,
@@ -260,6 +263,11 @@ class EncyclopediaWindow(QMainWindow):
         if self.catalog_host is not None:
             return self.catalog_host.choose_database()
         self.status.setText("Database loading is unavailable in this host. Open an exported tag catalog instead.")
+        return False
+
+    def review_completed_import(self):
+        if self.catalog_host is not None:
+            return self.catalog_host.show_completed_import()
         return False
 
     def review_defaults(self):

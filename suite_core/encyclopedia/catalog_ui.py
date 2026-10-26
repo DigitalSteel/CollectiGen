@@ -94,6 +94,11 @@ class EncyclopediaCatalogHost(QObject):
         self._creation_cancel = None
         self._creation_started = None
         self.dialog = self.pane = None
+        self.restore_dialog = None
+        self.reader_delivery_result = None
+        self.reader_delivery_ok = False
+        self.reader_delivery_error = ""
+        self.reader_delivery_publication = None
         self.optional_content_factory = None
         self._shown_result = None
         self._cancelled = False
@@ -442,6 +447,9 @@ class EncyclopediaCatalogHost(QObject):
         self.window.bar.refresh_state()
 
     def prepare_editing(self):
+        if self.restore_dialog is not None and self.restore_dialog.isVisible():
+            self.window.status.setText('Close the completed-import review before editing Tags or Categories. Its decisions are retained.')
+            return False
         if self.busy or not self._write_actions_allowed() or self.accepted_source is None or self.accepted_source.kind!='native':return False
         if self.dialog is not None and self.dialog.isVisible():
             self.window.status.setText('Close the default import review before opening Tag/Category editing.')
@@ -480,6 +488,7 @@ class EncyclopediaCatalogHost(QObject):
     def invalidate_default_baseline(self):
         """Before host publication; never reset, including away/back changes."""
         self.baseline_generation += 1
+        self.controller.completed_review = None
 
     def tag_data_native_view(self):
         """Retain only the original accepted writable native reader selection."""
@@ -564,6 +573,10 @@ class EncyclopediaCatalogHost(QObject):
         return True
 
     def create_database(self):
+        if self.restore_dialog is not None and self.restore_dialog.isVisible():
+            self.restore_dialog.raise_()
+            self.window.status.setText('Close the completed-import review before creating a database. Its decisions are retained.')
+            return False
         if self._closing or self.busy:
             return False
         root = QFileDialog.getExistingDirectory(self.window, 'Choose an empty folder for your new tag database')
@@ -660,6 +673,10 @@ class EncyclopediaCatalogHost(QObject):
     def open_database(self, root):
         if self._closing or self.busy:
             return False
+        if self.restore_dialog is not None:
+            self.controller.cancel()
+            self.restore_dialog.invalidate_context()
+            self.restore_dialog.close()
         if self.editing_bridge is not None and not self.editing_bridge.close_ready():
             self.window.status.setText('Finish Save or Cancel in Tag/Category Details before changing the catalog.')
             return False
@@ -796,6 +813,12 @@ class EncyclopediaCatalogHost(QObject):
             self.dialog.close()
             self.dialog.deleteLater()
             self.dialog = self.pane = None
+        if self.restore_dialog is not None:
+            self.restore_dialog.close()
+            self.restore_dialog.deleteLater()
+            self.restore_dialog = None
+        self.reader_delivery_result = None
+        self.reader_delivery_ok = False
         self.content_box = None
         self.content_status = None
         self.content_offers = self.content_refresh = self.content_download = None
@@ -803,8 +826,31 @@ class EncyclopediaCatalogHost(QObject):
         self._content_discovery = None
         self._download_result = self._download_generation = None
 
+    def show_completed_import(self):
+        """History entry has no optional-content acquisition side effects."""
+        if not self._write_actions_allowed() or self._closing or self.busy:
+            return False
+        if self.dialog is not None and self.dialog.isVisible() or self.controller.review is not None:
+            self.window.status.setText('Finish or discard the optional Tag content review, then close it before reviewing a completed import.')
+            return False
+        if self.editing_bridge is not None and not self.editing_bridge.close_ready():
+            self.window.status.setText('Finish Save or Cancel before reviewing a completed import.')
+            return False
+        if not self._retire_editor():
+            return False
+        if self.restore_dialog is None:
+            from qt_app.completed_pack_restore_dialog import CompletedPackRestoreDialog
+            self.restore_dialog = CompletedPackRestoreDialog(self)
+        self.restore_dialog.render()
+        self.restore_dialog.show(); self.restore_dialog.raise_()
+        return True
+
     def show_defaults(self):
         if not self._write_actions_allowed():return False
+        if self.restore_dialog is not None and self.restore_dialog.isVisible():
+            self.restore_dialog.raise_()
+            self.window.status.setText('Close the completed-import review before reviewing optional default tags. Its decisions are retained.')
+            return False
         if self.editing_bridge is not None and not self.editing_bridge.close_ready():
             self.window.status.setText('Finish Save or Cancel in Tag/Category Details before reviewing imports.')
             return False
@@ -1029,6 +1075,8 @@ class EncyclopediaCatalogHost(QObject):
             finally:
                 self.jobs.release(job.id)
         delivered = self.pane.poll() if self.pane is not None else self.controller.poll()
+        if self.restore_dialog is not None and self.restore_dialog.isVisible():
+            self.restore_dialog.render(delivered)
         if delivered:
             self.window.status.setText(self.controller.reason)
             self.window.status.setToolTip(self.controller.error or '')
@@ -1131,11 +1179,23 @@ class EncyclopediaCatalogHost(QObject):
                     self.window.status.setToolTip(str(error))
             if publication is not None:
                 root = self.controller.choice.native_adapter.root
-                delivered = self.window.open_publication(publication, path=self.controller.choice.transactions.destination,
-                                             native_root=root, directory_pin=self.controller.choice.native_adapter.directory_pin,
-                                             native_adapter=self.controller.choice.native_adapter,
-                                             refreshing=self.window.publication is not None and
-                                             self.window.publication.catalog_id == publication.catalog_id)
+                self.reader_delivery_error = ""
+                try:
+                    delivered = self.window.open_publication(publication, path=self.controller.choice.transactions.destination,
+                                                 native_root=root, directory_pin=self.controller.choice.native_adapter.directory_pin,
+                                                 native_adapter=self.controller.choice.native_adapter,
+                                                 refreshing=self.window.publication is not None and
+                                                 self.window.publication.catalog_id == publication.catalog_id)
+                except Exception as error:
+                    if self.restore_dialog is None or not self.restore_dialog.isVisible():
+                        raise
+                    delivered = False
+                    self.reader_delivery_error = str(error)
+                self.reader_delivery_result = result
+                self.reader_delivery_ok = bool(delivered)
+                self.reader_delivery_publication = publication
+                if not delivered and getattr(result, "native_saved", False):
+                    self.window.status.setText("Restoration saved; the Reader did not accept its result. Reload saved catalog; do not restore again.")
                 if delivered:
                     if self.controller.error:
                         self.window.status.setText('Tags were saved and the reader refreshed, but host observations are held. Refresh observations before further review; do not apply again.')
@@ -1143,6 +1203,8 @@ class EncyclopediaCatalogHost(QObject):
                     else:self.window.status.setText("Tag Database saved and ready to browse.")
             elif getattr(result, "publication_error", ""):
                 self.window.status.setText("Tags were saved. Reader refresh failed; choose Reload saved catalog in the review window. Do not import again.")
+        if self.restore_dialog is not None and self.restore_dialog.isVisible():
+            self.restore_dialog.render(delivered)
         if self.future is not None and self.future.done() and not self.executor.close_held:
             future, self.future = self.future, None
             changed_source = self.accepted_source is not self._opening_source
@@ -1222,6 +1284,8 @@ class EncyclopediaCatalogHost(QObject):
         self.executor.begin_close()
         if self.dialog is not None:
             self.dialog.close()
+        if self.restore_dialog is not None:
+            self.restore_dialog.close()
         self.timer.stop()
         return not self.executor.close_held
 

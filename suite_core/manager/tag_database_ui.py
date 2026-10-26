@@ -221,7 +221,7 @@ class TagDatabasePane(QWidget):
 
     def poll(self):
         delivered = self.controller.poll()
-        if (delivered and self.controller.last_operation == "connection_confirm"
+        if (delivered and self.controller.last_operation in {"connection_confirm", "connection_open"}
                 and self.controller.result is not None and not self.controller.error):
             result = self.controller.result
             for field, value in ((self.source_directory, result.source_directory),

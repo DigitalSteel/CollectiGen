@@ -5287,6 +5287,106 @@ def review_completed_knowledge_pack_import(app_root, receipt, *, catalog_identit
             tuple(tuple(row) for row in value["default_authority_fingerprints"]), observed)
 
 
+@dataclass(frozen=True)
+class CompletedPackReceiptRow:
+    receipt_relative: str
+    areas: tuple
+
+
+@dataclass(frozen=True)
+class CompletedPackComparisonPart:
+    relative: str
+    before: str
+    current: str
+    proposed: str
+    consequence: str
+    summary: str = ""
+
+
+def list_completed_knowledge_pack_imports(app_root, *, catalog_identity_binding):
+    """Read-only native receipt projection; rows grant no restore authority."""
+    from .catalog_admission import catalog_admission, _receipts
+    root = Path(app_root)
+    if not root.is_absolute() or ".." in root.parts:
+        raise RuntimeError("Select an exact absolute enrolled catalog")
+    _check_export_path(root)
+    _check_export_path(root / "data/user")
+    if not (root / "data/user").is_dir():
+        raise RuntimeError("Select an existing enrolled catalog; listing never creates one")
+    with catalog_admission(root, sys.modules[__name__], role="completed-import-list") as state:
+        if not state.enrolled or tuple(sorted(state.binding.items())) != catalog_identity_binding:
+            raise RuntimeError("Select the exact enrolled catalog before listing imports")
+        result = []
+        for path, value, _digest in _receipts(root, sys.modules[__name__]):
+            if (type(value.get("schema_version")) is int and value["schema_version"] == 5
+                    and value.get("status") == "complete" and value.get("identity_bound_operation") == "pack_import"
+                    and "foundation_transition" not in value):
+                areas = tuple(sorted({Path(row.get("target", "")).stem.replace("_", " ").title()
+                    for row in value.get("files", ())}))
+                result.append(CompletedPackReceiptRow(path.relative_to(root).as_posix(), areas))
+        state.checkpoint(ordinary=True)
+        return tuple(result)
+
+
+def compare_completed_knowledge_pack_import(app_root, review):
+    """Complete plain-text presentation over the same exact A evidence; no writer.
+
+    Uses the History comparison text budget (4 MiB). Larger complete comparisons
+    hold rather than returning a truncated or hash-only approval surface.
+    """
+    from .catalog_admission import catalog_admission
+    root = Path(app_root)
+    if type(review) is not CompletedPackImportReview:
+        raise TypeError("Exact native completed import review required")
+    if not root.is_absolute() or ".." in root.parts or str(root) != review.catalog_root:
+        raise RuntimeError("Comparison belongs to another selected catalog")
+    _check_export_path(root)
+    _check_export_path(root / "data/user")
+    if not (root / "data/user").is_dir():
+        raise RuntimeError("Select an existing enrolled catalog before comparison")
+    with catalog_admission(root, sys.modules[__name__], role="completed-import-comparison"):
+        path = root / review.receipt_relative
+        if review_completed_knowledge_pack_import(root, path, catalog_identity_binding=review.catalog_identity_binding) != review:
+            raise RuntimeError("Completed import changed before comparison")
+        manifest, _stamp = _read_pack_receipt(path, root)
+        rows = _prepare_pack_restore(path, manifest, root)
+        result = []; size = 0
+        def text(raw):
+            if raw is None:
+                return "(This file did not exist.)", "file absent"
+            value = json.loads(raw.decode("utf-8-sig"))
+            names = []
+            if type(value) is dict:
+                for rows in value.values():
+                    if type(rows) is list:
+                        for record in rows:
+                            if type(record) is dict:
+                                label = record.get("display") or record.get("name") or record.get("id")
+                                if type(label) is str:
+                                    names.append(label)
+            summary = (str(len(names))+(" record: " if len(names)==1 else " records: ")+", ".join(name if len(name)<=80 else name[:77]+"..." for name in names[:3])
+                + ("; more in exact comparison" if len(names)>3 else "")) if names else "saved document; see exact comparison"
+            return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True), summary
+        for row in rows:
+            current = _recovery_bytes(row[0])[0] if row[4] is not None else None
+            # Refuse before materializing a larger pretty-printed document.
+            size += len(current or b"") + len(row[3] or b"")
+            if size > 4 * 1024 * 1024:
+                raise RuntimeError("Complete comparison exceeds the 4 MiB History review bound; restore is held")
+            before, before_summary = text(row[3])
+            now, now_summary = text(current)
+            if len(before.encode("utf-8")) + len(now.encode("utf-8")) > 4 * 1024 * 1024:
+                raise RuntimeError("Complete comparison exceeds the History review bound; restore is held")
+            result.append(CompletedPackComparisonPart(row[0].relative_to(root).as_posix(), before, now, before,
+                "Restore previous saved values" if row[3] is not None else "Remove the file created by this import",
+                "Current: "+now_summary+". After restore: "+before_summary+"."))
+        if sum(len(v.before.encode("utf-8"))+len(v.current.encode("utf-8")) for v in result) > 4 * 1024 * 1024:
+            raise RuntimeError("Complete comparison exceeds the History review bound; restore is held")
+        if review_completed_knowledge_pack_import(root, path, catalog_identity_binding=review.catalog_identity_binding) != review:
+            raise RuntimeError("Completed import changed during comparison")
+        return tuple(result)
+
+
 class CompletedPackInverseFailure(RuntimeError):
     """Retain the single reserved inverse identity after an uncertain outcome."""
     def __init__(self, receipt):

@@ -5,6 +5,8 @@
     "collectigen.suite-manager"
   ],
   "files": [
+    "qt_app/completed_pack_restore_dialog.py",
+    "suite_core/tests/test_completed_pack_restore_ui.py",
     "tests/test_completed_pack_host.py",
     "suite_core/tests/test_tag_database_epoch.py",
     "tests/test_completed_pack_inverse.py",
