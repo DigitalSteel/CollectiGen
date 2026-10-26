@@ -1,0 +1,7 @@
+# CollectiGen core runtime for CPython 3.13, Windows x64.
+# Update only through the reviewed REL-03 runtime evidence process.
+Pillow==12.3.0 --hash=sha256:1cca606cd25738df4ed873d5ad46bbdb3d83b5cbca291f6b4ff13a4df6b0bbe8
+PySide6_Essentials==6.11.2 --hash=sha256:c8a29def77032773a30879f7f24415b5395ad08592d147c170824ef4c735dfc1
+shiboken6==6.11.2 --hash=sha256:6ab0eba1c904455df621f9a6df3ca2bb896bab8670572d2bc4e37804ae91f19a
+# Video decode/playback: Windows x64 CPython 3.11+ stable ABI wheel.
+av==18.1.0 --hash=sha256:ea1480b7a8d5405cb5f382b344731bf125fd2c1c6fae3964f6c48595628387ff

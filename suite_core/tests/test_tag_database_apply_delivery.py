@@ -1,0 +1,204 @@
+"""Saved Apply delivery; original worker/receipt lifecycle with transaction doubles."""
+from threading import Event
+from time import monotonic,sleep
+from types import SimpleNamespace
+from dataclasses import replace
+import pytest
+from suite_core.manager import tag_database_controller as module
+from suite_core.manager.resource_executor import ResourceExecutorOwner
+from suite_core.knowledge.tag_transactions import TagCatalogTransactions
+from suite_core.database_actions import CatalogRelease
+
+
+def stock_choice(tmp_path,apply):
+    transaction=object.__new__(TagCatalogTransactions)
+    transaction.session=SimpleNamespace(binding='original-binding')
+    transaction.apply=apply
+    release=object.__new__(CatalogRelease)
+    return module.TagDatabaseChoice('Synthetic selected catalog',transaction,release,None,tmp_path/'inert.zip',False,
+        capability_inventory=(('old','pin'),),capability_revision='old-revision')
+
+
+def drain(controller,executor):
+    end=monotonic()+3
+    while executor.close_held and monotonic()<end:sleep(.002)
+    assert not executor.close_held
+    assert controller.poll()
+
+
+def test_saved_apply_defers_optional_report_and_preserves_single_worker_close(tmp_path,monkeypatch):
+    entered=Event();release=Event();calls=[]
+    saved=SimpleNamespace(publication_error='',publication=None)
+    def apply(review,*,confirmed_token):
+        calls.append((review,confirmed_token));entered.set();assert release.wait(3);return saved
+    choice=stock_choice(tmp_path,apply)
+    monkeypatch.setattr(module,'_acquire_foundation_choice',lambda c:c)
+    executor=ResourceExecutorOwner();controller=module.TagDatabaseController(choices=(choice,),executor=executor,apply_authorized=True)
+    review=SimpleNamespace(can_apply=True,token='exact-review');controller.review=review
+    try:
+        assert controller.request('apply',confirmed=True) and entered.wait(1)
+        assert not controller.request('apply',confirmed=True)
+        assert controller.close_held and executor.close_held
+        controller.begin_close();assert controller.close_held and executor.close_held
+        release.set();drain(controller,executor)
+        assert calls==[(review,'exact-review')]
+        assert controller.result is saved
+        assert controller.choice.capability_report is None
+        assert controller.choice.capability_inventory==() and controller.choice.capability_revision==''
+        assert 'refresh observations' in controller.choice.capability_error
+        assert 'saved outcome is retained' in controller.reason
+        assert not controller.close_held
+    finally:release.set();executor.begin_close()
+
+
+def test_post_save_observation_failure_retains_result_without_replay(tmp_path,monkeypatch):
+    saved=SimpleNamespace(publication_error='',publication=None);calls=[];observations=[]
+    def apply(review,*,confirmed_token):calls.append(confirmed_token);return saved
+    choice=stock_choice(tmp_path,apply);monkeypatch.setattr(module,'_acquire_foundation_choice',lambda c:c)
+    original=module._observe
+    def observe(c,*,include_capabilities=True):
+        observations.append(include_capabilities)
+        if len(observations)==1:raise RuntimeError('synthetic observation failure after saved native result')
+        return original(c,include_capabilities=include_capabilities)
+    monkeypatch.setattr(module,'_observe',observe)
+    executor=ResourceExecutorOwner();controller=module.TagDatabaseController(choices=(choice,),executor=executor,apply_authorized=True)
+    controller.review=SimpleNamespace(can_apply=True,token='exact-review')
+    try:
+        assert controller.request('apply',confirmed=True);drain(controller,executor)
+        assert observations==[False,False] and calls==['exact-review']
+        assert controller.result is saved and controller.choice.capability_report is None
+        assert 'do not apply again' in controller.reason
+        assert not controller.request('apply',confirmed=True)
+    finally:executor.begin_close()
+
+
+def test_explicit_observation_still_requests_capability_verification(tmp_path,monkeypatch):
+    calls=[];choice=stock_choice(tmp_path,lambda *a,**kw:None)
+    original=module._observe
+    def observe(c,*,include_capabilities=True):calls.append(include_capabilities);return original(c,include_capabilities=include_capabilities)
+    monkeypatch.setattr(module,'_observe',observe)
+    executor=ResourceExecutorOwner();controller=module.TagDatabaseController(choices=(choice,),executor=executor)
+    try:
+        assert controller.request('observe');drain(controller,executor)
+        assert calls==[True]
+    finally:executor.begin_close()
+
+
+def test_failed_write_and_failed_observation_invalidate_cached_capability_evidence(tmp_path,monkeypatch):
+    calls=[]
+    def apply(review,*,confirmed_token):
+        calls.append(confirmed_token);raise RuntimeError('synthetic write refused before commit')
+    choice=stock_choice(tmp_path,apply)
+    monkeypatch.setattr(module,'_acquire_foundation_choice',lambda c:c)
+    def observe(c,*,include_capabilities=True):raise RuntimeError('synthetic observation hold')
+    monkeypatch.setattr(module,'_observe',observe)
+    executor=ResourceExecutorOwner();controller=module.TagDatabaseController(choices=(choice,),executor=executor,apply_authorized=True)
+    controller.review=SimpleNamespace(can_apply=True,token='exact-review')
+    try:
+        assert controller.request('apply',confirmed=True);drain(controller,executor)
+        assert calls==['exact-review'] and controller.result is None
+        assert controller.choice.observation_status=='unknown'
+        assert controller.choice.capability_inventory==() and controller.choice.capability_revision==''
+        assert 'observation hold' in controller.error and not controller.can_apply
+    finally:executor.begin_close()
+
+
+@pytest.mark.parametrize('status,has_receipt,offers_recovery', [
+    ('current', False, False),
+    ('unknown', True, False),
+    ('recovery_pending', False, False),
+    ('recovery_pending', True, True),
+])
+def test_refused_apply_guidance_uses_current_admitted_recovery_observation(
+        tmp_path, monkeypatch, status, has_receipt, offers_recovery):
+    calls=[]
+    def apply(review,*,confirmed_token):
+        calls.append(confirmed_token)
+        raise RuntimeError('Foundation knowledge changed after preview')
+    choice=stock_choice(tmp_path,apply)
+    choice.transactions.host=SimpleNamespace(root=tmp_path)
+    receipt=tmp_path/'backups/knowledge-pack-import/selected/recovery.json'
+    observed=replace(choice, observation_status=status,
+        recovery_receipts=(receipt,) if has_receipt else ())
+    monkeypatch.setattr(module,'_acquire_foundation_choice',lambda c:c)
+    monkeypatch.setattr(module,'_observe',lambda c,**kwargs:observed)
+    executor=ResourceExecutorOwner()
+    controller=module.TagDatabaseController(choices=(choice,),executor=executor,apply_authorized=True)
+    controller.review=SimpleNamespace(can_apply=True,token='exact-review')
+    try:
+        assert controller.request('apply',confirmed=True);drain(controller,executor)
+        assert calls==['exact-review'] and controller.result is None
+        assert controller.error=='Foundation knowledge changed after preview'
+        assert controller.choice is observed
+        assert ('recover the approved selected import' in controller.reason)==offers_recovery
+        if not offers_recovery:assert 'fresh review' in controller.reason
+        assert not controller.request('apply',confirmed=True)
+        assert not executor.close_held
+    finally:executor.begin_close()
+
+
+@pytest.mark.parametrize('kind',['connection_review','connection_confirm','connection_open'])
+def test_failed_connection_guidance_uses_available_connection_controls(tmp_path,monkeypatch,kind):
+    calls=[]
+    def refused(operation,*args):
+        calls.append(operation.kind)
+        raise ValueError('synthetic connection refused')
+    monkeypatch.setattr(module,'_connect',refused)
+    executor=ResourceExecutorOwner()
+    controller=module.TagDatabaseController(executor=executor,settings_path=tmp_path/'settings.json')
+    if kind=='connection_confirm':controller.connection_review=SimpleNamespace(token='reviewed')
+    try:
+        assert controller.can_connect and not controller.can_request
+        assert controller.connect(kind,confirmed=True);drain(controller,executor)
+        assert calls==[kind] and controller.error=='synthetic connection refused'
+        assert 'review the connection again' in controller.reason
+        assert 'refresh observations' not in controller.reason.lower() and 'recover' not in controller.reason.lower()
+        assert controller.can_connect and not controller.can_request and not controller.can_apply
+    finally:executor.begin_close()
+
+
+@pytest.mark.parametrize('kind',['connection_open','connection_confirm'])
+@pytest.mark.parametrize('cancelled',[False,True])
+@pytest.mark.parametrize('status,receipts,authorized,native,next_action',[
+    ('current',0,True,False,'Preview approved content'),
+    ('supplied',0,False,False,'Preview approved content'),
+    ('current',1,True,False,'Preview approved content'),
+    ('unknown',1,True,False,'Refresh host observations'),
+    ('held',1,True,False,'Refresh host observations'),
+    ('recovery_pending',0,True,False,'Refresh host observations'),
+    ('recovery_pending',1,False,False,'Refresh host observations'),
+    ('recovery_pending',1,True,False,'Recover selected import'),
+    ('recovery_pending',1,True,True,'Recover selected import'),
+    ('recovery_pending',2,True,True,'Refresh host observations'),
+])
+def test_connected_guidance_matches_existing_action_authority(
+        tmp_path,monkeypatch,kind,cancelled,status,receipts,authorized,native,next_action):
+    from suite_core.knowledge.native_tag_catalog_host import NativeTagCatalogAdapter
+    base=stock_choice(tmp_path,lambda *a,**k:None)
+    adapter=object.__new__(NativeTagCatalogAdapter) if native else None
+    if adapter is not None:adapter.root=tmp_path
+    base.transactions.host=SimpleNamespace(root=tmp_path,
+        capture=SimpleNamespace(__self__=adapter))
+    choice=replace(base,observation_status=status,
+        recovery_receipts=tuple(tmp_path/'backups'/str(i)/'recovery.json' for i in range(receipts)),
+        native_adapter=adapter)
+    result=SimpleNamespace(choice=choice);calls=[]
+    def connected(operation,*args):
+        assert operation.enter();calls.append(operation.kind)
+        if cancelled:operation.cancel()
+        return result
+    monkeypatch.setattr(module,'_connect',connected)
+    executor=ResourceExecutorOwner();controller=module.TagDatabaseController(
+        executor=executor,settings_path=tmp_path/'settings.json',apply_authorized=authorized)
+    if kind=='connection_confirm':controller.connection_review=SimpleNamespace(token='reviewed')
+    try:
+        assert controller.connect(kind,confirmed=True);drain(controller,executor)
+        assert calls==[kind] and controller.result is result and controller.choice is choice
+        assert next_action in controller.reason
+        assert ('Recover selected import' in controller.reason)==(next_action=='Recover selected import')
+        assert ('Preview approved content' in controller.reason)==(next_action=='Preview approved content')
+        assert ('saved connection is retained' in controller.reason)==cancelled
+        assert 'admission' not in controller.reason and 'cancelled' not in controller.reason.lower()
+        assert choice.recovery_receipts==tuple(tmp_path/'backups'/str(i)/'recovery.json' for i in range(receipts))
+        assert not controller.pending and not executor.close_held and not (tmp_path/'settings.json').exists()
+    finally:executor.begin_close()

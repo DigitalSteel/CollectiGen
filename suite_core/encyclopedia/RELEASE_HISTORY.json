@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "releases": [
+    {
+      "software_version": "0.2.2-alpha.1",
+      "numeric_version": "0.2.2",
+      "maturity": "alpha",
+      "date": "2026-10-14",
+      "timezone": "America/New_York",
+      "status": "Unsigned isolated local build186; static compiled/inventory evidence only. No native Close, signed-feed or public-release qualification.",
+      "scope": "Compact screen-bounded initial setup, framed Check Again and plain observation wording; retained authenticated Close request across transient original Job-query failures. No new application capability, trust, feed, migration or ownership route.",
+      "snapshot_interface_version": 2,
+      "source_build_provenance": {
+        "baseline_version": "0.2.2-alpha.1",
+        "baseline_display": "a.0.2.2",
+        "baseline_kind": "unsigned isolated local build186; not a public release",
+        "frozen_source_manifest_sha256": "b4d89b76ab4411fee107ba7b38e5cd75520bb4792f7dc69827eb036829d99984",
+        "frozen_stage_handoff_sha256": "407a527ac9dc282033e651b0d0c14dd728c2c11f22ff40fb130e97b5971d4851",
+        "built_handoff_sha256": "4954974383f306463338af61d1a10a89b478120ff2111e92ecdbcca505be28fb",
+        "current_working_tree": "unbuilt changes after baseline; not the frozen source tree",
+        "later_encyclopedia_changes": [
+          "core/encyclopedia_editing.py:identity_restore scope",
+          "suite_core/encyclopedia/catalog_ui.py:read-only/candidate delivery and subsequent source changes"
+        ],
+        "native_close_qualified": false,
+        "signed": false,
+        "published": false
+      }
+    },
+    {
+      "software_version": "0.2.1-alpha.1",
+      "numeric_version": "0.2.1",
+      "maturity": "alpha",
+      "date": "2026-10-14",
+      "timezone": "America/New_York",
+      "status": "accepted source corrections; new frozen/native candidate qualification pending",
+      "scope": "One exact package confirmation, conditional compatibility checks before standalone staging, unknown/stale installation status and launch-pending update hold. Catalogs, settings and original ownership/recovery remain preserved.",
+      "snapshot_interface_version": 2
+    },
+    {
+      "software_version": "0.2.0-alpha.1",
+      "numeric_version": "0.2.0",
+      "maturity": "alpha",
+      "date": "2026-10-12",
+      "timezone": "America/New_York",
+      "status": "reviewed synthetic source candidate; actual Dataset completion and frozen/native release acceptance pending",
+      "scope": "Standalone current local database opening, original selected Tag/Category forms with accepted-binding and lifecycle guards, explicit optional defaults download/source review/import/recovery, accepted-source refresh and dated offline Help. Explicit Organizer sender and accepted caller/settings/reopen source route open search or correction review without automatic image writes; actual Dataset completion/native qualification remains separate. Retained local records use original native transaction authority.",
+      "snapshot_interface_version": 2
+    },
+    {
+      "software_version": "0.1.9-alpha.1",
+      "numeric_version": "0.1.9",
+      "maturity": "alpha",
+      "date": "2026-10-12",
+      "timezone": "America/New_York",
+      "status": "integrated source candidate; no package or native visible acceptance",
+      "scope": "Compatible hosted accepted-result/invalidation and closing-admission hooks; standalone remains read-only without library provider.",
+      "snapshot_interface_version": 2
+    },
+    {
+      "software_version": "0.1.0-alpha.1",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 1,
+      "scope": "Independently reviewed read-only browser/publication foundation; 11 module tests, actual native capture synthetic only"
+    },
+    {
+      "software_version": "0.1.0-alpha.2",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 1,
+      "scope": "Separate explicit module inventory and focused distribution selection; no browser or native writer behavior changes"
+    },
+    {
+      "software_version": "0.1.0-alpha.3",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 1,
+      "scope": "Bounded symmetric public codec and canonical incremental serialization; detached synthetic export qualification only. Existing alpha.2 archives unchanged."
+    },
+    {
+      "software_version": "0.1.0-alpha.4",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 1,
+      "scope": "Reject positive/negative JSON float overflow during parsing; detached synthetic byte-scale evidence only, native readers unchanged."
+    },
+    {
+      "software_version": "0.1.0-alpha.5",
+      "date": "2026-10-05",
+      "snapshot_interface_version": 2,
+      "scope": "Maximum reader interfaces 1/2; compatible publications retain exact v1 bytes, retired/unavailable diagnostics require v2. Browser details retain nonassignable IDs and relationship attribution. Detached synthetic source qualification; package and visible GUI acceptance remain separate."
+    },
+    {
+      "software_version": "0.1.0-alpha.6",
+      "date": "2026-10-06",
+      "timezone": "America/New_York",
+      "snapshot_interface_version": 2,
+      "scope": "Landed unpublished native coherent capture/publication admission; browser/codec unchanged; no publication/activation"
+    },
+    {
+      "software_version": "0.1.0-alpha.7",
+      "date": "2026-10-06",
+      "timezone": "America/New_York",
+      "snapshot_interface_version": 2,
+      "scope": "Reviewed hosted examples source landing; existing wire interfaces unchanged; native workflow/distribution unqualified; delivered alpha.6 artifacts unchanged"
+    },
+    {
+      "software_version": "0.1.0-alpha.8",
+      "date": "2026-10-08",
+      "timezone": "America/New_York",
+      "snapshot_interface_version": 2,
+      "scope": "Standalone source inventory includes the existing catalog-preview dependency so an isolated source copy can open Tag Encyclopedia. Existing archives and snapshot interfaces are unchanged; no new package is released or native catalog workflow activated."
+    }
+  ]
+}
