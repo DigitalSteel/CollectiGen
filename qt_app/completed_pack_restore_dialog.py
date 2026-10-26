@@ -140,12 +140,14 @@ class CompletedPackRestoreDialog(QDialog):
 
     def render(self,delivered=False):
         c=self.controller;choice=c.choice
+        feedback=c.pending_feedback
         binding=choice.transactions.session.binding if choice else None
         key=(id(c),choice.native_adapter.root if choice and choice.native_adapter else None,
             choice.native_adapter.identity_binding if choice and choice.native_adapter else None,binding)
         if key!=self._scope_key:
             keep_saved=(self._scope_key is not None and key[:3]==self._scope_key[:3]
-                and c.last_operation=='reload' and c.result is not None)
+                and (c.last_operation=='reload' or feedback is not None and feedback[1]=='reload')
+                and self._saved is not None)
             saved=self._saved if keep_saved else None
             self._scope_key=key;self._listing=self._review=self._result=None;self._rows=();self._saved=saved
             self.imports.blockSignals(True);self.imports.clear();self.imports.addItem("Choose an import; nothing is selected",None);self.imports.blockSignals(False)
@@ -156,7 +158,6 @@ class CompletedPackRestoreDialog(QDialog):
         self.open_saved.setEnabled(writable and c.can_connect)
         busy=c.close_held or c.executor.close_held
         self.progress.setVisible(busy and not c.faulted)
-        feedback=c.pending_feedback
         owner=feedback[0] if feedback else None
         if owner is not None and owner is not self._phase:
             self._phase=owner;self._started=monotonic()

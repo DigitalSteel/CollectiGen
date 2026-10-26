@@ -432,3 +432,28 @@ def test_visible_recovery_and_reload_delayed_cancel(app,connected,monkeypatch,ca
     assert h.reader_delivery_ok and data(root)==connected[3]
     assert list((root/'backups/knowledge-pack-import').glob('completed-pack-undo-*/recovery.json'))==[inverse]
     d.close();window.close();app.processEvents();settle(app,h)
+
+
+@pytest.mark.parametrize('phase',['publication','observation'])
+def test_visible_native_saved_verification_hold(app,connected,monkeypatch,catalog_readable_font,phase):
+    import suite_core.manager.tag_database_controller as controller
+    window,h,d=start_preview(app,connected);root=connected[1]
+    confirm_review(app,d)
+    def fail(*a,**k):raise OSError('qualified '+phase+' verification hold')
+    with monkeypatch.context() as patch:
+        if phase=='publication':patch.setattr(h.controller.choice.transactions,'reload',fail)
+        else:patch.setattr(controller,'_observe',fail)
+        push(app,d,d.restore);settle(app,h)
+    result=h.controller.result;inverse=result.receipt
+    assert result.native_saved and data(root)==connected[3]
+    assert d.reload.isVisible() and d.reload.isEnabled() and not d.restore.isEnabled()
+    assert 'Restoration saved' in d.status.text() and 'Host verification needs review' in d.status.text()
+    if phase=='publication':assert result.publication is None and not h.reader_delivery_ok
+    else:assert result.publication is not None and h.reader_delivery_ok
+    capture(d,'native-'+phase+'-held')
+    push(app,d,d.reload);settle(app,h)
+    assert not h.controller.error and h.reader_delivery_ok and data(root)==connected[3]
+    assert 'Restoration saved' in d.status.text() and 'Reader refreshed' in d.status.text()
+    assert list((root/'backups/knowledge-pack-import').glob('completed-pack-undo-*/recovery.json'))==[inverse]
+    capture(d,'native-'+phase+'-reloaded')
+    d.close();window.close();app.processEvents();settle(app,h)

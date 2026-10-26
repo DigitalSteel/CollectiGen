@@ -2102,8 +2102,8 @@
       "size_bytes": 8368
     },
     "qt_app/completed_pack_restore_dialog.py": {
-      "sha256": "575eb77a1f50d9831e0e68547d08bb157a19a963f1c3cee9f96b73206f97092c",
-      "size_bytes": 16718
+      "sha256": "c0e04cb0501077085572404da48721a270c669faec0568bc5f7e509fcfc6e6d1",
+      "size_bytes": 16789
     },
     "qt_app/components.py": {
       "sha256": "e904b9d93b469370974489ccc06205dbceedd53fd0d0ac1609b92a0f028a7f2a",
@@ -3510,8 +3510,8 @@
       "size_bytes": 18689
     },
     "suite_core/tests/test_completed_pack_restore_ui.py": {
-      "sha256": "16fdb916a869685d1789ef5c3b1b5e3823276f69a30e543a41026ebd44bace9d",
-      "size_bytes": 23657
+      "sha256": "8cfce5acc536541f1b38cf7d4b75b0bd16be1840d94160ded725211744492089",
+      "size_bytes": 25238
     },
     "suite_core/tests/test_component_package_builder.py": {
       "sha256": "3087b4a0de3a537441299a1e34fa28dd9fd0078ea5ba3c8a3a130a26a29de5fe",
