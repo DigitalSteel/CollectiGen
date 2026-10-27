@@ -356,15 +356,20 @@ class EncyclopediaWindow(QMainWindow):
             self.open_snapshot(filename)
 
     def open_snapshot(self, path, *, refreshing=False):
+        if self.catalog_host is not None:
+            return self.catalog_host.open_export(path, read, refreshing=refreshing)
         try:
             candidate = read(path)
         except (OSError, ValueError) as error:
-            self.stale = self.publication is not None
-            self._invalidate_examples()
-            self.status.setText("Could not open the exported catalog. Previous view is retained. " + str(error))
-            self._identity()
-            return False
+            return self._snapshot_failed(error)
         return self.open_publication(candidate, path=path, refreshing=refreshing)
+
+    def _snapshot_failed(self, error):
+        self.stale = self.publication is not None
+        self._invalidate_examples()
+        self.status.setText("Could not open the exported catalog. Previous view is retained. " + str(error))
+        self._identity()
+        return False
 
     def open_publication(self, candidate, *, path=None, refreshing=False, native_root=None, directory_pin=None,native_adapter=None):
         """Immutable host delivery; never writes native data or snapshot files."""

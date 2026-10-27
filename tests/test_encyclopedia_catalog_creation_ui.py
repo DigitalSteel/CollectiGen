@@ -186,6 +186,106 @@ def test_visible_create_review_cancel_and_saved_completion(app, tmp_path, monkey
 
 @pytest.mark.parametrize('theme', ['light', 'dark'])
 @pytest.mark.parametrize('viewport', [(1280, 720), (1920, 1080)])
+@pytest.mark.parametrize('outcome', ['first', 'refresh', 'cancel', 'refuse', 'close'])
+def test_export_open_original_worker_feedback_and_recovery(app, tmp_path, monkeypatch, theme, viewport, outcome):
+    from PySide6.QtGui import QFontDatabase, QFont
+    import suite_core.encyclopedia.browser as browser
+    from suite_core.tests.test_encyclopedia import fixture
+    from suite_core.encyclopedia.publication import encode
+    from suite_core.tests.test_encyclopedia_catalog_ui import click
+    font_id = QFontDatabase.addApplicationFont('C:/Windows/Fonts/segoeui.ttf')
+    assert font_id >= 0
+    app.setFont(QFont(QFontDatabase.applicationFontFamilies(font_id)[0], 10))
+    apply_theme(app, theme)
+    exported = tmp_path/'synthetic-export.json'; exported.write_bytes(encode(fixture(2)))
+    original_bytes = exported.read_bytes()
+    settings = tmp_path/'settings.json'
+    window = create_window(settings_path=settings); host = window.catalog_host
+    window.resize(viewport[0]-24, viewport[1]-64); window.show(); app.processEvents()
+    monkeypatch.setattr(QFileDialog, 'getOpenFileName', lambda *a: (str(exported), ''))
+    output = os.environ.get('READER_EXPORT_CAPTURE')
+    captures = []
+    def capture(name):
+        app.processEvents()
+        if window.status.isVisible():
+            assert window.status.height() >= window.status.heightForWidth(window.status.width())
+        if output:
+            dest = Path(output)/f'{theme}-{viewport[0]}-{outcome}'; dest.mkdir(parents=True, exist_ok=True)
+            assert window.grab().save(str(dest/(name+'.png')))
+            captures.append(name)
+    if outcome != 'first':
+        click(window, 'Open exported tag catalog'); pump(app, lambda: not host.busy)
+        index = window.model.index(0, 0)
+        QTest.mouseClick(window.table.viewport(), Qt.LeftButton, pos=window.table.visualRect(index).center())
+    accepted, selection = window.publication, window._selected_id
+    entered, release = Event(), Event()
+    original_read = browser.read
+    calls = []
+    def delayed(path):
+        calls.append(path); entered.set()
+        assert release.wait(10)
+        if outcome == 'refuse':
+            raise ValueError('Synthetic refused export')
+        return original_read(path)
+    monkeypatch.setattr(browser, 'read', delayed)
+    ticks = []; timer = QTimer(); timer.setInterval(20); timer.timeout.connect(lambda: ticks.append(time.monotonic()))
+    timer.start()
+    try:
+        capture('start')
+        click(window, 'Open exported tag catalog' if outcome == 'first' else 'Refresh')
+        pump(app, entered.is_set)
+        QTest.qWait(1100); app.processEvents()
+        assert len(ticks) >= 15 and max(b-a for a,b in zip(ticks, ticks[1:])) < .35
+        assert host.busy and host.future is not None
+        assert window.database_activity.isVisible() and window.database_elapsed.isVisible()
+        assert '1s elapsed' in window.database_elapsed.text()
+        assert window.cancel_work_button.isVisible() and window.cancel_work_button.isEnabled()
+        assert window.publication is accepted and window._selected_id == selection
+        assert not window.open_snapshot(exported) and len(calls) == 1
+        assert 'Opening exported catalog' in window.status.text()
+        capture('waiting')
+        if outcome == 'cancel':
+            QTest.mouseClick(window.cancel_work_button, Qt.LeftButton); app.processEvents()
+            assert host.busy and 'current read' in window.status.text()
+            capture('stopping')
+        elif outcome == 'close':
+            window.close(); app.processEvents()
+            assert window.isVisible() and host._closing and window.cancel_close_button.isVisible()
+            capture('close-held')
+            QTest.mouseClick(window.cancel_close_button, Qt.LeftButton); app.processEvents()
+            assert not host._closing and window.isVisible() and host.busy
+            window.close(); app.processEvents()
+            assert host._closing and not host.executor.closed
+        release.set(); pump(app, lambda: not host.busy)
+        if outcome == 'close':
+            pump(app, lambda: host.executor.closed)
+            assert not window.isVisible() and window.publication is accepted
+        else:
+            pump(app, lambda: not window.cancel_work_button.isVisible())
+            assert not window.database_activity.isVisible() and not window.database_elapsed.isVisible()
+            if outcome in ('cancel', 'refuse'):
+                assert window.publication is accepted and window._selected_id == selection
+                assert 'Previous' in window.status.text()
+            else:
+                assert window.publication is not None and host.accepted_source.kind == 'export'
+                assert window._selected_id == selection
+            capture('result')
+            if outcome in ('cancel', 'refuse'):
+                monkeypatch.setattr(browser, 'read', original_read)
+                click(window, 'Refresh'); pump(app, lambda: not host.busy)
+                assert not window.stale and window._selected_id == selection
+                assert host.accepted_source.kind == 'export'
+                capture('retry-ready')
+        assert exported.read_bytes() == original_bytes and not settings.exists()
+    finally:
+        release.set(); timer.stop(); pump(app, lambda: not host.busy)
+        window.close(); pump(app, lambda: host.executor.closed and not host.executor.close_held)
+        QFontDatabase.removeApplicationFont(font_id)
+
+
+
+@pytest.mark.parametrize('theme', ['light', 'dark'])
+@pytest.mark.parametrize('viewport', [(1280, 720), (1920, 1080)])
 def test_first_database_choices_keep_overflow_keyboard_and_loaded_policy(app, content_font, tmp_path, monkeypatch, theme, viewport):
     from suite_core.manager.command_bar import CommandBar
     from suite_core.tests.test_encyclopedia import fixture
@@ -229,6 +329,7 @@ def test_first_database_choices_keep_overflow_keyboard_and_loaded_policy(app, co
         original_bytes = exported.read_bytes()
         monkeypatch.setattr(QFileDialog, 'getOpenFileName', lambda *args: (str(exported), ''))
         click(window, 'Open exported tag catalog')
+        pump(app, lambda: not host.busy)
         assert window.publication is not None and host.accepted_source.kind == 'export'
         assert not window.start_card.isVisible() and window.subtitle.isVisible()
         assert window.status.parentWidget() is window.centralWidget()
@@ -242,6 +343,7 @@ def test_first_database_choices_keep_overflow_keyboard_and_loaded_policy(app, co
         bad = tmp_path / 'refused-export.json'; bad.write_text('{"not_a_catalog":true}', encoding='utf-8')
         monkeypatch.setattr(QFileDialog, 'getOpenFileName', lambda *args: (str(bad), ''))
         click(window, 'Open exported tag catalog')
+        pump(app, lambda: not host.busy)
         assert window.publication is accepted and window._selected_id == selected
         assert 'Previous view is retained' in window.status.text()
         assert exported.read_bytes() == original_bytes and window.bar.visible_limits['Home'] == 4
@@ -249,3 +351,35 @@ def test_first_database_choices_keep_overflow_keyboard_and_loaded_policy(app, co
     finally:
         window.close()
         pump(app, lambda: host.executor.closed and not host.executor.close_held)
+
+
+def test_export_delivery_discards_changed_source_after_original_worker(app, tmp_path, monkeypatch):
+    from dataclasses import replace
+    import suite_core.encyclopedia.browser as browser
+    from suite_core.tests.test_encyclopedia import fixture
+    from suite_core.encyclopedia.publication import encode
+    exported = tmp_path/'export.json'; exported.write_bytes(encode(fixture(2)))
+    window = create_window(settings_path=tmp_path/'settings.json'); host = window.catalog_host
+    assert window.open_snapshot(exported)
+    pump(app, lambda: not host.busy)
+    release, entered = Event(), Event()
+    original_read = browser.read
+    def delayed(path):
+        entered.set(); assert release.wait(10)
+        return original_read(path)
+    monkeypatch.setattr(browser, 'read', delayed)
+    try:
+        assert window.open_snapshot(exported, refreshing=True)
+        pump(app, entered.is_set)
+        # Component injection represents an independently accepted replacement;
+        # ordinary visible commands refuse overlap while the worker is held.
+        replacement = replace(fixture(2), catalog_id='new-accepted-catalog')
+        assert window.open_publication(replacement)
+        accepted = host.accepted_source
+        release.set(); pump(app, lambda: not host.busy)
+        assert window.publication is replacement and host.accepted_source is accepted
+        assert 'Earlier opening discarded' in window.status.text()
+        assert not window.database_activity.isVisible() and not window.database_elapsed.isVisible()
+    finally:
+        release.set(); pump(app, lambda: not host.busy)
+        window.close(); pump(app, lambda: host.executor.closed and not host.executor.close_held)

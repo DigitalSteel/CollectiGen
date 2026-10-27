@@ -150,6 +150,7 @@ class EncyclopediaCatalogHost(QObject):
         self._accepted_native_adapter=None
         self._before_view = None
         self._opening_source = None
+        self._export_open = None
         self.timer = QTimer(self)
         self.timer.setInterval(40)
         self.timer.timeout.connect(self.poll)
@@ -157,7 +158,7 @@ class EncyclopediaCatalogHost(QObject):
 
     @property
     def busy(self):
-        return bool(self.controller.close_held or self.executor.close_held or self.other_work_busy)
+        return bool(self.future is not None or self.controller.close_held or self.executor.close_held or self.other_work_busy)
 
     @property
     def other_work_busy(self):
@@ -705,6 +706,43 @@ class EncyclopediaCatalogHost(QObject):
             return self.window.open_snapshot(source.path, refreshing=True)
         return False
 
+    def open_export(self, path, reader, *, refreshing=False):
+        """Read on the original executor; accept only in its original Qt delivery."""
+        if self._closing or self.busy:
+            return False
+        if self.editing_bridge is not None and not self.editing_bridge.close_ready():
+            self.window.status.setText('Finish Save or Cancel in Tag/Category Details before changing the catalog.')
+            return False
+        if self.restore_dialog is not None:
+            self.controller.cancel()
+            self.restore_dialog.invalidate_context()
+            self.restore_dialog.close()
+        from time import monotonic
+        path = Path(path).absolute()
+        self._cancelled = False
+        self._before_view = self.service.view
+        self._opening_source = self.accepted_source
+        self._read_generation += 1
+        self._opening_generation = self._read_generation
+        self._export_open = (path, refreshing)
+        self._export_started = monotonic()
+        self.window.status.setText('Opening exported catalog. Cancel stops delivery after the current read finishes; previous view stays visible.')
+        self._export_feedback()
+        self.future = self.executor.submit(reader, path)
+        self.window.bar.refresh_state()
+        return True
+
+    def _export_feedback(self):
+        if self._export_open is None:
+            return
+        from time import monotonic
+        self.window.database_activity.set_active(True, 'Opening exported catalog')
+        self.window.database_activity.show()
+        self.window.database_elapsed.setText(f'{max(0, int(monotonic() - self._export_started))}s elapsed')
+        self.window.database_elapsed.show()
+        self.window.cancel_work_button.setVisible(not self._closing)
+        self.window._sync_start_choices()
+
     @property
     def accepted_native_adapter(self):
         """Only the original adapter exposed by successful matching delivery."""
@@ -940,6 +978,8 @@ class EncyclopediaCatalogHost(QObject):
             self.jobs.cancel(self._editor_job.id)
         if self.future is not None:
             self.future.cancel()
+        if self._export_open is not None and not self._closing:
+            self.window.status.setText('Stopping exported catalog opening. Waiting for the current read to finish; previous view is retained.')
         self.controller.cancel()
         self.package_cancel.set()
         if self.package_future is not None:
@@ -952,6 +992,7 @@ class EncyclopediaCatalogHost(QObject):
     def poll(self):
         self.window.bar.refresh_state()
         self.window._sync_start_choices()
+        self._export_feedback()
         if self._poll_creation():
             return
         if self._handoff_waiting and self.organizer_receiver is not None:
@@ -1207,6 +1248,12 @@ class EncyclopediaCatalogHost(QObject):
             self.restore_dialog.render(delivered)
         if self.future is not None and self.future.done() and not self.executor.close_held:
             future, self.future = self.future, None
+            export, self._export_open = self._export_open, None
+            if export is not None:
+                self.window.database_activity.set_active(False)
+                self.window.database_activity.hide()
+                self.window.database_elapsed.hide()
+                self.window.cancel_work_button.hide()
             changed_source = self.accepted_source is not self._opening_source
             if self._closing:
                 self.service.view = None
@@ -1220,6 +1267,10 @@ class EncyclopediaCatalogHost(QObject):
             else:
                 try:
                     view = future.result()
+                    if export is not None:
+                        path, refreshing = export
+                        self.window.open_publication(view, path=path, refreshing=refreshing)
+                        return
                     from core.encyclopedia_catalog import EncyclopediaCatalogView
                     if type(view) is not EncyclopediaCatalogView:
                         raise ValueError('Exact core catalog view required')
@@ -1242,7 +1293,10 @@ class EncyclopediaCatalogHost(QObject):
                     if self._closing:self.service.view = None
                     elif self.accepted_source is self._opening_source:
                         self.service.view = self._before_view
-                    self.window.status.setText("Tag Database could not be opened. Previous view is retained. " + str(error))
+                    if export is not None:
+                        self.window._snapshot_failed(error)
+                    else:
+                        self.window.status.setText("Tag Database could not be opened. Previous view is retained. " + str(error))
         if self._closing and not self.busy:
             self.window.close()
         elif self._editor_refresh_needed and not self.busy and self.editing_bridge is not None and self.editing_bridge.close_ready():

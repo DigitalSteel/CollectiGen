@@ -1,5 +1,7 @@
 # Unbuilt development after Tag Encyclopedia a.0.2.2
 
+Source-only Reader follow-up (2026-10-27): exported catalog open/refresh uses the existing Reader worker, shows activity and elapsed time, and retains Cancel/Close ownership until the read finishes. This is an unbuilt source change; no packaged or native acceptance is implied.
+
 The source version now identifies the last frozen baseline, **a.0.2.2** (0.2.2-alpha.1). This working tree also contains later editing/restoration and read-only catalog changes that are **not in that binary**. They need their own coherent version, source inventory, checks and build before distribution. Existing source notes below are retained; they do not establish frozen acceptance for those later changes.
 
 The a.0.2.2 Root/Reader ZIPs are unsigned local build186, made from isolated staging185/source184 plus only the accepted presentation and custody fixes. Static compiled-source/inventory checks passed; native startup/Close, signed-feed installation/update/recovery and public release remain unqualified. The a.0.2.1 user startup screenshot is separate evidence; normal Close is still pending.
@@ -67,11 +69,11 @@ Read older and newer snapshots without rewriting saved catalog history. Tag deta
 
 This source update does not enable live catalog publishing or update existing packages. Native browser acceptance remains open.
 
-# a.0.1.4 (embedded 0.1.0-alpha.4) — 2026-10-05
+# a.0.1.4 (embedded 0.1.0-alpha.4) â€” 2026-10-05
 
 Reject malformed snapshot numbers, including overflowing and non-finite values. Valid snapshots and existing browsing behavior are unchanged.
 
-# a.0.1.3 (embedded 0.1.0-alpha.3) — 2026-10-05
+# a.0.1.3 (embedded 0.1.0-alpha.3) â€” 2026-10-05
 
 Reject oversized or excessively complex snapshots consistently when reading and saving publications. The existing limits remain 32 MiB per snapshot and 100,000 rows per collection.
 

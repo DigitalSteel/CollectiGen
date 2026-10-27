@@ -28,9 +28,12 @@ def test_accepted_export_refresh_wins_over_old_or_cancelled_native_cache(app, tm
     exported = tmp_path / 'export.json'
     exported.write_bytes(codec.encode(publication('export')))
     assert window.open_snapshot(exported)
+    settle(app, host)
     host.service.view = old_view  # Simulate a read cache; it is never refresh authority.
     exported.write_bytes(codec.encode(publication('export', 'r2', 2)))
-    assert host.refresh() and window.publication.catalog_id == 'export'
+    assert host.refresh()
+    settle(app, host)
+    assert window.publication.catalog_id == 'export'
     entered, release = Event(), Event()
     def delayed(path, *args):
         entered.set(); assert release.wait(10)
@@ -38,13 +41,18 @@ def test_accepted_export_refresh_wins_over_old_or_cancelled_native_cache(app, tm
     monkeypatch.setattr(host.service, 'open_catalog', delayed)
     host.open_database(root); assert entered.wait(2)
     exported.write_bytes(codec.encode(publication('export', 'r3', 3)))
-    assert window.open_snapshot(exported, refreshing=True)
+    # Explicit delivery injection exercises stale native rejection. Ordinary
+    # open commands now refuse overlap until the existing worker retires.
+    assert not window.open_snapshot(exported, refreshing=True)
+    assert window.open_publication(codec.read(exported), path=exported, refreshing=True)
     accepted = host.accepted_source
     host.cancel(); release.set(); settle(app, host)
     assert host.accepted_source is accepted and window.publication.catalog_id == 'export'
     assert host.service.view is None
     exported.write_bytes(codec.encode(publication('export', 'r4', 4)))
-    assert host.refresh() and window.publication.generation == 4
+    assert host.refresh()
+    settle(app, host)
+    assert window.publication.generation == 4
     window.close(); app.processEvents()
 
 
@@ -79,7 +87,7 @@ def test_controller_delivery_refusal_never_relabels_export_as_native(app, tmp_pa
     from suite_core.knowledge.tag_transactions import AppliedCatalog
     window = create_window(settings_path=tmp_path / 'settings.json'); host = window.catalog_host
     path = tmp_path / 'export.json'; path.write_bytes(codec.encode(publication('export')))
-    window.open_snapshot(path); accepted = host.accepted_source
+    window.open_snapshot(path); settle(app, host); accepted = host.accepted_source
     host.controller.choices = (SimpleNamespace(native_adapter=SimpleNamespace(root=tmp_path / 'native', directory_pin=(1, 2)),
         transactions=SimpleNamespace(destination=tmp_path / 'native/snapshot.json')),)
     host.controller.index = 0
