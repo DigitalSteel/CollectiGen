@@ -208,6 +208,12 @@ class EncyclopediaWindow(QMainWindow):
         self._invalidate_examples()
         self._counts_changed(0, 0)
         self._set_examples_visible(False)
+        # Pin the original populated positions before grouping the same widgets.
+        self.start_body.removeWidget(self.empty_hint)
+        layout.insertWidget(layout.indexOf(self.empty_database_action), self.empty_hint)
+        self._loaded_feedback_positions = [(widget, layout.indexOf(widget)) for widget in (
+            self.empty_hint, self.empty_database_action, self.status, self.database_activity,
+            self.database_elapsed, self.cancel_work_button, self.cancel_close_button)]
         self._set_commands()
         self.bar.searchRequested.connect(self.search_commands)
 
@@ -216,14 +222,17 @@ class EncyclopediaWindow(QMainWindow):
             return
         selected = self.publication is not None
         empty = selected and not self.publication.snapshot.tags
-        self.start_card.setVisible(not selected)
-        self.subtitle.setVisible(selected)
-        if not selected:
+        card = not selected or empty
+        self.start_card.setVisible(card)
+        self.subtitle.setVisible(not card)
+        if card:
             if not self._start_limit_active:
                 self._saved_home_limit = ('Home' in self.bar.visible_limits, self.bar.visible_limits.get('Home'))
             self._start_limit_active = True
-            self.bar.visible_limits['Home'] = 2
-            self.empty_hint.setText('A database keeps your tags, categories and edits together. Choose Create a database or Open Tag Database from Home. Optional starter tags can be reviewed separately.')
+            self.bar.visible_limits['Home'] = 3 if empty else 2
+            native = self.catalog_host is not None and self.catalog_host.accepted_source is not None and self.catalog_host.accepted_source.kind == 'native'
+            self.start_heading.setText(('Your database is open' if native else 'Your catalog is open') if empty else 'Start with a tag database')
+            self.empty_hint.setText('There are no Tags to browse. Review optional starter tags in content setup, or open another database from Home. Content setup asks you to choose its catalog; nothing is imported automatically.' if empty else 'A database keeps your tags, categories and edits together. Choose Create a database or Open Tag Database from Home. Optional starter tags can be reviewed separately.')
         elif self._start_limit_active:
             existed, value = self._saved_home_limit
             if existed:
@@ -234,30 +243,33 @@ class EncyclopediaWindow(QMainWindow):
         # Move the original feedback widgets, never copy their state or create
         # another progress owner. Loaded native/export delivery restores them.
         outer = self.centralWidget().layout()
-        for widget in (self.empty_hint, self.status, self.database_activity, self.database_elapsed, self.cancel_work_button):
-            parent = self.centralWidget() if selected else self.start_card
-            if widget.parentWidget() is parent:
-                continue
-            shown = not widget.isHidden()
-            outer.removeWidget(widget)
-            self.start_body.removeWidget(widget)
-            if selected:
-                anchor = self.empty_database_action if widget is self.empty_hint else self.cancel_close_button
-                outer.insertWidget(outer.indexOf(anchor), widget)
-            else:
-                if widget is self.cancel_work_button:
-                    self.start_body.addWidget(widget, 0, Qt.AlignLeft)
+        parent = self.start_card if card else self.centralWidget()
+        if any(widget.parentWidget() is not parent for widget, _ in self._loaded_feedback_positions):
+            shown = {widget: not widget.isHidden() for widget, _ in self._loaded_feedback_positions}
+            for widget, _ in self._loaded_feedback_positions:
+                outer.removeWidget(widget)
+                self.start_body.removeWidget(widget)
+            for widget, position in self._loaded_feedback_positions:
+                if card:
+                    if widget in (self.empty_database_action, self.cancel_work_button, self.cancel_close_button):
+                        self.start_body.addWidget(widget, 0, Qt.AlignLeft)
+                    else:
+                        self.start_body.addWidget(widget)
                 else:
-                    self.start_body.addWidget(widget)
-            widget.setVisible(shown)
+                    outer.insertWidget(position, widget)
+                widget.setVisible(shown[widget])
         self.empty_hint.setVisible(not selected or empty)
         self.empty_database_action.setVisible(empty)
-        self.empty_database_action.setEnabled(empty and (self.catalog_host is None or not self.catalog_host.busy))
+        self.empty_database_action.setEnabled(empty and self._starter_review_available())
+        self.empty_database_action.setToolTip('Review opens the existing optional-content workspace; nothing is imported automatically.' if self._starter_review_available() else 'Optional starter review needs an available original database host with content review permitted. Wait for current work or use an unrestricted database.')
         idle = self.catalog_host is None or not self.catalog_host.busy
         for name in ('search', 'category', 'counts', 'more_button', 'examples_heading', 'examples_button', 'examples_cancel', 'examples_status'):
             widget = getattr(self, name, None)
             if widget is not None and not selected:
                 widget.hide()
+
+    def _starter_review_available(self):
+        return self.catalog_host is not None and not self.catalog_host.busy and self.catalog_host._write_actions_allowed()
 
     def _set_commands(self):
         self._sync_start_choices()
@@ -270,7 +282,7 @@ class EncyclopediaWindow(QMainWindow):
             UiCommand("encyclopedia:completed-import", "Review completed user import…", "Home",
                       callback=self.review_completed_import,
                       enabled=lambda: idle() and self.catalog_host is not None and self.catalog_host._write_actions_allowed()),
-            UiCommand("encyclopedia:defaults", "Use optional default tags", "Home", callback=self.review_defaults, enabled=idle),
+            UiCommand("encyclopedia:defaults", "Use optional default tags", "Home", callback=self.review_defaults, enabled=self._starter_review_available),
             UiCommand("encyclopedia:open-export", "Open exported tag catalog", "Home", callback=self._choose_snapshot, enabled=idle),
             UiCommand("encyclopedia:copy", "Copy Tag Name", "Home", callback=self.copy_tag,
                       enabled=lambda: bool(self._selected_id and self.lookup)),
@@ -443,9 +455,10 @@ class EncyclopediaWindow(QMainWindow):
             self._show_resolution(self.lookup.get(selected))
         else:
             self.details.clear()
-        self.status.setText("Tag catalog refreshed." if refreshing else "Tag catalog opened. Search or choose a category to browse.")
+        self.status.setText('This catalog is open and empty. Nothing has been imported.' if not candidate.snapshot.tags else ("Tag catalog refreshed." if refreshing else "Tag catalog opened. Search or choose a category to browse."))
         if self.catalog_host is not None:
             self.catalog_host.accept_delivery(descriptor)
+        self._sync_start_choices()
         return True
 
     def refresh(self):

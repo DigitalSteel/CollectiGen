@@ -1,5 +1,7 @@
 # Unbuilt development after Tag Encyclopedia a.0.2.2
 
+Source-only loaded-empty Reader presentation: one card groups readiness, compact optional review and original read/Close feedback. Supporting commands remain in Home/More; populated layout and existing host restrictions are preserved. This is unbuilt source, not a Windows package qualification.
+
 Source-only Reader follow-up (2026-10-27): native database opening now reuses the same activity, elapsed and safe cancellation feedback. exported catalog open/refresh uses the existing Reader worker, shows activity and elapsed time, and retains Cancel/Close ownership until the read finishes. This is an unbuilt source change; no packaged or native acceptance is implied.
 
 The source version now identifies the last frozen baseline, **a.0.2.2** (0.2.2-alpha.1). This working tree also contains later editing/restoration and read-only catalog changes that are **not in that binary**. They need their own coherent version, source inventory, checks and build before distribution. Existing source notes below are retained; they do not establish frozen acceptance for those later changes.

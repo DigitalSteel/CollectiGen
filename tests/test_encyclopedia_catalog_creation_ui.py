@@ -140,9 +140,9 @@ def test_visible_create_review_cancel_and_saved_completion(app, tmp_path, monkey
             assert json.loads(settings.read_bytes())['unknown_future_setting'] == {'preserve': True}
             capture('created-open')
             assert seen == ['Create a tag database']
-            assert not window.start_card.isVisible()
-            assert window.status.parentWidget() is window.centralWidget()
-            assert 'Home' not in window.bar.visible_limits
+            assert window.start_card.isVisible()
+            assert window.status.parentWidget() is window.start_card
+            assert window.bar.visible_limits['Home'] == 3
             original_id = window.publication.catalog_id
             window.close()
             pump(app, lambda: host.executor.closed and not host.executor.close_held)
@@ -154,7 +154,7 @@ def test_visible_create_review_cancel_and_saved_completion(app, tmp_path, monkey
             pump(app, lambda: not reopened.cancel_work_button.isVisible())
             assert reopened.publication.catalog_id == original_id
             assert reopened.catalog_host.accepted_source.path == catalog
-            assert not reopened.start_card.isVisible() and reopened.empty_database_action.isVisible()
+            assert reopened.start_card.isVisible() and reopened.empty_database_action.isVisible()
             capture('saved-reopen', reopened)
         else:
             pump(app, lambda: not host.busy)
@@ -408,6 +408,8 @@ def test_native_open_original_feedback_and_recovery(app, tmp_path, monkeypatch, 
     def capture(name):
         app.processEvents()
         assert window.status.height() >= window.status.heightForWidth(window.status.width())
+        if window.empty_hint.isVisible():
+            assert window.empty_hint.height() >= window.empty_hint.heightForWidth(window.empty_hint.width())
         if output:
             dest = Path(output)/f'{theme}-{viewport[0]}-{outcome}'; dest.mkdir(parents=True, exist_ok=True)
             assert window.grab().save(str(dest/(name+'.png')))
@@ -471,4 +473,82 @@ def test_native_open_original_feedback_and_recovery(app, tmp_path, monkeypatch, 
     finally:
         release.set(); timer.stop(); pump(app, lambda: not host.busy)
         window.close(); pump(app, lambda: host.executor.closed and not host.executor.close_held)
+        QFontDatabase.removeApplicationFont(font_id)
+
+
+@pytest.mark.parametrize('theme', ['light', 'dark'])
+@pytest.mark.parametrize('viewport', [(1280, 720), (1920, 1080)])
+def test_loaded_empty_card_original_review_and_populated_return(app, tmp_path, monkeypatch, theme, viewport):
+    from PySide6.QtGui import QFontDatabase, QFont
+    from core.encyclopedia_catalog_creation import prepare_empty_catalog, confirm_empty_catalog
+    from suite_core.manager.command_bar import CommandBar
+    from suite_core.tests.test_encyclopedia import fixture
+    from suite_core.encyclopedia.publication import encode
+    from suite_core.tests.test_encyclopedia_catalog_ui import click
+    original_init = CommandBar.__init__
+    def configured(bar, *args, **kwargs):
+        original_init(bar, *args, **kwargs); bar.visible_limits['Home'] = 5
+    monkeypatch.setattr(CommandBar, '__init__', configured)
+    font_id = QFontDatabase.addApplicationFont('C:/Windows/Fonts/segoeui.ttf')
+    assert font_id >= 0
+    app.setFont(QFont(QFontDatabase.applicationFontFamilies(font_id)[0], 10)); apply_theme(app, theme)
+    settings, root = tmp_path/'settings.json', tmp_path/'native'
+    review = prepare_empty_catalog(settings, root); confirm_empty_catalog(review, review.token)
+    before = {p.relative_to(root):p.read_bytes() for p in root.rglob('*.json')}
+    window = create_window(settings_path=settings); host = window.catalog_host
+    window.resize(viewport[0]-24, viewport[1]-64); window.show(); app.processEvents()
+    output = os.environ.get('READER_LOADED_EMPTY_CAPTURE')
+    def capture(name, target=window):
+        app.processEvents()
+        if target is window:
+            assert window.status.height() >= window.status.heightForWidth(window.status.width())
+            if window.empty_hint.isVisible():
+                assert window.empty_hint.height() >= window.empty_hint.heightForWidth(window.empty_hint.width())
+        if output:
+            d=Path(output)/f'{theme}-{viewport[0]}';d.mkdir(parents=True,exist_ok=True)
+            assert target.grab().save(str(d/(name+'.png')))
+    monkeypatch.setattr(QFileDialog, 'getExistingDirectory', lambda *a:str(root))
+    try:
+        assert window.bar.visible_limits['Home']==2
+        click(window,'Open Tag Database');pump(app,lambda:not host.busy)
+        assert window.start_card.isVisible() and not window.subtitle.isVisible()
+        assert window.start_heading.text()=='Your database is open' and window.bar.visible_limits['Home']==3
+        assert window.empty_database_action.parentWidget() is window.start_card
+        assert window.empty_database_action.isEnabled() and window.empty_database_action.width()<window.start_card.width()/2
+        assert window.cancel_close_button.parentWidget() is window.start_card
+        capture('native-ready')
+        window.empty_database_action.setFocus();QTest.keyClick(window.empty_database_action,Qt.Key_Space);app.processEvents()
+        assert host.dialog is not None and host.dialog.isVisible()
+        host.dialog.resize(min(960,viewport[0]-64),min(660,viewport[1]-64));app.processEvents()
+        capture('review-open',host.dialog)
+        QTest.keyClick(host.dialog,Qt.Key_Escape);app.processEvents()
+        assert not host.dialog.isVisible() and window.start_card.isVisible()
+        assert before=={p.relative_to(root):p.read_bytes() for p in root.rglob('*.json')}
+        assert not settings.exists()
+        empty=tmp_path/'empty-export.json';empty.write_bytes(encode(window.publication))
+        monkeypatch.setattr(QFileDialog,'getOpenFileName',lambda *a:(str(empty),''))
+        click(window,'Open exported tag catalog');pump(app,lambda:not host.busy)
+        assert window.start_heading.text()=='Your catalog is open' and 'empty' in window.status.text()
+        assert window.bar.visible_limits['Home']==3 and window.start_card.isVisible()
+        capture('empty-export')
+        allowed=host._write_actions_allowed
+        monkeypatch.setattr(host,'_write_actions_allowed',lambda:False)
+        window._sync_start_choices();window.bar.refresh_state()
+        assert not window.empty_database_action.isEnabled() and window.empty_database_action.toolTip()
+        assert not next(c for c in window.commands if c.key=='encyclopedia:defaults').available()
+        capture('restricted-component')  # Capability projection, not production admission evidence.
+        monkeypatch.setattr(host,'_write_actions_allowed',allowed)
+        populated=tmp_path/'populated.json';populated.write_bytes(encode(fixture(2)))
+        monkeypatch.setattr(QFileDialog,'getOpenFileName',lambda *a:(str(populated),''))
+        click(window,'Open exported tag catalog');pump(app,lambda:not host.busy)
+        assert not window.start_card.isVisible() and window.subtitle.isVisible() and window.bar.visible_limits['Home']==5
+        outer=window.centralWidget().layout()
+        assert all(w.parentWidget() is window.centralWidget() and outer.indexOf(w)==i for w,i in window._loaded_feedback_positions)
+        capture('populated-return')
+        click(window,'Open Tag Database');pump(app,lambda:not host.busy)
+        assert window.start_card.isVisible() and window.bar.visible_limits['Home']==3
+        capture('native-return')
+        assert before=={p.relative_to(root):p.read_bytes() for p in root.rglob('*.json')} and not settings.exists()
+    finally:
+        window.close();pump(app,lambda:host.executor.closed and not host.executor.close_held)
         QFontDatabase.removeApplicationFont(font_id)
