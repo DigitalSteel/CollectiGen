@@ -354,9 +354,25 @@ def test_real_reader_connection_path_delivery_and_pending_recovery(app,tmp_path,
         assert 'could not finish' not in dialog.panel.status.text() and dialog.open_reader.isEnabled()
         assert dialog.panel.status.text()=='Open the reader, then close its window normally to finish setup.'
         state['installed']=InstalledEncyclopedia(selected,'interrupted','d'*64,'e'*64,True,False)
-        toggle_details(dialog.panel.technical)
+        if not dialog.panel.technical.isChecked():
+            toggle_details(dialog.panel.technical)
         QTest.mouseClick(dialog.panel.health_accept,Qt.LeftButton);settle_dialog(app,dialog)
-        assert dialog.panel.recover.isVisible() and dialog.panel.recovery_confirm.isVisible()
+        assert not dialog.panel.recovery_container.isVisible()
+        assert not dialog.open_reader.isEnabled()
+        assert dialog.panel.setup_step.text() == 'Setup needs attention'
+        state['installed']=InstalledEncyclopedia(selected,'interrupted','d'*64,'e'*64,True,False,
+            recovery_available=True,recovery_version='0.2.0-alpha.900',recovery_journal_sha256='f'*64)
+        if not dialog.panel.technical.isChecked():
+            toggle_details(dialog.panel.technical)
+        assert dialog.panel.health_accept.isVisible()
+        QTest.mouseClick(dialog.panel.health_accept,Qt.LeftButton);settle_dialog(app,dialog)
+        assert dialog.panel.installed is state['installed']
+        if not dialog.panel.recovery_toggle.isChecked():
+            toggle_details(dialog.panel.recovery_toggle)
+        assert dialog.panel.recover.isVisible() and dialog.panel.recovery_confirm.isVisible(), (
+            dialog.panel.installed, dialog.panel.recovery_container.isVisible(),
+            dialog.panel.recovery_toggle.isChecked(), dialog.panel.recover.isHidden(),
+            dialog.panel.recover.parentWidget().isVisible())
         assert not dialog.open_reader.isEnabled()
         QTest.mouseClick(dialog.panel.recovery_confirm,Qt.LeftButton)
         assert dialog.panel.recover.isEnabled() and 'needs attention' in dialog.panel.status.text()

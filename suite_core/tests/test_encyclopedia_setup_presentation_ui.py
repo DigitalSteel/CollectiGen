@@ -52,6 +52,7 @@ def test_compact_initial_setup_details_and_user_resize_fit_scaled_workarea(app, 
         assert dialog.panel.version_summary.isVisible() == (state != 'initial')
         for widget in (dialog.panel.refresh, dialog.close_button):
             assert widget.isVisible()
+            assert widget.width() >= widget.fontMetrics().horizontalAdvance(widget.text()) + 24
             point = widget.mapTo(dialog, widget.rect().bottomRight())
             assert 0 <= point.x() < dialog.width() and 0 <= point.y() < dialog.height()
         for widget in dialog.panel.findChildren(QLabel):
@@ -176,11 +177,25 @@ def test_setup_stage_card_retains_delayed_progress_cancel_and_installed_next_act
     adapter, calls, _ = fixture_adapter()
     service = adapter.installation
     service.entered, service.gate = Event(), Event()
+    original_install = service.install
+    def install_with_stock_cancellation(review, **kwargs):
+        result = original_install(review, **kwargs)
+        if kwargs['should_cancel']():
+            # Real EncyclopediaInstallation._cancel raises; a false connection
+            # result would incorrectly model a publication failure after cancel.
+            raise InterruptedError('Synthetic acquisition cancelled before installation')
+        return result
+    service.install = install_with_stock_cancellation
     executor = ResourceExecutorOwner()
     dialog = create_original_enrollment_dialog(adapter, executor)
     dialog.show(); app.processEvents()
     output = os.environ.get('ENCYCLOPEDIA_PRESENTATION_CAPTURE')
     def capture(name):
+        app.processEvents(); dialog.panel.setup_card.layout().activate()
+        for label in (dialog.panel.setup_step, dialog.panel.status, dialog.panel.version_summary):
+            if label.isVisible() and label.hasHeightForWidth():
+                assert label.height() >= label.heightForWidth(label.width()), (
+                    name, label.text(), label.height(), label.heightForWidth(label.width()))
         if output:
             dest = Path(output) / 'delayed'; dest.mkdir(parents=True, exist_ok=True)
             assert dialog.grab().save(str(dest / (theme + '-' + name + '.png')))
@@ -207,6 +222,7 @@ def test_setup_stage_card_retains_delayed_progress_cancel_and_installed_next_act
         QTest.mouseClick(panel.stop, Qt.LeftButton)
         service.gate.set(); settle_dialog(app, dialog)
         assert service.current.selected is None and not panel.activity.isVisible()
+        assert panel.status.text() == 'Setup did not finish. No reader is installed. Choose Check for app to try again.'
         capture('cancelled')
         install_visible(app, dialog); settle_dialog(app, dialog)
         assert panel.setup_step.text() == 'Step 3 of 3 · Open and finish setup'
@@ -216,3 +232,41 @@ def test_setup_stage_card_retains_delayed_progress_cancel_and_installed_next_act
     finally:
         service.gate.set()
         dialog.close(); settle_dialog(app, dialog)
+
+
+@pytest.mark.parametrize('operation', ['discover', 'review'])
+@pytest.mark.parametrize('theme', ['light', 'dark'])
+def test_setup_stage_card_keeps_release_and_review_waits_visible(app, content_font, theme, operation):
+    from threading import Event
+    from qt_app.theme import apply_theme
+    apply_theme(app, theme)
+    adapter, calls, _ = fixture_adapter(); service = adapter.installation
+    executor = ResourceExecutorOwner()
+    dialog = create_original_enrollment_dialog(adapter, executor)
+    dialog.show(); app.processEvents()
+    entered, gate = Event(), Event()
+    original = getattr(service, operation)
+    def delayed(*args, **kwargs):
+        entered.set(); assert gate.wait(3)
+        return original(*args, **kwargs)
+    if operation == 'review':
+        QTest.mouseClick(dialog.panel.refresh, Qt.LeftButton); settle_dialog(app, dialog)
+    setattr(service, operation, delayed)
+    try:
+        QTest.mouseClick(dialog.panel.refresh if operation == 'discover' else dialog.panel.install, Qt.LeftButton)
+        assert entered.wait(1)
+        QTest.qWait(250); dialog.poll()
+        assert dialog.panel.activity.isVisible() and dialog.panel.elapsed.isVisible()
+        assert dialog.panel.activity.minimum() == dialog.panel.activity.maximum() == 0
+        assert dialog.panel.stop.isEnabled() and dialog.close_button.isEnabled()
+        assert ('Step 1' if operation == 'discover' else 'Step 2') in dialog.panel.setup_step.text()
+        output = os.environ.get('ENCYCLOPEDIA_PRESENTATION_CAPTURE')
+        if output:
+            dest = Path(output) / 'delayed'; dest.mkdir(parents=True, exist_ok=True)
+            assert dialog.grab().save(str(dest / (theme + '-' + operation + '.png')))
+        QTest.mouseClick(dialog.panel.stop, Qt.LeftButton)
+        gate.set(); settle_dialog(app, dialog)
+        assert not calls and service.current.selected is None
+        assert not any(row[0] == 'install' for row in service.calls)
+    finally:
+        gate.set(); dialog.close(); settle_dialog(app, dialog)

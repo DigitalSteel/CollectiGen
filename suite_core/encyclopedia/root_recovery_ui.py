@@ -114,7 +114,6 @@ def create_original_enrollment_dialog(adapter,executor):
             self.setup_card = QFrame(self)
             self.setup_card.setObjectName('visualCard')
             card_style(self.setup_card, compact=True)
-            self.setup_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
             body = QVBoxLayout(self.setup_card)
             body.setContentsMargins(16, 16, 16, 16)
             body.setSpacing(10)
@@ -123,6 +122,10 @@ def create_original_enrollment_dialog(adapter,executor):
             self.setup_step.setObjectName('cardTitle')
             self.setup_step.setWordWrap(True)
             self.setup_step.setAccessibleName('Current Reader setup stage')
+            for label in (self.setup_step, self.status, self.version_summary):
+                policy = label.sizePolicy()
+                policy.setVerticalPolicy(QSizePolicy.Minimum)
+                label.setSizePolicy(policy)
             body.addWidget(self.setup_step)
             # Reparent the existing presentation controls, retaining their worker,
             # progress, cancellation and status owners. No second progress model.
@@ -159,6 +162,7 @@ def create_original_enrollment_dialog(adapter,executor):
             return 'Open the reader, then close its window normally to finish setup.'
 
         def installation_status_reason(self,result):
+            self.last_install_diagnostic = result.reason
             installed=result.installed
             if (result.connection_saved and installed.selected is not None
                     and installed.phase=='activated' and not installed.pending
@@ -186,19 +190,30 @@ def create_original_enrollment_dialog(adapter,executor):
             self.details.setPlainText('No managed reader is active.' if selected is None else
                 f'Installed reader {selected.version}\nDirectory: {selected.directory}'+
                 '\nOpen the installed reader explicitly. The original root still verifies its actual startup and normal Close.')
+            reason = getattr(self, 'last_install_diagnostic', '')
+            if reason and reason not in self.details.toPlainText():
+                self.details.appendPlainText('\nDiagnostic: ' + reason)
 
         def render(self):
             super().render()
+            if (self.installed is not None and self.installed.phase == 'absent'
+                    and self.installed.selected is None and not self.installed.pending
+                    and not self.installed.connection_pending and not self.observation_stale
+                    and self.status.text().startswith('The operation did not finish.')):
+                self.status.setText('Setup did not finish. No reader is installed. Choose Check for app to try again.')
             # Base construction calls render before the stage card exists.
             if hasattr(self, 'setup_step'):
                 selected = None if self.installed is None else self.installed.selected
                 stage = ('Check the Reader status' if self.observation_stale else
+                    'Setup needs attention' if self.publication_pending or self.installed is not None and
+                        (self.installed.pending or self.installed.connection_pending) else
                     'Setup complete' if selected is not None and self.installed.phase == 'healthy' else
                     'Step 3 of 3 · Open and finish setup' if selected is not None else
                     'Step 2 of 3 · Review and install' if self.offer is not None else
                     'Step 1 of 3 · Find the Reader')
                 self.setup_step.setText(stage)
             self.refresh.setText('Check for app')
+            compact_action(self.refresh)
             self.retry_save.setVisible(self.publication_pending and not self.close_held)
             pending=self.installed is not None and self.installed.pending
             recovery_visible=pending or self.installed is not None and self.installed.selected is not None and self.technical.isChecked()
