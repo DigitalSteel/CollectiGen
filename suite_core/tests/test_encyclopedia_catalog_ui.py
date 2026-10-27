@@ -115,13 +115,16 @@ def test_offline_help_update_unavailable_does_not_block_browsing(app, tmp_path, 
     window.close(); app.processEvents()
 
 
-def test_visible_optional_content_reuses_original_review_and_apply(app, selected):
+def test_visible_optional_content_reuses_original_review_and_apply(app, selected, monkeypatch):
+    from types import SimpleNamespace
+    from PySide6.QtCore import QRect
     from suite_core.encyclopedia.__main__ import create_window
     from PySide6.QtCore import Qt
     from PySide6.QtTest import QTest
     settings, source, root = selected
     window = create_window(settings_path=settings)
     window.resize(1440, 900); window.show(); app.processEvents()
+    monkeypatch.setattr(window, 'screen', lambda: SimpleNamespace(availableGeometry=lambda: QRect(0,0,1920,1080)))
     click(window, 'Use optional default tags')
     host, pane = window.catalog_host, window.catalog_host.pane
     pane.source_directory.setText(str(source)); pane.catalog_directory.setText(str(root))
@@ -369,11 +372,15 @@ def test_visible_saved_reload_keeps_actions_and_completed_status_reachable(
         qt_test_scope.show(host.dialog, size=viewport)
         pane = host.pane
         assert host.content_box.isVisible()
+        pane.source_directory.setText('retained-source-draft')
+        pane.catalog_directory.setText('retained-catalog-draft')
+        pane.connection_options.setChecked(False)
         QTest.mouseClick(pane.open_connection, Qt.LeftButton)
         settle(qt_test_scope.app, host)
         assert not host.controller.error
-        assert pane.source_directory.text() == str(source)
-        assert pane.catalog_directory.text() == str(root)
+        assert pane.source_directory.text() == 'retained-source-draft'
+        assert pane.catalog_directory.text() == 'retained-catalog-draft'
+        assert str(root) in pane.connected_context.text()
         assert not pane.connection_options.isChecked() and not pane.connection_box.isVisible()
         assert 'Verifying' not in window.status.text()
         assert host.content_status.text() == window.status.text() == host.controller.reason

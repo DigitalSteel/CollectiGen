@@ -14,6 +14,30 @@ from suite_core.knowledge import Source, Snapshot
 from suite_core.knowledge.catalog_migration_preview import PackRevision
 
 
+@pytest.mark.parametrize('reader_mode', [False, True])
+def test_reader_entry_mode_preserves_default_and_surfaces_faults(qt_test_scope, tmp_path, request, reader_mode):
+    from suite_core.manager.resource_executor import ResourceExecutorOwner
+    executor = ResourceExecutorOwner(); request.addfinalizer(executor.begin_close)
+    controller = TagDatabaseController(executor=executor, settings_path=tmp_path/'settings.json')
+    pane = TagDatabasePane(controller, reader_mode=reader_mode); pane.timer.stop()
+    qt_test_scope.show(pane)
+    assert pane.review_actions.isHidden() is reader_mode
+    assert pane.recovery_actions.isHidden() is reader_mode
+    assert pane.connection_options.isChecked() and pane.open_connection.isVisible()
+    assert controller.choice is None and controller.connection_review is None
+    pane.source_directory.setText('retained-source'); pane.catalog_directory.setText('retained-catalog')
+    pane.connection_options.setChecked(False)
+    controller.error = 'Retained connection failure'; pane.render()
+    assert not pane.review_actions.isHidden() and not pane.recovery_actions.isHidden()
+    assert controller.error == 'Retained connection failure'
+    controller.error = ''; controller.faulted = True; pane.render()
+    assert not pane.review_actions.isHidden() and not pane.recovery_actions.isHidden()
+    controller.faulted = False; pane.render()
+    assert pane.review_actions.isHidden() is reader_mode
+    assert pane.source_directory.text() == 'retained-source' and pane.catalog_directory.text() == 'retained-catalog'
+    assert not pane.connection_options.isChecked() and not (tmp_path/'settings.json').exists()
+
+
 @pytest.mark.parametrize('size',[(1000,540),(1600,930)])
 def test_keyboard_reader_viewport_is_fully_visible_and_state_is_preserved(tmp_path,qt_test_scope,request,size):
     from PySide6.QtCore import Qt

@@ -12,11 +12,13 @@ from suite_core.manager.ui_cards import compact_action, workspace_heading, works
 
 
 class TagDatabasePane(QWidget):
-    def __init__(self, controller, *, encyclopedia=None, parent=None, clock=monotonic):
+    def __init__(self, controller, *, encyclopedia=None, parent=None, clock=monotonic, reader_mode=False):
         super().__init__(parent)
         if type(controller) is not TagDatabaseController:
             raise TypeError("Explicit host-owned Tag controller required")
         self.controller, self.encyclopedia = controller, encyclopedia
+        self.reader_mode = reader_mode
+        self._empty_catalog_label = 'No catalog chosen for content review' if reader_mode else 'No catalog connected'
         self._review = None
         self._render_key = None
         self._shown_error = ""
@@ -29,15 +31,15 @@ class TagDatabasePane(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         scroll = QScrollArea(); scroll.setWidgetResizable(True)
         body = QWidget(); content = workspace_layout(body)
-        content.addWidget(workspace_heading("Databases"))
-        self.goal = self._label("Connect a Tag catalog, then preview the vocabulary you want to install or update. Your local edits and original image assignments are retained.")
+        content.addWidget(workspace_heading('Choose a catalog for content review' if reader_mode else 'Databases'))
+        self.goal = self._label('Open a saved connection, or review a local source and catalog below. Your Reader view stays separate; nothing imports automatically.' if reader_mode else 'Connect a Tag catalog, then preview the vocabulary you want to install or update. Your local edits and original image assignments are retained.')
         content.addWidget(self.goal)
-        content.addWidget(self._label("Selected catalog"))
+        content.addWidget(self._label('Catalog for content review' if reader_mode else 'Selected catalog'))
         self.catalog = QComboBox(); self.catalog.setAccessibleName("Select Tag catalog")
         for choice in controller.choices:
             self.catalog.addItem(choice.label)
         if not controller.choices:
-            self.catalog.addItem("No catalog connected")
+            self.catalog.addItem(self._empty_catalog_label)
         content.addWidget(self.catalog)
         self.connected_context = self._label("")
         self.connected_context.setAccessibleName("Connected catalog folders")
@@ -280,6 +282,12 @@ class TagDatabasePane(QWidget):
         if key == self._render_key:
             return
         self._render_key = key
+        dormant = (self.reader_mode and not c.choices and c.choice is None
+                   and c.review is None and c.result is None and not c.pending
+                   and not c.close_held and not c.faulted and not c.error and not c.closed)
+        if self.reader_mode:
+            self.review_actions.setVisible(not dormant)
+            self.recovery_actions.setVisible(not dormant)
         self.connected_context.setText(project_connected_catalog(c.choice))
         if c.connection_review is not self._connection_review:
             self._connection_review = c.connection_review
@@ -297,10 +305,10 @@ class TagDatabasePane(QWidget):
             self.confirm.blockSignals(True); self.confirm.setChecked(False); self.confirm.blockSignals(False)
         self.catalog.setEnabled(bool(c.choices) and not c.close_held and not c.closed)
         self.catalog.blockSignals(True)
-        if self.catalog.count() != max(1, len(c.choices)) or bool(c.choices) and self.catalog.itemText(0) == "No catalog connected":
+        if self.catalog.count() != max(1, len(c.choices)) or bool(c.choices) and self.catalog.itemText(0) == self._empty_catalog_label:
             self.catalog.clear()
             for choice in c.choices: self.catalog.addItem(choice.label)
-            if not c.choices: self.catalog.addItem("No catalog connected")
+            if not c.choices: self.catalog.addItem(self._empty_catalog_label)
         for index, choice in enumerate(c.choices): self.catalog.setItemText(index, choice.label)
         self.catalog.setCurrentIndex(max(c.index, 0)); self.catalog.blockSignals(False)
         choice = c.choice

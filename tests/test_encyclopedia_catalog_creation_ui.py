@@ -479,6 +479,8 @@ def test_native_open_original_feedback_and_recovery(app, tmp_path, monkeypatch, 
 @pytest.mark.parametrize('theme', ['light', 'dark'])
 @pytest.mark.parametrize('viewport', [(1280, 720), (1920, 1080)])
 def test_loaded_empty_card_original_review_and_populated_return(app, tmp_path, monkeypatch, theme, viewport):
+    from types import SimpleNamespace
+    from PySide6.QtCore import QRect
     from PySide6.QtGui import QFontDatabase, QFont
     from core.encyclopedia_catalog_creation import prepare_empty_catalog, confirm_empty_catalog
     from suite_core.manager.command_bar import CommandBar
@@ -498,6 +500,7 @@ def test_loaded_empty_card_original_review_and_populated_return(app, tmp_path, m
     window = create_window(settings_path=settings); host = window.catalog_host
     window.resize(viewport[0]-24, viewport[1]-64); window.show(); app.processEvents()
     output = os.environ.get('READER_LOADED_EMPTY_CAPTURE')
+    monkeypatch.setattr(window, 'screen', lambda: SimpleNamespace(availableGeometry=lambda: QRect(0,0,*viewport)))
     def capture(name, target=window):
         app.processEvents()
         if target is window:
@@ -519,8 +522,24 @@ def test_loaded_empty_card_original_review_and_populated_return(app, tmp_path, m
         capture('native-ready')
         window.empty_database_action.setFocus();QTest.keyClick(window.empty_database_action,Qt.Key_Space);app.processEvents()
         assert host.dialog is not None and host.dialog.isVisible()
-        host.dialog.resize(min(960,viewport[0]-64),min(660,viewport[1]-64));app.processEvents()
+        assert host.dialog.width() <= viewport[0]-32 and host.dialog.height() <= viewport[1]-64
+        assert host.pane.reader_mode and 'content review' in host.pane.catalog.itemText(0)
+        assert host.pane.review_actions.isHidden() and host.pane.recovery_actions.isHidden()
+        assert host.pane.open_connection.isVisible() and host.pane.connection_options.isVisible()
+        capture('review-initial',host.dialog)
+        draft=host.pane.connection_options.isChecked()
+        host.pane.connection_options.setFocus();QTest.keyClick(host.pane.connection_options,Qt.Key_Space);app.processEvents()
+        assert host.pane.connection_options.isChecked() is not draft
+        QTest.keyClick(host.pane.connection_options,Qt.Key_Space);app.processEvents()
+        assert host.pane.connection_options.isChecked() is draft
+        QTest.keyClick(host.pane.connection_options,Qt.Key_Tab);app.processEvents()
+        assert host.pane.source_directory.hasFocus()
         capture('review-open',host.dialog)
+        host.pane._review_scroll.ensureWidgetVisible(host.pane.open_connection);app.processEvents()
+        QTest.mouseClick(host.pane.open_connection,Qt.LeftButton);pump(app,lambda:not host.busy)
+        assert host.controller.error and host.controller.choice is None
+        assert not host.pane.review_actions.isHidden() and not host.pane.recovery_actions.isHidden()
+        capture('review-saved-unavailable',host.dialog)
         QTest.keyClick(host.dialog,Qt.Key_Escape);app.processEvents()
         assert not host.dialog.isVisible() and window.start_card.isVisible()
         assert before=={p.relative_to(root):p.read_bytes() for p in root.rglob('*.json')}

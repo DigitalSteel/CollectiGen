@@ -1,5 +1,7 @@
 # Unbuilt development after Tag Encyclopedia a.0.2.2
 
+Source-only optional-content entry: Reader now explains its separate content-review catalog, foregrounds saved connection and connection draft choices, and hides dormant Apply/recovery groups until relevant. Initial dialog bounds follow the owning screen work area. Existing consent, progress and recovery controls remain. Saved-open preserves the connection draft. No Windows package has been rebuilt or qualified for these changes.
+
 Source-only loaded-empty Reader presentation: one card groups readiness, compact optional review and original read/Close feedback. Supporting commands remain in Home/More; populated layout and existing host restrictions are preserved. This is unbuilt source, not a Windows package qualification.
 
 Source-only Reader follow-up (2026-10-27): native database opening now reuses the same activity, elapsed and safe cancellation feedback. exported catalog open/refresh uses the existing Reader worker, shows activity and elapsed time, and retains Cancel/Close ownership until the read finishes. This is an unbuilt source change; no packaged or native acceptance is implied.

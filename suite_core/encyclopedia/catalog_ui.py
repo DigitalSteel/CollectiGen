@@ -929,9 +929,8 @@ class EncyclopediaCatalogHost(QObject):
 
             self.dialog = CatalogDialog(self.window)
             self.dialog.setWindowTitle("Review optional Tag content")
-            self.dialog.resize(1000, 740)
             layout = QVBoxLayout(self.dialog)
-            intro = QLabel("Choose a local Tag data package and your own catalog folder. Review before connecting or importing. Opening a database never installs defaults.")
+            intro = QLabel('Content review is separate from browsing. Connecting and importing still require their own confirmations.')
             intro.setWordWrap(True); layout.addWidget(intro)
             self.content_box = QGroupBox('Get optional Tag content')
             content_layout = QVBoxLayout(self.content_box)
@@ -958,10 +957,14 @@ class EncyclopediaCatalogHost(QObject):
             self.content_review.clicked.connect(self.review_downloaded_content)
             layout.addWidget(self.content_box)
             self.content_box.setVisible(self.default_acquisition is not None)
-            self.pane = TagDatabasePane(self.controller, parent=self.dialog)
+            self.pane = TagDatabasePane(self.controller, parent=self.dialog, reader_mode=True)
             self.pane.open_encyclopedia.hide()  # The original standalone reader is already visible.
             self.pane.timer.stop()  # This original host polls once and delivers results.
             layout.addWidget(self.pane)
+            screen = self.window.screen()
+            area = screen.availableGeometry() if screen is not None else None
+            self.dialog.resize(min(1000, max(1, area.width()-32)) if area else 1000,
+                               min(740, max(1, area.height()-64)) if area else 740)
         self.dialog.show(); self.dialog.raise_()
         return True
 
