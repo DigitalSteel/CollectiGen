@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit,
     QMainWindow, QPushButton, QSplitter, QTableView, QTextEdit, QVBoxLayout, QWidget,
-    QListWidget, QApplication, QCheckBox, QSizePolicy,
+    QListWidget, QApplication, QCheckBox, QSizePolicy, QFrame,
 )
 from qt_app.browse_components import IncrementalResultModel, IncrementalResultRow
 from suite_core.knowledge import TagLookup
@@ -49,7 +49,9 @@ class EncyclopediaWindow(QMainWindow):
         title_font.setBold(True)
         title.setFont(title_font)
         layout.addWidget(title)
-        layout.addWidget(QLabel("Find and explore Tags from your selected database. Optional default content is reviewed before importing."))
+        self.subtitle = QLabel("Find and explore Tags from your selected database. Optional default content is reviewed before importing.")
+        self.subtitle.setWordWrap(True)
+        layout.addWidget(self.subtitle)
         self.bar = CommandBar(self)
         layout.addWidget(self.bar)
         self.open_button = QPushButton("Open exported tag catalog", self)
@@ -69,9 +71,23 @@ class EncyclopediaWindow(QMainWindow):
         self.advanced.toggled.connect(self._show_advanced)
         self.advanced.hide()
         layout.addWidget(self.advanced)
-        self.empty_hint = QLabel("A tag database stores your tags, categories and edits. Choose Home > Create a database for a new collection, or Home > Open Tag Database to use one you already have. Optional default tags can be reviewed separately.")
+        from suite_core.manager.ui_cards import card_style
+        self.start_card = QFrame(root)
+        self.start_card.setObjectName('visualCard')
+        card_style(self.start_card, compact=True)
+        self.start_body = QVBoxLayout(self.start_card)
+        self.start_body.setContentsMargins(16, 16, 16, 16)
+        self.start_body.setSpacing(10)
+        self.start_heading = QLabel('Start with a tag database')
+        self.start_heading.setObjectName('cardTitle')
+        self.start_heading.setWordWrap(True)
+        self.start_body.addWidget(self.start_heading)
+        self.empty_hint = QLabel()
         self.empty_hint.setWordWrap(True)
-        layout.addWidget(self.empty_hint)
+        self.start_body.addWidget(self.empty_hint)
+        layout.addWidget(self.start_card)
+        self._start_limit_active = False
+        self._saved_home_limit = None
         self.empty_database_action = QPushButton('Review optional starter tags')
         self.empty_database_action.clicked.connect(self.review_defaults)
         self.empty_database_action.hide()
@@ -138,6 +154,10 @@ class EncyclopediaWindow(QMainWindow):
         self.status.setTextFormat(Qt.PlainText)
         self.status.setWordWrap(True)
         self.status.setAccessibleName("Catalog status")
+        for label in (self.start_heading, self.empty_hint, self.status):
+            policy = label.sizePolicy()
+            policy.setVerticalPolicy(QSizePolicy.Minimum)
+            label.setSizePolicy(policy)
         layout.addWidget(self.status)
         from qt_app.components import IndeterminateActivityBar
         self.database_activity = IndeterminateActivityBar(root)
@@ -196,6 +216,41 @@ class EncyclopediaWindow(QMainWindow):
             return
         selected = self.publication is not None
         empty = selected and not self.publication.snapshot.tags
+        self.start_card.setVisible(not selected)
+        self.subtitle.setVisible(selected)
+        if not selected:
+            if not self._start_limit_active:
+                self._saved_home_limit = ('Home' in self.bar.visible_limits, self.bar.visible_limits.get('Home'))
+            self._start_limit_active = True
+            self.bar.visible_limits['Home'] = 2
+            self.empty_hint.setText('A database keeps your tags, categories and edits together. Choose Create a database or Open Tag Database from Home. Optional starter tags can be reviewed separately.')
+        elif self._start_limit_active:
+            existed, value = self._saved_home_limit
+            if existed:
+                self.bar.visible_limits['Home'] = value
+            else:
+                self.bar.visible_limits.pop('Home', None)
+            self._start_limit_active = False
+        # Move the original feedback widgets, never copy their state or create
+        # another progress owner. Loaded native/export delivery restores them.
+        outer = self.centralWidget().layout()
+        for widget in (self.empty_hint, self.status, self.database_activity, self.database_elapsed, self.cancel_work_button):
+            parent = self.centralWidget() if selected else self.start_card
+            if widget.parentWidget() is parent:
+                continue
+            shown = not widget.isHidden()
+            outer.removeWidget(widget)
+            self.start_body.removeWidget(widget)
+            if selected:
+                anchor = self.empty_database_action if widget is self.empty_hint else self.cancel_close_button
+                outer.insertWidget(outer.indexOf(anchor), widget)
+            else:
+                if widget is self.cancel_work_button:
+                    self.start_body.addWidget(widget, 0, Qt.AlignLeft)
+                else:
+                    self.start_body.addWidget(widget)
+            widget.setVisible(shown)
+        self.empty_hint.setVisible(not selected or empty)
         self.empty_database_action.setVisible(empty)
         self.empty_database_action.setEnabled(empty and (self.catalog_host is None or not self.catalog_host.busy))
         idle = self.catalog_host is None or not self.catalog_host.busy
