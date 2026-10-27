@@ -383,3 +383,92 @@ def test_export_delivery_discards_changed_source_after_original_worker(app, tmp_
     finally:
         release.set(); pump(app, lambda: not host.busy)
         window.close(); pump(app, lambda: host.executor.closed and not host.executor.close_held)
+
+
+@pytest.mark.parametrize('theme', ['light', 'dark'])
+@pytest.mark.parametrize('viewport', [(1280, 720), (1920, 1080)])
+@pytest.mark.parametrize('outcome', ['first', 'refresh', 'cancel', 'refuse', 'close'])
+def test_native_open_original_feedback_and_recovery(app, tmp_path, monkeypatch, theme, viewport, outcome):
+    from PySide6.QtGui import QFontDatabase, QFont
+    from core.encyclopedia_catalog_creation import prepare_empty_catalog, confirm_empty_catalog
+    from suite_core.tests.test_encyclopedia_catalog_ui import click
+    font_id = QFontDatabase.addApplicationFont('C:/Windows/Fonts/segoeui.ttf')
+    assert font_id >= 0
+    app.setFont(QFont(QFontDatabase.applicationFontFamilies(font_id)[0], 10))
+    apply_theme(app, theme)
+    root, settings = tmp_path/'synthetic-native', tmp_path/'settings.json'
+    review = prepare_empty_catalog(settings, root)
+    confirm_empty_catalog(review, review.token)
+    before = {p.relative_to(root): p.read_bytes() for p in root.rglob('*.json')}
+    settings_before = settings.read_bytes() if settings.exists() else None
+    monkeypatch.setattr(QFileDialog, 'getExistingDirectory', lambda *a: str(root))
+    window = create_window(settings_path=settings); host = window.catalog_host
+    window.resize(viewport[0]-24, viewport[1]-64); window.show(); app.processEvents()
+    output = os.environ.get('READER_NATIVE_CAPTURE')
+    def capture(name):
+        app.processEvents()
+        assert window.status.height() >= window.status.heightForWidth(window.status.width())
+        if output:
+            dest = Path(output)/f'{theme}-{viewport[0]}-{outcome}'; dest.mkdir(parents=True, exist_ok=True)
+            assert window.grab().save(str(dest/(name+'.png')))
+    if outcome != 'first':
+        click(window, 'Open Tag Database'); pump(app, lambda: not host.busy)
+        assert window.publication is not None and host.accepted_source.kind == 'native'
+    accepted = window.publication
+    entered, release = Event(), Event()
+    original_read = host.service.open_catalog
+    calls = []
+    def delayed(*a, **kw):
+        calls.append(a); entered.set(); assert release.wait(10)
+        if outcome == 'refuse': raise ValueError('Synthetic refused native read')
+        return original_read(*a, **kw)
+    monkeypatch.setattr(host.service, 'open_catalog', delayed)
+    ticks = []; timer = QTimer(); timer.setInterval(20); timer.timeout.connect(lambda: ticks.append(time.monotonic()))
+    timer.start()
+    try:
+        capture('start')
+        click(window, 'Open Tag Database' if outcome == 'first' else 'Refresh')
+        pump(app, entered.is_set); QTest.qWait(1100); app.processEvents()
+        assert len(ticks) >= 15 and max(b-a for a,b in zip(ticks,ticks[1:])) < .35
+        assert host.busy and window.database_activity.isVisible() and window.database_elapsed.isVisible()
+        assert '1s elapsed' in window.database_elapsed.text()
+        assert 'Opening Tag Database' in window.status.text() and window.cancel_work_button.isVisible()
+        assert window.publication is accepted
+        assert not host.open_database(root) and len(calls) == 1
+        capture('waiting')
+        if outcome == 'cancel':
+            QTest.mouseClick(window.cancel_work_button, Qt.LeftButton); app.processEvents()
+            assert host.busy and 'current read' in window.status.text()
+            capture('stopping')
+        elif outcome == 'close':
+            window.close(); app.processEvents()
+            assert window.isVisible() and host._closing and window.cancel_close_button.isVisible()
+            capture('close-held')
+            QTest.mouseClick(window.cancel_close_button, Qt.LeftButton); app.processEvents()
+            assert not host._closing and host.busy
+            window.close(); app.processEvents(); assert host._closing and not host.executor.closed
+        release.set(); pump(app, lambda: not host.busy)
+        assert host._read_started is None
+        assert not window.database_activity.isVisible() and not window.database_elapsed.isVisible()
+        if outcome == 'close':
+            pump(app, lambda: host.executor.closed)
+            assert not window.isVisible() and window.publication is accepted
+        else:
+            pump(app, lambda: not window.cancel_work_button.isVisible())
+            if outcome in ('cancel', 'refuse'):
+                assert window.publication is accepted and 'Previous' in window.status.text()
+            else:
+                assert window.publication is not None and host.accepted_source.kind == 'native'
+                assert window.empty_database_action.isVisible()
+            capture('result')
+            if outcome in ('cancel', 'refuse'):
+                monkeypatch.setattr(host.service, 'open_catalog', original_read)
+                click(window, 'Refresh'); pump(app, lambda: not host.busy)
+                assert window.publication.catalog_id == accepted.catalog_id and host.accepted_source.kind == 'native'
+                capture('retry-ready')
+        assert before == {p.relative_to(root): p.read_bytes() for p in root.rglob('*.json')}
+        assert settings_before == (settings.read_bytes() if settings.exists() else None)
+    finally:
+        release.set(); timer.stop(); pump(app, lambda: not host.busy)
+        window.close(); pump(app, lambda: host.executor.closed and not host.executor.close_held)
+        QFontDatabase.removeApplicationFont(font_id)

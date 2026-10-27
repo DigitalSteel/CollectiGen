@@ -151,6 +151,7 @@ class EncyclopediaCatalogHost(QObject):
         self._before_view = None
         self._opening_source = None
         self._export_open = None
+        self._read_started = None
         self.timer = QTimer(self)
         self.timer.setInterval(40)
         self.timer.timeout.connect(self.poll)
@@ -692,8 +693,12 @@ class EncyclopediaCatalogHost(QObject):
         self._opening_generation = self._read_generation
         baseline = self.window.publication if same else None
         directory = self.accepted_source.directory_pin if same else None
+        from time import monotonic
+        self._read_started = monotonic()
+        self.window.status.setText('Opening Tag Database. Cancel stops delivery after the current read finishes; previous view stays visible.')
+        self._read_feedback()
         self.future = self.executor.submit(self.service.open_catalog, root, baseline, directory)
-        self.window.status.setText("Opening Tag Database. Cancel is available; previous view stays visible.")
+        self.window.bar.refresh_state()
         return True
 
     def refresh(self):
@@ -725,20 +730,20 @@ class EncyclopediaCatalogHost(QObject):
         self._read_generation += 1
         self._opening_generation = self._read_generation
         self._export_open = (path, refreshing)
-        self._export_started = monotonic()
+        self._read_started = monotonic()
         self.window.status.setText('Opening exported catalog. Cancel stops delivery after the current read finishes; previous view stays visible.')
-        self._export_feedback()
+        self._read_feedback()
         self.future = self.executor.submit(reader, path)
         self.window.bar.refresh_state()
         return True
 
-    def _export_feedback(self):
-        if self._export_open is None:
+    def _read_feedback(self):
+        if self._read_started is None:
             return
         from time import monotonic
-        self.window.database_activity.set_active(True, 'Opening exported catalog')
+        self.window.database_activity.set_active(True, 'Opening exported catalog' if self._export_open is not None else 'Opening Tag Database')
         self.window.database_activity.show()
-        self.window.database_elapsed.setText(f'{max(0, int(monotonic() - self._export_started))}s elapsed')
+        self.window.database_elapsed.setText(f'{max(0, int(monotonic() - self._read_started))}s elapsed')
         self.window.database_elapsed.show()
         self.window.cancel_work_button.setVisible(not self._closing)
         self.window._sync_start_choices()
@@ -980,6 +985,8 @@ class EncyclopediaCatalogHost(QObject):
             self.future.cancel()
         if self._export_open is not None and not self._closing:
             self.window.status.setText('Stopping exported catalog opening. Waiting for the current read to finish; previous view is retained.')
+        elif self._read_started is not None and not self._closing:
+            self.window.status.setText('Stopping Tag Database opening. Waiting for the current read to finish; previous view is retained.')
         self.controller.cancel()
         self.package_cancel.set()
         if self.package_future is not None:
@@ -992,7 +999,7 @@ class EncyclopediaCatalogHost(QObject):
     def poll(self):
         self.window.bar.refresh_state()
         self.window._sync_start_choices()
-        self._export_feedback()
+        self._read_feedback()
         if self._poll_creation():
             return
         if self._handoff_waiting and self.organizer_receiver is not None:
@@ -1249,7 +1256,8 @@ class EncyclopediaCatalogHost(QObject):
         if self.future is not None and self.future.done() and not self.executor.close_held:
             future, self.future = self.future, None
             export, self._export_open = self._export_open, None
-            if export is not None:
+            if self._read_started is not None:
+                self._read_started = None
                 self.window.database_activity.set_active(False)
                 self.window.database_activity.hide()
                 self.window.database_elapsed.hide()
