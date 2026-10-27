@@ -106,6 +106,32 @@ def create_original_enrollment_dialog(adapter,executor):
     if adapter.channel not in ('stable','beta'):raise ValueError('explicit_enrollment_channel_required')
 
     class EnrollmentPanel(EncyclopediaAcquisitionPanel):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            from PySide6.QtWidgets import QFrame, QLabel, QSizePolicy
+            from PySide6.QtCore import Qt
+            from suite_core.manager.ui_cards import card_style
+            self.setup_card = QFrame(self)
+            self.setup_card.setObjectName('visualCard')
+            card_style(self.setup_card, compact=True)
+            self.setup_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+            body = QVBoxLayout(self.setup_card)
+            body.setContentsMargins(16, 16, 16, 16)
+            body.setSpacing(10)
+            body.setAlignment(Qt.AlignTop)
+            self.setup_step = QLabel(self.setup_card)
+            self.setup_step.setObjectName('cardTitle')
+            self.setup_step.setWordWrap(True)
+            self.setup_step.setAccessibleName('Current Reader setup stage')
+            body.addWidget(self.setup_step)
+            # Reparent the existing presentation controls, retaining their worker,
+            # progress, cancellation and status owners. No second progress model.
+            for widget in (self.status, self.activity, self.elapsed, self.version_summary):
+                self.layout().removeWidget(widget)
+                body.addWidget(widget)
+            self.layout().insertWidget(2, self.setup_card)
+            self.render()
+
         def scope_text(self):
             return 'Tag Encyclopedia lets you browse and search tag databases. First, install its reader app. Your databases stay separate, and the app opens only when you choose Open.'
 
@@ -116,8 +142,7 @@ def create_original_enrollment_dialog(adapter,executor):
             selected=None if self.installed is None else self.installed.selected
             return ('Installation status has not been checked yet.' if self.installed is None else
                 'Tag Encyclopedia is not installed yet.' if selected is None else
-                'Installed version: '+selected.version+(' — open the app and close it normally to finish setup.'
-                    if self.installed.phase=='activated' else ''))
+                'Installed version: '+selected.version)
 
         def available_version_label(self):
             return 'Available version: '
@@ -164,6 +189,15 @@ def create_original_enrollment_dialog(adapter,executor):
 
         def render(self):
             super().render()
+            # Base construction calls render before the stage card exists.
+            if hasattr(self, 'setup_step'):
+                selected = None if self.installed is None else self.installed.selected
+                stage = ('Check the Reader status' if self.observation_stale else
+                    'Setup complete' if selected is not None and self.installed.phase == 'healthy' else
+                    'Step 3 of 3 · Open and finish setup' if selected is not None else
+                    'Step 2 of 3 · Review and install' if self.offer is not None else
+                    'Step 1 of 3 · Find the Reader')
+                self.setup_step.setText(stage)
             self.refresh.setText('Check for app')
             self.retry_save.setVisible(self.publication_pending and not self.close_held)
             pending=self.installed is not None and self.installed.pending
@@ -184,6 +218,7 @@ def create_original_enrollment_dialog(adapter,executor):
             self.panel.details.setPlainText('Review a signed reader package before installing. User data stays separate. After its exact connection is saved, choose Open installed Tag Encyclopedia; no reader starts automatically.')
             layout=QVBoxLayout(self);layout.addWidget(self.panel)
             self.open_reader=compact_action(QPushButton('Open'));self.open_reader.setEnabled(False)
+            self.open_reader.hide()
             self.open_reader.clicked.connect(self.open_installed);self.panel.footer.insertWidget(0,self.open_reader)
             self.cancel_close=compact_action(QPushButton('Cancel Close'));self.cancel_close.hide()
             self.cancel_close.clicked.connect(self.resume_installation);self.panel.footer.addWidget(self.cancel_close)

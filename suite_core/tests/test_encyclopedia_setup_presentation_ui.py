@@ -32,17 +32,20 @@ def restore_application_theme(app):
 
 
 @pytest.mark.parametrize('theme', ['light', 'dark'])
-def test_compact_initial_setup_details_and_user_resize_fit_scaled_workarea(app, content_font, monkeypatch, theme):
+@pytest.mark.parametrize('viewport', [(1280, 720), (1920, 1080)])
+def test_compact_initial_setup_details_and_user_resize_fit_scaled_workarea(app, content_font, monkeypatch, theme, viewport):
     from qt_app.theme import apply_theme
     apply_theme(app, theme)
     adapter, calls, _ = fixture_adapter(); executor = ResourceExecutorOwner()
     dialog = create_original_enrollment_dialog(adapter, executor)
     scale = app.devicePixelRatio()
-    area = QRect(0, 0, round(1920 / scale), round(1080 / scale))
+    area = QRect(0, 0, round(viewport[0] / scale), round(viewport[1] / scale))
     monkeypatch.setattr(dialog, 'screen', lambda: SimpleNamespace(availableGeometry=lambda: area))
     dialog.fit_contents(); dialog.show(); app.processEvents()
     captured = []
     output = os.environ.get('ENCYCLOPEDIA_PRESENTATION_CAPTURE')
+    if output:
+        output = str(Path(output) / f'{viewport[0]}x{viewport[1]}')
     def check_and_capture(state):
         app.processEvents(); dialog.layout().activate()
         assert dialog.width() <= area.width() - 24 and dialog.height() <= area.height() - 64
@@ -72,6 +75,8 @@ def test_compact_initial_setup_details_and_user_resize_fit_scaled_workarea(app, 
         assert dialog.panel.status.text() == 'Choose Check for app to find the reader. Nothing will be installed until you confirm.'
         assert not dialog.panel.notes_toggle.isVisible() and not dialog.panel.technical.isVisible()
         assert not dialog.open_reader.isEnabled() and not calls
+        assert not dialog.open_reader.isVisible()
+        assert dialog.panel.setup_step.text() == 'Step 1 of 3 · Find the Reader'
         initial_height = dialog.height()
         assert initial_height < 400
         check_and_capture('initial')
@@ -79,6 +84,7 @@ def test_compact_initial_setup_details_and_user_resize_fit_scaled_workarea(app, 
         assert adapter.installation.calls == [('discover', 'stable')]
         assert dialog.panel.offer is adapter.installation.offer
         assert dialog.panel.install.isVisible() and not calls
+        assert dialog.panel.setup_step.text() == 'Step 2 of 3 · Review and install'
         assert dialog.panel.notes_toggle.isVisible() and dialog.panel.technical.isVisible()
         check_and_capture('available')
         QTest.mouseClick(dialog.panel.notes_toggle, Qt.LeftButton); app.processEvents()
@@ -118,10 +124,12 @@ def test_standalone_plain_observations_preserve_unknown_absent_stale_and_install
         assert panel.version_summary.text() == 'Tag Encyclopedia is not installed yet.'
         panel.observation_stale = True; panel.render()
         assert panel.version_summary.text().startswith('Last observed (may be out of date): ')
+        assert panel.setup_step.text() == 'Check the Reader status'
         selected = SimpleNamespace(version='synthetic-v1')
         panel.installed = InstalledEncyclopedia(selected, 'healthy', '', '', False)
         panel.observation_stale = False; panel.offer = adapter.installation.offer; panel.render()
         assert panel.version_summary.text().startswith('Installed version: synthetic-v1\nAvailable version: ')
+        assert panel.setup_step.text() == 'Setup complete'
         assert not calls
     finally:
         dialog.close(); settle_dialog(app, dialog)
@@ -157,3 +165,54 @@ def test_first_check_without_reader_keeps_clear_retry_and_close(app, content_fon
     finally:
         if not executor.closed:
             dialog.close(); settle_dialog(app, dialog)
+
+
+@pytest.mark.parametrize('theme', ['light', 'dark'])
+def test_setup_stage_card_retains_delayed_progress_cancel_and_installed_next_action(app, content_font, theme):
+    from threading import Event
+    from qt_app.theme import apply_theme
+    from suite_core.tests.test_encyclopedia_enrollment_ui import install_visible
+    apply_theme(app, theme)
+    adapter, calls, _ = fixture_adapter()
+    service = adapter.installation
+    service.entered, service.gate = Event(), Event()
+    executor = ResourceExecutorOwner()
+    dialog = create_original_enrollment_dialog(adapter, executor)
+    dialog.show(); app.processEvents()
+    output = os.environ.get('ENCYCLOPEDIA_PRESENTATION_CAPTURE')
+    def capture(name):
+        if output:
+            dest = Path(output) / 'delayed'; dest.mkdir(parents=True, exist_ok=True)
+            assert dialog.grab().save(str(dest / (theme + '-' + name + '.png')))
+            (dest / (theme + '-' + name + '-layout.json')).write_text(json.dumps({
+                key: {'visible': widget.isVisible(), 'height': widget.height(),
+                      'minimum_hint': widget.minimumSizeHint().height(),
+                      'retain_hidden': widget.sizePolicy().retainSizeWhenHidden()}
+                for key, widget in [('step', dialog.panel.setup_step), ('status', dialog.panel.status),
+                    ('activity', dialog.panel.activity), ('elapsed', dialog.panel.elapsed),
+                    ('version', dialog.panel.version_summary), ('card', dialog.panel.setup_card)]}, indent=2)+'\n')
+    try:
+        install_visible(app, dialog)
+        assert service.entered.wait(1)
+        QTest.qWait(1100); dialog.poll()
+        panel = dialog.panel
+        assert panel.setup_step.text() == 'Step 2 of 3 · Review and install'
+        assert panel.status.parentWidget() is panel.setup_card
+        assert panel.activity.parentWidget() is panel.setup_card
+        assert panel.activity.isVisible() and panel.activity.minimum() == panel.activity.maximum() == 0
+        assert panel.elapsed.isVisible() and 'Elapsed:' in panel.elapsed.text()
+        assert panel.stop.isEnabled() and dialog.close_button.isEnabled()
+        assert not calls and service.current.selected is None
+        capture('installing')
+        QTest.mouseClick(panel.stop, Qt.LeftButton)
+        service.gate.set(); settle_dialog(app, dialog)
+        assert service.current.selected is None and not panel.activity.isVisible()
+        capture('cancelled')
+        install_visible(app, dialog); settle_dialog(app, dialog)
+        assert panel.setup_step.text() == 'Step 3 of 3 · Open and finish setup'
+        assert dialog.open_reader.isVisible() and dialog.open_reader.isEnabled()
+        assert dialog.open_reader.property('primary') is True and not calls
+        capture('installed')
+    finally:
+        service.gate.set()
+        dialog.close(); settle_dialog(app, dialog)
