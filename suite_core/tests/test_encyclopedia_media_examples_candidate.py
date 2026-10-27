@@ -18,12 +18,23 @@ class Signal:
         for callback in self.callbacks: callback(*args)
 
 
+@dataclass
+class Policy:
+    horizontal: object = None
+    vertical: object = None
+    def setVerticalPolicy(self, value): self.vertical = value
+
+
 class Control:
     def __init__(self, *args, **kwargs):
         self.value = args[0] if args and isinstance(args[0], str) else ''
         self.enabled = True
         self.items = []
         self.position = 0
+        self._parent = next((arg for arg in reversed(args) if isinstance(arg, Control)), None)
+        self._central = self._layout = None
+        self._hidden = False
+        self._policy = Policy()
         for name in ('clicked', 'textChanged', 'returnPressed', 'currentIndexChanged', 'currentChanged',
                      'toggled', 'currentRowChanged', 'searchRequested'):
             setattr(self, name, Signal())
@@ -36,8 +47,18 @@ class Control:
     def setText(self, value): self.value = value; self.textChanged.emit(value)
     def text(self): return self.value
     def setPlainText(self, value): self.value = value
-    def hide(self): pass
-    def show(self): pass
+    def hide(self): self._hidden = True
+    def show(self): self._hidden = False
+    def setVisible(self, visible): self._hidden = not visible
+    def isHidden(self): return self._hidden
+    def setParent(self, parent): self._parent = parent
+    def parentWidget(self): return self._parent
+    def setCentralWidget(self, widget): self._central = widget
+    def centralWidget(self): return self._central
+    def layout(self): return self._layout
+    def sizePolicy(self): return replace(self._policy)
+    def setSizePolicy(self, *args):
+        self._policy = replace(args[0]) if len(args) == 1 else Policy(*args)
     def clearSelection(self): pass
     def isChecked(self): return False
     def clear(self): self.items = []; self.value = ''
@@ -55,6 +76,35 @@ class Control:
     def currentIndex(self): return self.position
     def findData(self, data): return next((i for i, item in enumerate(self.items) if item[1] == data), -1)
     def closeEvent(self, event): pass
+
+
+class Layout(Control):
+    """Ownership/order protocol only; no native geometry or event loop."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.owner, self.widgets, self.layouts = parent, [], []
+        if parent is not None: parent._layout = self
+    def addWidget(self, widget, *args):
+        self.insertWidget(len(self.widgets), widget)
+    def insertWidget(self, index, widget):
+        self.removeWidget(widget)
+        self.widgets.insert(len(self.widgets) if index < 0 else index, widget)
+        if self.owner is not None: widget.setParent(self.owner)
+    def removeWidget(self, widget):
+        if widget in self.widgets: self.widgets.remove(widget)
+    def indexOf(self, widget):
+        return self.widgets.index(widget) if widget in self.widgets else -1
+    def addLayout(self, layout, *args):
+        self.layouts.append(layout)
+        layout.owner = self.owner
+        for widget in layout.widgets:
+            if self.owner is not None: widget.setParent(self.owner)
+
+
+class CommandBarControl(Control):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.visible_limits = {}
 
 
 class Index:
@@ -86,11 +136,12 @@ class Model:
 def browser(monkeypatch):
     # All Qt and shared-model imports replaced before candidate import. No native
     # widget, QApplication, thumbnail, reader or file-dialog is ever constructed.
-    qtcore = ModuleType('PySide6.QtCore'); qtcore.Qt = SimpleNamespace(PlainText=0)
+    qtcore = ModuleType('PySide6.QtCore'); qtcore.Qt = SimpleNamespace(PlainText=0, AlignLeft=1)
     widgets = ModuleType('PySide6.QtWidgets')
-    for name in ('QComboBox QFileDialog QHBoxLayout QLabel QLineEdit QMainWindow QPushButton QSplitter QTableView QTextEdit QVBoxLayout QWidget QListWidget QApplication QCheckBox').split():
+    for name in ('QComboBox QFileDialog QLabel QLineEdit QMainWindow QPushButton QSplitter QTableView QTextEdit QWidget QListWidget QApplication QCheckBox QFrame').split():
         setattr(widgets, name, Control)
-    widgets.QSizePolicy = SimpleNamespace(Maximum=1, Preferred=2, Expanding=3)
+    widgets.QVBoxLayout = widgets.QHBoxLayout = Layout
+    widgets.QSizePolicy = SimpleNamespace(Maximum=1, Preferred=2, Expanding=3, Minimum=4)
     widgets.QAbstractItemView = SimpleNamespace(SelectRows=1, SingleSelection=2, NoEditTriggers=3)
     # The browser reuses a native activity widget; this pure-Control fixture
     # must double that dependency too, even when real Qt was loaded earlier.
@@ -99,11 +150,15 @@ def browser(monkeypatch):
     shared = ModuleType('qt_app.browse_components')
     shared.IncrementalResultModel, shared.IncrementalResultRow = Model, Row
     commandbar = ModuleType('suite_core.manager.command_bar')
-    commandbar.CommandBar = commandbar.CommandSearchDialog = Control
+    commandbar.CommandBar = CommandBarControl
+    commandbar.CommandSearchDialog = Control
     commandbar.UiCommand = lambda *args, **kwargs: SimpleNamespace(key=args[0], label=args[1], group=args[2], **kwargs)
+    cards = ModuleType('suite_core.manager.ui_cards')
+    cards.card_style = lambda widget, *, compact=False: None  # Presentation only, never import native Qt.
     for name, module in {'PySide6': ModuleType('PySide6'), 'PySide6.QtCore': qtcore,
                          'PySide6.QtWidgets': widgets, 'qt_app.browse_components': shared,
                          'suite_core.manager.command_bar': commandbar,
+                         'suite_core.manager.ui_cards': cards,
                          'qt_app.components': components}.items():
         monkeypatch.setitem(sys.modules, name, module)
     path = Path(__file__).with_name('browser.py')
@@ -116,6 +171,49 @@ def browser(monkeypatch):
     assert type(window.database_activity) is Control
     window.open_snapshot('synthetic-publication.json')  # reader replaced with DTO
     return window, module
+
+
+def test_fake_constructor_delivery_preserves_parent_visibility_and_policy(browser):
+    loaded, module = browser
+    loaded._sync_start_choices()  # Hostless fixture: explicitly model the host's next render sync.
+    empty = module.EncyclopediaWindow()
+    assert type(empty.start_card) is Control and type(empty.start_body) is Layout
+    assert empty.bar.visible_limits == {'Home': 2}
+    assert loaded.bar.visible_limits == {}  # Mutable policy is per instance.
+    root = empty.centralWidget()
+    assert root.layout().indexOf(empty.start_card) >= 0
+    for widget in (empty.empty_hint, empty.status, empty.database_activity, empty.database_elapsed, empty.cancel_work_button):
+        assert widget.parentWidget() is empty.start_card
+    assert empty.database_activity.isHidden() and empty.database_elapsed.isHidden()
+    assert empty.cancel_work_button.isHidden() and not empty.status.isHidden()
+    assert empty.status.sizePolicy().vertical == 4
+    assert empty.open_publication(publication())
+    empty._sync_start_choices()
+    assert empty.bar.visible_limits == {} and empty.start_card.isHidden()
+    for widget in (empty.empty_hint, empty.status, empty.database_activity, empty.database_elapsed, empty.cancel_work_button):
+        assert widget.parentWidget() is root
+    assert empty.database_activity.isHidden() and empty.cancel_work_button.isHidden()
+    assert not empty.status.isHidden()
+
+
+@pytest.mark.parametrize('preloaded', [False, True])
+def test_fake_module_substitution_restores_exact_previous_modules(monkeypatch, preloaded):
+    names = ('PySide6', 'PySide6.QtCore', 'PySide6.QtWidgets', 'qt_app.browse_components',
+             'suite_core.manager.command_bar', 'suite_core.manager.ui_cards', 'qt_app.components')
+    missing = object()
+    for name in names:
+        if preloaded:
+            monkeypatch.setitem(sys.modules, name, ModuleType(name))
+        else:
+            monkeypatch.delitem(sys.modules, name, raising=False)
+    previous = {name: sys.modules.get(name, missing) for name in names}
+    with monkeypatch.context() as scoped:
+        window, _module = browser.__wrapped__(scoped)
+        assert type(window.database_activity) is Control
+        assert sys.modules['PySide6.QtWidgets'].QApplication is Control
+        assert sys.modules['suite_core.manager.ui_cards'].card_style.__module__ == __name__
+    for name, original in previous.items():
+        assert sys.modules.get(name, missing) is original, name
 
 
 class Provider:
