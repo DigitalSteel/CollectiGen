@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+from concurrent.futures import Future
+from threading import Event
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +25,9 @@ from core import (
     normalize_tag,relation_between,
 )
 from core.image_workflow_state import ImageKnowledgeCoverage
+from core.duplicate_recycle_batch import (
+    apply_duplicate_recycle_batch,family_identities,missing_duplicate_recycle_outcome,
+)
 
 from .components import DisclosureButton,bind_status_footer,compact_button,set_progress_bar
 from .confidence import set_visual_status
@@ -229,7 +234,7 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
         self.frozen_authority_currentness=frozen_authority_currentness
         self._close_when_idle=False
         self.pool=QThreadPool.globalInstance(); self.report=None
-        self._task=None; self._restore_task=None
+        self._task=None; self._write_operation=""; self._restore_task=None
         self._details_task=None; self._details_generation=0
         self._preview_tasks=[]; self._preview_generation=0
         self._pair_thumbnail_task=None; self._pair_thumbnail_generation=0
@@ -238,6 +243,7 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
         self._active_group_id=""; self._active_pair_ids=()
         self._selected=set(); self._folder=None
         self._syncing_view=False; self._recycle_context=None
+        self._recycle_outcome=None; self._recycle_outcome_notes=(); self._recycle_refresh_errors=()
 
         self.setWindowTitle("Find Duplicate and Similar Images")
         self.resize(1320,900); self.setMinimumSize(1000,700)
@@ -254,6 +260,7 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
             self,self.search_status,self.progress,self.cancel,title="Duplicate search",
         )
         buttons=QDialogButtonBox(QDialogButtonBox.Close); buttons.rejected.connect(self.reject)
+        self.close_button=buttons.button(QDialogButtonBox.Close)
         root.addWidget(buttons)
         self._scope_changed(); self._update_actions()
         if self.frozen_scope is not None:
@@ -734,7 +741,21 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
             "Choose Find Duplicates to refresh after external file changes."
         )
 
+    def _retaining_write_result(self):
+        return self._task is not None and bool(self._write_operation)
+
+    def _bind_write_progress(self,task,operation):
+        self._write_operation=operation
+        self.cancel.hide()
+        self.search_status.setText(operation+". Wait for the accepted result; Close does not undo this operation.")
+        bind_job_progress(
+            self,task,title=operation,unit="families" if operation=="Moving selected duplicate families" else "pairs",
+            cancel_button=self.close_button,
+            cancel_tooltip="Wait for the accepted result before closing. Close does not undo this operation.",
+        )
+
     def cancel_work(self):
+        if self._retaining_write_result():return
         task=self._task
         if task is not None:
             task.cancel()
@@ -743,8 +764,8 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
             self._task=None; self.progress.hide(); self.cancel.hide()
             self.search.setEnabled(True); self._update_actions()
             self.search_status.setText(
-                "Duplicate work stopped safely for this review; completed "
-                "fingerprints remain available for the next run."
+                "Stopped observing this read-only duplicate search or preview. "
+                "Completed fingerprints remain available; background cleanup may still be finishing."
             )
 
     def _search_progress(self,current,total,message):
@@ -752,7 +773,7 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
         self.search_status.setText(str(message or "Updating the duplicate index…"))
 
     def _finish_task(self):
-        self._task=None; self.progress.hide(); self.cancel.hide(); self.search.setEnabled(True)
+        self._task=None; self._write_operation=""; self.progress.hide(); self.cancel.hide(); self.search.setEnabled(True)
         if self._close_when_idle:
             QTimer.singleShot(0,self.reject)
 
@@ -764,6 +785,8 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
             f"Index current • {report.indexed:,} new/changed • {report.reused:,} unchanged reused • {report.removed:,} stale cache row(s) retired"
         )
         self._render_groups()
+        self._recycle_refresh_errors=()
+        self._update_actions()
 
     def _search_cancelled(self):
         self._finish_task(); self.search_status.setText("Duplicate indexing stopped safely; completed fingerprints remain available for the next run.")
@@ -1244,6 +1267,7 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
                 "Keep both images and hide only this exact identity/content pair from future duplicate results."
                 if pair else "Choose a set first."
             )
+        if self._recycle_refresh_errors:self.resolve.setEnabled(False)
         self.history.setEnabled(bool(self.state.duplicates.decisions.snapshot_keys()))
         if self.training_mode:
             self.resolve.setEnabled(False)
@@ -1253,6 +1277,7 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
                 control.setEnabled(False)
 
     def _mark_distinct(self):
+        if self._task is not None:return
         if self.frozen_mode=="preflight" and not self._frozen_scope_current():
             QMessageBox.warning(self,"Frozen scope changed","Close this review and run the Ingest duplicate check again. No reviewed decision changed.")
             return
@@ -1285,6 +1310,7 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
         self.progress.show(); set_progress_bar(self.progress,unknown_text="Checking current fingerprints…")
         self.cancel.hide(); self.search.setEnabled(False)
         self.search_status.setText("Checking both current files before saving the reviewed decision…")
+        self._bind_write_progress(task,"Saving the reviewed-distinct decision")
         self._update_actions(); task.start()
 
     def _mark_distinct_ready(self,result):
@@ -1297,11 +1323,11 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
 
     def _distinct_cancelled(self):
         self._finish_task(); self._update_actions()
-        self.search_status.setText("Mark Distinct stopped before a new reviewed decision was saved.")
+        self.search_status.setText("Mark Distinct outcome not confirmed. Review current history before deliberately trying again; cancellation does not prove no decision was saved.")
 
     def _distinct_failed(self,message):
         self._finish_task(); self._update_actions()
-        self.search_status.setText("Reviewed-distinct decision not changed; no image or Image Knowledge changed.")
+        self.search_status.setText("Reviewed-distinct decision outcome not confirmed. Review current history before deliberately trying again; no image or Image Knowledge was changed by marking distinct.")
         QMessageBox.warning(self,"Reviewed decision could not be changed",str(message))
 
     def _selected_records(self):
@@ -1378,45 +1404,99 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
         self._apply_recycle(plans,boundary_required)
 
     def _apply_recycle(self,plans,boundary_confirmed):
+        if self._task is not None:return
+        plans=tuple(plans);families=family_identities(plans)
+        final_outcome=Future();invoked=Event();acknowledged=[False]
         def work(job):
-            moved=[]; errors=[]; recovery_required=False
-            for index,(record,plan) in enumerate(plans,1):
-                if not job.checkpoint():raise InterruptedError()
-                if not self._frozen_authority_scope_current():
-                    raise RuntimeError(
-                        "The frozen preflight scope changed before a Recycle "
-                        "Bin write. Nothing further was moved."
-                    )
-                try:
-                    self.state.recycle.apply_recycle(
-                        plan,reason="move explicitly selected duplicate candidate to Recycle Bin",
-                        boundary_confirmed=bool(boundary_confirmed),
-                        should_cancel=lambda:not job.checkpoint(),
-                    )
-                    moved.append(record)
-                except TransferRecoveryRequired as exc:
-                    errors.append(f"{record.path.name}: {exc}"); recovery_required=True; break
-                except Exception as exc:errors.append(f"{record.path.name}: {exc}")
-                job.update(index,len(plans),f"Moving {record.path.name} to Recycle Bin")
-            return tuple(moved),tuple(errors),recovery_required
-        task=CoordinatedCallTask(self.state.jobs,"Moving selected duplicate families to Recycle Bin",work,resource="io",key="duplicate-recycle-apply:"+hashlib.sha256("\n".join(record.identity for record,_plan in plans).encode()).hexdigest())
-        self._task=task; self.search.setEnabled(False); self.cancel.show(); self.progress.show(); set_progress_bar(self.progress,0,len(plans))
-        task.signals.progress.connect(self._search_progress); task.signals.complete.connect(self._recycle_apply_ready); task.signals.cancelled.connect(self._search_cancelled); task.signals.failed.connect(self._search_failed); task.start()
+            invoked.set()
+            return apply_duplicate_recycle_batch(
+                plans,
+                apply=lambda plan:self.state.recycle.apply_recycle(
+                    plan,reason="move explicitly selected duplicate candidate to Recycle Bin",
+                    boundary_confirmed=bool(boundary_confirmed),
+                    should_cancel=lambda:not job.checkpoint(),
+                ),
+                checkpoint=job.checkpoint,authority_current=self._frozen_authority_scope_current,
+                progress=job.update,final_outcome=final_outcome,
+            )
+        # Each accepted mutation owns its accounting;unlike searches,it must not
+        # silently inherit another keyed job's callable/result channel.
+        task=CoordinatedCallTask(self.state.jobs,"Moving selected duplicate families to Recycle Bin",work,resource="io")
+        def delivered(terminal,error=""):
+            if acknowledged[0]:return
+            acknowledged[0]=True
+            outcome=(final_outcome.result() if final_outcome.done() else
+                missing_duplicate_recycle_outcome(
+                    families,invoked=invoked.is_set(),
+                    message=("Batch ended before its worker began." if not invoked.is_set()
+                             else "Final family accounting is unavailable;review exact recovery records."),
+                ))
+            self._recycle_apply_ready(task,outcome,terminal,str(error))
+        self._task=task;self._recycle_refresh_errors=()
+        self.search.setEnabled(False);self.progress.show();set_progress_bar(self.progress,0,len(plans))
+        task.signals.progress.connect(self._search_progress)
+        task.signals.complete.connect(lambda _result:delivered("complete"))
+        task.signals.cancelled.connect(lambda:delivered("cancelled"))
+        task.signals.failed.connect(lambda error:delivered("failed",error))
+        self._bind_write_progress(task,"Moving selected duplicate families")
+        self._update_actions();task.start()
 
-    def _recycle_apply_ready(self,result):
-        self._finish_task(); moved,errors,recovery_required=result; self._recycle_context=None
-        if self.report is not None and moved:
-            identities={record.identity for record in moved}; remaining={key:value for key,value in self.report.records.items() if key not in identities}
-            self.report=self.state.duplicates.regroup(replace(self.report,records=remaining))
-            self.state.duplicates.clear_session_reports()
-            self.state.duplicates.record_badge_results(self.report)
-            self._active_group_id=""; self._active_pair_ids=()
-            self._selected.clear(); self._render_groups(); self.changed.emit([str(record.path) for record in moved])
-        self.search_status.setText(f"Moved {len(moved):,} selected duplicate family(s) to Recycle Bin • {len(errors):,} need attention")
-        if errors:
-            QMessageBox.warning(self,"Recycle recovery needs attention" if recovery_required else "Some duplicate families were not moved","\n".join(errors[:12]))
+    def _recycle_apply_ready(self,task,outcome,terminal,error=""):
+        if self._task is not task:return
+        # Retain evidence before fallible regrouping,badges or presentation.
+        self._recycle_outcome=outcome;self._recycle_context=None
+        refresh_errors=[]
+        text=(f"Confirmed moved: {len(outcome.moved):,} • Unconfirmed: {len(outcome.unconfirmed):,}"
+              f" • Not attempted: {len(outcome.unattempted):,}")
+        details=["Confirmed moved: "+family.path for family in outcome.moved]
+        details.extend("Unconfirmed: "+item.family.path+": "+item.error for item in outcome.unconfirmed)
+        details.extend("Not attempted: "+family.path for family in outcome.unattempted)
+        if outcome.stop_reason:details.append(outcome.stop_reason)
+        if error:details.append(error)
+        if terminal!="complete":details.append("Background status: "+terminal+";known family receipts remain valid.")
+        self._recycle_outcome_notes=tuple(details);self._recycle_refresh_errors=()
+        def failed(stage,refresh_error):
+            refresh_errors.append(stage+": "+(str(refresh_error) or type(refresh_error).__name__))
+            self._recycle_refresh_errors=tuple(refresh_errors)
+            self._recycle_outcome_notes=tuple(details+["Result refresh: "+value for value in refresh_errors])
+        def attempt(stage,action):
+            try:action()
+            except Exception as refresh_error:failed(stage,refresh_error)
+        try:
+            if self.report is not None and outcome.moved:
+                identities={family.identity for family in outcome.moved}
+                remaining={key:value for key,value in self.report.records.items() if key not in identities}
+                self.report=self.state.duplicates.regroup(replace(self.report,records=remaining))
+                self.state.duplicates.clear_session_reports()
+                self.state.duplicates.record_badge_results(self.report)
+                self._active_group_id="";self._active_pair_ids=()
+                self._selected.clear();self._render_groups()
+        except Exception as refresh_error:
+            failed("Report/cache/badge rendering",refresh_error)
+        finally:
+            # Known writes notify their owner once even without a report or if
+            # post-write presentation fails. Never infer rollback from that error.
+            if outcome.moved:attempt("Owner notification",lambda:self.changed.emit([family.path for family in outcome.moved]))
+            # Callable return/accounting,not widget rendering,ends write custody.
+            self._task=None;self._write_operation=""
+            attempt("Progress settlement",self._finish_task)
+        attempt("Action refresh",self._update_actions)
+        if refresh_errors:
+            text+=" • Result refresh needs attention;find duplicates again before resolving more."
+        elif outcome.unconfirmed or outcome.unattempted or outcome.stop_reason:
+            text+=" • Review exact Recycle Bin/recovery records before retrying."
+        attempt("Result text",lambda:self.search_status.setText(text))
+        attempt("Result details",lambda:self.search_status.setToolTip("\n".join(self._recycle_outcome_notes)))
+        if outcome.unconfirmed or outcome.unattempted or outcome.stop_reason or error or terminal!="complete" or refresh_errors:
+            attempt("Outcome warning",lambda:QMessageBox.warning(self,"Recycle recovery needs attention" if outcome.recovery_required else "Review Recycle Bin outcomes","\n".join(self._recycle_outcome_notes[:12])))
+        if refresh_errors:attempt("Resolution hold",lambda:self.resolve.setEnabled(False))
+
+    def done(self,result):
+        if self._retaining_write_result():return
+        super().done(result)
 
     def reject(self):
+        if self._retaining_write_result():return
         if self._restore_task is not None:
             self._restore_task.cancel(); self._restore_task=None
         if self.frozen_scope is not None and self._task is not None:

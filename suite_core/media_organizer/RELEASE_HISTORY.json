@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.4.11-alpha.1",
+      "numeric_version": "0.4.11",
+      "maturity": "alpha",
+      "date": "2026-11-03",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate; exact validation/publication receipt required",
+      "scope": "Completed BUG-328/329 duplicate write custody and exact partial family outcomes"
+    },
+    {
       "software_version": "0.4.10-alpha.1",
       "numeric_version": "0.4.10",
       "maturity": "alpha",

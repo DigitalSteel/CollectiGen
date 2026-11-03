@@ -34,7 +34,7 @@
   "maturity": "alpha",
   "module_id": "collectigen.media-organizer",
   "native_activation_qualified": false,
-  "numeric_version": "0.4.10",
+  "numeric_version": "0.4.11",
   "optional_integrations": [
     "injected model-manager status",
     "borrowed Encyclopedia TagLookup interface 1"
@@ -109,7 +109,7 @@
   "scope": "Exact published a045 runtime/profile/prerequisites/Setup/source-owner declarations; only shutdown availability correction and a046 metadata.",
   "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
   "shell_owner": "qt_app.main_window.TagManagerWindow",
-  "software_version": "0.4.10-alpha.1",
+  "software_version": "0.4.11-alpha.1",
   "standalone_distribution_qualified": false,
   "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
   "startup_owner": "qt_main._start_application",
