@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.4.9-alpha.1",
+      "numeric_version": "0.4.9",
+      "maturity": "alpha",
+      "date": "2026-11-03",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate; exact validation/publication receipt required",
+      "scope": "Completed F15 stale-example-error and literal provenance summary fixes; original transports and data authority retained"
+    },
+    {
       "software_version": "0.4.8-alpha.1",
       "numeric_version": "0.4.8",
       "maturity": "alpha",

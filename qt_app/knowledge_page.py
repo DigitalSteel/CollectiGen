@@ -1748,7 +1748,7 @@ class KnowledgePage(QWidget):
         )
         self.tag_notes=FinishedEditingTextEdit(); self.tag_notes.setMaximumHeight(70); self.tag_notes.setAccessibleName("Meaning and Usage notes"); self._tag_relationship_dirty_fields=set()
         provenance_row=QWidget(); provenance_layout=QHBoxLayout(provenance_row); provenance_layout.setContentsMargins(0,0,0,0)
-        self.tag_provenance=QLabel("No recorded provenance"); self.tag_provenance.setObjectName("mutedLabel"); self.tag_provenance.setWordWrap(True)
+        self.tag_provenance=QLabel("No recorded provenance"); self.tag_provenance.setTextFormat(Qt.PlainText); self.tag_provenance.setObjectName("mutedLabel"); self.tag_provenance.setWordWrap(True)
         provenance_details=QPushButton("View Details…"); provenance_details.clicked.connect(self.view_tag_provenance)
         provenance_layout.addWidget(self.tag_provenance,1); provenance_layout.addWidget(provenance_details)
         self._tag_provenance_details=""
@@ -4881,8 +4881,8 @@ class KnowledgePage(QWidget):
                 self._tag_examples_loaded((g,r,paths))
             )
             task.signals.failed.connect(
-                lambda message,g=generation,c=context:
-                self._tag_examples_failed(g,c,message)
+                lambda message,g=generation,r=record.id,c=context:
+                self._tag_examples_failed(g,r,c,message)
             )
             task.start()
         else:
@@ -4892,8 +4892,8 @@ class KnowledgePage(QWidget):
                 self._tag_examples_loaded((g,r,paths))
             )
             task.signals.failed.connect(
-                lambda message,g=generation,c=context:
-                self._tag_examples_failed(g,c,message)
+                lambda message,g=generation,r=record.id,c=context:
+                self._tag_examples_failed(g,r,c,message)
             )
             self.pool.start(task)
 
@@ -4908,8 +4908,9 @@ class KnowledgePage(QWidget):
         )
         self._tag_gallery_task=None
 
-    def _tag_examples_failed(self,generation,context,message):
-        if generation!=self._tag_gallery_generation:return
+    def _tag_examples_failed(self,generation,record_id,context,message):
+        if (generation!=self._tag_gallery_generation or record_id!=self.current_tag_id
+                or record_id not in self.tags.tags):return
         self.tag_gallery.set_error(message,context); self._tag_gallery_task=None
 
     def refresh_visible_gallery_statuses(self):
