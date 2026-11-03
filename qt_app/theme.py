@@ -4,6 +4,7 @@ import ctypes
 import os
 
 from PySide6.QtGui import QColor,QPalette
+from . import indicator_resources  # Register embedded stock-QSS glyph resources.
 from .confidence import COLOR_BLIND_STATUS_COLORS,STANDARD_STATUS_COLORS,set_color_blind_mode
 
 
@@ -59,6 +60,19 @@ def build_stylesheet(theme: str="system",color_blind_mode: bool=False) -> str:
     navigation_text="#f4f8ff" if theme=="midnight" else "palette(text)"
     disabled_text=("#aeb6c2" if theme in {"dark","midnight"}
                    else "#6b7280" if theme=="light" else "palette(button-text)")
+    # Native system/high-contrast appearance stays with the platform style.
+    glyph="dark" if theme in {"dark","midnight"} else "light"
+    indicator_styles="" if theme=="system" else f"""
+        QCheckBox::indicator, QRadioButton::indicator, QAbstractItemView::indicator {{ border:2px solid palette(text); background:palette(base); }}
+        QAbstractItemView::indicator {{ width:16px; height:16px; }}
+        QCheckBox::indicator, QAbstractItemView::indicator {{ border-radius:3px; }}
+        QRadioButton::indicator {{ border-radius:9px; }}
+        QCheckBox::indicator:checked, QAbstractItemView::indicator:checked {{ background:palette(text); image:url(:/collectigen/indicators/check-{glyph}.svg); }}
+        QCheckBox::indicator:indeterminate, QAbstractItemView::indicator:indeterminate {{ background:palette(text); image:url(:/collectigen/indicators/partial-{glyph}.svg); }}
+        QRadioButton::indicator:checked {{ background:palette(text); image:url(:/collectigen/indicators/radio-{glyph}.svg); }}
+        QCheckBox::indicator:focus, QRadioButton::indicator:focus, QAbstractItemView::indicator:focus {{ border-color:palette(highlight); border-style:dashed; }}
+        QCheckBox::indicator:disabled, QRadioButton::indicator:disabled, QAbstractItemView::indicator:disabled {{ border-color:palette(mid); border-style:dashed; }}
+    """
     colors=COLOR_BLIND_STATUS_COLORS if color_blind_mode else STANDARD_STATUS_COLORS
     styles={"red":"double","orange":"dashed","yellow":"dotted","green":"solid"} if color_blind_mode else {key:"solid" for key in ("red","orange","yellow","green")}
     return f"""
@@ -163,6 +177,7 @@ def build_stylesheet(theme: str="system",color_blind_mode: bool=False) -> str:
         QCheckBox#cardCheck:hover {{ background:palette(midlight); }}
         QCheckBox#cardCheck::indicator {{ width:18px; height:18px; }}
         QRadioButton::indicator, QCheckBox::indicator {{ width:16px; height:16px; }}
+        {indicator_styles}
         QProgressBar {{ min-height:18px; border:1px solid palette(midlight); border-radius:7px; background:palette(base); color:palette(text); text-align:center; }}
         QProgressBar::chunk {{ background:palette(highlight); border-radius:6px; }}
         QStatusBar {{ background:palette(base); border:0; }}

@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "date": "2026-11-03",
+      "interface_version": 1,
+      "maturity": "alpha",
+      "numeric_version": "0.4.7",
+      "scope": "BUG-325: explicit stock Qt indicator marks/outline states; native runtime and data contracts retained",
+      "software_version": "0.4.7-alpha.1",
+      "status": "candidate; exact validation and publication receipt required",
+      "timezone": "America/New_York"
+    },
+    {
       "software_version": "0.4.6-alpha.1",
       "numeric_version": "0.4.6",
       "maturity": "alpha",
