@@ -28,6 +28,7 @@ from .components import DisclosureButton,bind_status_footer,compact_button,set_p
 from .confidence import set_visual_status
 from .gallery import ImageKnowledgeBadge,ProtectedImageView,content_safety_policy
 from .modal_feedback import FeedbackEnabledDialog
+from .job_progress import bind_job_progress
 from .workers import AsyncCallTask,CoordinatedCallTask
 
 
@@ -67,15 +68,21 @@ class DistinctHistoryDialog(QDialog):
         previews.addWidget(self.left); previews.addWidget(self.right); root.addWidget(previews,1)
         self.reason=QLabel("Select a reviewed pair."); self.reason.setWordWrap(True)
         self.reason.setObjectName("mutedLabel"); root.addWidget(self.reason)
+        self.outcome=QLabel(""); self.outcome.setWordWrap(True)
+        self.outcome.setTextFormat(Qt.PlainText); self.outcome.hide()
+        root.addWidget(self.outcome)
         controls=QHBoxLayout(); self.remove=compact_button(QPushButton("Remove Mark"),primary=True)
         self.remove.setEnabled(False); self.remove.clicked.connect(self._remove_selected)
         controls.addWidget(self.remove); controls.addStretch(1)
         buttons=QDialogButtonBox(QDialogButtonBox.Close); buttons.rejected.connect(self.reject)
+        self.close_button=buttons.button(QDialogButtonBox.Close)
         controls.addWidget(buttons); root.addLayout(controls)
         self._refresh()
 
     def _refresh(self):
+        from PySide6.QtCore import QSignalBlocker
         self.rows=self.state.duplicates.decisions.history()
+        blocker=QSignalBlocker(self.table)
         self.table.setRowCount(len(self.rows))
         for row,decision in enumerate(self.rows):
             try:
@@ -91,6 +98,8 @@ class DistinctHistoryDialog(QDialog):
         else:
             self.left.clear(); self.right.clear(); self.reason.setText("No reviewed-distinct marks are recorded.")
             self.remove.setEnabled(False)
+        del blocker
+        self._selection_changed()
 
     def _selected(self):
         rows={item.row() for item in self.table.selectedItems()}
@@ -138,21 +147,46 @@ class DistinctHistoryDialog(QDialog):
         )
         self._task=task; self.remove.setEnabled(False)
         task.signals.complete.connect(lambda removed,key=decision.key:self._removed(key,removed))
-        task.signals.failed.connect(self._failed); task.start()
+        task.signals.failed.connect(self._failed)
+        task.signals.cancelled.connect(self._cancelled)
+        self.outcome.setText("Removing one reviewed-distinct mark. Wait for its result before closing; closing does not undo accepted work.")
+        self.outcome.show()
+        bind_job_progress(
+            self,task,title="Removing one reviewed-distinct mark",unit="marks",
+            cancel_button=self.close_button,
+            cancel_tooltip="Wait for the accepted mark removal to finish before closing. Closing does not undo it.",
+        )
+        task.start()
 
     def _removed(self,key,removed):
         self._task=None
-        if removed:self.changed.emit(key)
         self._refresh()
+        self.outcome.setText(
+            "Reviewed-distinct mark removed. No image or Image Knowledge changed."
+            if removed else "This reviewed-distinct mark was already absent. No removal was needed."
+        )
+        self.outcome.show()
+        if removed:self.changed.emit(key)
 
     def _failed(self,message):
         self._task=None; self.remove.setEnabled(self._selected() is not None)
-        QMessageBox.warning(self,"Distinct mark was not changed",str(message))
+        self.outcome.setText("Removal was not confirmed. Review the error and current history before deliberately retrying.")
+        self.outcome.show()
+        QMessageBox.warning(self,"Removal not confirmed",str(message))
+
+    def _cancelled(self):
+        self._task=None
+        self._refresh()
+        self.outcome.setText("Removal outcome is not confirmed. Review the current history before retrying; a cancellation request does not prove the mark was unchanged.")
+        self.outcome.show()
+
+    def done(self,result):
+        if self._task is not None:return
+        for task in self._preview_tasks:task.cancel()
+        super().done(result)
 
     def reject(self):
-        if self._task is not None:self._task.cancel()
-        for task in self._preview_tasks:task.cancel()
-        super().reject()
+        self.done(QDialog.Rejected)
 
 
 class DuplicateFinderDialog(FeedbackEnabledDialog):

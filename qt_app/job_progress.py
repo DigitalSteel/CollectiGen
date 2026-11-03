@@ -22,6 +22,8 @@ class WindowJobProgress(QObject):
         self.stop=QPushButton("Cancel Safely",owner)
         self.stop.clicked.connect(self.cancel)
         self._external_cancel=None
+        self._external_cancel_tooltip="Stop this operation at its next safe boundary."
+        self._external_tooltip_restore=None
         self._started=0.0
         self._title=""
         self._unit="items"
@@ -32,16 +34,21 @@ class WindowJobProgress(QObject):
         self.timer.setInterval(200)
         self.timer.timeout.connect(self.refresh)
 
-    def attach(self,task,*,title,unit,cancel_button=None):
+    def attach(self,task,*,title,unit,cancel_button=None,cancel_tooltip=None):
         if self.task is not None and self.task is not task:
             previous=self.task.manager.get(self.task.job_id) if self.task.job_id else None
             if previous is None or previous.state in {"queued","running","paused"}:
                 raise RuntimeError("The window already has an active operation progress owner.")
+        self._restore_external_tooltip()
         self.task=task
         self._title=str(title or task.name)
         self._unit=str(unit or "items")
         self._started=time.monotonic()
         self._external_cancel=cancel_button
+        self._external_cancel_tooltip=("Stop this operation at its next safe boundary."
+            if cancel_tooltip is None else str(cancel_tooltip))
+        if cancel_tooltip is not None and cancel_button is not None:
+            self._external_tooltip_restore=(cancel_button,cancel_button.toolTip())
         task.signals.complete.connect(lambda *_args:self.finish(task))
         task.signals.failed.connect(lambda *_args:self.finish(task))
         task.signals.cancelled.connect(lambda:self.finish(task))
@@ -82,7 +89,13 @@ class WindowJobProgress(QObject):
         self.stop.setVisible(self._external_cancel is None)
         self.stop.setEnabled(not stopping)
         if self._external_cancel is not None:
-            self._external_cancel.setToolTip("Stop this operation at its next safe boundary.")
+            self._external_cancel.setToolTip(self._external_cancel_tooltip)
+
+    def _restore_external_tooltip(self):
+        if self._external_tooltip_restore is not None:
+            button,tooltip=self._external_tooltip_restore
+            button.setToolTip(tooltip)
+            self._external_tooltip_restore=None
 
     def cancel(self):
         task=self.task
@@ -93,20 +106,23 @@ class WindowJobProgress(QObject):
 
     def finish(self,task):
         if self.task is not task:return
+        self._restore_external_tooltip()
         self.task=None
         self.timer.stop()
         self.activity.set_active(False)
         for widget in (self.phase,self.bar,self.activity,self.stop):widget.hide()
 
 
-def bind_job_progress(owner,task,*,title,unit="items",cancel_button=None):
+def bind_job_progress(owner,task,*,title,unit="items",cancel_button=None,cancel_tooltip=None):
     """Bind before starting a task; reuse the owner's one visible footer row.
 
     Optional ``cancel_button`` is already wired by its owning workflow; otherwise
     the shared row supplies cancellation without detaching completion delivery.
+    Optional cancel_tooltip describes the owner-wired action and is restored
+    on terminal completion. Defaults and physical-drain semantics do not change.
     Callers continue to own safe closing, errors, results and subsequent steps.
     """
     binding=getattr(owner,"_window_job_progress",None)
     if binding is None:
         binding=owner._window_job_progress=WindowJobProgress(owner)
-    return binding.attach(task,title=title,unit=unit,cancel_button=cancel_button)
+    return binding.attach(task,title=title,unit=unit,cancel_button=cancel_button,cancel_tooltip=cancel_tooltip)
