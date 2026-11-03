@@ -1482,7 +1482,7 @@ class DuplicateFinderDialog(FeedbackEnabledDialog):
             attempt("Progress settlement",self._finish_task)
         attempt("Action refresh",self._update_actions)
         if refresh_errors:
-            text+=" • Result refresh needs attention;find duplicates again before resolving more."
+            text+=f" • Result refresh needs attention;choose {self.search.text()} before resolving more."
         elif outcome.unconfirmed or outcome.unattempted or outcome.stop_reason:
             text+=" • Review exact Recycle Bin/recovery records before retrying."
         attempt("Result text",lambda:self.search_status.setText(text))

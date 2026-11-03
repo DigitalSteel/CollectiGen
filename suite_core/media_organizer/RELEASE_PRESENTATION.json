@@ -1,9 +1,9 @@
 {
   "component": "MediaOrganizer",
-  "display_version": "a.0.4.11",
-  "legacy_wire_version": "0.4.11-alpha.1",
+  "display_version": "a.0.4.12",
+  "legacy_wire_version": "0.4.12-alpha.1",
   "maturity": "alpha",
-  "numeric_version": "0.4.11",
+  "numeric_version": "0.4.12",
   "purpose": "presentation only; not signed release/update metadata",
   "schema": 1
 }

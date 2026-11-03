@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.4.12-alpha.1",
+      "numeric_version": "0.4.12",
+      "maturity": "alpha",
+      "date": "2026-11-03",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate; exact validation/publication receipt required",
+      "scope": "UX-01 duplicate refresh-held recovery instruction matches visible action"
+    },
+    {
       "software_version": "0.4.11-alpha.1",
       "numeric_version": "0.4.11",
       "maturity": "alpha",
