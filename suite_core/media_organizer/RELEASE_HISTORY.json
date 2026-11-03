@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.4.8-alpha.1",
+      "numeric_version": "0.4.8",
+      "maturity": "alpha",
+      "date": "2026-11-03",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate; exact validation/publication receipt required",
+      "scope": "Preserve final-Close owner custody on incomplete drain; existing producer and earlier vetoes unchanged"
+    },
+    {
       "date": "2026-11-03",
       "interface_version": 1,
       "maturity": "alpha",

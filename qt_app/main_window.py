@@ -5295,6 +5295,12 @@ class TagManagerWindow(QMainWindow):
                     self.statusBar().showMessage("Finishing the library refresh before closing…")
             event.ignore()
             return
+        if not self.state.shutdown_background_jobs(wait=True,timeout=2.0):
+            event.ignore()
+            QMessageBox.warning(self,"Close needs attention",
+                "Background work or Metadata readers have not finished closing. "
+                "The window remains open; try Close again after they have drained.")
+            return
         if not self.ui_test:
             self.qt_settings.setValue("main/geometry",self.saveGeometry())
             self.qt_settings.setValue("main/state",self.saveState())
@@ -5324,10 +5330,4 @@ class TagManagerWindow(QMainWindow):
         if hasattr(self,"knowledge_page"):
             self.knowledge_page.request_background_shutdown()
         self._finish_knowledge_editor_wait()
-        if not self.state.shutdown_background_jobs(wait=True,timeout=2.0):
-            event.ignore()
-            QMessageBox.warning(self,"Close needs attention",
-                "Background work or Metadata readers have not finished closing. "
-                "The window remains open; try Close again after they have drained.")
-            return
         super().closeEvent(event)
