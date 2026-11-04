@@ -4,6 +4,7 @@ import importlib
 import hashlib
 import json
 import time
+from threading import Lock
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -474,6 +475,47 @@ class BugReportPrivacyDialog(QDialog):
         self.status.show()
 
 
+class _ArchiveWriteAttempt:
+    """One effect-entry fence and retained result, independent of Qt delivery."""
+
+    def __init__(self,call):
+        self.call=call; self.lock=Lock(); self.entered=False
+        self.denied=False; self.outcome=None; self.task=None
+        self.dispatch_error=""
+
+    def deny_before_entry(self,message):
+        with self.lock:
+            self.dispatch_error=message
+            if self.entered:return False
+            self.denied=True; self.outcome=("denied",message)
+            return True
+
+    def run(self):
+        with self.lock:
+            if self.denied:return None
+            self.entered=True
+        try:
+            value=self.call()
+        except BaseException as exc:
+            with self.lock:self.outcome=("unconfirmed",str(exc))
+            raise
+        with self.lock:self.outcome=("complete",value)
+        return value
+
+    def snapshot(self):
+        with self.lock:return self.denied,self.outcome
+
+
+def _record_archive_exports(selected,result):
+    errors=[]
+    for item in selected:
+        try:
+            record_report_export(item.directory,package_id=result.archive_id,
+                package_sha256=result.sha256,package_kind="bulk")
+        except Exception as exc:errors.append(f"{item.report_id}: {exc}")
+    return "\n".join(errors)
+
+
 class FeedbackArchiveDialog(FeedbackEnabledDialog):
     feedback_workflow = "Collected feedback archive"
 
@@ -486,6 +528,11 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         self.feedback_directory = Path(feedback_directory)
         self.archive_path: Path | None = None
         self.tracking_warning = ""
+        self._write_attempt=None; self._archive_result=None
+        self._write_uncertain=False; self._completion_delivered=False
+        self._write_scope=(); self._write_phase=""
+        self._write_timer=QTimer(self); self._write_timer.setInterval(100)
+        self._write_timer.timeout.connect(self._poll_write)
         self._reports, self._invalid = (), ()
         self._reports_by_id = {}
         self._discovery_task = None
@@ -551,7 +598,7 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         self.destination = QLineEdit(
             str(self.feedback_directory / default_name)
         )
-        choose = QPushButton("Choose File…")
+        choose = self.browse_button = QPushButton("Choose File…")
         choose.clicked.connect(self._browse)
         output_layout.addWidget(self.destination, 1)
         output_layout.addWidget(choose)
@@ -578,11 +625,19 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         bind_status_footer(self,self.discovery_phase,self.discovery_activity,
             title="Loading saved reports",follow_visibility=True)
 
+        self.write_phase=QLabel("")
+        self.write_phase.setWordWrap(True)
+        self.write_phase.setAccessibleName("Archive write phase and elapsed time")
+        self.write_activity=IndeterminateActivityBar(self)
+        self.write_phase.hide(); self.write_activity.hide()
+        bind_status_footer(self,self.write_phase,self.write_activity,
+            title="Archive work",follow_visibility=True)
+
         buttons = QDialogButtonBox()
         self.export_button = buttons.addButton(
             "Create Reviewed Archive", QDialogButtonBox.AcceptRole
         )
-        cancel = buttons.addButton(QDialogButtonBox.Cancel)
+        cancel = self.cancel_button = buttons.addButton(QDialogButtonBox.Cancel)
         self.export_button.clicked.connect(self._export)
         cancel.clicked.connect(self.reject)
         layout.addWidget(buttons)
@@ -744,6 +799,7 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         return tuple(selected)
 
     def _set_all(self, state: Qt.CheckState) -> None:
+        if self._write_attempt is not None or self._archive_result is not None or self._write_uncertain:return
         for index in range(self.report_list.count()):
             self.report_list.item(index).setCheckState(state)
         self._refresh()
@@ -773,9 +829,10 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         self.preview.setPlainText(
             json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True)
         )
-        self.export_button.setEnabled(bool(selected))
+        self.export_button.setEnabled(bool(selected) and self._write_attempt is None and self._archive_result is None and not self._write_uncertain)
 
     def _browse(self) -> None:
+        if self._write_attempt is not None or self._archive_result is not None or self._write_uncertain:return
         selected, _filter = QFileDialog.getSaveFileName(
             self,
             "Save Feedback Archive",
@@ -789,38 +846,97 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
             self.destination.setText(str(path))
 
     def _export(self) -> None:
-        selected = self._selected()
-        destination = self.destination.text().strip()
+        if self._completion_delivered or self._write_attempt is not None or self._write_uncertain:return
+        if self._archive_result is not None:
+            self.accept();return
+        selected=self._selected();destination=self.destination.text().strip()
+        if not self._discovery_loaded or not selected:
+            self._set_validation_status("Select at least one currently loaded report.");return
         if not destination:
-            self._set_validation_status("Choose a ZIP destination.")
-            return
+            self._set_validation_status("Choose a new ZIP destination.");return
+        self._write_scope=tuple(selected)
+        directories=tuple(item.directory for item in selected)
+        self._begin_write("archive",lambda directories=directories,destination=destination:
+            export_feedback_archive(directories,destination))
+
+    def _set_write_editable(self,editable):
+        self.report_list.setEnabled(editable)
+        self.select_all_button.setEnabled(editable and bool(self._reports))
+        self.clear_all_button.setEnabled(editable and bool(self._reports))
+        self.destination.setEnabled(editable)
+        self.browse_button.setEnabled(editable)
+        self.export_button.setEnabled(editable and bool(self._selected()))
+
+    def _begin_write(self,phase,call):
+        attempt=_ArchiveWriteAttempt(call)
+        attempt.task=AsyncCallTask(attempt.run)
+        self._write_attempt=attempt;self._write_phase=phase
+        self._write_started_at=time.monotonic()
+        self._set_write_editable(False)
+        self.cancel_button.setText("Close")
+        self.status.hide();self.validation_status.hide()
+        self.write_phase.show()
+        self.write_activity.set_active(True,"Creating reviewed archive" if phase=="archive" else "Recording export history")
+        self.write_activity.show()
+        self._write_timer.start();self._poll_write()
         try:
-            result = export_feedback_archive(
-                [item.directory for item in selected],
-                destination,
-            )
-        except (BugReportError, OSError) as exc:
-            self.archive_path = None
-            self._set_operation_status(
-                "The feedback archive was not created. No original report was "
-                f"changed.\n{exc}",
-            )
-            return
-        self.archive_path = result.path
-        tracking_errors: list[str] = []
-        for item in selected:
-            try:
-                record_report_export(
-                    item.directory,
-                    package_id=result.archive_id,
-                    package_sha256=result.sha256,
-                    package_kind="bulk",
-                )
-            except Exception as exc:
-                tracking_errors.append(f"{item.report_id}: {exc}")
-        if tracking_errors:
-            self.tracking_warning = "\n".join(tracking_errors)
-        self.accept()
+            start_qt_delivery_task(QThreadPool.globalInstance(),attempt.task)
+        except Exception as exc:
+            # Denial uses the same fence as physical entry. If effects entered,
+            # retain custody; never cancel away a completed or uncertain write.
+            if attempt.deny_before_entry(str(exc)):self._poll_write()
+
+    def _poll_write(self):
+        attempt=self._write_attempt
+        if attempt is None:return
+        count=counted_noun(len(self._write_scope),"reviewed report")
+        phase=(f"Creating local archive from {count}." if self._write_phase=="archive"
+            else f"Verified ZIP saved. Recording export history for {count}.")
+        elapsed=int(time.monotonic()-self._write_started_at)
+        self.write_phase.setText(f"{phase} Elapsed {elapsed}s · Total not yet known. Close waits for this work.")
+        refresh_status_footer(self)
+        denied,outcome=attempt.snapshot()
+        if not denied and not attempt.task.is_finished():return
+        # Signals are only transport; receipt plus physical settlement owns the
+        # result. A denied late task has no permission to enter the writer.
+        self._write_timer.stop()
+        self.write_activity.set_active(False);self.write_activity.hide();self.write_phase.hide()
+        self._write_attempt=None
+        state,value=outcome or ("unconfirmed","The worker returned without a retained result.")
+        if self._write_phase=="archive":
+            if state=="complete":
+                self._archive_result=value;self.archive_path=value.path
+                selected=self._write_scope
+                self._begin_write("history",lambda selected=selected,result=value:_record_archive_exports(selected,result))
+                return
+            if state=="denied":
+                self._set_write_editable(True);self.cancel_button.setText("Cancel")
+                self._set_operation_status("Archive creation did not start. Review the error, then deliberately choose Create Reviewed Archive again.\n"+str(value))
+            else:
+                self._write_uncertain=True
+                self._set_operation_status("Archive creation could not be confirmed. This does not prove that no file exists. Review the chosen destination before closing and starting a new review; this review will not repeat creation.\n"+str(value))
+        else:
+            self.tracking_warning=str(value or "") if state=="complete" else "Export history could not be confirmed: "+str(value)
+            self.accept()
+        refresh_status_footer(self)
+
+    def done(self,result):
+        if self._write_attempt is not None or self._completion_delivered:return
+        if self._archive_result is not None:result=QDialog.Accepted
+        elif result==QDialog.Accepted:return
+        self._completion_delivered=True
+        super().done(result)
+
+    def accept(self):
+        self.done(QDialog.Accepted)
+
+    def reject(self):
+        self.done(QDialog.Rejected)
+
+    def closeEvent(self,event):
+        if self._write_attempt is not None:
+            event.ignore();return
+        super().closeEvent(event)
 
     def _set_validation_status(self, text: str) -> None:
         self.status.setText(text)
