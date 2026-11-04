@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.4.18-alpha.1",
+      "numeric_version": "0.4.18",
+      "maturity": "alpha",
+      "date": "2026-11-04",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate;exact validation/publication receipt required",
+      "scope": "Current privacy-review Copy/Save effect guards"
+    },
+    {
       "software_version": "0.4.17-alpha.1",
       "numeric_version": "0.4.17",
       "maturity": "alpha",

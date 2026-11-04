@@ -409,6 +409,7 @@ class BugReportPrivacyDialog(QDialog):
 
     def _copy_report(self) -> None:
         self._refresh_previews()
+        if not self.save_button.isEnabled():return
         QApplication.clipboard().setText(self._prepared.human_readable())
         self._set_operation_status(
             "Human-readable report copied. Nothing was uploaded.", error=False
@@ -416,6 +417,7 @@ class BugReportPrivacyDialog(QDialog):
 
     def _save(self) -> None:
         self._refresh_previews()
+        if not self.save_button.isEnabled():return
         destination_text = self.destination.text().strip()
         if not destination_text:
             self._set_validation_status("Choose a local report folder before saving.")
