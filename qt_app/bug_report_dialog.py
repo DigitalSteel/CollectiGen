@@ -3,11 +3,12 @@ from __future__ import annotations
 import importlib
 import hashlib
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThreadPool, QTimer, Slot
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -33,7 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .components import bind_status_footer,counted_noun
+from .components import bind_status_footer,counted_noun,IndeterminateActivityBar,refresh_status_footer
 
 from core import (
     BUG_REPORT_FEEDBACK_TYPES,
@@ -53,6 +54,7 @@ from core import (
 )
 from core.support_bundle import sanitized_log_excerpt, sanitized_settings
 from .modal_feedback import FeedbackEnabledDialog
+from .workers import AsyncCallTask,start_qt_delivery_task
 
 
 FEEDBACK_FIELD_PROMPTS = {
@@ -484,10 +486,18 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         self.feedback_directory = Path(feedback_directory)
         self.archive_path: Path | None = None
         self.tracking_warning = ""
-        self._reports, self._invalid = discover_feedback_reports(
-            self.feedback_directory
-        )
-        self._reports_by_id = {item.report_id: item for item in self._reports}
+        self._reports, self._invalid = (), ()
+        self._reports_by_id = {}
+        self._discovery_task = None
+        self._discovery_retired = []
+        self._discovery_outcome = None
+        self._discovery_closed = False
+        self._discovery_started = False
+        self._discovery_loaded = False
+        self._discovery_timer = QTimer(self)
+        self._discovery_timer.setInterval(100)
+        self._discovery_timer.timeout.connect(self._poll_discovery)
+        self.finished.connect(self._close_discovery)
 
         layout = QVBoxLayout(self)
         lead = QLabel(
@@ -500,8 +510,8 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         selection_group = QGroupBox("Collected Feedback Reports")
         selection_layout = QVBoxLayout(selection_group)
         selection_actions = QHBoxLayout()
-        select_all = QPushButton("Select All")
-        clear_all = QPushButton("Clear All")
+        select_all = self.select_all_button = QPushButton("Select All")
+        clear_all = self.clear_all_button = QPushButton("Clear All")
         select_all.clicked.connect(lambda: self._set_all(Qt.Checked))
         clear_all.clicked.connect(lambda: self._set_all(Qt.Unchecked))
         selection_actions.addWidget(select_all)
@@ -510,45 +520,20 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         selection_layout.addLayout(selection_actions)
         self.report_list = QListWidget()
         self.report_list.setAccessibleName("Feedback reports selected for export")
-        for report in self._reports:
-            label = BUG_REPORT_FEEDBACK_TYPES.get(
-                report.feedback_type, report.feedback_type
-            )
-            item = QListWidgetItem(
-                f"{report.report_id} • {label} • {report.summary}"
-            )
-            item.setData(Qt.UserRole, report.report_id)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(
-                Qt.Unchecked if report.export_count else Qt.Checked
-            )
-            if report.export_count:
-                item.setText(
-                    f"{item.text()} • Previously exported {report.export_count} time(s)"
-                )
-            item.setToolTip(
-                f"Created: {report.created_at or 'Unknown'}\n"
-                f"Optional attachments: {report.attachment_count}\n"
-                f"Previous exports: {report.export_count}"
-            )
-            self.report_list.addItem(item)
         selection_layout.addWidget(self.report_list, 1)
-        if not self._reports:
-            empty = QLabel(
-                f"No valid CBR report folders were found in {self.feedback_directory}."
-            )
-            empty.setWordWrap(True)
-            empty.setObjectName("mutedLabel")
-            selection_layout.addWidget(empty)
-        if self._invalid:
-            invalid = QLabel(
-                f"{counted_noun(len(self._invalid),'report folder')} could not be read and will "
-                "not be exported. Creating the archive will not change them."
-            )
-            invalid.setWordWrap(True)
-            invalid.setObjectName("errorLabel")
-            invalid.setToolTip("\n".join(self._invalid))
-            selection_layout.addWidget(invalid)
+        self.discovery_note = QLabel("Loading saved reports…")
+        self.discovery_note.setWordWrap(True)
+        self.discovery_note.setObjectName("mutedLabel")
+        selection_layout.insertWidget(0,self.discovery_note)
+        self.invalid_note = QLabel("")
+        self.invalid_note.setWordWrap(True)
+        self.invalid_note.setObjectName("errorLabel")
+        self.invalid_note.hide()
+        selection_layout.addWidget(self.invalid_note)
+        self.retry_button = QPushButton("Retry Loading Reports")
+        self.retry_button.clicked.connect(self._start_discovery)
+        self.retry_button.hide()
+        selection_layout.insertWidget(1,self.retry_button,0,Qt.AlignLeft)
         layout.addWidget(selection_group, 1)
 
         self.preview = QPlainTextEdit()
@@ -584,6 +569,15 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         self.status.setAccessibleName("Feedback archive export status")
         bind_status_footer(self, self.status, title="Feedback archive")
 
+        self.discovery_phase = QLabel("")
+        self.discovery_phase.setWordWrap(True)
+        self.discovery_phase.setAccessibleName("Archive report loading")
+        self.discovery_activity = IndeterminateActivityBar(self)
+        self.discovery_phase.hide()
+        self.discovery_activity.hide()
+        bind_status_footer(self,self.discovery_phase,self.discovery_activity,
+            title="Loading saved reports",follow_visibility=True)
+
         buttons = QDialogButtonBox()
         self.export_button = buttons.addButton(
             "Create Reviewed Archive", QDialogButtonBox.AcceptRole
@@ -593,7 +587,153 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         cancel.clicked.connect(self.reject)
         layout.addWidget(buttons)
         self.report_list.itemChanged.connect(lambda _item: self._refresh())
+        self.preview.setPlainText("Report selection will be available after loading finishes.")
+        self._set_discovery_ready(False)
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        if not self._discovery_started and not self._discovery_closed:
+            self._discovery_started = True
+            QTimer.singleShot(0,self._start_discovery)
+
+    def _set_discovery_ready(self,ready):
+        self.report_list.setEnabled(ready)
+        self.select_all_button.setEnabled(ready and bool(self._reports))
+        self.clear_all_button.setEnabled(ready and bool(self._reports))
+        self.export_button.setEnabled(ready and bool(self._selected()))
+
+    def _stop_discovery_activity(self):
+        self._discovery_timer.stop()
+        self.discovery_activity.set_active(False)
+        self.discovery_activity.hide()
+        self.discovery_phase.hide()
+        refresh_status_footer(self)
+
+    def _retire_discovery(self):
+        task = self._discovery_task
+        self._discovery_task = None
+        self._discovery_outcome = None
+        if task is not None:
+            task.cancel()
+            self._discovery_retired.append(task)
+        self._stop_discovery_activity()
+
+    def _close_discovery(self,_result):
+        self._discovery_closed = True
+        self._retire_discovery()
+        for task in self._discovery_retired:
+            task.cancel()
+
+    def _start_discovery(self):
+        if self._discovery_closed or self._discovery_loaded or self._discovery_task is not None:
+            return
+        directory = Path(self.feedback_directory)
+        task = AsyncCallTask(lambda directory=directory:discover_feedback_reports(directory))
+        self._discovery_task = task
+        self._discovery_outcome = None
+        task.signals.complete.connect(self._discovery_complete,Qt.QueuedConnection)
+        task.signals.failed.connect(self._discovery_failed,Qt.QueuedConnection)
+        self._discovery_started_at = time.monotonic()
+        self._set_discovery_ready(False)
+        self.retry_button.hide()
+        self.status.hide()
+        self.validation_status.hide()
+        self.discovery_note.setText("Loading saved reports…")
+        self.discovery_phase.show()
+        self.discovery_activity.set_active(True,"Loading saved reports")
+        self.discovery_activity.show()
+        self._poll_discovery()
+        self._discovery_timer.start()
+        try:
+            start_qt_delivery_task(QThreadPool.globalInstance(),task)
+        except Exception as exc:
+            # Admission may have occurred before an adapter raises. Cancel only
+            # this read result; never infer no-start or shut down the shared pool.
+            self._retire_discovery()
+            self._show_discovery_failure(str(exc))
+
+    @Slot(object)
+    def _discovery_complete(self,value):
+        task = self._discovery_task
+        if not self._discovery_closed and task is not None and self.sender() is task.signals:
+            self._discovery_outcome = (True,value)
+
+    @Slot(str)
+    def _discovery_failed(self,message):
+        task = self._discovery_task
+        if not self._discovery_closed and task is not None and self.sender() is task.signals:
+            self._discovery_outcome = (False,message)
+
+    def _show_discovery_failure(self,message):
+        self.discovery_note.setText("Saved reports could not be loaded.")
+        self.preview.setPlainText("No report selection is available until loading succeeds.")
+        self.retry_button.show()
+        self._set_operation_status("Restore access, then choose Retry Loading Reports. "
+            "A previous read may still finish, but its result will be ignored.\n"+message)
+
+    def _poll_discovery(self):
+        self._discovery_retired = [task for task in self._discovery_retired if not task.is_finished()]
+        task = self._discovery_task
+        if self._discovery_closed or task is None:
+            return
+        elapsed = int(time.monotonic()-self._discovery_started_at)
+        self.discovery_phase.setText(f"Elapsed {elapsed}s · Total not yet known. "
+            "Cancel dismisses this review; the read may finish in the background.")
+        refresh_status_footer(self)
+        if self._discovery_outcome is None or not task.is_finished():
+            return
+        success,value = self._discovery_outcome
+        self._discovery_task = None
+        self._discovery_outcome = None
+        self._stop_discovery_activity()
+        if not success:
+            self._show_discovery_failure(str(value))
+            return
+        self._reports,self._invalid = value
+        self._reports_by_id = {item.report_id:item for item in self._reports}
+        self._discovery_loaded = True
+        self._populate_reports()
+        self._set_discovery_ready(True)
         self._refresh()
+
+    def _populate_reports(self):
+        self.report_list.blockSignals(True)
+        self.report_list.clear()
+        for report in self._reports:
+            label = BUG_REPORT_FEEDBACK_TYPES.get(
+                report.feedback_type, report.feedback_type
+            )
+            item = QListWidgetItem(
+                f"{report.report_id} • {label} • {report.summary}"
+            )
+            item.setData(Qt.UserRole, report.report_id)
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(
+                Qt.Unchecked if report.export_count else Qt.Checked
+            )
+            if report.export_count:
+                item.setText(
+                    f"{item.text()} • Previously exported {report.export_count} time(s)"
+                )
+            item.setToolTip(
+                f"Created: {report.created_at or 'Unknown'}\n"
+                f"Optional attachments: {report.attachment_count}\n"
+                f"Previous exports: {report.export_count}"
+            )
+            self.report_list.addItem(item)
+        self.report_list.blockSignals(False)
+        if self._reports:
+            self.discovery_note.setText(f"{counted_noun(len(self._reports),'saved report')} available. Choose reports to include.")
+        elif self._invalid:
+            self.discovery_note.setText("No reports are available from the current metadata read.")
+        else:
+            self.discovery_note.setText("No saved feedback reports were found in this folder.")
+        if self._invalid:
+            self.invalid_note.setText(f"{counted_noun(len(self._invalid),'report folder')} could not be read and will not be exported. Creating the archive will not change them.")
+            self.invalid_note.setToolTip("\n".join(self._invalid))
+            self.invalid_note.show()
+        else:
+            self.invalid_note.hide()
 
     def _selected(self) -> tuple[FeedbackReportSummary, ...]:
         selected: list[FeedbackReportSummary] = []
@@ -609,6 +749,9 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
         self._refresh()
 
     def _refresh(self) -> None:
+        if not self._discovery_loaded:
+            self.export_button.setEnabled(False)
+            return
         selected = self._selected()
         manifest = {
             "selected_report_count": len(selected),
