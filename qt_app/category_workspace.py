@@ -1577,7 +1577,7 @@ class CategoryWorkspace(QWidget):
             if relationship_details:
                 relationship_review.append(relationship_details)
             dialog=ImageTagRemovalDialog(
-                service,affected_paths,tag_ids,pool=self.pool,parent=self,
+                service,affected_paths,tag_ids,pool=self.pool,parent=self,manager=self.job_manager,
                 relationship_summary="\n".join(relationship_review),
                 history_operation_factory=self._removal_history_factory,
                 history_opener=self._removal_history_opener,

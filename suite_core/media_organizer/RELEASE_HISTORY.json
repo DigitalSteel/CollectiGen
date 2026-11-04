@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.4.16-alpha.1",
+      "numeric_version": "0.4.16",
+      "maturity": "alpha",
+      "date": "2026-11-04",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate;exact validation/publication receipt required",
+      "scope": "G80 public removal scoped-return/notification custody and original Category manager relay"
+    },
+    {
       "software_version": "0.4.15-alpha.1",
       "numeric_version": "0.4.15",
       "maturity": "alpha",
