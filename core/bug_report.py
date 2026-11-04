@@ -838,6 +838,27 @@ def export_feedback_archive(
     """Create one verified uploadable archive without changing report originals."""
     if not report_directories:
         raise BugReportError("Select at least one feedback report.")
+    report_directories = tuple(Path(value) for value in report_directories)
+    destination = Path(output)
+    try:
+        resolved_destination = destination.resolve()
+        for directory in report_directories:
+            if resolved_destination.is_relative_to(directory.resolve()):
+                raise BugReportError(
+                    "Choose a ZIP destination outside the selected report folders."
+                )
+        if destination.exists() or destination.is_symlink():
+            raise BugReportError(
+                "The ZIP destination already exists. Choose a new file name; "
+                "existing files are not replaced."
+            )
+    except BugReportError:
+        raise
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise BugReportError(
+            "The ZIP destination could not be verified. Restore access or "
+            "choose another destination before trying again."
+        ) from exc
     files: list[tuple[str, bytes]] = []
     report_manifest: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -922,7 +943,6 @@ def export_feedback_archive(
         ),
     }
     files.insert(0, ("feedback-archive-manifest.json", _pretty_json(archive_manifest)))
-    destination = Path(output)
     write_verified_zip(destination, files)
     archive_sha256 = hashlib.sha256(destination.read_bytes()).hexdigest()
     return FeedbackArchiveExport(destination, archive_id, archive_sha256)
