@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.4.17-alpha.1",
+      "numeric_version": "0.4.17",
+      "maturity": "alpha",
+      "date": "2026-11-04",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate;exact validation/publication receipt required",
+      "scope": "Original-owner relationship caller routing"
+    },
+    {
       "software_version": "0.4.16-alpha.1",
       "numeric_version": "0.4.16",
       "maturity": "alpha",

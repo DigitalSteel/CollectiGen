@@ -1579,6 +1579,10 @@ class KnowledgePage(QWidget):
                 "reviewing relationships.",
             )
             return
+        source = (self.state, self.tags, self.categories, self.characters, self.editor_context)
+        def source_current():
+            return all(current is original for current, original in zip(
+                (self.state, self.tags, self.categories, self.characters, self.editor_context), source))
         try:dialog=RelationshipWorkspaceDialog(
                 self.tags,self.categories,self.characters,parent=self,
                 focus_tag_id=focus_tag_id,initial_kind=initial_kind,
@@ -1587,6 +1591,7 @@ class KnowledgePage(QWidget):
             QMessageBox.warning(self,"Relationships Unavailable",f"The relationship store could not be opened and was left unchanged.\n\n{exc}")
             return
         dialog.exec()
+        if not source_current():return
         review_tag_id=getattr(dialog,"review_tag_id","")
         review_character_links=bool(getattr(dialog,"review_character_links",False))
         review_conflict_rule_id=str(
@@ -1599,11 +1604,14 @@ class KnowledgePage(QWidget):
             self._consumer_policy_resolver=None; self._consumer_policy_error=""
             if hasattr(self,"_reload_modifier_roles"):
                 self._reload_modifier_roles()
+            if not source_current():return
             self._changed()
+            if not source_current():return
             if self.current_tag_id in self.tags.tags:
                 self._load_tag_record_into_editor(
                     self.tags.tags[self.current_tag_id],load_examples=False,
                 )
+        if not source_current():return
         if review_conflict_rule_id:
             self.open_automation.emit(
                 "conflicts.guided_checks",
@@ -1631,9 +1639,12 @@ class KnowledgePage(QWidget):
                     self,"Character Record Unavailable",str(error),
                 )
             else:
+                if not source_current():return
                 record_dialog.exec()
+                if not source_current():return
                 if record_dialog.saved:
                     self.characters.load()
+                    if not source_current():return
                     self._changed()
         elif review_character_links:
             self.show_character_tag_links()
