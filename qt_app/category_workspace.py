@@ -42,14 +42,32 @@ class CategoryDetailsDialog(QDialog):
     def __init__(self,can_close,parent=None):
         super().__init__(parent)
         self._can_close=can_close
+        self._completion_active=False
+        self._completion_delivered=False
+
+    def done(self,result):
+        from shiboken6 import isValid
+        if not isValid(self) or self._completion_active or self._completion_delivered:return
+        callback=self._can_close; owner=self.parent()
+        self._completion_active=True
+        try:
+            # The callback can flush pending edits or ask about an invalid draft.
+            if self._can_close is not callback or self.parent() is not owner:return
+            if not callback() or not isValid(self):return
+            if self._can_close is not callback or self.parent() is not owner:return
+            self._completion_delivered=True
+            # The original save callback settled once; deliver one result.
+            QDialog.done(self,result)
+        finally:
+            self._completion_active=False
 
     def reject(self):
-        if self._can_close():super().reject()
+        self.done(QDialog.Rejected)
 
     def closeEvent(self,event):
-        if self._can_close():
-            event.accept()
-            self.done(QDialog.Rejected)
+        event.ignore()
+        self.reject()
+        if self._completion_delivered:event.accept()
         else:event.ignore()
 
 
