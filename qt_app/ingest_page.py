@@ -5232,7 +5232,7 @@ class IngestPage(QWidget):
             categories=self.categories,characters=self.characters,
         )
         dialog=ImageTagBatchDialog(
-            service,paths,tag_id,pool=self.pool,parent=self,
+            service,paths,tag_id,pool=self.pool,parent=self,manager=self.state.jobs,
             history_operation_factory=lambda images:capture_operation(
                 self,images,operation_kind="selected_image_tag_batch"),
             history_opener=lambda images,operation_id:IngestPage._open_image_history(self,images,operation_id),
