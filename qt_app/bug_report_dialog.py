@@ -673,7 +673,7 @@ class FeedbackArchiveDialog(FeedbackEnabledDialog):
                     package_sha256=result.sha256,
                     package_kind="bulk",
                 )
-            except (BugReportError, OSError) as exc:
+            except Exception as exc:
                 tracking_errors.append(f"{item.report_id}: {exc}")
         if tracking_errors:
             self.tracking_warning = "\n".join(tracking_errors)

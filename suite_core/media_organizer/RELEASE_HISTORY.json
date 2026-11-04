@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.4.21-alpha.1",
+      "numeric_version": "0.4.21",
+      "maturity": "alpha",
+      "date": "2026-11-04",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate;exact validation/publication receipt required",
+      "scope": "Known archive completion after optional history errors"
+    },
+    {
       "software_version": "0.4.20-alpha.1",
       "numeric_version": "0.4.20",
       "maturity": "alpha",
