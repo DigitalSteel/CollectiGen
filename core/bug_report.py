@@ -120,7 +120,7 @@ class PreparedBugReport:
             f"- Optional attachments: {len(self.attachments)}",
             f"- Content fingerprint: `{self.content_fingerprint}`",
             "",
-            "This report was saved locally. CollectiGen did not upload or transmit it.",
+            "This report was prepared locally. CollectiGen did not upload or transmit it.",
             "",
         ]
         return "\n".join(lines)
@@ -429,7 +429,7 @@ def prepare_bug_report(
         "optional_attachments": attachment_manifest,
         "selected_image_identity_included": "selected_image_identity" in context,
         "notice": (
-            "This report is saved locally and is never uploaded automatically. "
+            "This report is prepared locally and is never uploaded automatically. "
             "Review every included field and attachment before sharing it."
         ),
     }

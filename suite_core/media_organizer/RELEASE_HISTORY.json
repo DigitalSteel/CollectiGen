@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.4.20-alpha.1",
+      "numeric_version": "0.4.20",
+      "maturity": "alpha",
+      "date": "2026-11-04",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate;exact validation/publication receipt required",
+      "scope": "Truthful prepared-report wording"
+    },
+    {
       "software_version": "0.4.19-alpha.1",
       "numeric_version": "0.4.19",
       "maturity": "alpha",
