@@ -16,7 +16,7 @@ from core.duplicate_preflight import (
     PreparedDuplicatePreflightScope,build_duplicate_preflight_scope,
 )
 
-from .components import bind_status_footer,compact_button,set_progress_bar
+from .components import bind_status_footer,compact_button,refresh_status_footer,set_progress_bar
 from .duplicate_finder_dialog import DuplicateFinderDialog
 from .modal_feedback import FeedbackEnabledDialog
 from .workers import CoordinatedCallTask
@@ -782,19 +782,30 @@ class DuplicatePreflightDialog(FeedbackEnabledDialog):
         if owner is None:return
         owner.library_paths_changed.emit(tuple(str(Path(value)) for value in values))
 
-    def reject(self) -> None:
+    def _completion_ready(self) -> bool:
+        from shiboken6 import isValid
+        review=self._review_dialog
+        if review is not None and isValid(review):
+            if not review.close() or review.isVisible():
+                self.status.setText("Wait for Duplicate Review, then retry this action.")
+                refresh_status_footer(self)
+                return False
+        return True
+
+    def done(self,result: int) -> None:
+        if self._closed or not self._completion_ready():return
         self._closed=True; self._freshness_timer.stop()
+        self._pending_action=""
         if self._task is not None:
             self._task.cancel(); self._task=None
-        review=self._review_dialog
-        if review is not None:
-            review.reject()
-        if self.context.owner is not None:
-            self.context.owner._duplicate_preflight_dialog=None
-        super().reject()
+        self._task_phase=""
+        owner=self.context.owner
+        if owner is not None and getattr(owner,"_duplicate_preflight_dialog",None) is self:
+            owner._duplicate_preflight_dialog=None
+        super().done(result)
+
+    def reject(self) -> None:
+        self.done(QDialog.Rejected)
 
     def accept(self) -> None:
-        self._closed=True; self._freshness_timer.stop()
-        if self.context.owner is not None:
-            self.context.owner._duplicate_preflight_dialog=None
-        super().accept()
+        self.done(QDialog.Accepted)

@@ -5559,6 +5559,7 @@ class IngestPage(QWidget):
             or
             getattr(getattr(self,"_preparation_impact_dialog",None),"_task",None) is not None
             or getattr(getattr(self,"_duplicate_preflight_dialog",None),"_task",None) is not None
+            or getattr(getattr(self,"_duplicate_preflight_dialog",None),"_closed",True) is False
             or
             getattr(self,"_batch_task",None) is not None
             or getattr(self,"_conflict_task",None) is not None
@@ -5600,8 +5601,20 @@ class IngestPage(QWidget):
             impact.reject()
         preflight=getattr(self,"_duplicate_preflight_dialog",None)
         if preflight is not None:
-            requested=preflight._task is not None or requested
+            requested=preflight._task is not None or not preflight._closed or requested
+            relay=getattr(preflight,"_ingest_shutdown_notification",None)
+            if relay is None:
+                relay={"waiting":False}
+                preflight._ingest_shutdown_notification=relay
+                def notify_preflight_finished(_result):
+                    if relay["waiting"]:
+                        relay["waiting"]=False
+                        self._notify_background_work_finished()
+                preflight.finished.connect(notify_preflight_finished,Qt.QueuedConnection)
             preflight.reject()
+            # Immediate closure already uses the existing zero-delay page recheck.
+            # A refused close needs one later recheck when this exact owner finishes.
+            relay["waiting"]=not preflight._closed
         if self._batch_task is not None:
             requested=True
             self.state.request_long_operation_cancel("ingest")
