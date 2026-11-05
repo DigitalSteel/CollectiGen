@@ -23,3 +23,14 @@ connection, credentials, inference or automatic model selection is connected.
 This source-only prerequisite is not LM Studio support in the shipped Organizer
 and creates no software version or packaged update. Existing runtime ownership,
 JIT/auth/UI/source admission and package/recovery gates remain open.
+
+## LM Studio fixed-GET source prerequisite
+
+AI-05C1 adds one explicit loopback model-list GET operation, returning the
+existing immutable metadata. It bounds time, bytes and framing, refuses redirect
+or fallback, and settles owned cancellation/deadline resources. An optional
+bearer is invocation-local only. Synthetic injected adapters establish source
+behavior, not actual server or Windows socket interoperability. No UI, saved
+connection, secret store, inference, model management or packaged support is
+connected. Existing Organizer/source/JIT-policy/native/recovery gates stay open;
+no module ID, software version or binary is created for this prerequisite.
