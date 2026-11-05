@@ -603,6 +603,7 @@ class SetupPage(QWidget):
         defer_expensive_initialization: bool=False,
         module_provider=None,
         dependency_service_factory=None,
+        connection_settings_path=None,
     ):
         super().__init__(parent); self.settings=settings; self.state=state; self.pool=QThreadPool.globalInstance(); self._benchmark_task=None; self._joy_benchmark_task=None; self._joy_quality_task=None; self._joy_quality_samples=(); self._ai_evaluation_task=None; self._ai_evaluation_samples=(); self._update_task=None; self._update_progress=None
         if state is not None and dependency_service_factory is not None and getattr(state,"dependency_service_factory",None) is not dependency_service_factory:
@@ -612,6 +613,7 @@ class SetupPage(QWidget):
             raise ValueError("The dependency service factory must be callable.")
         self._defer_expensive_initialization=bool(defer_expensive_initialization)
         self._component_inventory_task=None; self._component_inventory_ready=False
+        self._connection_settings_path=connection_settings_path
         self._dirty_sections=set(); self._suppress_dirty=False
         self._committed_section_values={}
         self._joy_quantization_user_selected=False
@@ -1841,6 +1843,15 @@ Use **Automatic** unless you need to choose the CPU or an NVIDIA GPU explicitly.
         self.upscale_models_button.setEnabled(self.state is not None)
         self.upscale_models_button.clicked.connect(self.open_upscaler_models)
         upscale_setup_layout.addWidget(self.upscale_models_button,alignment=Qt.AlignRight)
+        lm_connection=QWidget(); lm_layout=QVBoxLayout(lm_connection)
+        lm_layout.setContentsMargins(0,0,0,0)
+        lm_note=QLabel("Remember a local LM Studio endpoint and preferred model key. "
+            "Analysis through LM Studio is not available yet. This does not change your current AI models.")
+        lm_note.setWordWrap(True); lm_layout.addWidget(lm_note)
+        self.lm_connection_button=compact_button(QPushButton("Edit Connection…"))
+        self.lm_connection_button.clicked.connect(self.open_lmstudio_connection)
+        lm_layout.addWidget(self.lm_connection_button,alignment=Qt.AlignRight)
+        lm_layout.addStretch(1)
         self.ai_sections,ai_indexes=subsection_tabs(
             "AI tools and model setup",
             ("sdxl","Analyze Tags",(
@@ -1851,6 +1862,7 @@ Use **Automatic** unless you need to choose the CPU or an NVIDIA GPU explicitly.
             ("generation","Generate && Remix",(generation_setup,)),
             ("upscale","Upscale && Restore",(upscale_setup,)),
             ("locations","Model Locations",self.model_locations_panel),
+            ("lmstudio","LM Studio Connection",lm_connection),
         )
         self.component_sections,component_indexes=subsection_tabs(
             "Components and downloads details",
@@ -1962,6 +1974,8 @@ Use **Automatic** unless you need to choose the CPU or an NVIDIA GPU explicitly.
              ("content protection","rating"),None),
             ("appearance_accessibility","Always blur Explicit images",self.hidden_ratings["explicit"],
              ("content protection","rating"),None),
+            ("ai_models_runtime","LM Studio Connection",self.lm_connection_button,
+             ("lm studio","connection","endpoint","preferences"),lambda:self.ai_sections.setCurrentIndex(ai_indexes["lmstudio"])),
             ("ai_models_runtime","AI Tag models",self.tag_model_panel,
              ("wd","models","runtime"),lambda:self.ai_sections.setCurrentIndex(ai_indexes["sdxl"])),
             ("ai_models_runtime","AI memory policy",self.ai_memory.mode,
@@ -5545,6 +5559,14 @@ Use **Automatic** unless you need to choose the CPU or an NVIDIA GPU explicitly.
         ):
             blocker=QSignalBlocker(control); control.setCurrentIndex(max(0,control.findData(value))); del blocker
         self._update_content_safety_note()
+
+    def open_lmstudio_connection(self):
+        from core.settings import DEFAULT_SETTINGS_PATH
+        from core.lmstudio_connection_settings import LmStudioConnectionSettings
+        from .lmstudio_connection_dialog import LmStudioConnectionDialog
+        path=self._connection_settings_path if self._connection_settings_path is not None else DEFAULT_SETTINGS_PATH
+        dialog=LmStudioConnectionDialog(LmStudioConnectionSettings(path),self)
+        dialog.exec()
 
     def _save_preferences(self,values) -> bool:
         previous={key:getattr(self.settings,key) for key in values}

@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 823,
+  "allowlisted_source_file_count": 825,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -38,8 +38,8 @@
       "size_bytes": 2794
     },
     "SOURCE_DELIVERY_SUPPLEMENT.md": {
-      "sha256": "ecee0c97f1484501eb17d5fd0379f14c18a1e2b38557a5dc3678783d2e1846a2",
-      "size_bytes": 6683
+      "sha256": "6aaf9ee0f7422f54aff38869e13d232eb42f5ff9190bf2509601a264229c253e",
+      "size_bytes": 7436
     },
     "SUPPORT.md": {
       "sha256": "d8392a3bf12b5559d07f6885b9bd4e37e0e91ea043f21feb83fd3d88599370c8",
@@ -2249,6 +2249,10 @@
       "sha256": "61556eb93f47b2c2b980706247067c1efa9be51139a2d3812eebd15cc472c88b",
       "size_bytes": 25151
     },
+    "qt_app/lmstudio_connection_dialog.py": {
+      "sha256": "6df3672ae83255a4d946172e2b7e653ddb16a418e3041ff7587827d40aea9dac",
+      "size_bytes": 10495
+    },
     "qt_app/main_window.py": {
       "sha256": "ab482fc2459822df78ad924f0efc9005e1e35d41dfe16e7cd4dbe005ace1f4ee",
       "size_bytes": 264352
@@ -2346,8 +2350,8 @@
       "size_bytes": 21659
     },
     "qt_app/pages.py": {
-      "sha256": "406b608fba9e69c0edbef1a71c2c25568e61e595694db775f52bca25a4c96a8c",
-      "size_bytes": 300398
+      "sha256": "e74f0ebdb9167621853fd8a73e50a3f31dc3a7453a442728511a1dcb90b05666",
+      "size_bytes": 301899
     },
     "qt_app/preferred_caption_preparation_dialog.py": {
       "sha256": "f6d41b5610acf60e79cf45b0e5b77708294925c34564b6c23e39e707d5f9076b",
@@ -3252,6 +3256,10 @@
     "tests/test_lmstudio_connection_settings.py": {
       "sha256": "7c907ff8d1ce494d4b0a772ce699c35982740cb5fc75302ad300cdc27d09912e",
       "size_bytes": 13468
+    },
+    "tests/test_lmstudio_connection_ui.py": {
+      "sha256": "71be8d553e03fac41cc2496ab5edbe4c980d0bf803cda38493711e4050715b74",
+      "size_bytes": 12601
     },
     "tests/test_lmstudio_discovery.py": {
       "sha256": "6844ebbf0002f937831413ce042651b799923e6553645c476e2648e7ba805b6b",

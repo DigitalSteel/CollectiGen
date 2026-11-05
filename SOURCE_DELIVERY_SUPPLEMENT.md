@@ -66,3 +66,15 @@ Existing explicit recovery replacement,lock,history,late currentness refusal,
 readback and restore remain unchanged. Synthetic source checks do not qualify
 actual UI/settings/server/inference or a packaged update. Published0.4.23 stays
 unchanged;no runtime version or binary is created for this source prerequisite.
+
+## Inert LM Studio connection preference UI source
++
++AI-05F1 adds a named Setup destination and independent modal Save/Forget editor
++over the canonical settings service. Opening Setup does not read the connection;
++the explicit editor uses stock worker settlement and guards pending Close.
++It does not connect,authenticate,discover models or run inference. Existing AI
++choices and external server resources remain unchanged. Synthetic source UI
++evidence is not native main-window or packaged qualification. No runtime version,
++binary or installed update is created;published0.4.23 stays unchanged.
++An earlier unscoped synthetic Qt run hit an access violation;later scoped source
+evidence does not identify its cause or qualify native lifecycle.
