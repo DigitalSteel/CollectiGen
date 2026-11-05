@@ -45,3 +45,13 @@ The advisory lock and final observation are not atomic CAS against an arbitrary
 later external writer. Synthetic source checks do not qualify actual installed
 startup/Close,settings recovery or a packaged update. No version or binary is
 created here;the published0.4.23 runtime remains unchanged.
+
+## LM Studio saved-preference source prerequisite
+
+AI-05D1 adds an explicit same-document endpoint/model preference service using
+the existing guarded AppSettings writer. Constructor/Observe do not write;Save
+and Forget require an origin-bound exact snapshot,preserve unrelated values and
+retain typed recovery refusal. No token is accepted or stored in the owned
+namespace,and no loaded/readiness/provider-activation claim is persisted.
+Synthetic source checks do not qualify actual settings,UI,server,inference or
+a packaged update. Published0.4.23 remains unchanged;no version/build is created.
