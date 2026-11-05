@@ -1201,12 +1201,44 @@ class AppSettings:
                 raise ValueError("Keep library and storage folders separate from retained History & Versions storage.")
         temp = path.with_suffix(path.suffix + ".tmp")
         attempted_bytes = (json.dumps(payload, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+        class _PublicationHeld(SettingsRecoveryRequiredError):
+            """Refused before replacement; never enter post-publication recovery."""
+
         try:
             temp.write_bytes(attempted_bytes)
+            try:
+                from .training_source_io import _assert_unredirected
+                _assert_unredirected(path)
+                _assert_unredirected(temp)
+                try:
+                    with path.open("rb") as current_stream:
+                        # A larger external file is already different; do not
+                        # allocate its unbounded contents during the late check.
+                        current_bytes = current_stream.read(
+                            (len(previous_bytes) if previous_bytes is not None else 0) + 1
+                        )
+                except FileNotFoundError:
+                    current_bytes = None
+            except Exception:
+                raise _PublicationHeld(
+                    "Settings publication was held because its target or prepared file "
+                    "could not be verified. Available prior and prepared evidence was "
+                    "left in place. Reload and review before saving again."
+                ) from None
+            if current_bytes != previous_bytes:
+                raise _PublicationHeld(
+                    "Settings changed while publication was being prepared. The newer "
+                    "state was left unchanged; available prior and prepared evidence "
+                    "was left in place. Reload and review before saving again."
+                )
+            # This final observation detects changes already present here. The
+            # advisory lock cannot turn Path.replace into an atomic external CAS.
             temp.replace(path)
             verified = json.loads(path.read_text(encoding="utf-8"))
             if verified != payload:
                 raise OSError("Settings read-back did not match the values written.")
+        except _PublicationHeld:
+            raise
         except Exception as exc:
             try:
                 observed = path.read_bytes() if path.exists() else None

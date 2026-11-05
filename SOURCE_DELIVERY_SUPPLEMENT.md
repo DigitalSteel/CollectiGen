@@ -34,3 +34,14 @@ behavior, not actual server or Windows socket interoperability. No UI, saved
 connection, secret store, inference, model management or packaged support is
 connected. Existing Organizer/source/JIT-policy/native/recovery gates stay open;
 no module ID, software version or binary is created for this prerequisite.
+
+## Settings publication currentness source correction
+
+BUG-335 adds a final bounded preimage/path observation after temporary settings
+preparation and before replacement. Detectable newer/created/deleted/unverifiable
+targets are held without entering post-publication restoration. Existing history,
+prepared evidence and canonical successful/readback/restore behavior remain.
+The advisory lock and final observation are not atomic CAS against an arbitrary
+later external writer. Synthetic source checks do not qualify actual installed
+startup/Close,settings recovery or a packaged update. No version or binary is
+created here;the published0.4.23 runtime remains unchanged.
