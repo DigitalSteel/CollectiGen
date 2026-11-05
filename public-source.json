@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 825,
+  "allowlisted_source_file_count": 828,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -3332,6 +3332,18 @@
     "version.py": {
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48",
       "size_bytes": 324
+    },
+    "core/krea_training_compatibility.py": {
+      "sha256": "580d8e78c7fd011500c7f535fcbd9f7164bcecbe10271d4aff6f9d72feeabc73",
+      "size_bytes": 11047
+    },
+    "tests/test_krea_training_compatibility.py": {
+      "sha256": "b03183bd1de1605231688970a662e8c4e9a5480dd2d9723ba29a5744c1793ea8",
+      "size_bytes": 11253
+    },
+    "docs/KREA2_PACKAGE_REPORT.md": {
+      "sha256": "1878ac08c9f96bc7c353f708671147136b1cda803a574ec46189c67a07a34c4a",
+      "size_bytes": 2006
     }
   },
   "fresh_history_required": true,
