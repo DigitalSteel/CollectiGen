@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 815,
+  "allowlisted_source_file_count": 817,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -38,8 +38,8 @@
       "size_bytes": 2794
     },
     "SOURCE_DELIVERY_SUPPLEMENT.md": {
-      "sha256": "03dfa346f12f3979074c386a24e0b3d8ffd631361337a57ca28879ae6c776e6d",
-      "size_bytes": 3477
+      "sha256": "5f9a91a1d31b8027b535293f1a17541b70806274af6bf6477ea7b3aa24598707",
+      "size_bytes": 4066
     },
     "SUPPORT.md": {
       "sha256": "d8392a3bf12b5559d07f6885b9bd4e37e0e91ea043f21feb83fd3d88599370c8",
@@ -772,6 +772,10 @@
     "core/library_storage.py": {
       "sha256": "8bc21ca6c21d23c4a12a06bb9104d381e495ef5d65107407d0c2a8a9eab0290a",
       "size_bytes": 13722
+    },
+    "core/lmstudio_discovery.py": {
+      "sha256": "f65940a574daa6d3abad7cd185bd1532700d9a61e269d08db35d7ee5d26c00e0",
+      "size_bytes": 6502
     },
     "core/logging_setup.py": {
       "sha256": "3dcf198a6a42253dfbb6e2ca5d2403821946c619cdecfd1d204d8269d569757e",
@@ -3236,6 +3240,10 @@
     "suite_core/version.py": {
       "sha256": "2235cee9c44d591ec185ba44b85acef2c8be3ba0a8305c7b0762bf603db9b847",
       "size_bytes": 190
+    },
+    "tests/test_lmstudio_discovery.py": {
+      "sha256": "6844ebbf0002f937831413ce042651b799923e6553645c476e2648e7ba805b6b",
+      "size_bytes": 8316
     },
     "tools/Audit-PublicComponents.py": {
       "sha256": "6d2d812d782983e4ac4bd6364482373631ded5340808944673771ce90ff678e8",
