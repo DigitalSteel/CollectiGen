@@ -55,3 +55,14 @@ retain typed recovery refusal. No token is accepted or stored in the owned
 namespace,and no loaded/readiness/provider-activation claim is persisted.
 Synthetic source checks do not qualify actual settings,UI,server,inference or
 a packaged update. Published0.4.23 remains unchanged;no version/build is created.
+
+## LM Studio preference preservation source fix
+
+AI-05E1/BUG-336 preserves the current same-document LM Studio preference value
+or absence during ordinary AppSettings saves,including stale in-memory editors.
+The explicit preference writer retains Save/Forget authority. Unknown/future
+extension values are carried unchanged;ordinary saves do not interpret them.
+Existing explicit recovery replacement,lock,history,late currentness refusal,
+readback and restore remain unchanged. Synthetic source checks do not qualify
+actual UI/settings/server/inference or a packaged update. Published0.4.23 stays
+unchanged;no runtime version or binary is created for this source prerequisite.

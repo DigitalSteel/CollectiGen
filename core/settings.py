@@ -1173,6 +1173,11 @@ class AppSettings:
                 payload["ollama_metadata_connection"] = deepcopy(current_payload["ollama_metadata_connection"])
             else:
                 payload.pop("ollama_metadata_connection", None)
+            # Only the explicit LM Studio preference writer owns this extension.
+            if "lmstudio_analysis_connection" in current_payload:
+                payload["lmstudio_analysis_connection"] = deepcopy(current_payload["lmstudio_analysis_connection"])
+            else:
+                payload.pop("lmstudio_analysis_connection", None)
             # Explicit Tag connection confirmation owns this additive extension.
             if "tag_database_connection" in current_payload:
                 payload["tag_database_connection"] = deepcopy(current_payload["tag_database_connection"])
