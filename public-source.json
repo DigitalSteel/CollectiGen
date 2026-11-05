@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 975,
+  "allowlisted_source_file_count": 977,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -24,6 +24,10 @@
     "README.md": {
       "sha256": "5024c051872cbd4dadbe3d3bd12e784a539cf07047b5f43163be8606e14ede35",
       "size_bytes": 4249
+    },
+    "SOURCE_DELIVERY_SUPPLEMENT.md": {
+      "sha256": "7cabf4ba056d11ba7f6f7b7b989697621ec61b82cda897c66c881bcdbfdca64e",
+      "size_bytes": 668
     },
     "SUPPORT.md": {
       "sha256": "1cb1e9aea57477e1494bf8b89ff692c9342e9169c4af5b8292ece123788fb1f3",
@@ -278,8 +282,8 @@
       "size_bytes": 21343
     },
     "core/component_release_identity.py": {
-      "sha256": "20d4730db277ed2629391dcf64ee84ee4707151112f60608e4f24490e8b05b96",
-      "size_bytes": 8584
+      "sha256": "6e2f84d65ba247783724b20d529e3b34a013c3d30de6240801a9d2121ec635a5",
+      "size_bytes": 8705
     },
     "core/component_release_transport.py": {
       "sha256": "8e2fce2ddb6337712071c311d69875a9a9ba8ab51fed7a499cf3c52576e3ff97",
@@ -3704,6 +3708,10 @@
     "tests/test_knowledge_pack_records.py": {
       "sha256": "42eee7e2def737208f9d0a90421de0dde9c7f79562e64148fd31bf5819091e4a",
       "size_bytes": 68481
+    },
+    "tests/test_manager_current_release_labels.py": {
+      "sha256": "683fe1ce010744e66312397c7637776d3aff4ada2fad230b953dc9202a4f5320",
+      "size_bytes": 3725
     },
     "tests/test_manager_dependency_status.py": {
       "sha256": "09cf16829f43bcf2d1d91e25f467e0a18dd65bc2198a5a0cb63e912c79d8c267",
