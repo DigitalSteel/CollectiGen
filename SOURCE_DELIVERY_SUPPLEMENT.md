@@ -13,3 +13,14 @@ Run the private copy's bundled interpreter with `-B -m suite_core.media_organize
 Technical witness qt-replacement/RESULT.json proves a byte-distinct ABI-equivalent binding/DLL pair can load from a private copy with normal validation enabled and only its applicable integrity hash refreshed. Inert PE overlays left executable sections/ABI unchanged; this is a replacement-mechanism witness, not a rebuilt-Qt-source or arbitrary-version compatibility guarantee. The exact sources/build instructions provide the route for substantive compatible modifications. No signing key, publisher permission or Windows configuration change was needed for this private witness. No native window was created.
 
 This document records technical source-delivery/replacement evidence; it is not a blanket legal opinion, clean-machine test or publication approval. Official candidate bytes and user data remain untouched.
+
+## Source-only component-label correction
+
+The three explicit Manager 0.5.0, Reader 0.2.2 and Organizer 0.4.6 display
+rows are restored from the already reviewed correction. Signed wire identities,
+unknown-version fallback and admission remain unchanged. The focused pure
+regression is tools/test_component_release_label_rows.py. This source checkpoint
+is not a new qualified binary or update; the published 0.4.23 package and its
+immutable assets remain unchanged. Candidate version, notes, source/runtime
+correspondence, signed metadata, visible consumer and updater/recovery gates
+remain required before a downloadable fixed update is advertised.

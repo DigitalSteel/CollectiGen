@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 815,
+  "allowlisted_source_file_count": 816,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -38,8 +38,8 @@
       "size_bytes": 2794
     },
     "SOURCE_DELIVERY_SUPPLEMENT.md": {
-      "sha256": "03dfa346f12f3979074c386a24e0b3d8ffd631361337a57ca28879ae6c776e6d",
-      "size_bytes": 3477
+      "sha256": "553f524688f73b017e30146902d29c7b1065506c4bbb5347b737db15dc9e6abd",
+      "size_bytes": 4128
     },
     "SUPPORT.md": {
       "sha256": "d8392a3bf12b5559d07f6885b9bd4e37e0e91ea043f21feb83fd3d88599370c8",
@@ -274,8 +274,8 @@
       "size_bytes": 20429
     },
     "core/component_release_identity.py": {
-      "sha256": "3ec9e9037131d1b61f54b3ae4b6aacb590587be65edeb972ceb9306837ac7ae0",
-      "size_bytes": 8351
+      "sha256": "3697bcca20d969d8be5a0371b71ecc6fa940b6017a601d56afc3a68649a1252c",
+      "size_bytes": 8527
     },
     "core/component_release_transport.py": {
       "sha256": "8e2fce2ddb6337712071c311d69875a9a9ba8ab51fed7a499cf3c52576e3ff97",
@@ -3280,6 +3280,10 @@
     "tools/runtime-pins.json": {
       "sha256": "10134b91d387b32c345f6af0f18941ee2abbad27a3b751a2ce3bbe807d5d9407",
       "size_bytes": 1017
+    },
+    "tools/test_component_release_label_rows.py": {
+      "sha256": "1e8b3d7de79b484addee4e659598e6612056af846404b444ec9c7bbabbd4a47f",
+      "size_bytes": 4490
     },
     "tools/test_profile_isolation.py": {
       "sha256": "e0449cbd578d19c1aeaea628b6d6af6a447386bb894bca21bc464f40d36942f8",
