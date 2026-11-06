@@ -2034,8 +2034,8 @@
       "size_bytes": 18258
     },
     "qt_app/dataset_page.py": {
-      "sha256": "3fbd67938d3a216335d4a05c9925a00d747cdbd5bbf8e8b092f69834435b92a1",
-      "size_bytes": 496352
+      "sha256": "7adc0e76b738cc2d9821a5c22afc9263e88bf83820aa50c056039441d2247565",
+      "size_bytes": 497007
     },
     "qt_app/dataset_preparation_queue.py": {
       "sha256": "0978e5838b13bf1872a93b671af7021183a4ce79db32ea554d299c0c9ca4afff",
@@ -2590,8 +2590,8 @@
       "size_bytes": 8642
     },
     "qt_app/training_package_dialog.py": {
-      "sha256": "09c02f7f61ec28f952495142ce10931b38b9993ad1cc2fa342da3d2e2e8fa6c5",
-      "size_bytes": 35816
+      "sha256": "f772db53e2a3d3adeb511f21d726372eb18ad45d343f03d9b9d186a84e70399c",
+      "size_bytes": 40661
     },
     "qt_app/training_page.py": {
       "sha256": "9eab7114a6a19c705c29adcf2c7ef024fc9e34332cce1274d33f99d68d82e6c1",

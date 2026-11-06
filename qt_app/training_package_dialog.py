@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import (
     QCheckBox,QDialogButtonBox,QFileDialog,QFrame,QHeaderView,QHBoxLayout,
     QLabel,QLineEdit,QPushButton,QTabWidget,QTextEdit,QTreeWidget,
@@ -380,9 +380,10 @@ class TrainingPackageResultDialog(FeedbackEnabledDialog):
     }
 
     def __init__(self,result: TrainingPackageResult,parent=None, *, reference_inspection=False,
-                 candidate_plan_available=True) -> None:
+                 candidate_plan_available=True, krea_report=None) -> None:
         super().__init__(parent)
         self.result=result; self.action=""
+        self._krea_report = krea_report
         if reference_inspection:
             self._build_reference_inspection()
             return
@@ -448,7 +449,7 @@ class TrainingPackageResultDialog(FeedbackEnabledDialog):
             issues=QLabel(issue_text)
             issues.setWordWrap(True); issues.setProperty("severity","warning")
             layout.addWidget(issues)
-        self.trainer_preview_button=QPushButton("Review Trainer Settings…")
+        self.trainer_preview_button=QPushButton("Review Krea 2 Compatibility…" if krea_report else "Review Trainer Settings…")
         self.trainer_preview_button.setAutoDefault(False)
         self.trainer_preview_button.setEnabled(successful)
         self.trainer_preview_button.setVisible(successful)
@@ -571,6 +572,9 @@ class TrainingPackageResultDialog(FeedbackEnabledDialog):
         )
 
     def _choose(self,action: str) -> None:
+        if action == "trainer_preview" and self._krea_report is not None:
+            self._krea_report(self)
+            return
         self.action=action
         self.accept()
 
@@ -697,3 +701,113 @@ class TrainingPackageComparisonDialog(FeedbackEnabledDialog):
         buttons=QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+
+
+class KreaPackageReportDialog(FeedbackEnabledDialog):
+    """Review one frozen package without giving it execution authority."""
+
+    feedback_workflow = "Krea 2 package compatibility"
+
+    def __init__(self, verification, registry, jobs, parent=None, *, service=None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QPlainTextEdit
+        from core.krea_training_compatibility import KreaTrainingCompatibilityService
+        from .workers import CoordinatedCallTask
+
+        self._jobs = jobs
+        self._closing = False
+        self.setWindowTitle("Krea 2 Package Compatibility")
+        self.resize(850, 630)
+        layout = QVBoxLayout(self)
+        intro = QLabel("Review this package’s compatibility. The package stays unchanged and training cannot start here.")
+        intro.setWordWrap(True)
+        layout.addWidget(intro)
+        self.status = QLabel("Checking the exact package and registered base…")
+        self.status.setTextFormat(Qt.PlainText)
+        self.status.setWordWrap(True)
+        layout.addWidget(self.status)
+        self.report_tabs = QTabWidget()
+        self.report_sections = []
+        for title in ("Readiness", "Settings", "Captions"):
+            section = QPlainTextEdit()
+            section.setReadOnly(True)
+            section.setAccessibleName(f"Krea 2 {title.lower()}")
+            self.report_tabs.addTab(section, title)
+            self.report_sections.append(section)
+        self.report_tabs.setEnabled(False)
+        layout.addWidget(self.report_tabs, 1)
+        self.return_button = QPushButton("Return to Package Review")
+        self.return_button.clicked.connect(self.reject)
+        layout.addWidget(self.return_button)
+
+        service = service or KreaTrainingCompatibilityService()
+
+        def work(job):
+            def progress(_done, _total, label):
+                job.update(0, 0, label)
+            return service.report(verification, registry, progress=progress,
+                                  should_cancel=lambda: job.cancel_requested)
+
+        task = CoordinatedCallTask(jobs, "Check Krea 2 package compatibility", work, resource="io")
+        self._task = task
+        task.signals.progress.connect(self._progress)
+        task.signals.complete.connect(self._completed)
+        task.signals.failed.connect(self._failed)
+        task.signals.cancelled.connect(lambda: self._failed("Compatibility check cancelled."))
+        QTimer.singleShot(0, self._start)
+
+    def _start(self):
+        if self._task is None:
+            return
+        try:
+            self._task.start()
+        except (ValueError, RuntimeError) as exc:
+            self._failed(str(exc))
+
+    def _progress(self, _current, _total, message):
+        if not self._closing:
+            self.status.setText(message)
+
+    def _settled(self):
+        self._task = None
+        if self._closing:
+            super().reject()
+        return not self._closing
+
+    def _completed(self, report):
+        if not self._settled():
+            return
+        base = ("Exact registered base verified" if report.base_status == "identity_verified"
+                else "Exact registered base unavailable")
+        self.status.setText(f"{base}. Training readiness is unverified.")
+        sections = [
+            "\n".join(f"{item.summary}: {item.reason} {item.next_action}" for item in report.requirements),
+            "\n".join(f"{item.field} [{item.disposition}]\nRequested: {item.requested}\n{item.reason}"
+                      for item in report.settings),
+            "\n\n".join(f"{item.stable_id} ({item.role}, {item.effective_exposures} exposures)\n{item.caption}"
+                        for item in report.images),
+        ]
+        for widget, text in zip(self.report_sections, sections):
+            widget.setPlainText(text)
+        self.report_tabs.setEnabled(True)
+
+    def _failed(self, message):
+        if self._settled():
+            self.status.setText(f"Compatibility report unavailable. {message}")
+
+    def reject(self):
+        task = self._task
+        if task is not None and task.job_id:
+            self._closing = True
+            self.status.setText("Stopping the package check…")
+            self._jobs.cancel(task.job_id)
+            return
+        self._task = None
+        super().reject()
+
+    def closeEvent(self, event):
+        if self._task is not None and self._task.job_id:
+            event.ignore()
+            self.reject()
+        else:
+            super().closeEvent(event)

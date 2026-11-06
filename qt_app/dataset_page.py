@@ -5425,8 +5425,21 @@ class DatasetPage(QWidget):
             +(f" • {verification.artifact_count:,} artifacts verified"
               if verification and verification.valid else "")
         )
+        krea_report = None
+        if verification is not None and verification.valid:
+            family = verification.manifest.get("training_configuration", {}).get("target", {}).get("model_family", "")
+            if str(family).casefold() in {"krea 2", "krea2"}:
+                from .training_package_dialog import KreaPackageReportDialog
+
+                def krea_report(parent):
+                    KreaPackageReportDialog(
+                        verification, ModelResourceRegistry(MODEL_RESOURCES_PATH),
+                        self.state.jobs, parent,
+                    ).exec()
+
         dialog=TrainingPackageResultDialog(
             result,self,candidate_plan_available=getattr(self,"_training_package_plan",None) is not None,
+            krea_report=krea_report,
         )
         dialog.exec()
         if dialog.action=="saved_drafts" and result.status=="rolled_back":
