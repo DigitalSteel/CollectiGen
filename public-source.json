@@ -614,8 +614,8 @@
       "size_bytes": 4170
     },
     "core/generation_saved_work.py": {
-      "sha256": "5206cdb7c2e0e0f63ea8422f488c9de5810bae620bdceb4b12db1521b7a30cb5",
-      "size_bytes": 36313
+      "sha256": "419934267bc7914841f73557c4ff478dc8cc0e3a6b3a888b891e64d4cb0be556",
+      "size_bytes": 36693
     },
     "core/generation_swarm_components.py": {
       "sha256": "7130176ef4314a16f1a5910e89e79a462564b770932e92004f2d9f84ebd40e73",

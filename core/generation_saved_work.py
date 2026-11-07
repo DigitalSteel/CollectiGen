@@ -13,7 +13,7 @@ from uuid import uuid4
 
 from .generation_experiments import MAX_BYTES as GROUP_MAX_BYTES, load_experiment, validate_experiment
 from .generation_recipes import MAX_BYTES as RECIPE_MAX_BYTES, _validate as _validate_recipe, load_recipe, recipe_storage_digest, save_recipe
-from .generation_planning import MAX_PLAN_BYTES, load_plan, load_plan_with_digest, save_plan
+from .generation_planning import MAX_PLAN_BYTES, export_plan, load_plan, load_plan_with_digest, save_plan
 from .training_source_io import _assert_unredirected
 from .image_record import _atomic_create_text
 from .external_write_transaction import atomic_verified_bytes
@@ -348,7 +348,13 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, ca
     if kind == "groups":
         _publish_group(destination, value)
     elif kind == "drafts":
-        save_plan(destination, value)
+        raw = export_plan(value)
+        try:
+            _atomic_create_text(destination, raw.decode("utf-8"))
+        except FileExistsError as exc:
+            raise ValueError("The destination already exists; its contents were preserved.") from exc
+        if _preset_bytes(destination, maximum=MAX_PLAN_BYTES, label="Draft export") != raw:
+            raise OSError("Draft export read-back failed.")
     elif kind == "prompt_presets":
         _atomic_create_text(destination, _preset_text(value.to_dict()))
         if _preset_bytes(destination) != _preset_text(value.to_dict()).encode("utf-8"):
