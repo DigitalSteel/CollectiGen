@@ -164,25 +164,35 @@ def test_attempt_directory_cannot_masquerade_as_cache_root(tmp_path):
     assert not destination.exists()
 
 
-def test_cancel_during_final_hashing_holds_success_and_retains_output(tmp_path, monkeypatch):
+@pytest.mark.parametrize("cancel_at", [1, 3])
+def test_cancel_during_archive_hashing_preserves_acquisition(tmp_path, monkeypatch, cancel_at):
     acquired, trust, component, publication, root = acquired_fixture(tmp_path)
     import core.tag_default_package as module
+
     original = module.verify_artifact
-    cancelled = [False]
-    calls = []
-    def verify(path, artifact):
-        original(path, artifact)
-        calls.append(1)
-        if len(calls) == 3:  # Pre-extract, before decode, then final verification.
-            cancelled[0] = True
+    cancelled = False
+    calls = 0
+    archive = acquired.acquired.artifact
+    archive_bytes = archive.read_bytes()
+
+    def verify(path, artifact, *, should_cancel=None):
+        nonlocal cancelled, calls
+        calls += 1
+        cancelled = calls == cancel_at
+        original(path, artifact, should_cancel=should_cancel)
+
     monkeypatch.setattr(module, "verify_artifact", verify)
     destination = tmp_path / "prepared"
-    with pytest.raises(InterruptedError):
-        module.prepare_tag_default_package(acquired, destination, lambda: cancelled[0],
+    with pytest.raises(InterruptedError, match="artifact verification was cancelled"):
+        module.prepare_tag_default_package(acquired, destination, lambda: cancelled,
             trust_bytes=trust, component=component,
-            acquisition_cache_root=acquired.acquired.artifact.parent.parent)
-    assert len(calls) == 3
-    assert (destination / "Apps/TagDatabase/data/TagDatabase.zip").exists()
+            acquisition_cache_root=archive.parent.parent)
+    assert calls == cancel_at
+    assert archive.read_bytes() == archive_bytes
+    if cancel_at == 1:
+        assert not destination.exists()
+    else:
+        assert (destination / "Apps/TagDatabase/data/TagDatabase.zip").exists()
 
 
 @pytest.mark.parametrize("case", ["traversal", "symlink", "duplicate", "nonempty"])
