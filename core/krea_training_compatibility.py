@@ -64,6 +64,7 @@ class KreaTrainingCompatibilityService:
         before = _package_states(expected, should_cancel)
         if progress:
             progress(0, 0, "Verifying the exact package for the Krea compatibility report")
+        _cancel(should_cancel)
         current = TrainingPackageService().verify(expected.destination, should_cancel=should_cancel)
         _cancel(should_cancel)
         if not current.valid or current.package_fingerprint != expected.package_fingerprint:

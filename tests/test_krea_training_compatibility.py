@@ -156,6 +156,10 @@ def test_cancellation_and_mid_report_changes_are_not_returned(tmp_path, monkeypa
         return value
     if moment == "after_resource":
         monkeypatch.setattr(registry, "resolve", changed)
+    if moment == "verifying":
+        def unexpected_verify(*args, **kwargs):
+            pytest.fail("Cancellation at the progress callback must skip verification")
+        monkeypatch.setattr(TrainingPackageService, "verify", unexpected_verify)
     def progress(*args):
         if moment == "verifying":
             cancel[0] = True
