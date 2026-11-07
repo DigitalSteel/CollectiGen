@@ -274,8 +274,8 @@
       "size_bytes": 4938
     },
     "core/component_acquisition.py": {
-      "sha256": "f9992b8c0dc2385a7c1920529b8fca1d78212f6a7160ad85e4a5f8fe5650aa4e",
-      "size_bytes": 21481
+      "sha256": "01372f54dd759be52b27a5bd7ab69161d8a698e450c7c8141a74cab2e75eac1d",
+      "size_bytes": 21633
     },
     "core/component_release_identity.py": {
       "sha256": "20d4730db277ed2629391dcf64ee84ee4707151112f60608e4f24490e8b05b96",

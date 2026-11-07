@@ -321,6 +321,12 @@ class ComponentAcquisition:
         if verified != offer.release: raise ExactOfferHold(EXACT_OFFER_HOLD)
         self._check(should_cancel)
 
+    def _check_inflight_offer(self, offer, should_cancel):
+        self._check(should_cancel)
+        self._trust()
+        require(offer.trust_sha256 == self.trust_pin
+                and self._offers.get(offer.release.manifest_sha256) is offer, "changed_inflight_offer")
+
     def acquire(self, offer, *, progress=None, should_cancel=None):
         self._trust()
         self._check(should_cancel)
@@ -340,7 +346,7 @@ class ComponentAcquisition:
         if cached is not None:
             guard(cached)
             verify_component_artifact(cached, verified, should_cancel=should_cancel)
-            self._check(should_cancel)
+            self._check_inflight_offer(offer, should_cancel)
             return AcquiredComponent(offer, cached)
         used = sum(path.stat().st_size for path in self._acquired.values())
         require(used + verified.artifact.size_bytes <= self.cache_maximum, "cache_bound")
@@ -350,14 +356,11 @@ class ComponentAcquisition:
         try:
             artifact = self.transport.download_artifact(offer.artifact_source, verified.artifact,
                 cache_directory=attempt, progress=progress, should_cancel=should_cancel)
-            self._check(should_cancel)
-            self._trust()
-            require(offer.trust_sha256 == self.trust_pin
-                    and self._offers.get(offer.release.manifest_sha256) is offer, "changed_inflight_offer")
+            self._check_inflight_offer(offer, should_cancel)
             guard(artifact)
             require(artifact.parent == attempt and artifact.name == verified.artifact.name, "cache_artifact_binding")
             verify_component_artifact(artifact, verified, should_cancel=should_cancel)
-            self._check(should_cancel)
+            self._check_inflight_offer(offer, should_cancel)
             self._acquired[verified.manifest_sha256] = artifact
             return AcquiredComponent(offer, artifact)
         except BaseException:
