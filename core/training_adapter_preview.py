@@ -206,6 +206,7 @@ class SdScriptsSdxlLoraPreviewService:
         before = _package_states(package, should_cancel)
         if progress:
             progress(0, 0, "Verifying the exact training package")
+        _cancel(should_cancel)
         current = TrainingPackageService().verify(package.destination, should_cancel=should_cancel)
         _cancel(should_cancel)
         if not current.valid or current.package_fingerprint != package.package_fingerprint:
@@ -218,6 +219,7 @@ class SdScriptsSdxlLoraPreviewService:
             raise ValueError("This proposal covers SDXL 1.0 ordinary LoRA only. The manual package remains available.")
         if progress:
             progress(0, 0, "Verifying the exact registered base model")
+        _cancel(should_cancel)
         resolved = registry.resolve(config.base_model_id, role="checkpoint", family="SDXL",
                                     progress=progress, should_cancel=should_cancel)
         result = self._build_verified(current, config, resolved, recipe, should_cancel)
