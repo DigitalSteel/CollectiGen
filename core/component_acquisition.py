@@ -339,7 +339,8 @@ class ComponentAcquisition:
         cached = self._acquired.get(verified.manifest_sha256)
         if cached is not None:
             guard(cached)
-            verify_component_artifact(cached, verified)
+            verify_component_artifact(cached, verified, should_cancel=should_cancel)
+            self._check(should_cancel)
             return AcquiredComponent(offer, cached)
         used = sum(path.stat().st_size for path in self._acquired.values())
         require(used + verified.artifact.size_bytes <= self.cache_maximum, "cache_bound")
@@ -355,7 +356,8 @@ class ComponentAcquisition:
                     and self._offers.get(offer.release.manifest_sha256) is offer, "changed_inflight_offer")
             guard(artifact)
             require(artifact.parent == attempt and artifact.name == verified.artifact.name, "cache_artifact_binding")
-            verify_component_artifact(artifact, verified)
+            verify_component_artifact(artifact, verified, should_cancel=should_cancel)
+            self._check(should_cancel)
             self._acquired[verified.manifest_sha256] = artifact
             return AcquiredComponent(offer, artifact)
         except BaseException:
