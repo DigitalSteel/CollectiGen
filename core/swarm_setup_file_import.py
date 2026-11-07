@@ -51,14 +51,14 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
                          "Export it as CollectiGen JSON; SwarmUI translation does not yet preserve those choices.")
     params = {}
     prompts = recipe.get("prompts", {})
-    positive = (render_prompt_parts(recipe.get("prompt_parts", []))
-                if recipe["schema_version"] == 3 else prompts.get("positive_prompt"))
+    parts = recipe.get("prompt_parts")
+    positive = render_prompt_parts(parts) if parts else prompts.get("positive_prompt")
     negative = (recipe.get("negative_prompt") if recipe["schema_version"] == 3
                 else prompts.get("negative_prompt"))
     for key, value in (("prompt", positive), ("negativeprompt", negative)):
         if not include_prompts:
             continue
-        if value is None or key == "prompt" and not value:
+        if value is None:
             continue
         if imported_prompt_kind(value) != "literal" or (
             key == "prompt" and (not value.strip() or len(value) > 4096)
