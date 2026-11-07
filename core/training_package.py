@@ -1767,7 +1767,7 @@ class TrainingPackageService:
         ):
             raise ValueError("The package lineage, exclusions, output, or limitations are inconsistent.")
 
-        files,redirects=_package_files(root,limits=limits,should_cancel=cancel if limits else None)
+        files,redirects=_package_files(root,limits=limits,should_cancel=cancel)
         if redirects:
             raise ValueError("The package contains redirected or unsupported entries: "+", ".join(redirects))
         expected_files=set(expected_generated)
