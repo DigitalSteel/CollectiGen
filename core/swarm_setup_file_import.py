@@ -60,7 +60,9 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
             continue
         if value is None or key == "prompt" and not value:
             continue
-        if imported_prompt_kind(value) != "literal" or key == "prompt" and len(value) > 4096:
+        if imported_prompt_kind(value) != "literal" or (
+            key == "prompt" and (not value.strip() or len(value) > 4096)
+        ):
             raise ValueError("This setup contains prompt syntax outside the qualified literal subset. "
                              "Export it as CollectiGen JSON instead.")
         params[key] = value
