@@ -274,8 +274,8 @@
       "size_bytes": 4938
     },
     "core/component_acquisition.py": {
-      "sha256": "f9378940349639498b7c1162386ef9ca09429691ec8196709102341791b04d49",
-      "size_bytes": 21655
+      "sha256": "bad69d171caf36b006fb229ecc4ee5b3d29ab16519ad06ccfe14a87e0c445445",
+      "size_bytes": 20983
     },
     "core/component_release_identity.py": {
       "sha256": "20d4730db277ed2629391dcf64ee84ee4707151112f60608e4f24490e8b05b96",
@@ -3610,8 +3610,8 @@
       "size_bytes": 3827
     },
     "tests/test_component_acquisition.py": {
-      "sha256": "8c77ccbbfa420ca46b8c881be78c11f88c291f88f3648297e510ecb932621b11",
-      "size_bytes": 18985
+      "sha256": "b2fcaeade8da3fb11dd4bf384101bc8f56422361838ac06b2a5398f631d55af5",
+      "size_bytes": 19867
     },
     "tests/test_component_release_identity.py": {
       "sha256": "3d7667461d5360b3c56d7cb97fe704a7c4482e3f9dd220b18d7398c4a207c997",

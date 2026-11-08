@@ -151,7 +151,7 @@ def test_first_install_then_real_stock_transport(tmp_path):
     assert acquired.artifact.read_bytes() == PAYLOAD
     assert acquired.artifact.is_relative_to(s.root) and acquired.production_install_authorized is False
     assert progress[-1][:2] == (len(PAYLOAD), len(PAYLOAD))
-    assert len(feed.calls) == 6 and all(r.closed for r in feed.responses)
+    assert len(feed.calls) == 7 and all(r.closed for r in feed.responses)
     assert not (s.root / 'data').exists()
 
 
@@ -353,7 +353,7 @@ def test_cache_quota_and_exact_reuse(tmp_path):
     f=FakeFeed();f.add();s=service(tmp_path,f,max_cache_bytes=len(PAYLOAD));o,=offers(s)
     first=s.acquire(o);before=len(f.calls)
     assert s.acquire(o).artifact==first.artifact
-    assert len(f.calls)==before+2  # fresh metadata, no second payload transfer
+    assert len(f.calls)==before+3  # fresh listing and metadata, no second payload transfer
     f.add('collectigen.second-reader')
     second=next(x for x in offers(s) if x.release.component_id.value=='collectigen.second-reader')
     with pytest.raises(ValueError,match='cache_bound'):s.acquire(second)
@@ -401,3 +401,25 @@ def test_exact_offer_superseded_during_signature_readback(tmp_path, monkeypatch)
     assert replacement is not offer and replacement.release == offer.release
     acquisition.revalidate_offer(replacement)
     assert list(acquisition.root.iterdir()) == [acquisition._marker]
+
+
+@pytest.mark.parametrize('cached', [False, True])
+def test_withdrawn_offer_refused_before_download_or_cache_reuse(tmp_path, cached):
+    feed = FakeFeed()
+    _, name = feed.add()
+    acquisition = service(tmp_path, feed)
+    offer, = offers(acquisition)
+    acquired = acquisition.acquire(offer) if cached else None
+    row = feed.rows.pop()
+    feed.calls.clear()
+    with pytest.raises(ValueError, match='reviewed release changed'):
+        acquisition.acquire(offer)
+    assert [url for url, _, _ in feed.calls] == [API + '1']
+    if acquired:
+        assert acquired.artifact.read_bytes() == PAYLOAD
+    else:
+        assert list(acquisition.root.iterdir()) == [acquisition._marker]
+    feed.rows.append(row)
+    fresh, = offers(acquisition)
+    artifact = acquisition.acquire(fresh).artifact
+    assert artifact.name == name and artifact.read_bytes() == PAYLOAD
