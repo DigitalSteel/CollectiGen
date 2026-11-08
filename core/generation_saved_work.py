@@ -13,7 +13,7 @@ from uuid import uuid4
 
 from .generation_experiments import MAX_BYTES as GROUP_MAX_BYTES, load_experiment, validate_experiment
 from .generation_recipes import MAX_BYTES as RECIPE_MAX_BYTES, _validate as _validate_recipe, load_recipe, recipe_storage_digest, save_recipe
-from .generation_planning import MAX_PLAN_BYTES, export_plan, load_plan, load_plan_with_digest, save_plan
+from .generation_planning import MAX_PLAN_BYTES, export_plan, load_plan, load_plan_with_digest
 from .training_source_io import _assert_unredirected
 from .image_record import _atomic_create_text
 from .external_write_transaction import atomic_verified_bytes
@@ -283,7 +283,7 @@ def import_selected_saved_work(storage_root, kind, source_path, *, cancelled=Non
     if kind == "groups":
         _publish_group(target, value)
     elif kind == "drafts":
-        save_plan(target, value)
+        export_draft_copy(target, value)
     else:
         save_recipe(target, value)
     return str(target)
