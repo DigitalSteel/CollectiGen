@@ -188,7 +188,9 @@ class EncyclopediaInstallation:
             version=offer.release.software_version, os_name="windows", architecture="x86_64",
             manifest_bytes=offer.manifest_bytes, signature_bytes=offer.signature_bytes,
             trust_bytes=self.acquisition.trust, expected_active_token=reviewed.installed.active_sha256,
-            failpoint=handoff, preflight=lambda root, base, owner: self._unchanged(reviewed, root, base, owner), payload_policy=self.payload_policy)
+            failpoint=handoff, preflight=lambda root, base, owner: self._unchanged(reviewed, root, base, owner),
+            payload_policy=self.payload_policy,
+            copy_checkpoint=None if should_cancel is None else lambda: self._cancel(should_cancel))
         phase('Saving the reader connection')
         return self._publish_connection(expected=reviewed.settings)
 

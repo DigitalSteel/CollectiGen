@@ -292,7 +292,8 @@ def stage_and_activate(root, archive_path, *, component, version, os_name, archi
 
 def stage_and_activate_admitted(admission, archive_path, *, component, version, os_name,
         architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token,
-        failpoint=lambda phase: None, preflight=lambda root, base, owner: None, payload_policy=None):
+        failpoint=lambda phase: None, preflight=lambda root, base, owner: None,
+        payload_policy=None, copy_checkpoint=None):
     require(type(admission) is ComponentStageAdmission, "original_root_admission_required")
     with admission.transaction(component, enroll=True) as (root, base, owner, check):
         preflight(root, base, owner)
@@ -303,10 +304,12 @@ def stage_and_activate_admitted(admission, archive_path, *, component, version, 
         return _stage_and_activate(root, base, owner, archive_path, component=component,
             version=version, os_name=os_name, architecture=architecture,
             manifest_bytes=manifest_bytes, signature_bytes=signature_bytes, trust_bytes=trust_bytes,
-            expected_active_token=expected_active_token, failpoint=handoff, payload_policy=payload_policy)
+            expected_active_token=expected_active_token, failpoint=handoff, payload_policy=payload_policy,
+            copy_checkpoint=copy_checkpoint)
 
 
-def extract_component_archive(archive_path, destination, *, member_extracted=lambda: None, payload_policy=None):
+def extract_component_archive(archive_path, destination, *, member_extracted=lambda: None,
+        payload_policy=None, copy_checkpoint=None):
     """Stock bounded exclusive ZIP extraction, with no activation or cleanup.
 
     Caller owns the guarded empty destination and partial output after failure.
@@ -344,7 +347,12 @@ def extract_component_archive(archive_path, destination, *, member_extracted=lam
                 destination_file.parent.mkdir(parents=True, exist_ok=True)
                 with archive.open(info) as source, destination_file.open("xb") as output:
                     count = 0
-                    while chunk := source.read(65536):
+                    while True:
+                        if copy_checkpoint is not None:
+                            copy_checkpoint()
+                        chunk = source.read(65536)
+                        if not chunk:
+                            break
                         count += len(chunk)
                         require(count <= info.file_size, "member_bounds")
                         output.write(chunk)
@@ -353,7 +361,8 @@ def extract_component_archive(archive_path, destination, *, member_extracted=lam
 
 
 def _stage_and_activate(root, base, owner, archive_path, *, component, version, os_name,
-        architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token, failpoint, payload_policy=None):
+        architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token, failpoint,
+        payload_policy=None, copy_checkpoint=None):
     policy = require_payload_policy(payload_policy, component, {"os": os_name, "architecture": architecture})
     with lock(base):
         journal_path = base / "transaction.json"
@@ -400,7 +409,8 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         staging.mkdir()
         failpoint("staging_created")
         extract_component_archive(archive_path, staging,
-            member_extracted=lambda: failpoint("member_extracted"), payload_policy=policy)
+            member_extracted=lambda: failpoint("member_extracted"), payload_policy=policy,
+            copy_checkpoint=copy_checkpoint)
         profile = verify_directory(staging, target["inventory_sha256"], component, version, payload_policy=policy)
         require(profile["platform"] == {"os": os_name, "architecture": architecture}, "inventory_platform")
         verify_artifact(archive_path, verified.artifact)
