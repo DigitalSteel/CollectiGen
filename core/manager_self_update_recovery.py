@@ -318,6 +318,7 @@ class ManagerRecovery:
             j["startup_owner"] = owner
             self.current_code(j["binding"]["target"])
             self.gate("target_starting", j)
+            self.current_code(j["binding"]["target"])
             self.check_data(j, "expected_b")
             return self.save(j, "awaiting_health", "target_starting", owner=owner)
 
@@ -404,6 +405,8 @@ class ManagerRecovery:
             self.gate("exclusive_owner", j)
             self.gate("recovery_admission", j)
             self.release(j["binding"]["prior"])
+            self.current_code(j["binding"]["target"])
+            self.check_data(j, "before")
             request = {"transaction": self.id, "binding_sha256": digest(j["binding"]),
                        "deployment": self.binding, "prior": j["binding"]["prior"],
                        "observed_current_version": j["binding"]["target"]["version"],
