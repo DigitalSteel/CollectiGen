@@ -507,6 +507,8 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
                     guard(file)
                 require(staging.resolve().is_relative_to(root.resolve()) and staging != root, "staging_delete_boundary")
                 shutil.rmtree(staging)  # exact journal-owned staging only
+                if j["before"] is not None:
+                    payload(root, j["before"], component, payload_policy=policy)
             if j["before"] is None:
                 if current_path.exists():
                     current_path.unlink()
