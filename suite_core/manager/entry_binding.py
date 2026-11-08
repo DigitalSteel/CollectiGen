@@ -159,7 +159,7 @@ def selected_owned_package(admitted):
         layout=admitted.layout,system_root=selected.owned_ollama_system_root)
 
 
-def _bind_training_worker(admitted, signed_worker):
+def _bind_training_worker(admitted, signed_worker, *, prepare_workspace=False):
     from hashlib import sha256
 
     from .bootstrap_entry import EntryHold
@@ -181,7 +181,15 @@ def _bind_training_worker(admitted, signed_worker):
     manager = next((row for row in rows if row["path"] == PAYLOAD_ENTRY), None)
     if manager is None or not executable.is_file() or sha256_file(executable) != manager["sha256"]:
         raise EntryHold("training_worker_manager_identity_changed")
-    return plan.provision_training_worker(proof, code_root=code, data_root=admitted.layout.data_root)
+    data = _path(admitted.layout.data_root)
+    if prepare_workspace and plan.training_worker_file_rows(proof) is not None:
+        manager_data = _path(data / "Manager")
+        if not manager_data.is_dir():
+            raise EntryHold("training_review_manager_data_required")
+        workspace = _path(manager_data / "TrainingReview")
+        workspace.mkdir(exist_ok=True)
+        _path(workspace)
+    return plan.provision_training_worker(proof, code_root=code, data_root=data)
 
 
 def launch_manager(*, normal_entry_session=None, argv=None, executable=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None, signed_training_worker=None):
@@ -218,7 +226,7 @@ def launch_manager(*, normal_entry_session=None, argv=None, executable=None, man
     if tag_database_controller is not None:
         options.update(tag_database_controller=tag_database_controller,tag_encyclopedia=tag_encyclopedia)
     if signed_training_worker is not None:
-        options["dataset_verifier"] = _bind_training_worker(admitted, signed_training_worker)
+        options["dataset_verifier"] = _bind_training_worker(admitted, signed_training_worker, prepare_workspace=True)
     direct=selected_direct_runtime(admitted)
     if direct is not None:options['direct_runtime_selection']=direct
     from .encyclopedia_acquisition_binding import factory_for_session

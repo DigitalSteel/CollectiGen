@@ -3182,8 +3182,8 @@
       "size_bytes": 9718
     },
     "suite_core/manager/entry_binding.py": {
-      "sha256": "650830b6b5a9be183f0e5439bdcce40e05282c3f6f20b183433cf0131bb81c65",
-      "size_bytes": 12654
+      "sha256": "be4ed31ec8852112a335b370bf2866a97aa7ab39444be9b1852ec822b3e9bf9a",
+      "size_bytes": 13086
     },
     "suite_core/manager/frozen_entry.py": {
       "sha256": "45378a465e85cc418e4d96bed17439dabd4024cc7553c3256c7718239f945dfd",
