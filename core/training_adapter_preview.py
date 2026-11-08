@@ -211,6 +211,9 @@ class SdScriptsSdxlLoraPreviewService:
     The prior result is an expected snapshot, never trusted as current evidence.
     No package, source, registry, config, environment or output file is written.
     """
+    def __init__(self, *, package_limits=None):
+        self._package_limits = package_limits
+
     @staticmethod
     def require_supported_configuration(config: TrainingConfiguration) -> None:
         config.require_single_checkpoint_adapter()
@@ -229,8 +232,11 @@ class SdScriptsSdxlLoraPreviewService:
         current = TrainingPackageService().verify(
             package.destination, should_cancel=should_cancel,
             expected_package_fingerprint=package.package_fingerprint,
+            limits=self._package_limits,
         )
         _cancel(should_cancel)
+        if current.inspection_limited:
+            raise ValueError("The package exceeds the Training preview inspection limits. Review a smaller package.")
         if not current.valid or current.package_fingerprint != package.package_fingerprint:
             raise ValueError("The training package changed or failed verification. Verify or rebuild it first.")
         if current.manifest != package.manifest:

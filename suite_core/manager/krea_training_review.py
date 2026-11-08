@@ -340,11 +340,15 @@ class KreaTrainingReviewDialog(QDialog):
                 or self._adapter_preview is not None or self._cancel.is_set()):
             return
         from core.model_resource_registry import ModelResourceRegistry
+        from core.training_adapter_preview import SdScriptsSdxlLoraPreviewService
+        from core.training_package import TrainingPackageVerificationLimits
         from qt_app.training_adapter_preview_dialog import TrainingAdapterPreviewDialog
 
         preview = TrainingAdapterPreviewDialog(
             self._verification, ModelResourceRegistry(self._registry_path),
-            self._preview_jobs, self, availability=lambda _package, _recipe: False,
+            self._preview_jobs, self,
+            service=SdScriptsSdxlLoraPreviewService(package_limits=TrainingPackageVerificationLimits()),
+            availability=lambda _package, _recipe: False,
         )
         self._adapter_preview = preview
         try:
