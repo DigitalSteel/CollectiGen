@@ -368,7 +368,7 @@ def organizer_factory_for_entry(explicit_factory, normal_entry_session):
     raise EntryHold('organizer_metadata_factory_not_supplied')
 
 
-def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagnostics_root=None, owned_runtime_admission=None, entry_probe=None, before_window_probe=None, normal_entry_session=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None,direct_runtime_selection=None,encyclopedia_acquisition_factory=None,organizer_connection_factory=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, model_workspace_factory=None, tag_content_factory=None, organizer_acquisition_factory=None):
+def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagnostics_root=None, owned_runtime_admission=None, entry_probe=None, before_window_probe=None, normal_entry_session=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None,direct_runtime_selection=None,encyclopedia_acquisition_factory=None,organizer_connection_factory=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, model_workspace_factory=None, tag_content_factory=None, organizer_acquisition_factory=None, dataset_verifier=None):
     if normal_entry_session is not None:
         from .bootstrap_entry import EntryHold, NormalEntrySession
         if type(normal_entry_session) is not NormalEntrySession:
@@ -514,6 +514,11 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             if type(organizer_connection_host) is not OrganizerConnectionHost:
                 raise ValueError('typed_organizer_connection_host_required')
             entry_owner.organizer_connection_host = organizer_connection_host
+        if dataset_verifier is not None:
+            from core.training_dataset_binding import ReviewedDatasetVerifier
+
+            if args.demo or type(dataset_verifier) is not ReviewedDatasetVerifier:
+                raise ValueError("reviewed_training_dataset_verifier_required")
         if before_window_probe is not None: before_window_probe(entry_owner)
         window = create_window(synthetic_demo(now) if args.demo else unconfigured(now), theme=args.theme,
             color_blind_mode=args.color_blind_mode, current_build=build_status, resource_route=resource_route, diagnostics_provider=diagnostics_provider, metadata_setup=metadata_setup, lifecycle_bridge=lifecycle_bridge,
@@ -531,6 +536,7 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             shared_settings_submit=shared_settings_submit,
             shared_settings_close_choice=shared_settings_close_choice,
             model_workspace_factory=model_workspace_factory, tag_content_host=entry_owner.tag_content_host,
+            dataset_verifier=dataset_verifier,
             krea_registry_path=(Path(app_settings_path).parent / "model_resources.json"
                                 if not args.demo and app_settings_path is not None else None))
         entry_owner.window = window

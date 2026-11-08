@@ -240,3 +240,70 @@ class ContainedDatasetPreparationService(ContainedRuntimeQualificationService):
         if destination is not None:
             _write_new(destination / 'dataset-preparation-qualification.json', _bytes(report))
         return report, destination
+
+
+class ReviewedDatasetVerifier:
+    """Bind Manager review to an explicitly reviewed worker and owned work directory."""
+
+    def __init__(self, inventory, python_relative, work_root):
+        from .training_process import ProcessInventory
+
+        if type(inventory) is not ProcessInventory or not Path(work_root).is_absolute():
+            raise ValueError("An exact reviewed worker and absolute Training work root are required.")
+        self.inventory = inventory
+        self.python_relative = python_relative
+        self.work_root = Path(work_root)
+
+    @classmethod
+    def from_verified_file_rows(cls, runtime, rows, manifest, work_root, *, should_cancel=None):
+        """Pin an installed copy using file rows already authenticated by its owner."""
+        from .training_file_inventory import SoftwareInventoryService
+        from .training_process import ProcessInventory
+
+        runtime = Path(runtime)
+        manifest = Path(manifest)
+        work_root = Path(work_root)
+        if (not runtime.is_absolute() or not work_root.is_absolute()
+                or not manifest.is_absolute() or manifest.parent != work_root):
+            raise TrainingProcessError("Use an absolute worker root and a separate owned inventory directory.")
+        service = SoftwareInventoryService()
+        inventory = service.capture(runtime, should_cancel=should_cancel)
+        actual = {name: {"directory": True} for name, _ in inventory.directories if name != "."}
+        actual.update({name: {"bytes": state[2], "sha256": digest}
+                       for name, state, digest in inventory.files})
+        if actual != rows or "python.exe" not in actual or "sha256" not in actual["python.exe"]:
+            raise TrainingProcessError("The installed Training worker differs from its verified package files.")
+        service.save(inventory, manifest)
+        pin = ProcessInventory(inventory.root, str(manifest), inventory.fingerprint,
+                               len(inventory.files), inventory.byte_count)
+        return cls(pin, "python.exe", work_root)
+
+    def __call__(self, package, *, should_cancel):
+        from dataclasses import asdict
+        from tempfile import mkdtemp
+
+        from .background_jobs import BackgroundJobManager
+        from .training_adapter_preview import SdxlLoraRecipe
+        from .training_dataset_preparation import assess_manifest, digest
+
+        package_root = Path(package.destination).resolve(strict=True)
+        root = self.work_root.resolve(strict=True)
+        if any(root.is_relative_to(path) for path in
+               (package_root, Path(self.inventory.root).resolve(strict=True))):
+            raise TrainingProcessError("Use a separate owned directory for dataset verification.")
+        worker = ContainedDatasetPreparationService.from_reviewed_worker_inventory(
+            self.inventory, self.python_relative, should_cancel=should_cancel,
+        )
+        work = Path(mkdtemp(prefix="dataset-review-", dir=root))
+        selection = {
+            "root": str(package_root),
+            "package_fingerprint": package.package_fingerprint,
+            "manifest_sha256": digest(package.manifest),
+            "recipe": asdict(SdxlLoraRecipe()),
+        }
+        jobs = BackgroundJobManager()
+        try:
+            return worker.check(selection, assess_manifest(package.manifest), work, jobs,
+                                should_cancel=should_cancel)
+        finally:
+            jobs.shutdown(wait=True)

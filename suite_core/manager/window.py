@@ -145,7 +145,7 @@ def view_for_candidate(observation):
             dict(observation.release_dates).get(observation.software_version), "Unsigned developer candidate", observation.notes),))
 
 
-def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None):
+def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None, dataset_verifier=None):
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtGui import QIcon
     if organizer_connection_host is not None:
@@ -1328,7 +1328,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
             preview_jobs = BackgroundJobManager()
             try:
-                dialog = KreaTrainingReviewDialog(destination, registry_path, self, preview_jobs=preview_jobs)
+                dialog = KreaTrainingReviewDialog(destination, registry_path, self,
+                                                    dataset_verifier=dataset_verifier, preview_jobs=preview_jobs)
             except BaseException:
                 preview_jobs.shutdown(wait=True)
                 raise
