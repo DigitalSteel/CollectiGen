@@ -432,6 +432,8 @@ def export_reviewed_setup(storage_root, item_path, destination, review, *,
     encoded = _preset_text(payload)
     if callable(cancelled) and cancelled():
         raise InterruptedError("Setup export cancelled; nothing was saved.")
+    if review_setup_export(storage_root, item_path) != current:
+        raise ValueError("The saved setup changed. Review Export Selected again before exporting.")
     try:
         _atomic_create_text(destination, encoded)
     except FileExistsError as exc:
