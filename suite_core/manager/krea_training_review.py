@@ -94,6 +94,8 @@ class KreaTrainingReviewDialog(QDialog):
         limits = TrainingPackageVerificationLimits()
         verification = TrainingPackageService().verify(
             package_path, should_cancel=self._cancel.is_set, limits=limits)
+        if self._cancel.is_set():
+            raise InterruptedError("Training package review was cancelled.")
         if verification.inspection_limited:
             raise ValueError("The package exceeds the review limits. Choose a smaller package.")
         if not verification.valid:
