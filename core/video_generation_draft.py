@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Mapping
 from uuid import uuid4
 
+from .generation_transport import strict_json
 from .training_source_io import _assert_unredirected, read_stable_training_source
 from .video_generation import MAX_JSON_BYTES, VideoGenerationRequest
 
@@ -80,6 +81,16 @@ class VideoAuthoringDraft:
                    if baseline is not None else None)
 
 
+def scoped_video_draft_path(directory: Path, path: str | Path) -> Path:
+    """Accept only an explicit direct child of the admitted draft directory."""
+    directory = Path(directory)
+    target = Path(path).absolute()
+    if not directory.is_absolute() or target.parent != directory or ":" in target.name or target.suffix.casefold() != ".json":
+        raise ValueError("Choose a .json draft in this workspace's video draft folder.")
+    _assert_unredirected(target)
+    return target
+
+
 def save_video_draft(path: str | Path, request: VideoGenerationRequest | VideoAuthoringDraft) -> Path:
     """Create a complete new draft, refusing a raced destination or redirect."""
     if not isinstance(request, (VideoGenerationRequest, VideoAuthoringDraft)):
@@ -97,6 +108,7 @@ def save_video_draft(path: str | Path, request: VideoGenerationRequest | VideoAu
             ensure_ascii=False, sort_keys=True, allow_nan=False, separators=(",", ":")) + "\n").encode("utf-8")
     if len(raw) > MAX_JSON_BYTES:
         raise ValueError("The video draft exceeds the supported size.")
+    _parse_video_draft(raw)
     temporary = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
     try:
         with temporary.open("xb") as stream:
@@ -109,7 +121,7 @@ def save_video_draft(path: str | Path, request: VideoGenerationRequest | VideoAu
         else:
             os.link(temporary, target)  # Atomic exclusive publish on POSIX.
             temporary.unlink()
-        verified, _ = read_stable_training_source(target)
+        verified, _ = read_stable_training_source(target, max_bytes=MAX_JSON_BYTES)
         if verified != raw:
             raise RuntimeError("The saved video draft failed read-back verification.")
         return target
@@ -119,14 +131,23 @@ def save_video_draft(path: str | Path, request: VideoGenerationRequest | VideoAu
 
 
 def load_video_draft(path: str | Path) -> VideoGenerationRequest | VideoAuthoringDraft:
-    raw, _ = read_stable_training_source(path)
-    if len(raw) > MAX_JSON_BYTES:
-        raise ValueError("The video draft exceeds the supported size.")
-    payload = json.loads(raw)
+    raw, _ = read_stable_training_source(path, max_bytes=MAX_JSON_BYTES)
+    return _parse_video_draft(raw)
+
+
+def _parse_video_draft(raw: bytes) -> VideoGenerationRequest | VideoAuthoringDraft:
+    try:
+        payload = strict_json(raw)
+    except (ValueError, RecursionError) as exc:
+        raise ValueError("The video draft contains invalid or ambiguous JSON.") from exc
     if not isinstance(payload, dict):
         raise ValueError("This is not a video draft.")
     if payload.get("schema_id") == DRAFT_SCHEMA_ID:
+        if set(payload) != {"schema_id", "request"} or not isinstance(payload["request"], dict):
+            raise ValueError("The video draft has an invalid request envelope.")
         return VideoGenerationRequest.from_dict(payload["request"])
     if payload.get("schema_id") == AUTHORING_SCHEMA_ID:
+        if set(payload) != {"schema_id", "authoring"} or not isinstance(payload["authoring"], dict):
+            raise ValueError("The video draft has an invalid authoring envelope.")
         return VideoAuthoringDraft.from_dict(payload["authoring"])
     raise ValueError("This is not a video draft.")
