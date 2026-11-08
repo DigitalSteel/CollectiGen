@@ -398,9 +398,9 @@ class ManagerRecovery:
                     self.save(j, "restoring_data", "data_restored_or_preserved", path=n)
                 self.save(j, "data_restored", "manager_data_readback_verified")
             self.check_data(j, "before")
-            self.release(j["binding"]["prior"])
             self.gate("exclusive_owner", j)
             self.gate("recovery_admission", j)
+            self.release(j["binding"]["prior"])
             request = {"transaction": self.id, "binding_sha256": digest(j["binding"]),
                        "deployment": self.binding, "prior": j["binding"]["prior"],
                        "observed_current_version": j["binding"]["target"]["version"],
@@ -423,6 +423,8 @@ class ManagerRecovery:
             self.current_code(j["binding"]["prior"])
             self.check_data(j, "before")
             evidence = self.gate("prior_reopened_healthy_and_closed", j)
+            self.current_code(j["binding"]["prior"])
+            self.check_data(j, "before")
             return self.save(j, "recovery_verified", "manual_recovery_verified", evidence=evidence)
 
 
