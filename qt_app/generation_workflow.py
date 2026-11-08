@@ -67,7 +67,7 @@ def _saved_runtime_connection(setup_window, data_root=None):
         return "", "Saved generator connection is unavailable. Review it in Setup before checking it."
 
 
-def _connect_setup_return(window, dialog):
+def _connect_setup_return(window, dialog, *, generator_setup_allowed=True):
     """Route one retained dialog through the existing Setup workspace."""
     def open_setup():
         if (getattr(window, "_generation_setup_return", None) is not None
@@ -113,7 +113,8 @@ def _connect_setup_return(window, dialog):
         panel.set_request_return_available(True)
         dialog.hide()
 
-    dialog.setup_requested.connect(open_setup)
+    if generator_setup_allowed:
+        dialog.setup_requested.connect(open_setup)
 
     def open_image_description_setup(review):
         if (getattr(window, "_generation_setup_return", None) is not None
@@ -527,7 +528,11 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
         outfits = [{**o.to_dict(), "associated_character_ids": list(character_db.associated_character_ids(o.id)),
                     "text": ", ".join(o.sdxl_tags), "reviewed": True}
                    for o in getattr(character_db, "outfits", {}).values()][:1000]
-        endpoint, connection_issue = _saved_runtime_connection(setup_window, data_root)
+        runtime_allowed = getattr(state, "generation_runtime_allowed", True)
+        endpoint, connection_issue = (
+            _saved_runtime_connection(setup_window, data_root) if runtime_allowed else
+            ("", "Generator access is unavailable in this workspace.")
+        )
         dialog = GenerationDialog(state.jobs, registry=model_registry,
             storage_root=data_root / "generation", source_record=source,
             source_identity=identity, knowledge_fragments=fragments,
@@ -537,10 +542,10 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             protected_model_roots=protected_model_roots(settings),
             settings=settings,
             ingest_history=getattr(state, "moves", None),
-            setup_available=setup_window is not None,
+            setup_available=setup_window is not None and runtime_allowed,
             initial_endpoint=endpoint, connection_issue=connection_issue,
             prompt_knowledge=getattr(state, "knowledge", None),
-            characters=characters, outfits=outfits, parent=host)
+            characters=characters, outfits=outfits, runtime_allowed=runtime_allowed, parent=host)
         dialog.source_records = saved_records
         if preloaded_draft is not None:
             plan, target, token = preloaded_draft
@@ -582,7 +587,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
                 dialog.source_current_provider = dialog._reference_current
             dialog._refresh_from_plan("Created an independent iteration. Review its seed and prepare it before submitting.")
         if setup_window is not None:
-            _connect_setup_return(setup_window, dialog)
+            _connect_setup_return(setup_window, dialog, generator_setup_allowed=runtime_allowed)
         if resource is not None:
             resources = [item.to_dict() for item in dialog.plan.request.resources
                          if item.hashes.get("sha256") != resource.hashes["sha256"]]
@@ -729,7 +734,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
                 on_opened(dialog)
             if setup_from_image:
                 QTimer.singleShot(0, dialog.start_setup_from_image)
-        if not force_new and not selected and not resource_id and initial_plan is None:
+        if runtime_allowed and not force_new and not selected and not resource_id and initial_plan is None:
             dialog.load_history(on_open=True)
 
     if not selected and not resource_id and initial_plan is None:

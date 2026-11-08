@@ -107,6 +107,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         connection_issue="",
         prompt_knowledge=None,
         swarm_preset_service=None,
+        runtime_allowed=True,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -124,6 +125,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.remix_source = False
         self.prompt_knowledge = prompt_knowledge
         self.swarm_preset_service = swarm_preset_service
+        self.runtime_allowed = runtime_allowed
+        self._planning_file_picker_open = False
         self.storage_root = Path(storage_root)
         self.source_record = GenerationRecord.from_dict(source_record.to_dict()) if source_record else None
         self.source_identity = _mapping(source_identity)
@@ -194,7 +197,10 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.setWindowTitle("Plan Image Generation")
         self.resize(1000, 860)
         layout = QVBoxLayout(self)
-        heading = QLabel("Review a complete request before any local generator receives it")
+        heading = QLabel(
+            "Review a complete request before any local generator receives it"
+            if self.runtime_allowed else "Plan an image to save as a draft or export as a request"
+        )
         heading.setObjectName("sectionTitle")
         layout.addWidget(heading)
         self.workflow_context = WorkflowContextSummary()
@@ -228,8 +234,10 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.tabs.addTab(self._scroll(self._build_review_tab()), "Review")
         self.tabs.addTab(self._build_advanced_tab(), "Advanced")
         connection = self._build_connection_tab()
-        self.tabs.addTab(self._scroll(self._build_results_tab()), "Results && Queue")
+        results_tab = self.tabs.addTab(self._scroll(self._build_results_tab()), "Results && Queue")
         self._readiness_tab_index = self.tabs.addTab(self._scroll(connection), "Readiness")
+        self.tabs.setTabVisible(results_tab, self.runtime_allowed)
+        self.tabs.setTabVisible(self._readiness_tab_index, self.runtime_allowed)
         body = QHBoxLayout()
         body.addWidget(self.tabs, 1)
         self.source_panel = self._build_source_panel()
@@ -255,6 +263,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.submit_button = QPushButton("Submit Reviewed Request")
         self.submit_button.setProperty("primary", True); self.submit_button.clicked.connect(self.submit_reviewed)
         buttons.addButton(self.submit_button, QDialogButtonBox.AcceptRole)
+        self.submit_button.setVisible(self.runtime_allowed)
         buttons.addButton(self.next_step_button, QDialogButtonBox.ActionRole)
         self.more_draft_actions_button = QPushButton("More Draft Actions…")
         self.more_draft_actions_button.setCheckable(True)
@@ -283,7 +292,8 @@ class GenerationDialog(FeedbackEnabledDialog):
             return False
 
     def _autosave_draft(self, *, closing=False):
-        if self._closed or self._shutdown_requested or self._pending or self._execution_active():
+        if (self._closed or self._shutdown_requested or self._planning_file_picker_open
+                or self._pending or self._execution_active()):
             return
         if not closing and (not self.isVisible() or self._draft_save_error):
             return
@@ -842,7 +852,10 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.goal = QLineEdit(); self.goal.setMaxLength(500)
         self.goal.setPlaceholderText("Optional planning note; not sent to the generator")
         self.positive = QTextEdit(); self.positive.setFixedHeight(90); self.positive.setAccessibleName("Image prompt sent to generator")
-        self.positive.setPlaceholderText("Describe the image you want to generate. This text is sent to the generator.")
+        self.positive.setPlaceholderText(
+            "Describe the image you want to generate. This text is sent to the generator."
+            if self.runtime_allowed else "Describe the image you want to plan."
+        )
         self.negative = QTextEdit(); self.negative.setFixedHeight(70); self.negative.setAccessibleName("Negative prompt")
         self.negative.setPlaceholderText("Optional details to avoid in the image")
         self.model = QLineEdit(); self.model.setPlaceholderText("Exact generator model name")
@@ -1565,7 +1578,11 @@ class GenerationDialog(FeedbackEnabledDialog):
 
     def _build_review_tab(self) -> QWidget:
         page = QWidget(); layout = QVBoxLayout(page)
-        note = QLabel("The source stays unchanged. This tab shows every deliberate difference and any translation loss before submission.")
+        note = QLabel(
+            "The source stays unchanged. This tab shows every deliberate difference and any translation loss before submission."
+            if self.runtime_allowed else
+            "Review changes and offline compatibility notes before saving or exporting. The original source stays unchanged."
+        )
         note.setWordWrap(True); layout.addWidget(note)
         splitter = QSplitter(Qt.Vertical)
         self.resource_tree = QTreeWidget()
@@ -1912,7 +1929,13 @@ class GenerationDialog(FeedbackEnabledDialog):
             self._update_actions(); return
         self._displayed_request = displayed
         self._refresh_seed_controls()
-        self.prepared = None; self.receipt = None; self._refresh_review("Inputs changed. Review and prepare this revised request before submitting.", fragments=False)
+        self.prepared = None
+        self.receipt = None
+        self._refresh_review(
+            "Inputs changed. Review and prepare this revised request before submitting."
+            if self.runtime_allowed else "Inputs changed. Review the draft before saving or exporting.",
+            fragments=False,
+        )
 
     def _refresh_request_details_summary(self) -> None:
         entered = int(bool(self.goal.text().strip())) + int(bool(self.negative.toPlainText().strip()))
@@ -2523,7 +2546,17 @@ class GenerationDialog(FeedbackEnabledDialog):
         if not self.plan.diff(): self.diff_tree.addTopLevelItem(QTreeWidgetItem(["Source retained", "", "", "No deliberate change yet."]))
         # Keystrokes must never traverse the registry or inspect model files.
         readiness = assess_readiness(self.plan, "swarmui", registry=None, capabilities=None)
-        self.readiness.setPlainText(_plain_json(readiness))
+        if self.runtime_allowed:
+            self.readiness.setPlainText(_plain_json(readiness))
+        else:
+            notes = (
+                "Offline SwarmUI compatibility preview\n"
+                "The exported request stays generator-neutral. This preview cannot verify a connection, resources, or exact replay."
+            )
+            for issue in readiness.issues:
+                if issue.code != "adapter_capabilities_missing":
+                    notes += f"\n\n{issue.message}\n{issue.recovery}"
+            self.readiness.setPlainText(notes)
         self._sync_advanced_json_from_plan()
         if fragments:
             self.fragment_tree.blockSignals(True); self.fragment_tree.clear()
@@ -2600,7 +2633,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             button.setEnabled(idle)
         self.history_choice.setEnabled(idle)
         selected_job = self.history_choice.currentData()
-        self.recover_button.setEnabled(idle and isinstance(selected_job, dict)
+        self.recover_button.setEnabled(self.runtime_allowed and idle and isinstance(selected_job, dict)
                                        and bool(selected_job.get("job_id")))
         selection_needs_open = self._selected_job_needs_open()
         if selection_needs_open:
@@ -2635,7 +2668,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         if self._output_preview and self._output_preview.get("application_blocker"):
             self.output_apply_button.setEnabled(False)
         self.output_apply_button.setToolTip((self._output_preview or {}).get("application_blocker", ""))
-        self.check_button.setEnabled(idle)
+        self.check_button.setEnabled(idle and self.runtime_allowed)
         self.choose_resource_button.setEnabled(self.registry is not None and not self._pending and not active)
         for button in (self.add_lora_button, self.choose_vae_button, self.choose_other_resource_button):
             button.setEnabled(self.registry is not None and not self._pending and not active)
@@ -2683,7 +2716,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             input_issue=input_issue)
         self._update_draft_action_presentation()
         self.source_panel.setEnabled(idle)
-        self.experiment_button.setEnabled(not self._pending and (idle or bool(self._experiment_dialog)))
+        self.experiment_button.setEnabled(self.runtime_allowed and not self._pending and (idle or bool(self._experiment_dialog)))
         self.results_experiment_button.setEnabled(self.experiment_button.isEnabled())
         self.save_recipe_button.setEnabled(idle and not input_issue)
         self.save_recipe_button.setToolTip(input_issue)
@@ -2702,7 +2735,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             "valid", self.prepared.get("request") is not None))
             or self._next_step_tab == 1 or self.submit_button.isEnabled())
         self.submit_button.setVisible(
-            review_stage and not self._pending and not self._execution_active()
+            self.runtime_allowed and review_stage and not self._pending and not self._execution_active()
         )
         self.next_step_button.setVisible(not self.submit_button.isEnabled())
         self.more_draft_actions_button.setText(
@@ -2710,6 +2743,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         )
 
     def open_experiment(self):
+        if not self._require_generation_runtime():
+            return
         if self._pending or self._shutdown_requested: return
         if self._experiment_dialog is None:
             if self._execution_active(): return
@@ -3135,6 +3170,15 @@ class GenerationDialog(FeedbackEnabledDialog):
         if any(item.kind == "init_image" for stage in self.plan.request.stages for item in stage.inputs):
             using = ("One exact source image is attached for image-guided generation."
                      if callable(self.source_image_provider) else "Saved image reference; reconnect the exact original to continue.")
+
+        if not self.runtime_allowed:
+            next_step = ("Enter an image prompt on Request." if not self.plan.request.positive_prompt
+                         else input_issue or "Review your request, then save the draft or export the request.")
+            self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
+                result="A saved draft or exported request.",
+                readiness="Planning only. Generator access is unavailable here.", next_step=next_step)
+            self._next_step_tab = 0 if not self.plan.request.positive_prompt or input_issue else 1
+            return
         result = "New images; originals unchanged. Verified results go to Ingest as unreviewed."
         job_state = str(getattr(self._submitted_progress, "state", ""))
         if "submit" in self._pending:
@@ -3348,7 +3392,15 @@ class GenerationDialog(FeedbackEnabledDialog):
         if not self._pending:
             self._io_timer.stop()
 
+    def _require_generation_runtime(self):
+        if self.runtime_allowed:
+            return True
+        self.status.setText("This workspace supports planning and export. Generator access is unavailable here.")
+        return False
+
     def check_connection(self) -> None:
+        if not self._require_generation_runtime():
+            return
         if self._pending or self._execution_active(): return
         if self.connection_issue:
             self.status.setText(self.connection_issue)
@@ -3444,6 +3496,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.prepared = None; self.connection_detail.setPlainText(_plain_json(binding)); self._refresh_from_plan("Exact local model is bound. Review its visible name and hash, then prepare.")
 
     def prepare_request(self) -> None:
+        if not self._require_generation_runtime():
+            return
         if self._pending or self._execution_active(): return
         input_issue, _target = self._ordinary_input_issue()
         if input_issue:
@@ -3647,6 +3701,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._refresh_from_plan("Validated neutral JSON edits were applied with a new audit diff. Bind and prepare again before submitting.")
 
     def submit_reviewed(self) -> None:
+        if not self._require_generation_runtime():
+            return
         if self._shutdown_requested:
             return
         if self.remix_source and (not callable(self.source_image_provider) or not any(
@@ -3936,6 +3992,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._run("history", service.history, done)
 
     def recover_selected(self) -> None:
+        if not self._require_generation_runtime():
+            return
         receipt = self.history_choice.currentData()
         if not isinstance(receipt, dict) or not receipt.get("job_id"):
             self.status.setText("Load and select a retained job first."); return
@@ -3964,6 +4022,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         return str(getattr(self._submitted_progress, "state", ""))
 
     def has_active_background_work(self) -> bool:
+        if self._planning_file_picker_open:
+            return True
         if self._prompt_templates_dialog and self._prompt_templates_dialog.has_active_background_work():
             return True
         if self._saved_work_dialog and self._saved_work_dialog.has_active_background_work():
@@ -4018,6 +4078,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._closed = True; self._generation += 1; self._io_timer.stop(); self._progress_timer.stop()
 
     def reject(self) -> None:
+        if self._planning_file_picker_open:
+            return
         if self.has_active_background_work():
             self.hide()
             return
@@ -4029,6 +4091,9 @@ class GenerationDialog(FeedbackEnabledDialog):
         super().reject()
 
     def closeEvent(self, event) -> None:
+        if self._planning_file_picker_open:
+            event.ignore()
+            return
         if self.has_active_background_work():
             event.ignore()
             self.hide()
@@ -4111,17 +4176,64 @@ class GenerationDialog(FeedbackEnabledDialog):
                 self.draft_status.setText("Draft saved to your chosen file · reopen it with Open Draft.")
                 self.status.setText("Draft saved with a read-back check.")
             self._run("save", lambda: self._save_path(path, snapshot), saved)
+    def _choose_plan_file(self, picker, *args, **kwargs):
+        if self._planning_file_picker_open:
+            return ""
+        self._planning_file_picker_open = not self.runtime_allowed
+        try:
+            path, _ = picker(self, *args, **kwargs)
+            return path
+        finally:
+            self._planning_file_picker_open = False
+            self._notify_background_work_finished()
+
     def _choose_load(self):
+        if self._planning_file_picker_open:
+            return
         if not self.confirm_draft_loss(after_saved=self._choose_load): return
-        path, _ = QFileDialog.getOpenFileName(self, "Load Generation Plan", str(self.storage_root), "Generation plan (*.json)")
+        path = self._choose_plan_file(
+            QFileDialog.getOpenFileName, "Load Generation Plan", str(self.storage_root), "Generation plan (*.json)",
+        )
         if path:
             target = Path(path).absolute()
-            self._run("load", lambda: load_plan_with_digest(target), lambda result: self._apply_loaded_plan(result[0], target, result[1]))
+            import_copy = not self.runtime_allowed and target.parent != self._draft_path.parent
+
+            def load():
+                local_path = target
+                if import_copy:
+                    from core.generation_saved_work import import_selected_saved_work
+
+                    local_path = Path(import_selected_saved_work(self.storage_root, "drafts", target))
+                plan, token = load_plan_with_digest(local_path)
+                return plan, local_path, token
+
+            def opened(result):
+                self._apply_loaded_plan(*result)
+                if import_copy:
+                    self._draft_path = result[1]
+                    self.status.setText("Imported a local draft. The original request file was preserved.")
+
+            self._run("load", load, opened)
     def _choose_export(self):
+        if self._planning_file_picker_open:
+            return
         if not self._draft_inputs_valid():
             self.status.setText("Complete invalid values or apply the Advanced edits before exporting.")
             return
-        path, _ = QFileDialog.getSaveFileName(self, "Export Generation Request", str(self.storage_root / "generation-request.json"), "JSON (*.json)")
+        options = QFileDialog.Option(0) if self.runtime_allowed else QFileDialog.DontConfirmOverwrite
+        path = self._choose_plan_file(
+            QFileDialog.getSaveFileName, "Export Generation Request", str(self.storage_root / "generation-request.json"),
+            "JSON (*.json)", options=options,
+        )
         if path:
             snapshot = self.plan
+            if not self.runtime_allowed:
+                from core.generation_saved_work import export_draft_copy
+
+                self._run(
+                    "export",
+                    lambda: export_draft_copy(path, snapshot),
+                    lambda _result: self.status.setText("Portable request exported and verified."),
+                )
+                return
             self._run("export", lambda: self._save_path(path, snapshot), lambda result: (self._remember_saved(*result), self.status.setText("Complete request exported with recovery evidence.")))
