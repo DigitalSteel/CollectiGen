@@ -2940,9 +2940,9 @@ class GenerationDialog(FeedbackEnabledDialog):
         dialog.finished.connect(finished)
         dialog.open()
 
-    def load_recipe(self, *, selected_path=None, on_unapplied=None):
+    def load_recipe(self, *, selected_path=None, selected_digest=None, on_unapplied=None):
         if self._pending or self._execution_active(): return
-        from core.generation_recipes import load_recipe
+        from core.generation_recipes import load_recipe, recipe_storage_digest
         if selected_path is None:
             from .generation_saved_work_dialog import SavedGenerationWorkDialog
             browser = SavedGenerationWorkDialog(
@@ -2956,6 +2956,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             self._saved_work_dialog = None
             if not accepted or self._shutdown_requested or not browser.selected_path: return
             path = browser.selected_path
+            selected_digest = browser.selected_digest
         else:
             if self._shutdown_requested: return
             path = Path(selected_path)
@@ -2982,6 +2983,8 @@ class GenerationDialog(FeedbackEnabledDialog):
             return tuple(notes), recoverable
         def prepare():
             recipe = load_recipe(path)
+            if selected_digest is not None and recipe_storage_digest(recipe) != selected_digest:
+                raise ValueError("The selected setup changed. Reopen the list and review it again.")
             notes, recoverable = inspect_resources(recipe)
             return recipe, notes, recoverable
         def done(value):
