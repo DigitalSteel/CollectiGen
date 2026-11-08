@@ -44,6 +44,8 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
     """
     from .generation_recipes import _validate, render_prompt_parts
     recipe = _validate(deepcopy(recipe))[0]
+    if recipe["schema_version"] == 2 and recipe.get("resources") == []:
+        raise ValueError("This setup clears model resources. Export it as CollectiGen JSON to preserve that choice.")
     if (recipe.get("resources") or recipe.get("stages") or recipe.get("source_binding")
             or recipe.get("source_settings") or recipe.get("finishing")
             or any(key in recipe["settings"] for key in ("model", "model_hash", "vae"))):
@@ -73,7 +75,7 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
         field = reverse[key]
         if type(value) not in (str, int, float) or type(value) is bool:
             raise ValueError(f"The {key} setting is outside the qualified SwarmUI subset.")
-        rendered = str(value)
+        rendered = "0" if key == "cfg_scale" and value == 0 else str(value)
         if _setting(field, rendered) != value:
             raise ValueError(f"The {key} setting cannot round-trip exactly. Export CollectiGen JSON instead.")
         params[field] = rendered
