@@ -343,12 +343,17 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
             return preview, search, recipe, availability_error
         task = CoordinatedCallTask(self.jobs, "Review trainer settings", work, resource="io")
         self._task = task
-        task.signals.progress.connect(lambda _done, _total, message: self.status.setText(message))
+        task.signals.progress.connect(
+            lambda _done, _total, message: self._show_progress(task, message))
         task.signals.complete.connect(lambda value: self._finish(task, self._completed, value))
         task.signals.failed.connect(lambda message: self._finish(task, self._failed, message))
         task.signals.cancelled.connect(lambda: self._finish(task, self._failed, "Preview cancelled. The package remains unchanged."))
         self._set_busy(True)
         task.start()
+
+    def _show_progress(self, task, message):
+        if self._task is task and not self._closing:
+            self.status.setText(message)
 
     def _finish(self, task, callback, value):
         if self._task is not task:
