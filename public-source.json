@@ -3150,8 +3150,8 @@
       "size_bytes": 5245
     },
     "suite_core/manager/encyclopedia_acquisition_ui.py": {
-      "sha256": "31a4e56440a3185da7747cb6fd6457f1844e38656cf57b3439759b4c1cb1fffb",
-      "size_bytes": 28762
+      "sha256": "641866a3240bbdb196064b3eaff8ef3cecde8bdd704ba54bf85e511dd4835669",
+      "size_bytes": 29426
     },
     "suite_core/manager/encyclopedia_connection_ui.py": {
       "sha256": "60675d41a1efffa13f835aa32606bf8dfd54f87eb33dde0be4d56aa2f0946ef4",

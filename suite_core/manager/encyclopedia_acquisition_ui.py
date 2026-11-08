@@ -275,19 +275,22 @@ class EncyclopediaAcquisitionPanel(QWidget):
             return
         future, operation = self.future, self.operation
         confirmation = None
-        inspect_after_failure = False
+        recovery_check = None
         try:
             result = future.result()
             if self.recovery_only:
                 self.publication_pending=result.connection_pending
                 self.status.setText(result.reason)
-            elif operation == 'Checking recovery options':
+            elif operation in ('Checking recovery options', 'Checking cancellation outcome'):
                 self.installed = result
                 self.observation_stale = False
                 self.publication_pending = result.connection_pending
-                self.status.setText('Setup was interrupted. Review the available recovery action below.' if result.pending else
+                cancelled = operation == 'Checking cancellation outcome'
+                self.status.setText(('Installation stopped. Review the recovery action below.' if cancelled else
+                    'Setup was interrupted. Review the available recovery action below.') if result.pending else
                     'The reader files are retained. Choose Retry Save to finish connecting the app.' if result.connection_pending else
                     self.pending_setup_guidance() if result.phase == 'activated' else
+                    'Installation cancelled. Choose Check Again for a fresh review.' if cancelled else
                     'The operation did not finish. Choose Check Again for a fresh review; your previous installation is retained.')
             elif operation == "Refreshing releases":
                 offers, self.installed = result
@@ -339,6 +342,11 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 self.status.setText("The release check could not finish. Your installation is unchanged. Choose Check Again to retry.")
             elif isinstance(error, InterruptedError) and operation == "Reviewing installation":
                 self.status.setText("Review cancelled. Your installation is unchanged.")
+            elif isinstance(error, InterruptedError) and operation == 'Installing reviewed package':
+                self.offer = None
+                self.status.setText("Installation stopped. Checking whether setup needs recovery.")
+                if not self.recovery_only:
+                    recovery_check = 'Checking cancellation outcome'
             elif isinstance(error, StandaloneReaderCompatibilityHold):
                 self.status.setText("Compatibility could not be confirmed. This package was not installed. Choose Check Again for a new review.")
                 self.offer = None
@@ -347,13 +355,13 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 if operation in ('Reviewing installation', 'Installing reviewed package'):
                     self.offer = None
                 if operation == 'Installing reviewed package' and not self.recovery_only:
-                    inspect_after_failure = True
+                    recovery_check = 'Checking recovery options'
             self.details.setPlainText(f"Operation: {operation}\nDiagnostic: {error}")
         finally:
             self.future = self.operation = None
             self.render()
-        if inspect_after_failure and not self.closing:
-            self._start('Checking recovery options', self.service.observe)
+        if recovery_check is not None and not self.closing:
+            self._start(recovery_check, self.service.observe)
             return
         if confirmation is not None and self.cancel.is_set():
             self.reviewed = None
