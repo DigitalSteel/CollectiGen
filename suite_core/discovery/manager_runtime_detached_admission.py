@@ -48,6 +48,54 @@ class DetachedAdmissionPlan(AdmissionPlan):
         return False
 
 
+    def training_worker_file_rows(self, proof_bytes):
+        """Project only the worker files covered by this admitted proof."""
+        require(type(proof_bytes) is bytes and sha256(proof_bytes).hexdigest() == self.inventory_sha256,
+                "detached_inventory_pin")
+        proof = _json(proof_bytes, "detached inventory")
+        require(proof["inventory_profile"] == self.inventory_profile
+                and proof["archive_sha256"] == self.artifact_sha256, "worker_archive_binding")
+        prefix = "training-worker/python/"
+        selected = {}
+        for row in proof["files"]:
+            path = row["path"]
+            if not path.startswith(prefix):
+                continue
+            relative = path[len(prefix):]
+            selected[relative] = {"bytes": row["size_bytes"], "sha256": row["sha256"]}
+        if not selected:
+            return None
+        require("python.exe" in selected, "training_worker_python_missing")
+        for name in tuple(selected):
+            for parent in Path(name).parents:
+                if parent != Path("."):
+                    selected[parent.as_posix()] = {"directory": True}
+        return selected
+
+
+    def provision_training_worker(self, proof_bytes, *, code_root, data_root, should_cancel=None):
+        """Bind a previously admitted worker to an explicitly owned installation."""
+        rows = self.training_worker_file_rows(proof_bytes)
+        if rows is None:
+            return None
+
+        from core.training_dataset_binding import ReviewedDatasetVerifier
+        from suite_core.installation import _path
+
+        code = _path(code_root)
+        data = _path(data_root)
+        require(not code.is_relative_to(data) and not data.is_relative_to(code),
+                "training_worker_code_and_data_must_be_separate")
+        runtime = _path(code / "training-worker" / "python")
+        work = _path(data / "Manager" / "TrainingReview")
+        require(work.is_dir(), "training_review_owned_directory_required")
+        from tempfile import mkdtemp
+        receipt_root = Path(mkdtemp(prefix="worker-pin-", dir=work))
+        return ReviewedDatasetVerifier.from_verified_file_rows(
+            runtime, rows, receipt_root / "worker-inventory.json", receipt_root,
+            should_cancel=should_cancel)
+
+
 def produce_detached_inventory(archive, *, inventory_profile, expected_version,
                                expected_channel, expected_component=MANAGER,
                                expected_os="windows", expected_architecture="x86_64"):
