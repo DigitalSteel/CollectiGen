@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 983,
+  "allowlisted_source_file_count": 984,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1913,6 +1913,10 @@
       "sha256": "df667659ab261a66cfb04eb058009e8282d8e8f5a2931e5071ff928c2a9b6ebc",
       "size_bytes": 21260
     },
+    "core/video_output_processing_worker.py": {
+      "sha256": "58197e0039b4e9ae52d89edc990f1af7b934e5af8bd818b94281974532904947",
+      "size_bytes": 6624
+    },
     "core/video_runtime_preferences.py": {
       "sha256": "cd39a7a72bc124e54dea23d9c1048509ee01c0c5368df004ff2a985ae81d2319",
       "size_bytes": 5580
@@ -3034,8 +3038,8 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "6abec8cff6b3b7d93440263c6e95a455b0b88269aeb006b17721fa33c7c1228a",
-      "size_bytes": 34062
+      "sha256": "65ba31b16d2755850278fb7989ad8f3edcc2b2024f40b20a78a4be0b919ef342",
+      "size_bytes": 34108
     },
     "suite_core/manager/README.md": {
       "sha256": "c1e2868bced18b4b10646f0e55c707bbaafb036459cf22324149cdbb739c681f",

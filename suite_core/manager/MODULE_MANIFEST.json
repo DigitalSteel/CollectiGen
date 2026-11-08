@@ -466,6 +466,7 @@
     "core/video_ingest.py",
     "core/video_output_goal.py",
     "core/video_output_processing.py",
+    "core/video_output_processing_worker.py",
     "core/video_runtime_preferences.py",
     "core/video_source_image.py",
     "core/video_temporal.py",
