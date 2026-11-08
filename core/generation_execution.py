@@ -1318,6 +1318,15 @@ class GenerationExecutionService:
             self._check_outputs(receipt)
             return [output["path"] for output in receipt["outputs"]]
 
+    def review_verified_result(self, job_id, expected_receipt_digest):
+        """Read the exact retained receipt and verify its files without recovering the job."""
+        with _LOCK:
+            receipt = self._read(job_id)
+            if digest(receipt) != expected_receipt_digest:
+                raise ValueError("The retained result changed; reopen and review it before sending to Ingest.")
+            self._check_outputs(receipt)
+            return receipt
+
     def _check_outputs(self, receipt, *, max_verification_bytes=None):
         if receipt.get("state") != "verified" or len(receipt.get("outputs", [])) != 1:
             raise ValueError("A verified result is required.")
