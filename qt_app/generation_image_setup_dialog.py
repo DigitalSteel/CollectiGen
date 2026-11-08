@@ -607,12 +607,14 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
                 if resource.role != "lora" or not isinstance(digest, str) or not SHA.fullmatch(digest):
                     continue
                 name = str(resource.name).replace("\\", "/").rsplit("/", 1)[-1]
+                displayed_weights = [(key, value) for key, value in resource.weights.items()
+                                     if key != "clip" or value != resource.weights.get("text_encoder")]
                 weights = ", ".join(
                     f"{str(key).replace('_', ' ')[:32]} " +
                     (f"{value:g}" if type(value) in (int, float)
                      and abs(value) <= 1e308 and math.isfinite(value)
                      else "unusable recorded value")
-                    for key, value in list(resource.weights.items())[:4]
+                    for key, value in displayed_weights[:4]
                 ) or "Strength not recorded"
                 row = QTreeWidgetItem(("", name, weights, "", ""))
                 row.setFlags(row.flags() | Qt.ItemIsUserCheckable)

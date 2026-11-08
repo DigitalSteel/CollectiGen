@@ -2174,8 +2174,8 @@
       "size_bytes": 26154
     },
     "qt_app/generation_image_setup_dialog.py": {
-      "sha256": "9d960ffaea0f3ac60dd4c88ea46ebf78fd7f958a942623a05279ac98c855d33b",
-      "size_bytes": 58892
+      "sha256": "7a6c91b39aeba796ef6958b26b1f7b7b8918698ea71f6cca8a02fa6ba6d48af9",
+      "size_bytes": 59076
     },
     "qt_app/generation_manual_setup_dialog.py": {
       "sha256": "85399eb8f6f1f540dcfbb6f6fa5d74dbe454346f5a291b7ec8b6888df2b32c21",
