@@ -206,6 +206,8 @@ def list_recent_saved_work(storage_root, kind, *, limit=40, scan_limit=256, offs
                     raise ValueError("Saved item exceeds its size limit.")
                 if kind == "drafts":
                     value, item["content_digest"] = load_plan_with_digest(path)
+                elif kind == "groups":
+                    value, item["content_digest"] = load_experiment(path)
                 else:
                     value = _load(kind, path)
                 if kind == "drafts":
@@ -220,6 +222,7 @@ def list_recent_saved_work(storage_root, kind, *, limit=40, scan_limit=256, offs
                         f"{count} {state.replace('_', ' ')}" for state, count in sorted(counts.items()))
                 elif kind == "prompt_presets":
                     item["name"] = value.name
+                    item["content_digest"] = _preset_digest(value.to_dict())
                     held = value.extra_fields["import_semantics"]["held_fields"] if value.schema_version == 2 else []
                     item["summary"] = f"Prompt preset · {len(held)} unsupported fields" if held else "Prompt preset · review before applying"
                     item["preset_id"] = value.preset_id
@@ -336,14 +339,25 @@ def save_named_recipe(storage_root, recipe, *, operation_id=None, import_evidenc
     return target
 
 
-def export_selected_saved_work(storage_root, kind, item_path, destination, *, cancelled=None):
+def export_selected_saved_work(storage_root, kind, item_path, destination, *, selected_digest=None, cancelled=None):
     """Export one managed item to an explicitly chosen new path without replacing it."""
     source = _checked_managed_path(storage_root, kind, item_path)
     destination = Path(destination).absolute()
     _assert_unredirected(destination)
     if callable(cancelled) and cancelled():
         raise InterruptedError("Saved-work export was cancelled.")
-    value = _load(kind, source)
+    if kind == "drafts":
+        value, digest = load_plan_with_digest(source)
+        if selected_digest is not None and digest != selected_digest:
+            raise ValueError("The selected draft changed. Refresh the list and choose it again before exporting.")
+    elif kind == "groups":
+        value, digest = load_experiment(source)
+        if selected_digest is not None and digest != selected_digest:
+            raise ValueError("The selected group changed. Refresh the list and choose it again before exporting.")
+    else:
+        value = _load(kind, source)
+    if kind == "prompt_presets" and selected_digest is not None and _preset_digest(value.to_dict()) != selected_digest:
+        raise ValueError("The selected prompt preset changed. Refresh the list and choose it again before exporting.")
     if source == destination or destination.exists():
         raise ValueError("Choose a new export filename; the existing file is preserved.")
     if callable(cancelled) and cancelled():
