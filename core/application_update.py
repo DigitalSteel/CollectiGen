@@ -253,6 +253,13 @@ class ApplicationUpdateService:
                     offset = 0
                     part.unlink(missing_ok=True)
                     response = self.opener(urllib.request.Request(source.url, headers={"User-Agent": headers["User-Agent"]}), timeout=60)
+                if offset:
+                    expected_range = f"bytes {offset}-{artifact.size_bytes - 1}/{artifact.size_bytes}"
+                    if response.headers.get_all("Content-Range") != [expected_range]:
+                        response.close()
+                        raise UpdateServiceError(
+                            "The resumed download does not match the requested signed byte range."
+                        )
                 mode = "ab" if offset else "wb"
                 with response, part.open(mode) as output:
                     copied = offset
