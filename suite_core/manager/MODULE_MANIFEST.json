@@ -431,6 +431,7 @@
     "core/training_reference_tokenizers.py",
     "core/training_registry_policy.py",
     "core/training_resource_guidance.py",
+    "core/training_restricted_loading_contract.py",
     "core/training_result.py",
     "core/training_resume_adapter.py",
     "core/training_retained_history.py",
@@ -800,6 +801,12 @@
     "suite_core/selected_catalog.py",
     "suite_core/shared_backend_routing_candidate.py",
     "suite_core/version.py",
+    "tools/optional-ai-profiles.json",
+    "tools/training_dataset_package.json",
+    "tools/training_dataset_profile_worker.py",
+    "tools/training_runtime_probe.py",
+    "tools/training_runtime_sources.json",
+    "tools/training_verification_worker.py",
     "version.py"
   ],
   "support_files": [
