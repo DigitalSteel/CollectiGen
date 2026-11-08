@@ -109,7 +109,7 @@ def save_video_draft(path: str | Path, request: VideoGenerationRequest | VideoAu
         else:
             os.link(temporary, target)  # Atomic exclusive publish on POSIX.
             temporary.unlink()
-        verified, _ = read_stable_training_source(target)
+        verified, _ = read_stable_training_source(target, max_bytes=MAX_JSON_BYTES)
         if verified != raw:
             raise RuntimeError("The saved video draft failed read-back verification.")
         return target
@@ -119,9 +119,7 @@ def save_video_draft(path: str | Path, request: VideoGenerationRequest | VideoAu
 
 
 def load_video_draft(path: str | Path) -> VideoGenerationRequest | VideoAuthoringDraft:
-    raw, _ = read_stable_training_source(path)
-    if len(raw) > MAX_JSON_BYTES:
-        raise ValueError("The video draft exceeds the supported size.")
+    raw, _ = read_stable_training_source(path, max_bytes=MAX_JSON_BYTES)
     payload = json.loads(raw)
     if not isinstance(payload, dict):
         raise ValueError("This is not a video draft.")
