@@ -361,9 +361,9 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         require(not pending_path.exists(), "recover_pending_transaction_first")
         previous_bytes = None
         if journal_path.exists():
-            previous = read_json(journal_path)
+            previous_bytes = read_metadata_bytes(journal_path)
+            previous = _json(previous_bytes, "component state")
             require(previous.get("phase") in ("healthy", "rolled_back", "abandoned"), "recover_pending_transaction_first")
-            previous_bytes = journal_path.read_bytes()
         platform = {"os": os_name, "architecture": architecture}
         before = active(root, base, component, platform, payload_policy=policy)
         require(active_token(before) == expected_active_token, "stale_active_reference")
@@ -410,7 +410,7 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         verify_directory(staging, target["inventory_sha256"], component, version, payload_policy=policy)
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_handoff")
         if previous_bytes is not None:
-            require(journal_path.exists() and journal_path.read_bytes() == previous_bytes, "current_journal_changed")
+            require(journal_path.exists() and read_metadata_bytes(journal_path) == previous_bytes, "current_journal_changed")
             history = base / ("transaction-" + uuid4().hex + ".json")
             atomic_bytes(history, previous_bytes)  # copy exact bytes; current record stays reachable
             journal["prior_journal"] = {"name": history.name, "sha256": sha256(previous_bytes).hexdigest()}
@@ -419,6 +419,9 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         require(len(canonical(journal)) <= MAX_METADATA_BYTES, "journal_size")
         atomic(pending_path, journal)
         failpoint("prior_journal_preserved")
+        guard(journal_path)
+        current_bytes = read_metadata_bytes(journal_path) if journal_path.exists() else None
+        require(current_bytes == previous_bytes, "current_journal_changed")
         atomic(journal_path, journal)  # failure preserves prior current record atomically
         failpoint("new_journal_established")
         pending_path.unlink()
