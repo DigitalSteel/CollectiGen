@@ -247,6 +247,10 @@ def _write_new_package_bytes(root: Path,relative: str,payload: bytes) -> Path:
     return target
 
 
+class TrainingPackageInspectionLimit(ValueError):
+    """A selected reference exceeds the bounded inspection policy."""
+
+
 @dataclass(frozen=True)
 class TrainingPackageVerificationLimits:
     """Opt-in limits for inspecting a user-selected reference, not publication."""
@@ -279,7 +283,7 @@ def _inspection_read(path, limit, cancel):
     if cancel(): raise InterruptedError("Training package verification was cancelled.")
     before = _inspection_signature(path)
     if before[2] > limit:
-        raise ValueError("Package inspection byte limit exceeded.")
+        raise TrainingPackageInspectionLimit("Package inspection byte limit exceeded.")
     raw = bytearray(); total = 0
     with path.open("rb") as stream:
         opened = os.fstat(stream.fileno())
@@ -295,7 +299,7 @@ def _inspection_read(path, limit, cancel):
             if not chunk: break
             total += len(chunk)
             if total > limit:
-                raise ValueError("Package inspection byte limit exceeded during reading.")
+                raise TrainingPackageInspectionLimit("Package inspection byte limit exceeded during reading.")
             raw.extend(chunk)
         if _identity(os.fstat(stream.fileno())) != before[:5]:
             raise ValueError("Package file changed during inspection.")
@@ -311,7 +315,7 @@ def _package_files(root: Path, *, limits=None, should_cancel=None) -> tuple[tupl
             raise InterruptedError("Training package verification was cancelled.")
         current=stack.pop()
         if limits and len(current.relative_to(root).parts) > limits.depth:
-            raise ValueError("Package inspection depth limit exceeded.")
+            raise TrainingPackageInspectionLimit("Package inspection depth limit exceeded.")
         if limits and _has_redirected_component(current):
             raise ValueError("Package directory changed or is redirected.")
         with os.scandir(current) as entries:
@@ -320,7 +324,7 @@ def _package_files(root: Path, *, limits=None, should_cancel=None) -> tuple[tupl
                     raise InterruptedError("Training package verification was cancelled.")
                 count += 1
                 if limits and count > limits.entries:
-                    raise ValueError("Package inspection entry limit exceeded.")
+                    raise TrainingPackageInspectionLimit("Package inspection entry limit exceeded.")
                 path=Path(entry.path)
                 relative=path.relative_to(root).as_posix()
                 if _is_redirected(path):
@@ -332,7 +336,7 @@ def _package_files(root: Path, *, limits=None, should_cancel=None) -> tuple[tupl
                         size=entry.stat(follow_symlinks=False).st_size
                         total += size
                         if size > max(limits.manifest_bytes, limits.artifact_bytes) or total > limits.total_bytes:
-                            raise ValueError("Package inspection inventory byte limit exceeded.")
+                            raise TrainingPackageInspectionLimit("Package inspection inventory byte limit exceeded.")
                     files.append(relative)
                 else:
                     redirects.append(relative)
@@ -495,6 +499,7 @@ class TrainingPackageVerification:
     manifest: dict[str,object]=field(default_factory=dict)
     issues: tuple[str,...]=()
     inspection_sources: tuple=()
+    inspection_limited: bool=False
 
 
 @dataclass(frozen=True)
@@ -1345,6 +1350,7 @@ class TrainingPackageService:
             root=Path(destination).expanduser().absolute()
             return TrainingPackageVerification(
                 root,False,issues=(f"The package failed closed during verification: {exc}",),
+                inspection_limited=isinstance(exc,TrainingPackageInspectionLimit),
             )
 
     def _verify_package(
@@ -1406,7 +1412,7 @@ class TrainingPackageService:
             raw_candidates=manifest.get("candidate_plan",{}).get("candidates",[])
             raw_artifacts=manifest.get("artifacts",[])
             if len(raw_candidates)>limits.candidates or len(raw_artifacts)>limits.artifacts:
-                raise ValueError("Package inspection candidate or artifact limit exceeded.")
+                raise TrainingPackageInspectionLimit("Package inspection candidate or artifact limit exceeded.")
         candidate_manifest=validate_training_plan_manifest(
             manifest.get("candidate_plan"),should_cancel=cancel,
         )
@@ -1617,7 +1623,7 @@ class TrainingPackageService:
             if limits:
                 remaining=limits.total_bytes-inspected_bytes
                 if remaining < 0:
-                    raise ValueError("Package inspection total byte limit exceeded.")
+                    raise TrainingPackageInspectionLimit("Package inspection total byte limit exceeded.")
                 inspected_content,signature=_inspection_read(target,min(limits.artifact_bytes,remaining),cancel)
                 inspected_bytes += len(inspected_content)
                 fingerprint={"size":len(inspected_content),"sha256":hashlib.sha256(inspected_content).hexdigest()}
@@ -1653,7 +1659,7 @@ class TrainingPackageService:
                     raise ValueError(f"Image {relative} differs from its declared transform.")
                 with Image.open(io.BytesIO(inspected_content) if limits else target) as opened:
                     if limits and opened.width * opened.height > limits.image_pixels:
-                        raise ValueError("Package inspection image pixel limit exceeded.")
+                        raise TrainingPackageInspectionLimit("Package inspection image pixel limit exceeded.")
                     opened.load()
                     decoded=(
                         list(opened.size),opened.mode,str(opened.format or "").upper(),

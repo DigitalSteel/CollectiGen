@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 981,
+  "allowlisted_source_file_count": 983,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -785,6 +785,10 @@
       "sha256": "092689d980491449b53d9fc6722abfb51b7a72f85a3511657b20bd81cea6b01c",
       "size_bytes": 15441
     },
+    "core/krea_training_compatibility.py": {
+      "sha256": "7d9ca50be080d65725e449a85d36c2054a6e3729d37204b661b4ec8d8e873891",
+      "size_bytes": 11730
+    },
     "core/learning_help_catalog.py": {
       "sha256": "4760a89115a20d735c209717e0df3281f52dcdadd57b0b5491e504ac4f941448",
       "size_bytes": 2361
@@ -1562,8 +1566,8 @@
       "size_bytes": 9207
     },
     "core/training_adapter_preview.py": {
-      "sha256": "822dbc7c647d1f78f54d690801d0d9504f4028ef803594a76122b66585231ec7",
-      "size_bytes": 23626
+      "sha256": "0df4fb786f223f77d2615b23c498a4280fde29f8e575f6919754d3b996a1d29c",
+      "size_bytes": 24175
     },
     "core/training_anima.py": {
       "sha256": "4368627fccab95e9d5d3bc38ad1fea4ddbbdc5d82483bf7e70f7c19c3040894d",
@@ -1710,8 +1714,8 @@
       "size_bytes": 5285
     },
     "core/training_package.py": {
-      "sha256": "c503fcf1845a1a5f150a435fc4445913b1e38e4e364a94ed067baa2fa53aed9a",
-      "size_bytes": 117847
+      "sha256": "0e79b2324f9dba016188fca0db81318633328f054e72be013311090d4c2c2bb6",
+      "size_bytes": 118253
     },
     "core/training_package_effects.py": {
       "sha256": "793198bffa68aaaeb9ba71d1bca1f2135e18e63ef2d7c01d17d5ccd3aa478e85",
@@ -3030,8 +3034,8 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "bd8ed62da28edb13f4265f641bb3e1acd2efe39b35f7ce0d5e79cf5b54e482f9",
-      "size_bytes": 33969
+      "sha256": "6abec8cff6b3b7d93440263c6e95a455b0b88269aeb006b17721fa33c7c1228a",
+      "size_bytes": 34062
     },
     "suite_core/manager/README.md": {
       "sha256": "c1e2868bced18b4b10646f0e55c707bbaafb036459cf22324149cdbb739c681f",
@@ -3062,8 +3066,8 @@
       "size_bytes": 96
     },
     "suite_core/manager/__main__.py": {
-      "sha256": "48e7197df53f3588cb2addf643c9e118dd62a25a14c8f70a1c1eabb669d0b0e8",
-      "size_bytes": 31405
+      "sha256": "81676446a23ebb2703f5c174f0e350fe56267eae78824cf816831eeaabb42add",
+      "size_bytes": 31590
     },
     "suite_core/manager/assets/collectigen.ico": {
       "sha256": "f819e00ab1dbaad539c7f25f08b9353561a56701eb83b6440e21b87dcf83bd10",
@@ -3164,6 +3168,10 @@
     "suite_core/manager/host_contracts.py": {
       "sha256": "8dfce6cceafb65fe4d4bcd87205fe12610e00629b41a3b4c0b35baf19024879f",
       "size_bytes": 3128
+    },
+    "suite_core/manager/krea_training_review.py": {
+      "sha256": "5109a50250f6c7407977580be32c93d99b772eb076f3c7ddf7ae328e6c92d028",
+      "size_bytes": 5135
     },
     "suite_core/manager/launcher_main.py": {
       "sha256": "33adf7ee200a23dd52062074697fc2a5a62c5ef611572c38308dada16d9b13e5",
@@ -3322,8 +3330,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "d80a6b3e077e9d0b6199929810cbffb73b5bd3c1d9ae58796bc3d1c72584273c",
-      "size_bytes": 175298
+      "sha256": "616b0a8e93ab9b1ec9818bbc91c497323a70b34681beee564f68982b543b0607",
+      "size_bytes": 177697
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

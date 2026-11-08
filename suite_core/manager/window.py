@@ -145,7 +145,7 @@ def view_for_candidate(observation):
             dict(observation.release_dates).get(observation.software_version), "Unsigned developer candidate", observation.notes),))
 
 
-def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None):
+def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None):
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtGui import QIcon
     if organizer_connection_host is not None:
@@ -547,6 +547,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if model_workspace_factory is not None else 'Repository inspection is unavailable in this launch.')
             self.repository_inspection_button.clicked.connect(self.open_repository_inspection)
             applications_layout.addWidget(self.repository_inspection_button, 0, Qt.AlignLeft)
+            self._krea_picker_open = False
+            self._krea_review_dialog = None
+            self._close_after_krea_review = False
+            self.krea_training_review_button = compact_action(QPushButton("Review Krea 2 Training Package…"))
+            self.krea_training_review_button.setVisible(not view.synthetic and krea_registry_path is not None)
+            self.krea_training_review_button.setToolTip("Read a selected package and check its exact registered base. No training starts.")
+            self.krea_training_review_button.clicked.connect(self.open_krea_training_review)
+            applications_layout.addWidget(self.krea_training_review_button, 0, Qt.AlignLeft)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
             external.setWordWrap(True)
@@ -1204,6 +1212,30 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if self.chat_host is not None: self.chat_host.cancel_load()
             self.render_ollama_load()
 
+        def open_krea_training_review(self):
+            registry_path = krea_registry_path
+            if self.view.synthetic or self.close_policy.pending or registry_path is None or self._krea_review_dialog is not None or self._krea_picker_open:
+                return
+            from PySide6.QtWidgets import QFileDialog
+            from .krea_training_review import KreaTrainingReviewDialog
+            self._krea_picker_open = True
+            try:
+                destination = QFileDialog.getExistingDirectory(self, "Select the Krea 2 training package")
+            finally:
+                self._krea_picker_open = False
+            if not destination or self.close_policy.pending:
+                return
+            dialog = KreaTrainingReviewDialog(destination, registry_path, self)
+            self._krea_review_dialog = dialog
+            try:
+                dialog.exec()
+            finally:
+                self._krea_review_dialog = None
+                dialog.deleteLater()
+                if self._close_after_krea_review:
+                    self._close_after_krea_review = False
+                    QTimer.singleShot(0, self.close)
+
         def open_repository_inspection(self):
             if self.view.synthetic or self.close_policy.pending or self._model_workspace_factory is None: return
             from qt_app.model_workspace_dialog import ModelWorkspaceDialog
@@ -1753,6 +1785,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.render_library()
 
         def closeEvent(self, event):
+            if self._krea_picker_open:
+                self.statusBar().showMessage("Close the Training package chooser before closing Manager.")
+                event.ignore()
+                return
+            if self._krea_review_dialog is not None:
+                self._close_after_krea_review = True
+                self._krea_review_dialog.reject()
+                event.ignore()
+                return
             host = self._model_workspace_factory
             if host is not None and hasattr(host, 'begin_close'):
                 host.begin_close()

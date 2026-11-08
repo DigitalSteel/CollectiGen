@@ -530,7 +530,9 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             shared_settings_controller=shared_settings_controller,
             shared_settings_submit=shared_settings_submit,
             shared_settings_close_choice=shared_settings_close_choice,
-            model_workspace_factory=model_workspace_factory, tag_content_host=entry_owner.tag_content_host)
+            model_workspace_factory=model_workspace_factory, tag_content_host=entry_owner.tag_content_host,
+            krea_registry_path=(Path(app_settings_path).parent / "model_resources.json"
+                                if not args.demo and app_settings_path is not None else None))
         entry_owner.window = window
         entry_owner.acquisition_panel = getattr(window, "acquisition_panel", None)
         entry_owner.organizer_acquisition_panel = getattr(window, "organizer_acquisition_panel", None)
