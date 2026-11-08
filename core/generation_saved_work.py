@@ -315,7 +315,8 @@ def save_named_recipe(storage_root, recipe, *, operation_id=None, import_evidenc
             raise ValueError("Selected import details exceed their local save limit.")
     else:
         receipt = None
-    if target.exists():
+    already_saved = target.exists()
+    if already_saved:
         # A completion signal can be lost after publication. Retrying the same
         # reviewed operation must identify that exact saved setup, not make a copy.
         if operation_id is None or load_recipe(target) != recipe:
@@ -333,7 +334,7 @@ def save_named_recipe(storage_root, recipe, *, operation_id=None, import_evidenc
             if _preset_bytes(evidence_path, maximum=MAX_IMPORT_EVIDENCE_BYTES,
                              label="Setup import evidence") != encoded.encode("utf-8"):
                 raise OSError("Setup import details failed read-back verification.")
-    if not target.exists():
+    if not already_saved:
         save_recipe(target, recipe)
     if receipt is not None and read_recipe_import_evidence(storage_root, target) != receipt:
         raise OSError("Saved setup import details failed exact read-back verification.")
