@@ -57,9 +57,11 @@ def write_verification_bundle(path):
     return captured.sha256
 
 
-def verify_package(selection):
+def verify_package(selection, *, should_cancel=None):
     """Blocking helper primitive; never call on the UI/controller thread."""
     from .training_package import TrainingPackageService
+    if should_cancel and should_cancel():
+        raise InterruptedError('Dataset package verification was cancelled.')
     selected.validate_selection(selection)
     root = Path(selection['root'])
     _assert_unredirected(root / selected.generated.MANIFEST)
@@ -71,6 +73,8 @@ def verify_package(selection):
     for artifact in expected['artifacts']:
         if artifact['kind'] != 'image':
             continue
+        if should_cancel and should_cancel():
+            raise InterruptedError('Dataset package verification was cancelled.')
         path = root / artifact['path']
         _assert_unredirected(path)
         if not path.is_relative_to(root):
@@ -80,7 +84,7 @@ def verify_package(selection):
             decoded_pixels += width * height
             if image.size != tuple(artifact['transform']['output_dimensions']) or width * height > 4 * 1024 * 1024 or decoded_pixels > selected.MAX_PIXEL_SAMPLES:
                 raise ValueError('dataset_scope_exceeded')
-    verified = TrainingPackageService().verify(root)
+    verified = TrainingPackageService().verify(root, should_cancel=should_cancel)
     if not verified.valid or verified.manifest != expected or verified.package_fingerprint != selection['package_fingerprint']:
         raise ValueError('package_unavailable_or_changed')
     return verified
@@ -96,7 +100,7 @@ def inspect_package(selection):
 def prepare_replica(selection, expected_summary, destination, *, should_cancel=None):
     """Copy a verified package to a fresh helper-owned immutable input root."""
     from .training_package import TrainingPackageService
-    package = verify_package(selection)
+    package = verify_package(selection, should_cancel=should_cancel)
     summary = selected.assess_manifest(package.manifest)
     if summary['holds'] or selected.canonical(summary) != selected.canonical(expected_summary):
         raise ValueError('dataset_admission_changed')
@@ -120,8 +124,8 @@ def prepare_replica(selection, expected_summary, destination, *, should_cancel=N
                 if not block:
                     break
                 writer.write(block)
-    replica = TrainingPackageService().verify(destination)
-    if not replica.valid or replica.manifest != package.manifest or verify_package(selection).manifest != package.manifest:
+    replica = TrainingPackageService().verify(destination, should_cancel=should_cancel)
+    if not replica.valid or replica.manifest != package.manifest or verify_package(selection, should_cancel=should_cancel).manifest != package.manifest:
         raise ValueError('dataset_replica_changed')
     return destination
 
