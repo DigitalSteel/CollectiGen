@@ -31,6 +31,7 @@ from .training_source_io import _assert_unredirected, _identity, read_stable_tra
 
 ADAPTER_ID = "collectigen.swarmui.t2i.v1"
 _LOCK = threading.RLock()
+_MAX_RECEIPT_BYTES = 8 * 1024 * 1024
 _REQUIRED_SWARM_PARAMETERS = frozenset({
     "prompt", "negativeprompt", "model", "width", "height", "seed", "steps",
     "cfgscale", "sampler", "scheduler", "donotsave", "exactbackendid", "automaticvae",
@@ -724,10 +725,8 @@ class GenerationExecutionService:
 
     def _read(self, job_id):
         path = self._path(job_id) / "receipt.json"
-        _assert_unredirected(path)
-        if path.stat().st_size > 8 * 1024 * 1024:
-            raise ValueError("Generation receipt is too large.")
-        result = strict_json(path.read_bytes())
+        raw, _ = read_stable_training_source(path, max_bytes=_MAX_RECEIPT_BYTES)
+        result = strict_json(raw)
         if (result.get("job_id") != job_id or result.get("schema_version") != 1
                 or not re.fullmatch(r"[a-f0-9]{64}", str(result.get("fingerprint", "")))):
             raise ValueError("Unsupported generation receipt")
@@ -741,12 +740,13 @@ class GenerationExecutionService:
         return result
 
     def _write(self, receipt):
-        if len(json.dumps(receipt, ensure_ascii=False).encode()) > 8 * 1024 * 1024:
+        if len(json.dumps(receipt, ensure_ascii=False).encode()) > _MAX_RECEIPT_BYTES:
             raise ValueError("Generation receipt exceeds its bounded storage limit; use neutral export.")
         target = self._path(receipt["job_id"]) / "receipt.json"
         _assert_unredirected(target)
         if target.exists():
-            atomic_verified_bytes(target.with_suffix(".previous.json"), target.read_bytes())
+            previous, _ = read_stable_training_source(target, max_bytes=_MAX_RECEIPT_BYTES)
+            atomic_verified_bytes(target.with_suffix(".previous.json"), previous)
         write_verified_json(target, receipt, label="Generation job receipt")
 
     def history(self):
