@@ -136,6 +136,7 @@ class GenerationDialog(FeedbackEnabledDialog):
                                               and callable(checked_connection_provider))
         self._image_submission_allowed = runtime_allowed or self._checked_image_submission
         self._review_verified_results = review_verified_results and not runtime_allowed
+        self._offline_job_recovery = self._review_verified_results and checked_image_submission
         self.storage_root = Path(storage_root)
         self.source_record = GenerationRecord.from_dict(source_record.to_dict()) if source_record else None
         self.source_identity = _mapping(source_identity)
@@ -247,7 +248,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         connection = self._build_connection_tab()
         results_tab = self.tabs.addTab(self._scroll(self._build_results_tab()), "Results && Queue")
         self._readiness_tab_index = self.tabs.addTab(self._scroll(connection), "Readiness")
-        if self._review_verified_results:
+        if self._review_verified_results and not self._offline_job_recovery:
             self.tabs.setTabText(results_tab, "Verified Results")
         self.tabs.setTabVisible(results_tab, self.runtime_allowed or self._review_verified_results)
         self.tabs.setTabVisible(self._readiness_tab_index, self.runtime_allowed or self._checked_connection is not None)
@@ -1871,7 +1872,9 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.choose_ingested_button.clicked.connect(self._choose_ingested_result)
         self.history_choice = QComboBox(); self.history_button = QPushButton("Refresh Recent Jobs")
         self.history_choice.activated.connect(self._select_history)
-        self.recover_button = QPushButton("Open Verified Result" if self._review_verified_results else "Open or Recover Selected Job")
+        self.recover_button = QPushButton("Open Verified Result"
+                                          if self._review_verified_results and not self._offline_job_recovery
+                                          else "Open or Recover Selected Job")
         self.history_button.clicked.connect(self.load_history); self.recover_button.clicked.connect(self.recover_selected)
         history_row = QHBoxLayout(); history_row.addWidget(self.history_button); history_row.addWidget(self.history_choice, 1); history_row.addWidget(self.recover_button)
         self.opened_result_status = QLabel()
@@ -1906,7 +1909,11 @@ class GenerationDialog(FeedbackEnabledDialog):
         layout.addWidget(self.outcome_toggle); layout.addWidget(outcome)
         layout.addWidget(self.results_experiment_button, 0, Qt.AlignLeft)
         if self._review_verified_results:
-            self.results_status.setText("Refresh recent jobs, then open and preview a verified result.")
+            self.results_status.setText(
+                "Open a verified result or recover an interrupted job from files already saved on this computer."
+                if self._offline_job_recovery else
+                "Refresh recent jobs, then open and preview a verified result."
+            )
             for widget in (self.ingest_button, self.finish_result_button, self.result_action,
                            self.result_action_button, self.outcome_toggle, self.results_experiment_button):
                 widget.hide()
@@ -2673,9 +2680,12 @@ class GenerationDialog(FeedbackEnabledDialog):
                 f"Selected: {self.history_choice.currentText()}. Open or recover this job before using result actions."
             )
         elif self.receipt:
-            self.opened_result_status.setText(
-                f"Opened result: {self._opened_result_name()}. Result actions use this job."
-            )
+            if self._offline_job_recovery and self.receipt.get("state") != "verified":
+                self.opened_result_status.setText(f"Opened job: {self._opened_result_name()}. No verified result.")
+            else:
+                self.opened_result_status.setText(
+                    f"Opened result: {self._opened_result_name()}. Result actions use this job."
+                )
         elif self.history_choice.count():
             self.opened_result_status.setText("Choose a recent job and open or recover it to review its result.")
         self.opened_result_status.setVisible(bool(self.receipt or self.history_choice.count()))
@@ -4096,7 +4106,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         from core.generation_execution import GenerationExecutionService
         service = GenerationExecutionService(self.storage_root, self.jobs)
         def done(receipts):
-            if self._review_verified_results:
+            if self._review_verified_results and not self._offline_job_recovery:
                 receipts = [receipt for receipt in receipts if receipt.get("state") == "verified"]
             previous = self.history_choice.currentData()
             previous_id = str(previous.get("job_id") or "") if isinstance(previous, dict) else ""
@@ -4119,7 +4129,7 @@ class GenerationDialog(FeedbackEnabledDialog):
                     self.result_preview.clear("Open the selected job before previewing it")
                     self.result_preview.hide()
                 self._history_context = True
-                self.status.setText("Select a verified result to open." if self._review_verified_results else
+                self.status.setText("Select a verified result to open." if self._review_verified_results and not self._offline_job_recovery else
                                     "Retained generation jobs loaded. Select one to recover its current receipt.")
                 if on_open:
                     self.tabs.setCurrentIndex(3)
@@ -4128,7 +4138,7 @@ class GenerationDialog(FeedbackEnabledDialog):
                         scroll.ensureWidgetVisible(self.history_choice)
                     self.history_choice.setFocus(Qt.OtherFocusReason)
             else:
-                self.status.setText("Manager has no verified results to review." if self._review_verified_results else
+                self.status.setText("Manager has no verified results to review." if self._review_verified_results and not self._offline_job_recovery else
                                     "No retained generation jobs are available. Start a new request, or load a saved plan.")
         self._run("history", service.history, done)
 
@@ -4140,7 +4150,9 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.status.setText("Load and select a retained job first."); return
         from core.generation_execution import GenerationExecutionService
         service = GenerationExecutionService(self.storage_root, self.jobs)
-        self.status.setText("Checking the retained verified result…" if self._review_verified_results else
+        offline_recovery = (self._offline_job_recovery and receipt.get("state") != "verified")
+        self.status.setText("Checking locally saved job files…" if offline_recovery else
+                            "Checking the retained verified result…" if self._review_verified_results else
                             "Reconciling the retained local session without resubmitting…")
         expected_id = str(receipt["job_id"])
         def opened(current):
@@ -4148,9 +4160,17 @@ class GenerationDialog(FeedbackEnabledDialog):
                 self.status.setText("Recovery returned a different job. Select and open the intended job again.")
                 return
             self.receive_receipt(current)
+            if offline_recovery and current.get("state") == "outcome_unknown":
+                self.status.setText("No completed result could be verified from the saved files. "
+                                    "Check the original generator before trying again.")
+            elif offline_recovery and current.get("state") in {"failed", "cancelled"}:
+                self.status.setText(f"This job was {current['state']}. Its receipt remains available.")
+
         def open_result():
             if self._review_verified_results:
                 from core.generation_execution import digest
+                if offline_recovery:
+                    return service.recover(expected_id, expected_receipt_digest=digest(receipt))
                 return service.review_verified_result(expected_id, digest(receipt))
             return service.recover(expected_id, adapter=self.adapter)
 

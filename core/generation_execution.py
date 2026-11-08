@@ -1314,10 +1314,12 @@ class GenerationExecutionService:
             result["raw_generator_sha256"] = hashlib.sha256(raw_output.read_bytes()).hexdigest()
         return result
 
-    def recover(self, job_id, *, adapter=None):
+    def recover(self, job_id, *, adapter=None, expected_receipt_digest=None):
         """Read/verify a retained response; never submits or assumes a lost job stopped."""
         with _LOCK:
             receipt = self._read(job_id)
+            if expected_receipt_digest is not None and digest(receipt) != expected_receipt_digest:
+                raise ValueError("The retained job changed. Refresh Recent Jobs and select it again.")
             if any(job.key == "generation:" + receipt["fingerprint"] for job in getattr(self.jobs, "active", lambda: [])()):
                 raise ValueError("This generation is still tracked; use its active progress or cancel action.")
             if adapter is not None and receipt.get("state") in {"submitting", "running", "cancelling", "outcome_unknown"}:
