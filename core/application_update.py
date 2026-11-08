@@ -247,15 +247,20 @@ class ApplicationUpdateService:
             request = urllib.request.Request(source.url, headers=headers)
             try:
                 response = self.opener(request, timeout=60)
-                status = int(getattr(response, "status", response.getcode()))
+                status = getattr(response, "status", None)
+                status = int(response.getcode() if status is None else status)
                 if offset and status == 200:
                     # The server ignored Range and supplied the full body.
                     offset = 0
-                elif offset and status != 206:
+                elif status != (206 if offset else 200):
                     response.close()
-                    offset = 0
-                    part.unlink(missing_ok=True)
-                    response = self.opener(urllib.request.Request(source.url, headers={"User-Agent": headers["User-Agent"]}), timeout=60)
+                    raise UpdateServiceError("The release server returned an unexpected download response status.")
+                if offset:
+                    expected_range = f"bytes {offset}-{artifact.size_bytes - 1}/{artifact.size_bytes}"
+                    get_ranges = getattr(getattr(response, "headers", None), "get_all", None)
+                    if not callable(get_ranges) or get_ranges("Content-Range") != [expected_range]:
+                        response.close()
+                        raise UpdateServiceError("The resumed download does not match the requested signed byte range.")
                 mode = "ab" if offset else "wb"
                 with response:
                     if should_cancel and should_cancel():
