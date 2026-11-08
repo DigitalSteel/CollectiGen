@@ -333,7 +333,10 @@ class ManagerRecovery:
             j = self.load()
             require(j["phase"] == "awaiting_health", "health_phase")
             self.current_code(j["binding"]["target"])
+            self.check_data(j, "expected_b")
             evidence = self.gate("target_healthy", j)
+            self.current_code(j["binding"]["target"])
+            self.check_data(j, "expected_b")
             return self.save(j, "healthy", "target_healthy", evidence=evidence)
 
     def repair(self, *, explicitly_requested, executor):
