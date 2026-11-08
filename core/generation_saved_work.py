@@ -378,8 +378,12 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, se
             _atomic_create_text(destination, text)
         except FileExistsError as exc:
             raise ValueError("Choose a new export filename; the existing file is preserved.") from exc
-        if _preset_bytes(destination) != text.encode("utf-8"):
-            raise OSError("Prompt preset export read-back failed.")
+        try:
+            if _preset_bytes(destination) != text.encode("utf-8"):
+                raise ValueError("Exported bytes differ from the selected prompt preset.")
+        except (OSError, ValueError) as exc:
+            raise OSError("Prompt preset export failed exact read-back verification. The export file may exist; "
+                          "inspect it before retrying with a new filename.") from exc
     else:
         save_recipe(destination, value)
     return str(destination)
