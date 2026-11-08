@@ -248,7 +248,10 @@ class ApplicationUpdateService:
             try:
                 response = self.opener(request, timeout=60)
                 status = int(getattr(response, "status", response.getcode()))
-                if offset and status != 206:
+                if offset and status == 200:
+                    # The server ignored Range and supplied the full body.
+                    offset = 0
+                elif offset and status != 206:
                     response.close()
                     offset = 0
                     part.unlink(missing_ok=True)
