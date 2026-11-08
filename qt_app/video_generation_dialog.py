@@ -128,6 +128,7 @@ class VideoGenerationDialog(QDialog):
             verify_output=self._verify_output, registry=self.registry,
             protected_roots=protected_model_roots(self.settings))
         self._task = None
+        self._export_picker_open = False
         self._task_label = ""
         self._task_cancelable = False
         self._source_path: Path | None = None
@@ -495,11 +496,15 @@ class VideoGenerationDialog(QDialog):
         self.save_button = QPushButton("Save Draft…")
         self.load_button = QPushButton("Load Draft…")
         self.new_button = QPushButton("New Draft")
+        self.export_draft_button = QPushButton("Export Draft Copy…")
+        self.export_draft_button.clicked.connect(self.export_draft_copy)
+        self.export_draft_button.setVisible(self.scoped_drafts and not runtime_allowed)
         for button, slot in ((self.save_button, self.save_draft),
                              (self.load_button, self.load_draft), (self.new_button, self.new_draft)):
             button.clicked.connect(lambda _checked=False, action=slot: action())
         draft_row.addWidget(self.load_button)
         draft_row.addWidget(self.new_button)
+        draft_row.addWidget(self.export_draft_button)
         draft_row.addStretch(1)
         form_stack.addWidget(draft_controls)
         self._section_widgets = ((request_box, output_box, draft_controls),
@@ -593,7 +598,7 @@ class VideoGenerationDialog(QDialog):
         self._update_actions()
 
     def _busy(self):
-        return self._task is not None or self._runtime_storage_dialog is not None
+        return self._export_picker_open or self._task is not None or self._runtime_storage_dialog is not None
 
     def _set_status(self, value):
         self.status.setText(str(value)[:2000])
@@ -1795,7 +1800,7 @@ class VideoGenerationDialog(QDialog):
         """True while a worker, exact job, held process, or decoder remains owned."""
         player = self._preview_player
         finishing = self._finishing_dialog
-        return bool(self._task is not None or self._runtime_receipt is not None or self._runtime_start_uncertain
+        return bool(self._export_picker_open or self._task is not None or self._runtime_receipt is not None or self._runtime_start_uncertain
             or (self._runtime_storage_dialog is not None and self._runtime_storage_dialog.has_active_background_work())
             or (self._pack_dialog is not None and self._pack_dialog.has_active_background_work())
             or self._active_job_state() in {"queued", "running", "paused"}
@@ -2076,6 +2081,32 @@ class VideoGenerationDialog(QDialog):
             return
         self._guard_draft_loss(self._choose_draft_to_load)
 
+    def export_draft_copy(self):
+        if self.runtime_allowed or not self.scoped_drafts or self._busy() or self._shutdown_requested:
+            return
+        try:
+            request = self._draft_request()
+        except (ValueError, TypeError, RuntimeError) as exc:
+            self._set_status(f"Video draft could not be exported: {exc}")
+            return
+        self._export_picker_open = True
+        try:
+            path, _ = QFileDialog.getSaveFileName(
+                self, "Export video draft copy", "video-draft.json", "Video draft (*.json)",
+                options=QFileDialog.DontConfirmOverwrite,
+            )
+        finally:
+            self._export_picker_open = False
+        if not path or self._shutdown_requested:
+            return
+        target = Path(path).absolute()
+        if ":" in target.name or target.exists():
+            self._set_status("Choose a new .json filename. Existing files are never overwritten.")
+            return
+        self._run("Export video draft", lambda: save_video_draft(target, request),
+                  lambda saved: self._set_status(f"Exported video draft copy: {saved.name}"),
+                  cancelable=False)
+
     def _choose_draft_to_load(self):
         path, _ = QFileDialog.getOpenFileName(self, "Load video draft",
             str(self.storage_root), "Video draft (*.json)")
@@ -2332,6 +2363,7 @@ class VideoGenerationDialog(QDialog):
             self.save_button.setEnabled(idle)
             self.load_button.setEnabled(idle)
             self.new_button.setEnabled(idle)
+            self.export_draft_button.setEnabled(idle)
             self.cancel_step_button.setEnabled(self._busy() and self._task_cancelable)
             self.close_button.setEnabled(idle)
             self._update_action_presentation()
