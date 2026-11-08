@@ -2826,8 +2826,8 @@
       "size_bytes": 9413
     },
     "suite_core/discovery/component_staging.py": {
-      "sha256": "772b9e7976edd16dd9d7fb498e0a7ffff95f20e8f7607ecbad4ec4239b8968a8",
-      "size_bytes": 31439
+      "sha256": "11a017dbeec9f5d51db802de46805986cf145995afa612c8cc6633ff73ff679b",
+      "size_bytes": 31753
     },
     "suite_core/discovery/github_component_releases.py": {
       "sha256": "b18b23ba7b4b96df22e1659801694c28742f32ac79651c72416fe354f0263c08",

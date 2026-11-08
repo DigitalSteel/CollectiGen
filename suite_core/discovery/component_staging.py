@@ -121,8 +121,10 @@ def lock(base):
 
 def read_metadata_bytes(path):
     guard(path)
-    require(path.stat().st_size <= MAX_METADATA_BYTES, "metadata_size")
-    return path.read_bytes()
+    with path.open("rb") as stream:
+        data = stream.read(MAX_METADATA_BYTES + 1)
+    require(len(data) <= MAX_METADATA_BYTES, "metadata_size")
+    return data
 
 
 def read_json(path):
@@ -468,13 +470,15 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
         current_record = _json(current_bytes, "component state") if current_bytes is not None else None
         if current_record is not None:
             validate_journal(current_record, component, owner, trust_bytes)
-        journal_path = pending_path if pending_path.exists() else current_journal_path
-        j = read_json(journal_path) if journal_path == pending_path or current_record is None else current_record
+        pending_bytes = read_metadata_bytes(pending_path) if pending_path.exists() else None
+        if pending_bytes is None:
+            j = current_record if current_record is not None else read_json(current_journal_path)
+        else:
+            j = _json(pending_bytes, "component state")
         validate_journal(j, component, owner, trust_bytes)
-        pending_only = journal_path == pending_path and current_bytes != pending_path.read_bytes()
-        completed_handoff = journal_path == pending_path and not pending_only
-        if journal_path == pending_path and not pending_only:
-            journal_path = current_journal_path
+        pending_only = pending_bytes is not None and pending_bytes != current_bytes
+        completed_handoff = pending_bytes is not None and not pending_only
+        journal_path = pending_path if pending_only else current_journal_path
         current_path = base / "active.json"
         current = read_json(current_path) if current_path.exists() else None
         require(current == j["before"] or current == j["target"], "unexpected_active_reference")
@@ -489,6 +493,9 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
                 require(terminal_reference == current, "pending_current_reference_mismatch")
                 prior_journal_bytes(base, current_record, component, owner, trust_bytes)
         prior_bytes = prior_journal_bytes(base, j, component, owner, trust_bytes)
+        if pending_bytes is not None:
+            require(pending_path.exists() and read_metadata_bytes(pending_path) == pending_bytes,
+                    "pending_journal_changed")
         if completed_handoff:
             pending_path.unlink()  # validated exact current bytes prove metadata handoff occurred
         if j["phase"] == "healthy":
@@ -524,14 +531,14 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
         result = active(root, base, component, payload_policy=policy)
         require(result == (j["target"] if j["phase"] == "healthy" else j["before"]), "recovery_readback")
         if pending_only:
-            require((current_journal_path.read_bytes() if current_journal_path.exists() else None) == current_bytes,
+            require((read_metadata_bytes(current_journal_path) if current_journal_path.exists() else None) == current_bytes,
                     "current_journal_changed")
             if current_bytes is None:
                 atomic(current_journal_path, j)  # retain idempotent first-transaction recovery
             os.replace(pending_path, base / ("abandoned-pending-" + uuid4().hex + ".json"))
         elif j["phase"] in ("abandoned", "rolled_back") and prior_bytes is not None:
             history = base / ("recovered-transaction-" + uuid4().hex + ".json")
-            atomic_bytes(history, current_journal_path.read_bytes())
+            atomic_bytes(history, read_metadata_bytes(current_journal_path))
             atomic_bytes(current_journal_path, prior_bytes)  # restore prior API-visible rollback record
         return result
 
