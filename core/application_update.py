@@ -259,13 +259,14 @@ class ApplicationUpdateService:
                     while True:
                         if should_cancel and should_cancel():
                             raise InterruptedError("The update download was cancelled safely.")
-                        block = response.read(1024 * 1024)
+                        remaining = artifact.size_bytes - copied
+                        block = response.read(min(1024 * 1024, remaining + 1))
                         if not block:
                             break
+                        if len(block) > remaining:
+                            raise UpdateServiceError("Downloaded release exceeds its signed size.")
                         output.write(block)
                         copied += len(block)
-                        if copied > artifact.size_bytes:
-                            raise UpdateServiceError("Downloaded release exceeds its signed size.")
                         if progress:
                             progress(copied, artifact.size_bytes, artifact.name)
             except InterruptedError:
