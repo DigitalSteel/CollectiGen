@@ -237,7 +237,7 @@ class EncyclopediaInstallation:
                 require(not path.exists(), "connection_intent_clear_readback")
                 installed = replace(installed, connection_pending=False)
             except Exception as error:
-                return InstallationResult(installed, False,
+                return InstallationResult(replace(installed, connection_pending=path.exists()), False,
                     f"Executable transaction saved; connection publication needs Retry save. {error}")
         if restoring:
             return InstallationResult(installed, True,
