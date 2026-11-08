@@ -348,7 +348,10 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         task.signals.failed.connect(lambda message: self._finish(task, self._failed, message))
         task.signals.cancelled.connect(lambda: self._finish(task, self._failed, "Preview cancelled. The package remains unchanged."))
         self._set_busy(True)
-        task.start()
+        try:
+            task.start()
+        except RuntimeError:
+            self._finish(task, self._failed, "Trainer preview could not start. Choose Update Preview to retry.")
 
     def _finish(self, task, callback, value):
         if self._task is not task:
@@ -482,7 +485,12 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         task.signals.complete.connect(lambda path: self._finish_image(task, path=path))
         task.signals.failed.connect(lambda message: self._finish_image(task, error=message))
         task.signals.cancelled.connect(lambda: self._finish_image(task, error="Image preview cancelled."))
-        task.start()
+        try:
+            task.start()
+        except RuntimeError:
+            self._image_task = None
+            self._clear_image_preview()
+            self.caption.set_text("Image check could not start. Choose Update Preview, then select the image again.")
 
     def _clear_image_preview(self):
         if self._image_task is not None:
