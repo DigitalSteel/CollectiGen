@@ -248,11 +248,14 @@ class ApplicationUpdateService:
             try:
                 response = self.opener(request, timeout=60)
                 status = int(getattr(response, "status", response.getcode()))
-                if offset and status != 206:
-                    response.close()
+                if offset and status == 200:
+                    if should_cancel and should_cancel():
+                        response.close()
+                        raise InterruptedError("The update download was cancelled safely.")
                     offset = 0
-                    part.unlink(missing_ok=True)
-                    response = self.opener(urllib.request.Request(source.url, headers={"User-Agent": headers["User-Agent"]}), timeout=60)
+                elif status != (206 if offset else 200):
+                    response.close()
+                    raise UpdateServiceError("The release server returned an unexpected download response status.")
                 if offset:
                     expected_range = f"bytes {offset}-{artifact.size_bytes - 1}/{artifact.size_bytes}"
                     if response.headers.get_all("Content-Range") != [expected_range]:
