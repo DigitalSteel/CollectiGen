@@ -1446,8 +1446,8 @@
       "size_bytes": 7634
     },
     "core/tag_default_package.py": {
-      "sha256": "8c205b57659271b04d134bed2ac59231db2c891958effc9d4362edfe23b8e888",
-      "size_bytes": 7821
+      "sha256": "d763d1b8ce56dc7a5a8f03167584a9ef906fd703e200d867d2e0c26268ba1a0e",
+      "size_bytes": 7934
     },
     "core/tag_identity_merge.py": {
       "sha256": "90f8782894f54f4f14e891811fc4df36784971ba37d6bddf5c139a5d31f82395",

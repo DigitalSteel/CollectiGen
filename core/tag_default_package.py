@@ -11,6 +11,7 @@ from pathlib import Path
 
 from core.component_acquisition import AcquiredComponent, ComponentOffer
 from core.tag_default_acquisition import AcquiredTagDefault, TagDefaultBaseline, TAG_DATABASE_COMPONENT
+from core.training_source_io import read_stable_training_source
 from release_contract import verify_artifact
 from suite_core.discovery.component_release_signature import verify_component_release
 from suite_core.discovery.component_staging import (
@@ -84,7 +85,8 @@ def prepare_tag_default_package(acquired, destination, should_cancel=None, *,
     marker = cache_root / ".component-acquisition-owner.json"
     guard(marker)
     require(marker.is_file() and marker.stat().st_size <= 1024, "original_acquisition_cache_marker_required")
-    owner = json.loads(marker.read_bytes())
+    raw, _ = read_stable_training_source(marker, max_bytes=1024)
+    owner = json.loads(raw)
     require(type(owner) is dict and set(owner) == {"purpose", "owner"}
         and owner["purpose"] == "COMPONENT_ACQUISITION_CACHE"
         and type(owner["owner"]) is str and 1 <= len(owner["owner"]) <= 128,
