@@ -557,7 +557,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self._image_draft_picker_open = False
             self.generate_plan_button = compact_action(QPushButton("Plan an Image…"))
             self.generate_plan_button.setVisible(not view.synthetic and normal_entry_session is not None)
-            self.generate_plan_button.setToolTip("Create or reopen an image draft. A checked connection can prepare an image request.")
+            self.generate_plan_button.setToolTip("Create or reopen an image draft. Review and submit through your checked local generator.")
             self.generate_plan_button.clicked.connect(self.open_generate_plan)
             applications_layout.addWidget(self.generate_plan_button, 0, Qt.AlignLeft)
             self._generation_setup_dialog = None
@@ -1304,7 +1304,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 root = Path(session.admitted.layout.data_root) / "Manager"
                 self.state = SimpleNamespace(jobs=BackgroundJobManager(), settings=None,
                     generation_data_root=root, generation_runtime_allowed=False,
-                    generation_review_verified_results=True, checked_image_connection=self.checked_image_connection)
+                    generation_review_verified_results=True, checked_image_connection=self.checked_image_connection,
+                    checked_image_submission=True)
             return self.state
 
         _IMAGE_PICKER_CLOSE_NOTICE = "Close held. Finish or close the image chooser, then close Manager again."

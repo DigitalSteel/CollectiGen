@@ -551,7 +551,8 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             prompt_knowledge=getattr(state, "knowledge", None),
             characters=characters, outfits=outfits, runtime_allowed=runtime_allowed,
             review_verified_results=getattr(state, "generation_review_verified_results", False),
-            checked_connection=checked_connection, checked_connection_provider=provider, parent=host)
+            checked_connection=checked_connection, checked_connection_provider=provider,
+            checked_image_submission=getattr(state, "checked_image_submission", False), parent=host)
         dialog.source_records = saved_records
         if preloaded_draft is not None:
             plan, target, token = preloaded_draft

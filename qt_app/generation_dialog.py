@@ -111,6 +111,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         review_verified_results=False,
         checked_connection=None,
         checked_connection_provider=None,
+        checked_image_submission=False,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -131,6 +132,9 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.runtime_allowed = runtime_allowed
         self._checked_connection = checked_connection
         self._checked_connection_provider = checked_connection_provider
+        self._checked_image_submission = bool(checked_image_submission and checked_connection
+                                              and callable(checked_connection_provider))
+        self._image_submission_allowed = runtime_allowed or self._checked_image_submission
         self._review_verified_results = review_verified_results and not runtime_allowed
         self.storage_root = Path(storage_root)
         self.source_record = GenerationRecord.from_dict(source_record.to_dict()) if source_record else None
@@ -272,7 +276,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.submit_button = QPushButton("Submit Reviewed Request")
         self.submit_button.setProperty("primary", True); self.submit_button.clicked.connect(self.submit_reviewed)
         buttons.addButton(self.submit_button, QDialogButtonBox.AcceptRole)
-        self.submit_button.setVisible(self.runtime_allowed)
+        self.submit_button.setVisible(self._image_submission_allowed)
         buttons.addButton(self.next_step_button, QDialogButtonBox.ActionRole)
         self.more_draft_actions_button = QPushButton("More Draft Actions…")
         self.more_draft_actions_button.setCheckable(True)
@@ -2640,7 +2644,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         output_blocker = self._output_followup_blocker()
         memory_blocker = self._memory_submission_blocker()
         input_issue, _target = self._ordinary_input_issue()
-        self.submit_button.setEnabled(self.runtime_allowed and prepared_valid and self._seed_input_valid() and not output_blocker and not memory_blocker and not input_issue and self.safety_ack.isChecked() and not self._pending and not active and source_ready)
+        self.submit_button.setEnabled(self._image_submission_allowed and prepared_valid and self._seed_input_valid() and not output_blocker and not memory_blocker and not input_issue and self.safety_ack.isChecked() and not self._pending and not active and source_ready)
         self.submit_button.setToolTip("Reconnect the exact source image before submitting Remix." if not source_ready else input_issue or memory_blocker)
         idle = not self._pending and not active
         if (getattr(self, "_memory_observation_plan_digest", None) != self.plan.digest
@@ -2764,7 +2768,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             "valid", self.prepared.get("request") is not None))
             or self._next_step_tab == 1 or self.submit_button.isEnabled())
         self.submit_button.setVisible(
-            self.runtime_allowed and review_stage and not self._pending and not self._execution_active()
+            self._image_submission_allowed and review_stage and not self._pending and not self._execution_active()
         )
         self.next_step_button.setVisible(not self.submit_button.isEnabled())
         self.more_draft_actions_button.setText(
@@ -3234,11 +3238,19 @@ class GenerationDialog(FeedbackEnabledDialog):
                      if callable(self.source_image_provider) else "Saved image reference; reconnect the exact original to continue.")
 
         if not self.runtime_allowed:
+            if self._checked_image_submission and self._review_verified_results and self._execution_active():
+                self.results_status.setText("Manager is tracking this image job. You can cancel submitted work here.")
+                self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
+                    result="A retained job outcome in Manager.", readiness="Image job in progress.",
+                    next_step="Wait for the outcome or cancel submitted work in Verified Results.")
+                self._next_step_tab = 3
+                return
             if self._checked_connection is not None:
                 self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
                     result="A prepared request for review, or a saved draft.",
-                    readiness="Preparation only. Manager cannot submit this request.",
-                    next_step=("Save the draft or export the request." if prepared_valid else
+                    readiness=("Checked local generator." if self._checked_image_submission else "Preparation only."),
+                    next_step=(("Review and submit the request." if self._checked_image_submission else
+                                "Save the draft or export the request.") if prepared_valid else
                                "Open Readiness to check the saved generator, bind an exact model and prepare the request."))
                 self._next_step_tab = self._readiness_tab_index
                 return
@@ -3675,11 +3687,11 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.prepared = _mapping(prepared)
         valid = bool(self.prepared and self.prepared.get("valid", self.prepared.get("request") is not None))
         self.connection_detail.setPlainText(_plain_json(prepared))
-        if valid and self._checked_connection is not None:
+        if valid and self._checked_connection is not None and not self._checked_image_submission:
             self.status.setText("Request prepared for review. Manager cannot submit it.")
         else:
             self.status.setText("Prepared request is ready for explicit submission; GPU memory fit remains unproven. Review the memory observation in Readiness." if valid else "Preflight blocked this request. Review the reported blockers before preparing again.")
-        if valid and self.runtime_allowed and self._memory_submission_blocker():
+        if valid and self._image_submission_allowed and self._memory_submission_blocker():
             self.status.setText(self._memory_submission_blocker())
         if valid and self.binding:
             from core.generation_execution import GenerationExecutionService
@@ -3799,8 +3811,12 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._sync_advanced_json_from_plan(force=True)
         self._refresh_from_plan("Validated neutral JSON edits were applied with a new audit diff. Bind and prepare again before submitting.")
 
+    def _check_submission_authority(self):
+        if self._checked_connection_provider() != self._checked_connection:
+            raise ValueError("The saved generator connection changed. Reopen Generate after reviewing it.")
+
     def submit_reviewed(self) -> None:
-        if not self._require_generation_runtime():
+        if not self._require_generation_runtime(preparation=self._checked_image_submission):
             return
         if self._shutdown_requested:
             return
@@ -3827,6 +3843,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         adapter, prepared = self.adapter, deepcopy(self.prepared)
         self.receipt = None; self._ingest_issue = ""; self._ingest_folder_recovery = False
         self.status.setText("Submitting the reviewed request…")
+        if self._checked_image_submission and self._review_verified_results:
+            self.tabs.setCurrentIndex(3)
         def listener(job) -> None:
             # The coordinator drops completed results after notifying observers.
             # Capture the durable receipt now and marshal it onto the Qt thread.
@@ -3846,7 +3864,9 @@ class GenerationDialog(FeedbackEnabledDialog):
             if self.receipt is None:
                 self.status.setText("Request submitted. Progress remains attached to its durable receipt.")
             self._poll_submission()
-        self._run("submit", lambda: service.submit(adapter, prepared, confirmed=True, listener=listener), done)
+        options = {"check_authority": self._check_submission_authority} if self._checked_image_submission else {}
+        self._run("submit", lambda: service.submit(adapter, prepared, confirmed=True, listener=listener,
+                                                   **options), done)
 
     def _receive_submission_completion(self, event: object) -> None:
         if self._closed:
@@ -3892,7 +3912,10 @@ class GenerationDialog(FeedbackEnabledDialog):
         if callable(cancel) and self._submitted_job_id:
             cancel(self._submitted_job_id)
             self._cancellation_requested = True
-        self.cancel_button.setEnabled(False); self.status.setText("Cancellation requested. The eventual outcome will still be verified before Ingest.")
+        self.cancel_button.setEnabled(False)
+        self.status.setText("Cancellation requested. Manager retains the job outcome."
+                            if self._review_verified_results else
+                            "Cancellation requested. The eventual outcome will still be verified before Ingest.")
         self._update_actions()
 
     def _request_submitted_shutdown_cancel(self) -> None:
