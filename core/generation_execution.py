@@ -1322,6 +1322,7 @@ class GenerationExecutionService:
                 raise ValueError("The retained job changed. Refresh Recent Jobs and select it again.")
             if any(job.key == "generation:" + receipt["fingerprint"] for job in getattr(self.jobs, "active", lambda: [])()):
                 raise ValueError("This generation is still tracked; use its active progress or cancel action.")
+            prior_stop_evidence = receipt.get("server_stopped")
             if adapter is not None and receipt.get("state") in {"submitting", "running", "cancelling", "outcome_unknown"}:
                 if adapter.endpoint != receipt["prepared"]["capabilities"].get("endpoint"):
                     raise ValueError("Recovery must use the original local endpoint.")
@@ -1334,7 +1335,9 @@ class GenerationExecutionService:
                 receipt["outputs"] = [self._verify_result(receipt, strict_json(raw))]
                 receipt["state"] = "verified"; self._write(receipt)
             elif receipt["state"] not in {"cancelled", "failed"}:
-                receipt["state"] = "outcome_unknown"; self._write(receipt)
+                if receipt["state"] != "outcome_unknown" or receipt.get("server_stopped") != prior_stop_evidence:
+                    receipt["state"] = "outcome_unknown"
+                    self._write(receipt)
             return receipt
 
     def verified_output_paths(self, expected_receipt):
