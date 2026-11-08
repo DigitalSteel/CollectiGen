@@ -44,6 +44,8 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
     """
     from .generation_recipes import _validate, render_prompt_parts
     recipe = _validate(deepcopy(recipe))[0]
+    if recipe["schema_version"] == 2 and recipe.get("resources") == []:
+        raise ValueError("This setup clears model resources. Export it as CollectiGen JSON to preserve that choice.")
     if (recipe.get("resources") or recipe.get("stages") or recipe.get("source_binding")
             or recipe.get("source_settings") or recipe.get("finishing")
             or any(key in recipe["settings"] for key in ("model", "model_hash", "vae"))):
@@ -51,16 +53,18 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
                          "Export it as CollectiGen JSON; SwarmUI translation does not yet preserve those choices.")
     params = {}
     prompts = recipe.get("prompts", {})
-    positive = (render_prompt_parts(recipe.get("prompt_parts", []))
-                if recipe["schema_version"] == 3 else prompts.get("positive_prompt"))
+    parts = recipe.get("prompt_parts")
+    positive = render_prompt_parts(parts) if parts else prompts.get("positive_prompt")
     negative = (recipe.get("negative_prompt") if recipe["schema_version"] == 3
                 else prompts.get("negative_prompt"))
     for key, value in (("prompt", positive), ("negativeprompt", negative)):
         if not include_prompts:
             continue
-        if value is None or key == "prompt" and not value:
+        if value is None:
             continue
-        if imported_prompt_kind(value) != "literal" or key == "prompt" and len(value) > 4096:
+        if imported_prompt_kind(value) != "literal" or (
+            key == "prompt" and (not value.strip() or len(value) > 4096)
+        ):
             raise ValueError("This setup contains prompt syntax outside the qualified literal subset. "
                              "Export it as CollectiGen JSON instead.")
         params[key] = value
@@ -71,7 +75,7 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
         field = reverse[key]
         if type(value) not in (str, int, float) or type(value) is bool:
             raise ValueError(f"The {key} setting is outside the qualified SwarmUI subset.")
-        rendered = str(value)
+        rendered = "0" if key == "cfg_scale" and value == 0 else str(value)
         if _setting(field, rendered) != value:
             raise ValueError(f"The {key} setting cannot round-trip exactly. Export CollectiGen JSON instead.")
         params[field] = rendered
