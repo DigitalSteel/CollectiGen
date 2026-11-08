@@ -25,7 +25,7 @@ _PARTS = (("character", "Character traits"), ("outfit", "Outfit details"),
 
 def choose_registered_setup_resource(parent, registry, jobs, role, *,
                                      main_model_resource_id="", settings=None,
-                                     protected_model_roots=()):
+                                     protected_model_roots=(), title=None):
     """Use the shared exact-role picker for either Generation Setup composer."""
     from .model_selector_dialog import ModelSelectorDialog
     from .generation_workflow import _registered_resource_with_label
@@ -35,6 +35,8 @@ def choose_registered_setup_resource(parent, registry, jobs, role, *,
         main_model_resource_id=main_model_resource_id,
         settings=settings, protected_roots=tuple(protected_model_roots),
     )
+    if title:
+        picker.setWindowTitle(title)
     if picker.exec() != QDialog.Accepted:
         return None
     resource, label = _registered_resource_with_label(

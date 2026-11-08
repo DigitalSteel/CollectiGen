@@ -460,9 +460,10 @@ class SavedGenerationWorkDialog(QDialog):
             layout.addWidget(explanation)
             mapped = evidence["mapped"]
             resolved = evidence.get("resolved_resources", [])
+            resolved_loras = evidence.get("resolved_loras", [])
             summary = QLabel(
                 f"Imported: {', '.join(mapped['settings']) or 'no scalar settings'}; "
-                f"{len(resolved)} exact source-model choices recorded at save; "
+                f"{len(resolved) + len(resolved_loras)} exact source-model choices recorded at save; "
                 f"{len(evidence['held_fields'])} original source fields retained for review. "
                 "No source file or account is opened here."
             )
@@ -490,6 +491,8 @@ class SavedGenerationWorkDialog(QDialog):
             }
             if resolved:
                 detail_payload["explicit_exact_resource_choices_at_save"] = resolved
+            if resolved_loras:
+                detail_payload["ordered_exact_lora_matches_at_save"] = resolved_loras
             if selected:
                 detail_payload["selected_presets_in_order"] = selected
                 detail_payload["conflict_choices"] = evidence["choices"]

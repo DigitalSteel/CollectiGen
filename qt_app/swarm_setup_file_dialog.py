@@ -13,9 +13,10 @@ from shiboken6 import isValid
 from core.swarm_setup_file_import import (
     compose_swarm_setup_presets, composed_swarm_setup_evidence,
     inspect_swarm_setup_composition, inspect_swarm_setup_composition_resources,
+    inspect_swarm_setup_lora_stack,
     inspect_swarm_setup_resource_references,
     read_swarm_setup_file, recheck_swarm_setup_file,
-    select_swarm_setup_preset, selected_swarm_setup_evidence,
+    select_swarm_setup_preset, selected_swarm_setup_evidence, validate_swarm_setup_evidence,
 )
 from core.generation_saved_work import save_named_recipe
 from .components import DisclosureButton
@@ -42,6 +43,7 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         self._conflict_controls = {}
         self._composition_base_summary = ""
         self._resource_choices = {}
+        self._lora_matches = []
         self._resource_source_choices = {}
         self._resource_reference_rows = {}
         self._resource_source_controls = {}
@@ -233,6 +235,12 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         self.source_resource_status.setTextFormat(Qt.PlainText)
         self.source_resource_status.setWordWrap(True)
         resource_layout.addWidget(self.source_resource_status)
+        self.match_loras = QPushButton("Match Source LoRAs…")
+        self.match_loras.clicked.connect(self._choose_import_loras)
+        resource_layout.addWidget(self.match_loras, 0, Qt.AlignLeft)
+        self.clear_loras = QPushButton("Leave Source LoRAs Unmatched")
+        self.clear_loras.clicked.connect(self._clear_import_loras)
+        resource_layout.addWidget(self.clear_loras, 0, Qt.AlignLeft)
         self.source_resource_group = resource_group
         self.source_resource_group.hide()
         self.no_resource_refs = QLabel(
@@ -381,6 +389,8 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         resource_refs = inspect_swarm_setup_resource_references(self._source_review, key)
         if resource_refs and self.registry is not None:
             supported.append("source models need an exact registered choice")
+        if self.registry is not None and self._source_lora_stack(preset):
+            supported.append("source LoRAs need exact registered choices")
         held = len(preset.held_fields)
         excerpt = (preset.positive_prompt[:120] + ("…" if len(preset.positive_prompt) > 120 else "")
                    if preset.positive_prompt else "")
@@ -400,6 +410,16 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
             lines.append("Negative prompt (literal): " +
                          (preset.negative_prompt if preset.negative_prompt else "[explicitly blank]"))
         lines.extend(f"{key_name}: {value}" for key_name, value in preset.settings.items())
+        try:
+            stack = inspect_swarm_setup_lora_stack(preset)
+        except ValueError as exc:
+            lines.append(f"LoRA stack held. {exc}")
+        else:
+            if stack:
+                lines.append("Source LoRAs in order. No LoRA is added to the setup by this preview.")
+                for name, model, encoder, inherited in stack:
+                    suffix = " (inherits model strength)" if inherited else ""
+                    lines.append(f"{name} · model {model} · text encoder {encoder}{suffix}")
         for field in preset.held_fields:
             lines.append(f"{field.field}: {field.reason}")
             if field.value and field.field != "preview_image":
@@ -639,6 +659,7 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         self._applied_keys = keys
         self._applied_choices = choices
         if not same_source_file:
+            self._clear_import_loras()
             for field in tuple(self._resource_choices):
                 self._clear_import_resource(field)
             self._resource_source_choices.clear()
@@ -691,6 +712,7 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         self._applied_keys = ()
         self._applied_choices = {}
         if not same_source_file:
+            self._clear_import_loras()
             for field in tuple(self._resource_choices):
                 self._clear_import_resource(field)
             self._resource_source_choices.clear()
@@ -712,6 +734,8 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
 
     def _show_import_resource_references(self):
         references = self._available_resource_references()
+        stack = self._source_lora_stack(select_swarm_setup_preset(
+            self._applied_review, self._applied_key)) if self._applied_key else ()
         if not references:
             self.no_resource_refs.setText(
                 "The selected source has no matchable main model or VAE names. "
@@ -760,8 +784,11 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
                 control.hide()
             control.blockSignals(False)
             choose.setEnabled(self.registry is not None and field in self._resource_source_choices)
-        self.source_resource_group.setVisible(bool(references))
-        self.no_resource_refs.setVisible(not bool(references))
+        self.source_resource_group.setVisible(bool(references or stack))
+        self.no_resource_refs.setVisible(not bool(references or stack))
+        self.match_loras.setVisible(bool(stack))
+        self.match_loras.setEnabled(self.registry is not None)
+        self.clear_loras.setVisible(bool(self._lora_matches))
         self._update_import_resource_status()
 
     def _available_resource_references(self):
@@ -773,6 +800,68 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
                          inspect_swarm_setup_resource_references(
                              self._applied_review, self._applied_key))
         return ()
+
+    @staticmethod
+    def _source_lora_stack(preset):
+        try:
+            return inspect_swarm_setup_lora_stack(preset)
+        except ValueError:
+            return ()  # Source Details explains why this stack is held.
+
+    def _choose_import_loras(self):
+        if self.registry is None or self.save_in_progress or not self._applied_key:
+            return
+        review = self._applied_review
+        key = self._applied_key
+        stack = self._source_lora_stack(select_swarm_setup_preset(review, key))
+        current = self._chosen_resources()
+        main = next((row for row in current if row["role"] == "checkpoint"), None)
+        rows, matches = [], []
+        try:
+            for index, (name, model, encoder, _) in enumerate(stack, 1):
+                row = choose_registered_setup_resource(
+                    self, self.registry, self.jobs, "lora",
+                    main_model_resource_id=main["id"] if main else "",
+                    settings=self.settings, protected_model_roots=self.protected_model_roots,
+                    title=f"Match LoRA {index} of {len(stack)} — {name}",
+                )
+                if row is None:
+                    return
+                matches.append({"name": name, "resource_id": row["id"],
+                                "sha256": row["hashes"]["sha256"]})
+                rows.append({**row, "weights": {"model": float(model), "text_encoder": float(encoder)}})
+            if not matches:
+                return
+            selected_swarm_setup_evidence(review, key, resolved_loras=matches)
+            old_ids = {row["resource_id"] for row in self._lora_matches}
+            retained = [self.resource_tree.topLevelItem(i).data(0, Qt.UserRole)
+                        for i in range(self.resource_tree.topLevelItemCount())]
+            retained = [row for row in retained if row["role"] != "lora" or row["id"] not in old_ids]
+            if len(retained) + len(rows) > 32 or any(
+                    existing["role"] == "lora" and existing["id"] == row["id"]
+                    for existing in retained for row in rows):
+                raise ValueError("The stack exceeds the setup resource limit or overlaps an authored LoRA.")
+            if review is not self._source_review or review is not self._applied_review:
+                raise ValueError("Review the current source again before matching its LoRAs.")
+        except (ValueError, RuntimeError) as exc:
+            self.status.setText(str(exc))
+            return
+        self._clear_import_loras()
+        self._lora_matches = matches
+        for row in rows:
+            self._insert_resource(row)
+        self.clear_loras.show()
+        self.status.setText(f"Matched {len(rows)} source LoRAs in order. Review the Reusable Setup before saving.")
+
+    def _clear_import_loras(self):
+        ids = {row["resource_id"] for row in self._lora_matches}
+        self._lora_matches = []
+        for index in reversed(range(self.resource_tree.topLevelItemCount())):
+            row = self.resource_tree.topLevelItem(index).data(0, Qt.UserRole)
+            if row["role"] == "lora" and row["id"] in ids:
+                self.resource_tree.takeTopLevelItem(index)
+                self._invalidate()
+        self.clear_loras.hide()
 
     def _import_source_choice_changed(self, field):
         control = self._resource_source_controls[field]
@@ -798,6 +887,9 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         active = [("main model" if field == "model" else "VAE")
                   for field, row in self._resource_choices.items()
                   if (row["id"], row["role"], row["hashes"]["sha256"]) in chosen]
+        if self._lora_matches and all(
+                (row["resource_id"], "lora", row["sha256"]) in chosen for row in self._lora_matches):
+            active.append(f"{len(self._lora_matches)} source LoRAs")
         self.source_resource_status.setText(
             ("Exact choices in this setup: " + ", ".join(active) + ". ") if active else
             "No source model is matched in this setup. "
@@ -892,7 +984,8 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         ) if self._applied_keys else
             selected_swarm_setup_evidence(
                 self._applied_review, self._applied_key,
-                resolved_resources=self._resolved_resources(recipe)))
+                resolved_resources=self._resolved_resources(recipe),
+                resolved_loras=self._lora_matches))
         return save_named_recipe(self.storage_root, recipe, operation_id=operation_id,
                                  import_evidence=evidence)
 
@@ -924,6 +1017,14 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
             self.status.setText("Use Reviewed Combination in Setup before reviewing its changed order or settings.")
             return
         super().review()
+        if self._lora_matches and self.save_button.isEnabled():
+            try:
+                evidence = selected_swarm_setup_evidence(
+                    self._applied_review, self._applied_key, resolved_loras=self._lora_matches)
+                validate_swarm_setup_evidence(evidence, recipe=self.recipe)
+            except ValueError as exc:
+                self.save_button.setEnabled(False)
+                self.status.setText(f"{exc} Match the source LoRAs again or leave them unmatched.")
 
     def reject(self):
         self._closing = True
