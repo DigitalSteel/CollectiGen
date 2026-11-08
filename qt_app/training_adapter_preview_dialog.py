@@ -294,6 +294,8 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
             self.images.setCurrentItem(self.images.topLevelItem(0))
 
     def _changed(self, *_):
+        if self._closing:
+            return
         self._clear()
         self.summary.setText("Recipe changed — update the preview")
         self.status.setText("The previous proposal is no longer current. Package and base-model bytes will be checked again.")
@@ -467,6 +469,8 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         self.next.setEnabled(start + self.PAGE_SIZE < len(self._filtered))
 
     def _select_image(self):
+        if self._closing:
+            return
         self._clear_image_preview()
         item = self.images.currentItem()
         if item is None or self.preview is None:
@@ -493,6 +497,8 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
             self.caption.set_text("Image check could not start. Choose Update Preview, then select the image again.")
 
     def _clear_image_preview(self):
+        if self._closing and self._image_task is not None:
+            return
         if self._image_task is not None:
             self.jobs.cancel(self._image_task.job_id)
             self._image_task = None
@@ -504,8 +510,12 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         if self._image_task is not task:
             return
         self._image_task = None
+        if self._closing:
+            self._clear_image_preview()
+            super().reject()
+            return
         selection = self._image_selection
-        if self._closing or selection is None or selection[0] is not self.preview:
+        if selection is None or selection[0] is not self.preview:
             return
         item = self.images.currentItem()
         if item is None or item.data(0, Qt.UserRole) != selection[1]:
@@ -545,15 +555,16 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
 
     def reject(self):
         self._closing = True
-        self._clear_image_preview()
-        if self._task is not None:
-            self.jobs.cancel(self._task.job_id)
+        task = self._task or self._image_task
+        if task is not None:
             self.status.setText("Stopping the read-only preview at a safe boundary…")
+            self.jobs.cancel(task.job_id)
             return
+        self._clear_image_preview()
         super().reject()
 
     def closeEvent(self, event):
-        if self._task is not None:
+        if self._task is not None or self._image_task is not None:
             event.ignore(); self.reject()
         else:
             self._closing = True
