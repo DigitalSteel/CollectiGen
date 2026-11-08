@@ -547,6 +547,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if model_workspace_factory is not None else 'Repository inspection is unavailable in this launch.')
             self.repository_inspection_button.clicked.connect(self.open_repository_inspection)
             applications_layout.addWidget(self.repository_inspection_button, 0, Qt.AlignLeft)
+            self.training_comparison_button = compact_action(QPushButton("Compare Training Samples…"))
+            self.training_comparison_button.setToolTip("Plan comparisons and review saved samples. Generator access is unavailable.")
+            self.training_comparison_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.training_comparison_button.clicked.connect(self.open_training_comparison)
+            applications_layout.addWidget(self.training_comparison_button, 0, Qt.AlignLeft)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
             external.setWordWrap(True)
@@ -1752,7 +1757,61 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.statusBar().showMessage(self.close_policy.decision.reason)
             self.render_library()
 
-        def closeEvent(self, event):
+        def generation_state(self):
+            session = normal_entry_session
+            if view.synthetic or session is None or session.state != "ready" or self.close_policy.pending:
+                return
+            from pathlib import Path
+            from types import SimpleNamespace
+            from core.background_jobs import BackgroundJobManager
+            from core.video_decoder import VideoDecoderLifetime
+
+            if not hasattr(self, "state"):
+                root = Path(session.admitted.layout.data_root) / "Manager"
+                self.state = SimpleNamespace(
+                    jobs=BackgroundJobManager(), settings=None, generation_data_root=root,
+                    generation_runtime_allowed=False, video_decoder_lifetime=VideoDecoderLifetime(),
+                )
+            return self.state
+
+        def open_training_comparison(self):
+            state = self.generation_state()
+            if state is None:
+                return
+            from qt_app.training_workflow_controller import TrainingWorkflowController
+
+            controller = getattr(self, "_training_comparison_controller", None)
+            if controller is None:
+                controller = TrainingWorkflowController(state.jobs, self)
+                self._training_comparison_controller = controller
+            controller.evaluation(on_return=lambda: self.navigation.setCurrentRow(self.page_rows["Applications"]))
+
+        def closeEvent(self, event):
+            comparison = getattr(self, "_training_comparison_controller", None)
+            if comparison is not None:
+                if not comparison.has_active_background_work():
+                    for review in tuple(comparison.dialogs):
+                        review.request_shell_close()
+                if comparison.dialogs or comparison.has_active_background_work():
+                    self.statusBar().showMessage("Close held: finish or close Training comparison, then close Manager again.")
+                    event.ignore()
+                    return
+                if getattr(self, "_generation_source_task", None) is not None:
+                    self.statusBar().showMessage("Close held: wait for image source preparation, then close again.")
+                    event.ignore()
+                    return
+                draft = getattr(self, "_generation_dialog", None)
+                if draft is not None and (draft.has_active_background_work() or not draft.close()):
+                    self.statusBar().showMessage("Close held: wait for image plan work to finish, then close again.")
+                    event.ignore()
+                    return
+                if not self.state.jobs.shutdown(wait=False):
+                    self.statusBar().showMessage("Close held: wait for image plan work to finish, then close again.")
+                    event.ignore()
+                    return
+                comparison.deleteLater()
+                del self._training_comparison_controller
+                del self.state
             host = self._model_workspace_factory
             if host is not None and hasattr(host, 'begin_close'):
                 host.begin_close()

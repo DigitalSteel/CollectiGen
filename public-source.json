@@ -2690,8 +2690,8 @@
       "size_bytes": 17728
     },
     "qt_app/training_workflow_controller.py": {
-      "sha256": "a2cd291f3ac98bf9b07dbcd034f5758e31a1dfbc5a650b2a50464758a84517ad",
-      "size_bytes": 43313
+      "sha256": "16dedc41d33e9904dd54ea2e7747c3a08478a4de849a224922b7ee8835a9a3c1",
+      "size_bytes": 43699
     },
     "qt_app/training_workspace.py": {
       "sha256": "588ad7cdc02f6d7efc4a96f63fc6a71125f358648977036c62037e5b5e029e5c",
@@ -3318,8 +3318,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "d80a6b3e077e9d0b6199929810cbffb73b5bd3c1d9ae58796bc3d1c72584273c",
-      "size_bytes": 175298
+      "sha256": "459153311e3d10b8c0fb57e1976be990749a42faea6d3139d1ffeec82fb633d2",
+      "size_bytes": 178859
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

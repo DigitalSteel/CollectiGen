@@ -347,7 +347,7 @@ class TrainingWorkflowController(QObject):
         from .training_workspace import open_training_workspace
         open_training_workspace(self.parent(), draft=draft)
 
-    def evaluation(self, run_id='', required_resource=''):
+    def evaluation(self, run_id='', required_resource='', *, on_return=None):
         if self._closing: return None
         from core.generation_execution import GenerationExecutionService
         from .training_evaluation_dialog import TrainingEvaluationDialog
@@ -398,7 +398,9 @@ class TrainingWorkflowController(QObject):
                 generation_closed()
                 return
             navigation = getattr(host, 'navigation', None)
-            if navigation is not None:
+            if on_return is not None:
+                on_return()
+            elif navigation is not None:
                 navigation.setCurrentRow(8)
             dialog.show()
             dialog.raise_()
@@ -508,6 +510,10 @@ class TrainingWorkflowController(QObject):
                 source.status.setText(str(error)[:2000]); return
             def opened(generation_dialog):
                 if self._closing or source not in self.dialogs: return
+                if not generation_dialog.runtime_allowed:
+                    source.status.setText('Comparison batch saved. Its first sample opened as an offline draft. '
+                                          'Batch execution requires an available generator.')
+                    return
                 generation_dialog.open_experiment()
                 experiment = getattr(generation_dialog, '_experiment_dialog', None)
                 if experiment is None or not callable(getattr(experiment, 'open_exact_group', None)):
