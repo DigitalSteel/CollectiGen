@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import json
+import math
 import re
 from typing import Any, Iterable
 
@@ -615,6 +616,14 @@ def _parse_swarm(record: GenerationRecord, parsed: dict[str, Any]) -> None:
         "denoise": _find(flat, "denoise", "denoising strength"),
     }
     _apply_settings(record, {key: value for key, value in recognized.items() if value is not None}, source_prefix="sui_image_params")
+    names = params.get("loras", [])
+    raw_encoder_weights = params.get("loratencweights")
+    encoder_weights = None
+    if (isinstance(names, list) and names and isinstance(raw_encoder_weights, list)
+            and len(raw_encoder_weights) == len(names)):
+        parsed_weights = [_number(value) for value in raw_encoder_weights]
+        if all(type(value) in (int, float) and math.isfinite(value) for value in parsed_weights):
+            encoder_weights = parsed_weights
     known_leafs = {
         "prompt", "positive prompt", "negativeprompt", "negative prompt", "model", "modelhash", "model hash",
         "vae", "vae name", "sampler", "sampler name", "scheduler", "seed", "steps", "cfgscale", "cfg scale",
@@ -623,6 +632,8 @@ def _parse_swarm(record: GenerationRecord, parsed: dict[str, Any]) -> None:
         "swarm version", "version", "modelid", "modelversionid", "base model", "vaehash", "refinerhash",
         "preset", "backend", "backend workflow",
     }
+    if encoder_weights is not None:
+        known_leafs.add("loratencweights")
     if record.generator_version:
         _report(
             record,
@@ -664,27 +675,35 @@ def _parse_swarm(record: GenerationRecord, parsed: dict[str, Any]) -> None:
     ):
         if params.get(setting_name) not in (None, "", [], {}):
             _report(record, f"sui_image_params.{setting_name}", neutral_path, "translated", params[setting_name])
-    names = params.get("loras", [])
     weights = params.get("loraweights", [])
     hashes = params.get("lorahashes", {})
     if isinstance(names, list):
         record.loras = []
         for index, name in enumerate(names):
             weight = weights[index] if isinstance(weights, list) and index < len(weights) else 1
-            record.loras.append({"name": str(name), "weight": _number(weight)})
+            model_weight = _number(weight)
+            record.loras.append({"name": str(name), "weight": model_weight})
+            resource_weights = {"model": model_weight}
+            if encoder_weights is not None:
+                resource_weights.update(clip=encoder_weights[index], text_encoder=encoder_weights[index])
+            elif "loratencweights" not in params:
+                resource_weights["clip"] = model_weight
             item_hash = hashes.get(str(name), "") if isinstance(hashes, dict) else ""
             _add_resource(
                 record,
                 "lora",
                 name,
                 hashes={"sha256": item_hash},
-                weights={"model": _number(weight), "clip": _number(weight)},
+                weights=resource_weights,
                 provenance={"generator": "swarmui", "source_path": f"sui_image_params.loras[{index}]"},
             )
         if names:
             _report(record, "sui_image_params.loras", "resources.lora", "translated", names)
         if isinstance(weights, list) and weights:
             _report(record, "sui_image_params.loraweights", "resources.lora.weights", "translated", weights)
+        if encoder_weights is not None:
+            _report(record, "sui_image_params.loratencweights",
+                    "resources.lora.weights.text_encoder", "translated", raw_encoder_weights)
     embeddings = params.get("embeddings", [])
     if isinstance(embeddings, list):
         for index, item in enumerate(embeddings):

@@ -566,8 +566,8 @@
       "size_bytes": 11728
     },
     "core/generation_metadata.py": {
-      "sha256": "bbf25e000c6402f50b40f6b8ccd4e34566dd4e9f7011918bf692b3cda03c52c2",
-      "size_bytes": 56477
+      "sha256": "d9a6103bcca513c9af3581c1e67ea11a5e592fbe31c39bf2c8586b771505980d",
+      "size_bytes": 57524
     },
     "core/generation_outpainting.py": {
       "sha256": "cff5cd9ec9ad61e70db2bf34bc7096e0b1ccd15626cda9ac18b47089deef0229",
@@ -2206,8 +2206,8 @@
       "size_bytes": 26154
     },
     "qt_app/generation_image_setup_dialog.py": {
-      "sha256": "9d960ffaea0f3ac60dd4c88ea46ebf78fd7f958a942623a05279ac98c855d33b",
-      "size_bytes": 58892
+      "sha256": "7a6c91b39aeba796ef6958b26b1f7b7b8918698ea71f6cca8a02fa6ba6d48af9",
+      "size_bytes": 59076
     },
     "qt_app/generation_manual_setup_dialog.py": {
       "sha256": "6f655d2a1e825d2e1c85fe795dadb91909dcf4e6838a8de1ce6316479f08139a",
