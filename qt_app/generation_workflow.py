@@ -416,8 +416,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             dialog = getattr(host, "_generation_dialog", None)
             if dialog is not None and not dialog._closed:
                 dialog.status.setText("The requested source or model was not applied. Finish, save, or close this generation workspace, then choose it again.")
-        if not requested_scope:
-            return
+        return
     dialog = getattr(host, "_generation_dialog", None)
     if dialog is not None and not dialog._closed:
         if not requested_scope:
