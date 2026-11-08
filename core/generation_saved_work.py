@@ -236,6 +236,7 @@ def list_recent_saved_work(storage_root, kind, *, limit=40, scan_limit=256, offs
                     item["summary"] = model_summary + (
                         " · prompt templates included" if "prompts" in value or
                         value.get("prompt_parts") or "negative_prompt" in value else "")
+                    item["content_digest"] = recipe_storage_digest(value)
                     item["has_import_evidence"] = has_recipe_import_evidence(storage_root, path)
                 item["available"] = True
                 if kind == "prompt_presets":
@@ -389,12 +390,15 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, se
     return str(destination)
 
 
-def review_setup_export(storage_root, item_path):
+def review_setup_export(storage_root, item_path, *, selected_digest=None):
     """Capture one selected managed setup for an explicit export review."""
     source = _checked_managed_path(storage_root, "recipes", item_path)
     raw = _preset_bytes(source, maximum=RECIPE_MAX_BYTES, label="Selected setup")
     recipe = _validate_recipe(strict_json(raw))[0]
-    return {"recipe": recipe, "digest": recipe_storage_digest(recipe)}
+    digest = recipe_storage_digest(recipe)
+    if selected_digest is not None and digest != selected_digest:
+        raise ValueError("The selected setup changed. Refresh the list and select it again before exporting.")
+    return {"recipe": recipe, "digest": digest}
 
 
 def export_reviewed_setup(storage_root, item_path, destination, review, *,
@@ -416,7 +420,10 @@ def export_reviewed_setup(storage_root, item_path, destination, review, *,
     encoded = _preset_text(payload)
     if callable(cancelled) and cancelled():
         raise InterruptedError("Setup export cancelled; nothing was saved.")
-    _atomic_create_text(destination, encoded)
+    try:
+        _atomic_create_text(destination, encoded)
+    except FileExistsError as exc:
+        raise ValueError("Choose a new export filename; the existing file is preserved.") from exc
     try:
         if _preset_bytes(destination, maximum=RECIPE_MAX_BYTES + 4096, label="Setup export") != encoded.encode("utf-8"):
             raise ValueError("Exported bytes differ from the review.")

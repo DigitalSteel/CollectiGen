@@ -596,7 +596,8 @@ class SavedGenerationWorkDialog(QDialog):
         if self._task is not None or not item or not item.get("exportable", item["available"]): return
         if self.kind == "recipes":
             self._run("Read selected setup for export",
-                lambda _cancelled: review_setup_export(self.storage_root, item["path"]),
+                lambda _cancelled: review_setup_export(
+                    self.storage_root, item["path"], selected_digest=item.get("content_digest")),
                 lambda review: self._review_setup_export(item, review))
             return
         path, _ = QFileDialog.getSaveFileName(self, "Export One Saved Item", Path(item["path"]).name,
