@@ -617,6 +617,10 @@ def preview_recipe(recipe, current, *, include_prompts=False):
     context["recipe"] = {"name": recipe["name"], "recipe_sha256": hashlib.sha256(raw).hexdigest()}
     changes["target_context"] = context
     candidate = current.revise(changes, source="generation_recipe", consequence="Apply reviewed reusable setup")
+    if (recipe["schema_version"] == 2 and recipe.get("resources") == []
+            and request["resources"] and request.get("model")
+            and (candidate.request.model, candidate.request.model_hash) == (current.request.model, current.request.model_hash)):
+        notes.append("Apply clears the model component list. The separately selected checkpoint stays selected.")
     delta = [{"setting": key, "before": request.get(key), "after": value}
              for key, value in changes.items() if key != "target_context" and request.get(key) != value]
     if any(context.get(key) != current.target_context.get(key) for key in ("output_goal", "output_plan")):

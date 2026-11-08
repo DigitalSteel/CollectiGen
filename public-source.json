@@ -590,8 +590,8 @@
       "size_bytes": 16219
     },
     "core/generation_recipes.py": {
-      "sha256": "928b9323aefdeaad7590ae7e165442f1de53c0c03ee4e8f10e1ac1c38bbc221c",
-      "size_bytes": 40777
+      "sha256": "9a706e11cde1a2acf4524720ff5b31055d62cb2f13f57b50c4372fd187a6d28e",
+      "size_bytes": 41154
     },
     "core/generation_reference_inputs.py": {
       "sha256": "b95fa9240cd9517b80f891afc2643e848adbfa565abb1443148bb0f0e4afa611",
@@ -614,8 +614,8 @@
       "size_bytes": 4170
     },
     "core/generation_saved_work.py": {
-      "sha256": "e54ad51fdd1234c6f4bed5477b8dda322da5aea409d4ea74746c036340b3f1f4",
-      "size_bytes": 39955
+      "sha256": "0ba3e33fbf058a5e6869c2cd71b51eb6fca542fcb87e9b4070419bc112cc206a",
+      "size_bytes": 40295
     },
     "core/generation_swarm_components.py": {
       "sha256": "7130176ef4314a16f1a5910e89e79a462564b770932e92004f2d9f84ebd40e73",

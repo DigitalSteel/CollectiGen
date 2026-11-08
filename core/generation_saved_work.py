@@ -232,7 +232,10 @@ def list_recent_saved_work(storage_root, kind, *, limit=40, scan_limit=256, offs
                     item["size_bytes"] = state.st_size
                 else:
                     item["name"] = value["name"]
-                    item["summary"] = f"{len(value.get('resources', []))} model components" + (
+                    resources = value.get("resources", [])
+                    model_summary = ("Clears model components" if value["schema_version"] == 2 and value.get("resources") == []
+                                     else f"{len(resources)} model components")
+                    item["summary"] = model_summary + (
                         " · prompt templates included" if "prompts" in value or
                         value.get("prompt_parts") or "negative_prompt" in value else "")
                     item["has_import_evidence"] = has_recipe_import_evidence(storage_root, path)
@@ -464,7 +467,8 @@ def setup_export_payload(recipe, *, format="collectigen", include_prompts=False)
     if not include_prompts:
         for field in ("prompts", "prompt_parts", "negative_prompt"):
             payload.pop(field, None)
-    if not (payload.get("settings") or payload.get("resources") or payload.get("stages")
+    clears_resources = payload.get("schema_version") == 2 and payload.get("resources") == []
+    if not (clears_resources or payload.get("settings") or payload.get("resources") or payload.get("stages")
             or payload.get("prompts") or payload.get("prompt_parts")
             or payload.get("negative_prompt") is not None or payload.get("finishing")):
         raise ValueError("No reusable choices remain. Include prompt text or cancel this export.")
