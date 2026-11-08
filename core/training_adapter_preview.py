@@ -181,6 +181,17 @@ def _package_states(package: TrainingPackageVerification, cancel=None):
     if len(set(paths)) != len(paths):
         raise ValueError("The expected package inventory repeats an artifact.")
     result = [(".", _identity(root_state))]
+    directories = set()
+    for relative in paths:
+        directories.update(parent for parent in PurePosixPath(relative).parents if parent.parts)
+    for relative in sorted(directories):
+        _cancel(cancel)
+        directory = root / relative
+        _assert_unredirected(directory)
+        state = directory.stat(follow_symlinks=False)
+        if not stat.S_ISDIR(state.st_mode):
+            raise ValueError("A package artifact directory changed or is unavailable.")
+        result.append((relative.as_posix(), _identity(state)))
     for relative in paths:
         _cancel(cancel)
         path = root / relative
