@@ -471,13 +471,17 @@ class SavedGenerationWorkDialog(QDialog):
             )
             summary.setWordWrap(True)
             layout.addWidget(summary)
-            if resolved:
+            chosen_resources = [
+                f"{row['field']}" +
+                (f" from {row['preset_key']}" if row.get("preset_key") else "") +
+                f" → exact {row['role']}" for row in resolved
+            ]
+            if resolved_loras:
+                chosen_resources.append(f"{len(resolved_loras)} matched LoRAs in source order")
+            if chosen_resources:
                 chosen = QLabel(
-                    "Chosen at save: " + ", ".join(
-                        f"{row['field']}" +
-                        (f" from {row['preset_key']}" if row.get("preset_key") else "") +
-                        f" → exact {row['role']}" for row in resolved
-                    ) + ". Current model availability is checked separately before use."
+                    "Chosen at save: " + ", ".join(chosen_resources) +
+                    ". Current model availability is checked separately before use."
                 )
                 chosen.setWordWrap(True)
                 chosen.setTextFormat(Qt.PlainText)
@@ -489,12 +493,12 @@ class SavedGenerationWorkDialog(QDialog):
                 "source_dialect": evidence["source_dialect"],
                 "source_sha256": evidence["source_sha256"],
                 "imported_mapping": mapped,
-                "held_or_omitted": evidence["held_fields"],
             }
             if resolved:
                 detail_payload["explicit_exact_resource_choices_at_save"] = resolved
             if resolved_loras:
                 detail_payload["ordered_exact_lora_matches_at_save"] = resolved_loras
+            detail_payload["held_or_omitted"] = evidence["held_fields"]
             if selected:
                 detail_payload["selected_presets_in_order"] = selected
                 detail_payload["conflict_choices"] = evidence["choices"]
