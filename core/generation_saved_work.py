@@ -323,11 +323,14 @@ def save_named_recipe(storage_root, recipe, *, operation_id=None, import_evidenc
         # reviewed operation must identify that exact saved setup, not make a copy.
         if operation_id is None or load_recipe(target) != recipe:
             raise ValueError("This setup save target already contains different data.")
+    evidence_path = _recipe_import_evidence_path(storage_root, target)
+    has_evidence = evidence_path.exists()
+    if (receipt is None and has_evidence) or (already_saved and receipt is not None and not has_evidence):
+        raise ValueError("This setup save operation has different local import details.")
     if receipt is not None:
-        evidence_path = _recipe_import_evidence_path(storage_root, target)
         evidence_path.parent.mkdir(parents=True, exist_ok=True)
         _assert_unredirected(evidence_path.parent)
-        if evidence_path.exists():
+        if has_evidence:
             if strict_json(_preset_bytes(evidence_path, maximum=MAX_IMPORT_EVIDENCE_BYTES,
                                          label="Setup import evidence")) != receipt:
                 raise ValueError("This setup save operation has different local import details.")
