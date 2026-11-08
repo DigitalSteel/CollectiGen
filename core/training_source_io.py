@@ -39,13 +39,21 @@ def _identity(state) -> tuple[int,int,int,int,int]:
     )
 
 
-def read_stable_training_source(path: str|Path) -> tuple[bytes,dict[str,object]]:
-    """Read one regular source through a stable, non-redirected file handle."""
+def read_stable_training_source(path: str|Path, *, max_bytes: int|None=None) -> tuple[bytes,dict[str,object]]:
+    """Read a stable regular source, optionally bounded even if it grows.
+
+    A bounded read consumes at most max_bytes plus one overflow-detection byte.
+    The default preserves existing callers' unrestricted read behavior.
+    """
+    if max_bytes is not None and (type(max_bytes) is not int or max_bytes <= 0):
+        raise ValueError("The source byte limit must be a positive integer.")
     source=Path(path).absolute()
     _assert_unredirected(source)
     before_path=source.stat(follow_symlinks=False)
     if not stat_module.S_ISREG(before_path.st_mode):
         raise RuntimeError(f"{source.name} is not a regular source image file.")
+    if max_bytes is not None and before_path.st_size > max_bytes:
+        raise ValueError("The source exceeds the requested byte limit.")
     flags=os.O_RDONLY
     flags|=int(getattr(os,"O_BINARY",0))
     flags|=int(getattr(os,"O_NOFOLLOW",0))
@@ -58,11 +66,18 @@ def read_stable_training_source(path: str|Path) -> tuple[bytes,dict[str,object]]
             raise RuntimeError(
                 f"{source.name} changed before its source bytes could be read."
             )
+        if max_bytes is not None and opened.st_size > max_bytes:
+            raise ValueError("The source exceeds the requested byte limit.")
         blocks=[]
+        total=0
         while True:
-            block=os.read(descriptor,1024*1024)
+            size=1024*1024 if max_bytes is None else min(1024*1024,max_bytes-total+1)
+            block=os.read(descriptor,size)
             if not block:
                 break
+            total+=len(block)
+            if max_bytes is not None and total > max_bytes:
+                raise ValueError("The source exceeds the requested byte limit.")
             blocks.append(block)
         after_open=os.fstat(descriptor)
     finally:

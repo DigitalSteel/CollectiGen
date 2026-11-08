@@ -18,6 +18,7 @@ from uuid import uuid4
 from . import training_dataset_package_contract as generated
 from . import training_package_effects as effects
 from .training_configuration import TrainingConfiguration
+from .training_source_io import read_stable_training_source
 
 canonical, sha = generated.canonical, generated.sha
 PROFILE = 'sdxl-package-pixel-preserving-preparation-v1'
@@ -170,9 +171,8 @@ def validate_report(value, request):
 
 def read_manifest(package, selected_binding):
     path = package / generated.MANIFEST
-    if path.stat().st_size > MAX_MANIFEST:
-        raise ValueError('dataset_scope_exceeded')
-    manifest = json.loads(path.read_bytes())
+    raw, _ = read_stable_training_source(path, max_bytes=MAX_MANIFEST)
+    manifest = json.loads(raw)
     if digest(manifest) != selected_binding['manifest_sha256'] or manifest['package_fingerprint'] != selected_binding['package_fingerprint']:
         raise ValueError('dataset_package_changed')
     artifacts = manifest['artifacts']
