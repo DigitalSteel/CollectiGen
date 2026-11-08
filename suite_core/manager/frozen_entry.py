@@ -8,7 +8,7 @@ _HELD_NORMAL_SESSIONS = []
 
 def run(argv=None, *, executable=None, channel_factory=None,
         expected_launcher_sha256=None, sdk_factory=None, manager_launch=None,
-        update_service_factory=None):
+        update_service_factory=None, training_proof_provider=None):
     import sys
     from suite_core.manager.bootstrap_entry import EntryHold, NormalEntrySession, classify_invocation
     from suite_core.manager.entry_binding import validate_normal_launch, launch_manager
@@ -79,6 +79,12 @@ def run(argv=None, *, executable=None, channel_factory=None,
                     raise EntryHold('original_update_host_configuration_held')
         elif getattr(session,'update_profile',None) is not None:
             raise EntryHold('explicit_update_service_factory_required')
+        if training_proof_provider is not None:
+            if not callable(training_proof_provider):
+                raise EntryHold("trusted_training_proof_provider_required")
+            signed_worker = training_proof_provider(session=session, admitted=admitted)
+            if signed_worker is not None:
+                options["signed_training_worker"] = signed_worker
         result = target(**options)
         if session.state != 'local_accepted':
             raise EntryHold('manager_returned_without_local_scope_acceptance')

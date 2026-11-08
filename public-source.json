@@ -3162,8 +3162,8 @@
       "size_bytes": 12654
     },
     "suite_core/manager/frozen_entry.py": {
-      "sha256": "57dd8a4a9ba38336efc078044a4f58478ca0122cc79703a69c732a6b735c5574",
-      "size_bytes": 5614
+      "sha256": "45378a465e85cc418e4d96bed17439dabd4024cc7553c3256c7718239f945dfd",
+      "size_bytes": 6124
     },
     "suite_core/manager/host_contracts.py": {
       "sha256": "8dfce6cceafb65fe4d4bcd87205fe12610e00629b41a3b4c0b35baf19024879f",
