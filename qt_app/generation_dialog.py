@@ -108,6 +108,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         prompt_knowledge=None,
         swarm_preset_service=None,
         runtime_allowed=True,
+        review_verified_results=False,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -126,6 +127,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.prompt_knowledge = prompt_knowledge
         self.swarm_preset_service = swarm_preset_service
         self.runtime_allowed = runtime_allowed
+        self._review_verified_results = review_verified_results and not runtime_allowed
         self.storage_root = Path(storage_root)
         self.source_record = GenerationRecord.from_dict(source_record.to_dict()) if source_record else None
         self.source_identity = _mapping(source_identity)
@@ -237,7 +239,9 @@ class GenerationDialog(FeedbackEnabledDialog):
         connection = self._build_connection_tab()
         results_tab = self.tabs.addTab(self._scroll(self._build_results_tab()), "Results && Queue")
         self._readiness_tab_index = self.tabs.addTab(self._scroll(connection), "Readiness")
-        self.tabs.setTabVisible(results_tab, self.runtime_allowed)
+        if self._review_verified_results:
+            self.tabs.setTabText(results_tab, "Verified Results")
+        self.tabs.setTabVisible(results_tab, self.runtime_allowed or self._review_verified_results)
         self.tabs.setTabVisible(self._readiness_tab_index, self.runtime_allowed)
         body = QHBoxLayout()
         body.addWidget(self.tabs, 1)
@@ -1855,13 +1859,17 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.choose_ingested_button.clicked.connect(self._choose_ingested_result)
         self.history_choice = QComboBox(); self.history_button = QPushButton("Refresh Recent Jobs")
         self.history_choice.activated.connect(self._select_history)
-        self.recover_button = QPushButton("Open or Recover Selected Job")
+        self.recover_button = QPushButton("Open Verified Result" if self._review_verified_results else "Open or Recover Selected Job")
         self.history_button.clicked.connect(self.load_history); self.recover_button.clicked.connect(self.recover_selected)
         history_row = QHBoxLayout(); history_row.addWidget(self.history_button); history_row.addWidget(self.history_choice, 1); history_row.addWidget(self.recover_button)
         self.opened_result_status = QLabel()
         self.opened_result_status.setWordWrap(True)
         self.opened_result_status.setTextFormat(Qt.PlainText)
         handoff_row = QHBoxLayout(); handoff_row.addWidget(self.preview_result_button); handoff_row.addWidget(self.ingest_button); handoff_row.addStretch(1)
+        self.copy_receipt_path_button = QPushButton("Copy Receipt Path for Organizer")
+        self.copy_receipt_path_button.clicked.connect(self.copy_manager_receipt_path)
+        self.copy_receipt_path_button.setVisible(self._review_verified_results)
+        handoff_row.insertWidget(2, self.copy_receipt_path_button)
         outcome_form.addRow(self.choose_ingested_button, self.record_outcome_button)
         self.finish_result_button = QPushButton("Finish Result…")
         self.finish_result_button.clicked.connect(self.finish_result)
@@ -1885,6 +1893,11 @@ class GenerationDialog(FeedbackEnabledDialog):
         layout.addLayout(outcome_actions)
         layout.addWidget(self.outcome_toggle); layout.addWidget(outcome)
         layout.addWidget(self.results_experiment_button, 0, Qt.AlignLeft)
+        if self._review_verified_results:
+            self.results_status.setText("Refresh recent jobs, then open and preview a verified result.")
+            for widget in (self.ingest_button, self.finish_result_button, self.result_action,
+                           self.result_action_button, self.outcome_toggle, self.results_experiment_button):
+                widget.hide()
         layout.addStretch(1)
         return page
 
@@ -2640,7 +2653,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             button.setEnabled(idle)
         self.history_choice.setEnabled(idle)
         selected_job = self.history_choice.currentData()
-        self.recover_button.setEnabled(self.runtime_allowed and idle and isinstance(selected_job, dict)
+        self.recover_button.setEnabled((self.runtime_allowed or self._review_verified_results) and idle and isinstance(selected_job, dict)
                                        and bool(selected_job.get("job_id")))
         selection_needs_open = self._selected_job_needs_open()
         if selection_needs_open:
@@ -2654,7 +2667,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         elif self.history_choice.count():
             self.opened_result_status.setText("Choose a recent job and open or recover it to review its result.")
         self.opened_result_status.setVisible(bool(self.receipt or self.history_choice.count()))
-        outcome_available = bool(self.receipt and not selection_needs_open)
+        outcome_available = bool(self.receipt and not selection_needs_open and not self._review_verified_results)
         self.outcome_toggle.setVisible(outcome_available)
         self.outcome_toggle.setEnabled(outcome_available and idle)
         self.outcome_group.setVisible(outcome_available and self.outcome_toggle.isChecked())
@@ -2695,6 +2708,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             bool(self.receipt and self.receipt.get("state") == "verified") and not selection_needs_open)
         self.ingest_folder_button.setEnabled(idle)
         self.preview_result_button.setEnabled(self.ingest_button.isEnabled())
+        self.copy_receipt_path_button.setEnabled(self.ingest_button.isEnabled())
         self.finish_result_button.setEnabled(self.ingest_button.isEnabled())
         self.result_action_button.setEnabled(self.ingest_button.isEnabled())
         self.result_action.setEnabled(self.ingest_button.isEnabled())
@@ -2777,6 +2791,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.open_experiment()
 
     def finish_result(self):
+        if self._review_verified_results:
+            return
         if (self._pending or self._execution_active() or self._selected_job_needs_open()
                 or not self.receipt or self.receipt.get("state") != "verified"):
             return
@@ -3108,10 +3124,38 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.result_preview.set_image(QPixmap.fromImage(image), receipt["outputs"][0]["path"])
             self.result_preview.show()
             self.tabs.widget(3).ensureWidgetVisible(self.result_preview)
-            self.status.setText("Verified result preview. Send it to Ingest when ready to review it.")
+            message = ("Verified result preview. Copy its receipt path to review a copy in Organizer."
+                       if self._review_verified_results else
+                       "Verified result preview. Send it to Ingest when ready to review it.")
+            self.status.setText(message)
         self._run("result_preview", prepare, show)
 
+    def copy_manager_receipt_path(self):
+        if not self._review_verified_results or not self.copy_receipt_path_button.isEnabled():
+            return
+        from PySide6.QtWidgets import QApplication
+        from core.generation_execution import GenerationExecutionService
+
+        receipt = deepcopy(self.receipt)
+
+        def verify():
+            source, = GenerationExecutionService(self.storage_root, None).verified_output_paths(receipt)
+            return str(Path(source).with_name("receipt.json"))
+
+        def copy_path(path):
+            if self.receipt != receipt or self._selected_job_needs_open():
+                return
+            QApplication.clipboard().setText(path)
+            self.status.setText(
+                "Receipt path copied. In Organizer, choose Add Images → Review Manager Result "
+                "and paste the path into the file chooser."
+            )
+
+        self._run("copy_receipt_path", verify, copy_path)
+
     def create_result_draft(self):
+        if self._review_verified_results:
+            return
         if (not self.receipt or self.receipt.get("state") != "verified" or self._pending
                 or self._execution_active() or self._selected_job_needs_open()):
             return
@@ -3236,7 +3280,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._next_step_tab = tab
         self.results_status.setText(self.status.text() if active else
             "Open or recover the selected job before using its result." if self._selected_job_needs_open() else
-            "Verified results are ready. Preview, finish, remix or send them to Ingest." if self.ingest_button.isEnabled() else
+            ("Verified result ready to preview or review in Organizer." if self._review_verified_results else
+             "Verified results are ready. Preview, finish, remix or send them to Ingest.") if self.ingest_button.isEnabled() else
             "Open a recent job or an alternatives group to review results and recover interrupted work.")
         self.results_status.setVisible(active)
 
@@ -3894,7 +3939,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._ingest_folder_recovery = False
         outputs = self.receipt.get("outputs") or []
         if self.receipt.get("state") == "verified" and outputs:
-            self.status.setText("Verified results are ready to send through Ingest.")
+            self.status.setText("Verified result opened. Preview it here." if self._review_verified_results else
+                                "Verified results are ready to send through Ingest.")
         else: self.status.setText("The generator outcome needs review before results can enter Ingest.")
         self._update_actions()
 
@@ -3913,6 +3959,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.status.setText("Request retained. Close other memory-heavy work or choose Lower Memory and preview its smaller base and faithful final size. Quick Preview only skips finishing. Review every change and prepare again before submitting.")
 
     def record_outcome(self) -> None:
+        if self._review_verified_results:
+            return
         if self._selected_job_needs_open() or self._pending:
             self.status.setText("Open or recover the selected job before recording its outcome.")
             return
@@ -3937,6 +3985,8 @@ class GenerationDialog(FeedbackEnabledDialog):
             lambda outcome: self.status.setText("Outcome review recorded for the verified Ingest copy."),
         )
     def send_verified_to_ingest(self) -> None:
+        if self._review_verified_results:
+            return
         if (self._pending or self._ingest_issue or self._selected_job_needs_open()
                 or not self.receipt or self.receipt.get("state") != "verified"):
             return
@@ -3977,6 +4027,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         from core.generation_execution import GenerationExecutionService
         service = GenerationExecutionService(self.storage_root, self.jobs)
         def done(receipts):
+            if self._review_verified_results:
+                receipts = [receipt for receipt in receipts if receipt.get("state") == "verified"]
             previous = self.history_choice.currentData()
             previous_id = str(previous.get("job_id") or "") if isinstance(previous, dict) else ""
             opened_id = str((self.receipt or {}).get("job_id") or "")
@@ -3998,7 +4050,8 @@ class GenerationDialog(FeedbackEnabledDialog):
                     self.result_preview.clear("Open the selected job before previewing it")
                     self.result_preview.hide()
                 self._history_context = True
-                self.status.setText("Retained generation jobs loaded. Select one to recover its current receipt.")
+                self.status.setText("Select a verified result to open." if self._review_verified_results else
+                                    "Retained generation jobs loaded. Select one to recover its current receipt.")
                 if on_open:
                     self.tabs.setCurrentIndex(3)
                     scroll = self.tabs.currentWidget()
@@ -4006,27 +4059,35 @@ class GenerationDialog(FeedbackEnabledDialog):
                         scroll.ensureWidgetVisible(self.history_choice)
                     self.history_choice.setFocus(Qt.OtherFocusReason)
             else:
-                self.status.setText("No retained generation jobs are available. Start a new request, or load a saved plan.")
+                self.status.setText("Manager has no verified results to review." if self._review_verified_results else
+                                    "No retained generation jobs are available. Start a new request, or load a saved plan.")
         self._run("history", service.history, done)
 
     def recover_selected(self) -> None:
-        if not self._require_generation_runtime():
+        if not self._review_verified_results and not self._require_generation_runtime():
             return
         receipt = self.history_choice.currentData()
         if not isinstance(receipt, dict) or not receipt.get("job_id"):
             self.status.setText("Load and select a retained job first."); return
         from core.generation_execution import GenerationExecutionService
         service = GenerationExecutionService(self.storage_root, self.jobs)
-        self.status.setText("Reconciling the retained local session without resubmitting…")
+        self.status.setText("Checking the retained verified result…" if self._review_verified_results else
+                            "Reconciling the retained local session without resubmitting…")
         expected_id = str(receipt["job_id"])
         def opened(current):
             if str(_mapping(current).get("job_id") or "") != expected_id:
                 self.status.setText("Recovery returned a different job. Select and open the intended job again.")
                 return
             self.receive_receipt(current)
-        self._run("recovery", lambda: service.recover(expected_id, adapter=self.adapter), opened,
+        def open_result():
+            if self._review_verified_results:
+                from core.generation_execution import digest
+                return service.review_verified_result(expected_id, digest(receipt))
+            return service.recover(expected_id, adapter=self.adapter)
+
+        self._run("recovery", open_result, opened,
                   lambda error: self.status.setText(
-                      f"Could not open the selected job. {error} Retry Open or Recover Selected Job."))
+                      f"Could not open the selected job. {error} Retry {self.recover_button.text()}."))
 
     def _execution_active(self) -> bool:
         return (any(child.has_active_background_work() for child in self._finishing_dialogs)
