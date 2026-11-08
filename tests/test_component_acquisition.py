@@ -151,7 +151,7 @@ def test_first_install_then_real_stock_transport(tmp_path):
     assert acquired.artifact.read_bytes() == PAYLOAD
     assert acquired.artifact.is_relative_to(s.root) and acquired.production_install_authorized is False
     assert progress[-1][:2] == (len(PAYLOAD), len(PAYLOAD))
-    assert len(feed.calls) == 6 and all(r.closed for r in feed.responses)
+    assert len(feed.calls) == 7 and all(r.closed for r in feed.responses)
     assert not (s.root / 'data').exists()
 
 
@@ -353,11 +353,33 @@ def test_cache_quota_and_exact_reuse(tmp_path):
     f=FakeFeed();f.add();s=service(tmp_path,f,max_cache_bytes=len(PAYLOAD));o,=offers(s)
     first=s.acquire(o);before=len(f.calls)
     assert s.acquire(o).artifact==first.artifact
-    assert len(f.calls)==before+2  # fresh metadata, no second payload transfer
+    assert len(f.calls)==before+3  # fresh listing and signed metadata, no second payload transfer
     f.add('collectigen.second-reader')
     second=next(x for x in offers(s) if x.release.component_id.value=='collectigen.second-reader')
     with pytest.raises(ValueError,match='cache_bound'):s.acquire(second)
     assert first.artifact.read_bytes()==PAYLOAD
+
+
+@pytest.mark.parametrize("same_offer", [True, False])
+def test_missing_cached_artifact_allows_a_fresh_signed_download(tmp_path, same_offer):
+    feed = FakeFeed()
+    feed.add()
+    acquisition = service(tmp_path, feed, max_cache_bytes=len(PAYLOAD))
+    first_offer, = offers(acquisition)
+    first = acquisition.acquire(first_offer)
+    first.artifact.unlink()
+    if same_offer:
+        next_offer = first_offer
+    else:
+        feed.add('collectigen.second-reader')
+        next_offer = next(offer for offer in offers(acquisition)
+                          if offer.release.component_id.value == 'collectigen.second-reader')
+
+    replacement = acquisition.acquire(next_offer)
+
+    assert replacement.artifact.parent != first.artifact.parent
+    assert replacement.artifact.read_bytes() == PAYLOAD
+    assert not first.artifact.exists()
 
 
 def test_changed_cached_artifact_not_overwritten(tmp_path):

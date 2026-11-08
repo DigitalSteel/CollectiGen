@@ -352,10 +352,17 @@ class ComponentAcquisition:
         cached = self._acquired.get(verified.manifest_sha256)
         if cached is not None:
             guard(cached)
-            verify_component_artifact(cached, verified)
-            self._check_inflight_offer(offer, should_cancel)
-            return AcquiredComponent(offer, cached)
-        used = sum(path.stat().st_size for path in self._acquired.values())
+            if cached.exists():
+                verify_component_artifact(cached, verified)
+                self._check_inflight_offer(offer, should_cancel)
+                return AcquiredComponent(offer, cached)
+        used = 0
+        for path in self._acquired.values():
+            guard(path)
+            try:
+                used += path.stat().st_size
+            except FileNotFoundError:
+                continue
         require(used + verified.artifact.size_bytes <= self.cache_maximum, "cache_bound")
         attempt = self.root / ("attempt-" + uuid4().hex)
         attempt.mkdir()
