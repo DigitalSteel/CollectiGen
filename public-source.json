@@ -1566,8 +1566,8 @@
       "size_bytes": 9207
     },
     "core/training_adapter_preview.py": {
-      "sha256": "29f6f6105018ba019e60ef03a692df7ceee37447df35f752d679375a9f075eb3",
-      "size_bytes": 24713
+      "sha256": "b898629778cf486859b7fc2ef58b68eb3d0c63f2867d5fbebda89de87f303808",
+      "size_bytes": 24851
     },
     "core/training_anima.py": {
       "sha256": "4368627fccab95e9d5d3bc38ad1fea4ddbbdc5d82483bf7e70f7c19c3040894d",

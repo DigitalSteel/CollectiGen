@@ -5,7 +5,8 @@ import hashlib
 import json
 import math
 import stat
-from dataclasses import asdict, dataclass, fields
+from copy import deepcopy
+from dataclasses import asdict, dataclass, fields, replace
 from pathlib import Path, PurePosixPath
 
 from .model_resource_registry import ModelResourceRegistry, ResourceResolution
@@ -225,6 +226,8 @@ class SdScriptsSdxlLoraPreviewService:
         recipe.validate()
         if not package.valid or not isinstance(package.manifest, dict) or not isinstance(package.package_fingerprint, str) or len(package.package_fingerprint) != 64:
             raise ValueError("Start from a verified training package.")
+        _cancel(should_cancel)
+        package = replace(package, manifest=deepcopy(package.manifest))
         before = _package_states(package, should_cancel)
         if progress:
             progress(0, 0, "Verifying the exact training package")
