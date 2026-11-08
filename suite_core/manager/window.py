@@ -561,6 +561,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.generate_plan_button.clicked.connect(self.open_generate_plan)
             applications_layout.addWidget(self.generate_plan_button, 0, Qt.AlignLeft)
             self._video_draft_picker_open = False
+            self.remix_plan_button = compact_action(QPushButton("Plan a Remix…"))
+            self.remix_plan_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.remix_plan_button.clicked.connect(self.open_remix_plan)
+            applications_layout.addWidget(self.remix_plan_button, 0, Qt.AlignLeft)
             for label, action in (
                 ("Plan a Video…", self.open_video_plan),
                 ("Open Video Draft…", lambda: self.open_video_plan(reopen=True)),
@@ -1241,8 +1245,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     generation_data_root=root, generation_runtime_allowed=False)
             return self.state
 
+        _IMAGE_PICKER_CLOSE_NOTICE = "Close held. Finish or close the image chooser, then close Manager again."
+
         def open_generate_plan(self):
-            if self._image_draft_picker_open or self._offline_generation_state() is None:
+            if (self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None
+                    or self._offline_generation_state() is None):
                 return
             from qt_app.generation_workflow import choose_generation_draft, open_generation_workspace
 
@@ -1254,6 +1261,31 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 choose_generation_draft(self, allow_draft_transfer=True)
             finally:
                 self._image_draft_picker_open = False
+                if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:
+                    self.statusBar().clearMessage()
+
+        def open_remix_plan(self):
+            if (self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None
+                    or self._offline_generation_state() is None):
+                return
+            from PySide6.QtWidgets import QFileDialog
+            from qt_app.generation_workflow import open_generation_workspace
+
+            current = getattr(self, "_generation_dialog", None)
+            if current is not None and not current._closed:
+                open_generation_workspace(self)
+                current.status.setText("Save any changes and close this Generate draft before choosing a Remix image.")
+                return
+            self._image_draft_picker_open = True
+            try:
+                path, _ = QFileDialog.getOpenFileName(
+                    self, "Choose an image for a Remix plan", "", "Images (*.png *.jpg *.jpeg *.webp)")
+            finally:
+                self._image_draft_picker_open = False
+                if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:
+                    self.statusBar().clearMessage()
+            if path and not self.close_policy.pending:
+                open_generation_workspace(self, paths=(Path(path),), remix=True, force_new=True)
 
         def open_video_plan(self, *, reopen=False, import_copy=False):
             if self._video_draft_picker_open or self._offline_generation_state() is None:
@@ -1860,8 +1892,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.render_library()
 
         def closeEvent(self, event):
+            if getattr(self, "_generation_source_task", None) is not None:
+                self.statusBar().showMessage("Close held: wait for image source preparation, then close again.")
+                event.ignore()
+                return
             if self._image_draft_picker_open:
-                self.statusBar().showMessage("Close the image draft chooser before closing Manager.")
+                self.statusBar().showMessage(self._IMAGE_PICKER_CLOSE_NOTICE)
                 event.ignore()
                 return
             dialog = getattr(self, "_generation_dialog", None)
