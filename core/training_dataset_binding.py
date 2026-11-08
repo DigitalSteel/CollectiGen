@@ -11,9 +11,10 @@ import zipfile
 from . import training_dataset_preparation as selected
 from .training_preflight import ContainedRuntimeQualificationService, PreflightReply
 from .training_process import ProcessInput, TrainingProcessError, _bytes, _sha, _write_new
-from .training_source_io import _assert_unredirected
+from .training_source_io import _assert_unredirected, read_stable_training_source
 
 WORKER = Path(__file__).resolve().parents[1] / 'tools/training_dataset_profile_worker.py'
+MAX_VERIFIER_SOURCE_BYTES = 32 * 1024 * 1024
 # Direct shared verification/manifest/caption/transform authorities. These are
 # controller-owned process inputs; no library, settings or registry is loaded.
 PACKAGE_CODE = tuple(Path(__file__).with_name(name) for name in (
@@ -31,16 +32,18 @@ def verification_bundle():
     empty package object so the application initializer never runs.
     """
     folder = Path(__file__).parent
-    stream = io.BytesIO(); total = 0
+    entries = [(path, '_collectigen_package_code/' + path.relative_to(folder).as_posix())
+               for path in sorted(folder.rglob('*.py'))]
+    entries.append((folder.parent / 'version.py', 'version.py'))
+    stream = io.BytesIO()
+    remaining = MAX_VERIFIER_SOURCE_BYTES
     with zipfile.ZipFile(stream, 'w', compression=zipfile.ZIP_STORED) as archive:
-        for path in sorted(folder.rglob('*.py')):
-            _assert_unredirected(path)
-            raw = path.read_bytes(); total += len(raw)
-            if total > 32 * 1024 * 1024:
+        for path, name in entries:
+            if remaining == 0:
                 raise ValueError('dataset_verifier_code_scope_exceeded')
-            info = zipfile.ZipInfo('_collectigen_package_code/' + path.relative_to(folder).as_posix(), (1980, 1, 1, 0, 0, 0))
-            archive.writestr(info, raw)
-        archive.writestr(zipfile.ZipInfo('version.py', (1980, 1, 1, 0, 0, 0)), (folder.parent / 'version.py').read_bytes())
+            raw, _ = read_stable_training_source(path, max_bytes=remaining)
+            remaining -= len(raw)
+            archive.writestr(zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0)), raw)
     return stream.getvalue()
 
 
