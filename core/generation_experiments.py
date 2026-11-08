@@ -12,7 +12,7 @@ from uuid import uuid4
 
 from .external_write_transaction import atomic_verified_bytes
 from .generation_planning import GenerationPlan
-from .training_source_io import _assert_unredirected
+from .training_source_io import _assert_unredirected, read_stable_training_source
 
 MAX_CANDIDATES = 32
 MAX_BYTES = 24 * 1024 * 1024
@@ -241,10 +241,13 @@ def save_experiment(path, experiment, *, expected_digest=None):
     path = Path(path).absolute()
     _assert_unredirected(path)
     raw = _bytes(validate_experiment(experiment))
-    existing = path.read_bytes() if path.exists() and path.stat().st_size <= MAX_BYTES else None
-    if path.exists() and existing is None:
-        raise ValueError("Existing experiment is too large.")
-    digest = hashlib.sha256(existing).hexdigest() if existing is not None else ""
+    existing, digest = None, ""
+    if path.exists():
+        try:
+            existing, identity = read_stable_training_source(path, max_bytes=MAX_BYTES)
+        except ValueError as error:
+            raise ValueError("Existing experiment is too large.") from error
+        digest = identity["sha256"]
     if expected_digest is None and existing is not None or expected_digest is not None and digest != expected_digest:
         raise ValueError("The saved experiment changed. Reopen it before saving.")
     if existing is not None:
@@ -254,17 +257,17 @@ def save_experiment(path, experiment, *, expected_digest=None):
 
 
 def load_experiment(path):
-    path = Path(path).absolute(); _assert_unredirected(path)
-    if path.stat().st_size > MAX_BYTES:
-        raise ValueError("Saved experiment is too large.")
-    raw = path.read_bytes()
+    try:
+        raw, identity = read_stable_training_source(path, max_bytes=MAX_BYTES)
+    except ValueError as error:
+        raise ValueError("Saved experiment is too large.") from error
     value = validate_experiment(json.loads(raw))
     # No process restart is permission to resubmit an uncertain GPU job.
     for row in value["candidates"]:
         if row["state"] == "submitting":
             row["state"] = "outcome_unknown"
             row["error"] = "Reconcile retained jobs before resuming. This candidate will not be resubmitted automatically."
-    return value, hashlib.sha256(raw).hexdigest()
+    return value, identity["sha256"]
 
 
 def reconcile_experiment(experiment, receipts):
