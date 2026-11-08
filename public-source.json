@@ -2850,8 +2850,8 @@
       "size_bytes": 2988
     },
     "suite_core/discovery/manager_runtime_detached_admission.py": {
-      "sha256": "a895e1271d0784c42a7833885a5c6732d2a8c9a1a5c29240d65f5ac16bad1fff",
-      "size_bytes": 11676
+      "sha256": "a7ac7a785cd528872831438d67cbbebf5f93b5fa87eb7711686cb8aa50412367",
+      "size_bytes": 12014
     },
     "suite_core/discovery/offline_component_producer.py": {
       "sha256": "ae8399f38fa12af7f5329056ec1291bcd7a49dcf7368e6359ae16f02c4c72ef8",

@@ -91,9 +91,18 @@ class DetachedAdmissionPlan(AdmissionPlan):
         require(work.is_dir(), "training_review_owned_directory_required")
         from tempfile import mkdtemp
         receipt_root = Path(mkdtemp(prefix="worker-pin-", dir=work))
-        return ReviewedDatasetVerifier.from_verified_file_rows(
-            runtime, rows, receipt_root / "worker-inventory.json", receipt_root,
-            should_cancel=should_cancel)
+        try:
+            return ReviewedDatasetVerifier.from_verified_file_rows(
+                runtime, rows, receipt_root / "worker-inventory.json", receipt_root,
+                should_cancel=should_cancel)
+        except Exception:
+            # Only remove an empty directory created by this attempt. Preserve
+            # any receipt or diagnostic data already written by the verifier.
+            try:
+                receipt_root.rmdir()
+            except OSError:
+                pass
+            raise
 
 
 def produce_detached_inventory(archive, *, inventory_profile, expected_version,
