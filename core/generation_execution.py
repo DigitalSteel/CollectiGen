@@ -759,7 +759,7 @@ class GenerationExecutionService:
             raise ValueError("Generation history exceeds its bounded memory view; review a specific saved job.")
         return [self._read(path.parent.name) for path in paths]
 
-    def submit(self, adapter, prepared, *, confirmed=False, listener=None):
+    def submit(self, adapter, prepared, *, confirmed=False, listener=None, check_authority=None):
         if not confirmed:
             raise ValueError("Explicit reviewed generation submission is required.")
         frozen = deepcopy(prepared)
@@ -769,6 +769,8 @@ class GenerationExecutionService:
         frozen["fingerprint"] = fingerprint
         if len(json.dumps(frozen, ensure_ascii=False).encode()) > 7 * 1024 * 1024:
             raise ValueError("Prepared generation exceeds receipt limits; use neutral export.")
+        if check_authority is not None:
+            check_authority()
         with _LOCK:
             for existing in self.history():
                 if existing.get("state") in {"submitting", "running", "cancelling", "outcome_unknown"} and not existing.get("server_stopped"):
@@ -794,6 +796,9 @@ class GenerationExecutionService:
         try:
             options = dict(resource="gpu", key="generation:" + fingerprint,
                            recover_on_shutdown=True, reclaim_ai_runtime=True)
+            def execute(job):
+                return self._execute(adapter, receipt, job, check_authority=check_authority)
+
             if listener is not None:
                 def deliver_with_retained_receipt(progress):
                     notification = progress
@@ -815,9 +820,9 @@ class GenerationExecutionService:
                             # when its separate durable receipt needs recovery.
                             notification = progress
                     listener(notification)
-                return self.jobs.submit_observed("Generate reviewed local image", lambda job: self._execute(adapter, receipt, job),
+                return self.jobs.submit_observed("Generate reviewed local image", execute,
                                                 deliver_with_retained_receipt, **options)[0]
-            return self.jobs.submit("Generate reviewed local image", lambda job: self._execute(adapter, receipt, job), **options)
+            return self.jobs.submit("Generate reviewed local image", execute, **options)
         except Exception:
             # A synchronous worker failure already classified its submission state.
             current = self._read(job_id)
@@ -832,7 +837,7 @@ class GenerationExecutionService:
         if claim.is_file() and claim.read_text(encoding="ascii") == receipt["job_id"]:
             claim.unlink()
 
-    def _execute(self, adapter, receipt, job):
+    def _execute(self, adapter, receipt, job, *, check_authority=None):
         submitted = False
         started = None
         samples, attempts, peak, last_sample = 0, 0, None, 0.0
@@ -857,6 +862,8 @@ class GenerationExecutionService:
             if job.cancel_requested:
                 receipt.update(state="cancelled", proven_unsubmitted=True)
                 self._write(receipt); self._release_claim(receipt); return receipt
+            if check_authority is not None:
+                check_authority()
             session = adapter.revalidate(receipt["prepared"])
             if isinstance(adapter, SwarmLocalAdapter) and adapter.resource_observation is not None:
                 receipt["resource_observation"] = deepcopy(adapter.resource_observation)
@@ -881,6 +888,11 @@ class GenerationExecutionService:
                 payload["extra_metadata"]["collectigen_conditioning_kind"] = summary["kind"]
                 payload["extra_metadata"]["collectigen_conditioning_source"] = summary["source_sha256"]
                 payload["extra_metadata"]["collectigen_conditioning_wire"] = summary["wire_sha256"]
+            if check_authority is not None:
+                check_authority()
+            if job.cancel_requested:
+                receipt.update(state="cancelled", proven_unsubmitted=True)
+                self._write(receipt); self._release_claim(receipt); return receipt
             submitted = True
             started = time.monotonic()
             receipt["state"] = "running"; self._write(receipt)
