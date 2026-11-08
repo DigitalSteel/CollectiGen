@@ -339,9 +339,9 @@ class SavedGenerationWorkDialog(QDialog):
     def refresh(self):
         self._load_page(self._offset, self._previous_offsets, self._active_query)
 
-    def _load_page(self, offset, previous_offsets, query):
+    def _load_page(self, offset, previous_offsets, query, *, imported_path=None):
         selected = self._selected_item()
-        keep = selected["path"] if selected else None
+        keep = imported_path or (selected["path"] if selected else None)
         def show(value):
             self._offset = offset
             self._previous_offsets = list(previous_offsets)
@@ -362,7 +362,12 @@ class SavedGenerationWorkDialog(QDialog):
                     if not item["available"]:
                         row.setToolTip(0, "This file is unavailable. Its contents were not applied.")
                     self.tree.addTopLevelItem(row)
-                    if item["path"] == keep: row.setSelected(True)
+                    if item["path"] == keep:
+                        if imported_path and item["available"]:
+                            self.tree.setCurrentItem(row)
+                            self.tree.scrollToItem(row)
+                        else:
+                            row.setSelected(True)
             message = f"Folder page {len(self._previous_offsets) + 1}: {len(value['items'])} saved items, newest on this page first"
             if self.preset_browser is not None: message = "Select a preset and Open Selected to review its exact snapshot"
             if value["truncated"]: message += "; Next searches the next folder page"
@@ -373,6 +378,12 @@ class SavedGenerationWorkDialog(QDialog):
                 message = ("No saved image drafts yet. Choose Start New Image, or Close without opening a workspace"
                            if self.kind == "drafts" else
                            "No saved Generation Setups yet. Choose Create Setup to make one, or Close without starting a draft")
+            if imported_path:
+                imported = self._items.get(imported_path)
+                if imported and imported["available"]:
+                    message = f"Draft imported and selected. Choose {self.open_button.text()} to open it"
+                else:
+                    message = "Draft imported. Refresh or browse the folder to select it"
             self.status.setText(message + ".")
         self._run("Load recent saved work", lambda cancelled: list_recent_saved_work(
             self.storage_root, self.kind, offset=offset, query=query, cancelled=cancelled), show)
@@ -573,9 +584,12 @@ class SavedGenerationWorkDialog(QDialog):
         else:
             self.refresh()
 
-    def _imported(self, _path):
+    def _imported(self, path):
         self.search.clear()
-        self.restart()
+        if self.kind == "drafts":
+            self._load_page(0, [], "", imported_path=path)
+        else:
+            self.restart()
 
     def export_selected(self):
         item = self._selected_item()
