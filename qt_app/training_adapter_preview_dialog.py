@@ -71,6 +71,7 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         self._filtered = ()
         self._image_search = ()
         self._image_task = None
+        self._superseded_image_tasks = set()
         self._image_selection = None
         self.setWindowTitle("Review Trainer Settings")
         self.resize(1080, 790)
@@ -345,7 +346,8 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
             return preview, search, recipe, availability_error
         task = CoordinatedCallTask(self.jobs, "Review trainer settings", work, resource="io")
         self._task = task
-        task.signals.progress.connect(lambda _done, _total, message: self.status.setText(message))
+        task.signals.progress.connect(
+            lambda _done, _total, message: self._show_progress(task, message))
         task.signals.complete.connect(lambda value: self._finish(task, self._completed, value))
         task.signals.failed.connect(lambda message: self._finish(task, self._failed, message))
         task.signals.cancelled.connect(lambda: self._finish(task, self._failed, "Preview cancelled. The package remains unchanged."))
@@ -355,13 +357,18 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         except RuntimeError:
             self._finish(task, self._failed, "Trainer preview could not start. Choose Update Preview to retry.")
 
+    def _show_progress(self, task, message):
+        if self._task is task and not self._closing:
+            self.status.setText(message)
+
     def _finish(self, task, callback, value):
         if self._task is not task:
             return
         self._task = None
         self._set_busy(False)
         if self._closing:
-            super().reject(); return
+            self._finish_close()
+            return
         callback(value)
 
     def _completed(self, result):
@@ -500,19 +507,25 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         if self._closing and self._image_task is not None:
             return
         if self._image_task is not None:
-            self.jobs.cancel(self._image_task.job_id)
+            task = self._image_task
+            self._superseded_image_tasks.add(task)
             self._image_task = None
+            self.jobs.cancel(task.job_id)
         self._image_selection = None
         self.image_preview.set_unavailable("Choose a packaged image to review it beside its exact caption.",
                                            "Packaged training image")
 
     def _finish_image(self, task, *, path=None, error=None):
+        if task in self._superseded_image_tasks:
+            self._superseded_image_tasks.remove(task)
+            if self._closing:
+                self._finish_close()
+            return
         if self._image_task is not task:
             return
         self._image_task = None
         if self._closing:
-            self._clear_image_preview()
-            super().reject()
+            self._finish_close()
             return
         selection = self._image_selection
         if selection is None or selection[0] is not self.preview:
@@ -553,18 +566,23 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         value = self.preview.settings[item.data(0, Qt.UserRole)]
         self.setting_detail.set_text(f"{value.field}\nTreatment: {value.disposition}\nRequested: {value.requested}\nProposed: {value.proposed}\n\n{value.reason}")
 
+    def _finish_close(self):
+        if self._task is None and self._image_task is None and not self._superseded_image_tasks:
+            self._clear_image_preview()
+            super().reject()
+
     def reject(self):
         self._closing = True
-        task = self._task or self._image_task
-        if task is not None:
+        if self._task is not None or self._image_task is not None or self._superseded_image_tasks:
             self.status.setText("Stopping the read-only preview at a safe boundary…")
-            self.jobs.cancel(task.job_id)
+            for task in (self._task, self._image_task):
+                if task is not None:
+                    self.jobs.cancel(task.job_id)
             return
-        self._clear_image_preview()
-        super().reject()
+        self._finish_close()
 
     def closeEvent(self, event):
-        if self._task is not None or self._image_task is not None:
+        if self._task is not None or self._image_task is not None or self._superseded_image_tasks:
             event.ignore(); self.reject()
         else:
             self._closing = True
