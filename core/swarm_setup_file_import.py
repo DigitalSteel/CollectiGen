@@ -335,6 +335,37 @@ def select_swarm_setup_preset(review: SwarmSetupFileReview, key: str) -> SwarmSe
     raise ValueError("Choose a preset from this exact file review.")
 
 
+def inspect_swarm_setup_lora_stack(preset: SwarmSetupPreset):
+    """Read an ordered source proposal without selecting registered resources."""
+    params = preset.source_row["param_map"]
+    if not {"loras", "loraweights", "loratencweights", "loraweight",
+            "lorasectionconfinement"}.intersection(params):
+        return ()
+    if "lorasectionconfinement" in params or "loraweight" in params:
+        raise ValueError("This LoRA stack uses section scopes or an unsupported weight field.")
+    names = [name.strip(" ") for name in params.get("loras", "").split(",")]
+    if (len(names) > 32 or len({name.casefold() for name in names}) != len(names)
+            or any(not _short_text(name, limit=256, required=True) or "|" in name for name in names)):
+        raise ValueError("Use an ordered list of up to 32 distinct LoRA names separated by commas.")
+
+    def weights(field):
+        values = [value.strip(" ") for value in params.get(field, "").split(",")]
+        if len(values) != len(names) or any(
+                len(value) > 32 or not re.fullmatch(r"[+-]?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)", value)
+                for value in values):
+            raise ValueError("Provide one explicit numeric strength per LoRA in each supplied weight list.")
+        if any(len(value.partition(".")[2].rstrip("0")) > 3 for value in values):
+            raise ValueError("The setup editor can preserve up to three decimal places in LoRA strengths.")
+        if any(not -10 <= float(value) <= 10 for value in values):
+            raise ValueError("Each LoRA strength must be between -10 and 10.")
+        return values
+
+    model = weights("loraweights")
+    inherited = "loratencweights" not in params
+    encoder = model if inherited else weights("loratencweights")
+    return tuple(zip(names, model, encoder, [inherited] * len(names), strict=True))
+
+
 def inspect_swarm_setup_resource_references(review: SwarmSetupFileReview,
                                              key: str) -> tuple[dict[str, str], ...]:
     """Name source singleton references without treating their names as identities.
@@ -393,8 +424,38 @@ def _validate_resolved_resources(evidence, preset, recipe):
             raise ValueError("A SwarmUI resource choice is not in the saved setup.")
 
 
+def _validate_resolved_loras(evidence, preset, recipe):
+    stack = inspect_swarm_setup_lora_stack(preset)
+    decisions = evidence["resolved_loras"]
+    if not stack or not isinstance(decisions, list) or len(decisions) != len(stack):
+        raise ValueError("Match every LoRA in this source stack or leave the stack unmatched.")
+    resource_ids = []
+    for decision, (name, _, _, _) in zip(decisions, stack, strict=True):
+        if (not isinstance(decision, dict) or set(decision) != {"name", "resource_id", "sha256"}
+                or decision["name"] != name or not isinstance(decision["resource_id"], str)
+                or not decision["resource_id"] or len(decision["resource_id"]) > 128
+                or not isinstance(decision["sha256"], str)
+                or not re.fullmatch(r"[0-9a-f]{64}", decision["sha256"])):
+            raise ValueError("A SwarmUI LoRA match does not identify its exact ordered source row.")
+        resource_ids.append(decision["resource_id"])
+    if len(set(resource_ids)) != len(resource_ids) or len({row["sha256"] for row in decisions}) != len(decisions):
+        raise ValueError("Choose a distinct exact registered copy for each LoRA in the stack.")
+    if recipe is None:
+        return
+    resources = recipe.get("resources", []) if isinstance(recipe, dict) else []
+    if not isinstance(resources, list) or any(not isinstance(row, dict) for row in resources):
+        raise ValueError("A saved setup is required to verify SwarmUI LoRA matches.")
+    selected = [row for row in resources if row.get("role") == "lora" and row.get("id") in resource_ids]
+    if [row["id"] for row in selected] != resource_ids:
+        raise ValueError("The saved setup must retain the matched LoRAs in source order.")
+    for row, decision, (_, model, encoder, _) in zip(selected, decisions, stack, strict=True):
+        if (row.get("hashes", {}).get("sha256") != decision["sha256"]
+                or row.get("weights") != {"model": float(model), "text_encoder": float(encoder)}):
+            raise ValueError("A saved LoRA identity or strength differs from the matched source stack.")
+
+
 def selected_swarm_setup_evidence(review: SwarmSetupFileReview, key: str, *,
-                                  resolved_resources=()) -> dict[str, object]:
+                                  resolved_resources=(), resolved_loras=()) -> dict[str, object]:
     """Retain only the selected source object and translator decisions, inertly."""
     if not isinstance(review, SwarmSetupFileReview) or review.source_dialect != SOURCE_DIALECT:
         raise ValueError("Read and review a supported SwarmUI preset file first.")
@@ -413,6 +474,8 @@ def selected_swarm_setup_evidence(review: SwarmSetupFileReview, key: str, *,
     }
     if resolved_resources:
         evidence["resolved_resources"] = deepcopy(list(resolved_resources))
+    if resolved_loras:
+        evidence["resolved_loras"] = deepcopy(list(resolved_loras))
     return validate_swarm_setup_evidence(evidence)
 
 
@@ -621,8 +684,8 @@ def validate_swarm_setup_evidence(evidence: dict[str, object], *, recipe=None) -
     standard_keys = {
             "source_kind", "source_dialect", "source_sha256", "selected_key",
             "selected_row", "mapped", "held_fields"}
-    if not isinstance(evidence, dict) or set(evidence) not in (
-            standard_keys, standard_keys | {"resolved_resources"}):
+    if (not isinstance(evidence, dict) or not standard_keys <= set(evidence)
+            or set(evidence) - standard_keys - {"resolved_resources", "resolved_loras"}):
         raise ValueError("Saved SwarmUI import evidence has unsupported fields.")
     if (evidence["source_kind"] != "swarmui_preset_file"
             or evidence["source_dialect"] != SOURCE_DIALECT
@@ -667,6 +730,8 @@ def validate_swarm_setup_evidence(evidence: dict[str, object], *, recipe=None) -
         raise ValueError("Saved SwarmUI held-field review differs from its selected source.")
     if "resolved_resources" in evidence:
         _validate_resolved_resources(evidence, projected, recipe)
+    if "resolved_loras" in evidence:
+        _validate_resolved_loras(evidence, projected, recipe)
     _check_evidence_size(evidence)
     return deepcopy(evidence)
 
