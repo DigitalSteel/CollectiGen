@@ -52,9 +52,10 @@ def prepare_missing_batch(session, service, storage_root, *, batch=0, should_can
         seen = set()
         for candidate in group['candidates']:
             plan = GenerationPlan.from_dict(candidate['plan'])
-            binding = plan.target_context.get(CELL_KEY, {})
-            key = binding.get('cell')
-            if (key not in expected or key in seen or binding.get('session_id') != spec['id']
+            binding = plan.target_context.get(CELL_KEY)
+            key = binding.get('cell') if isinstance(binding, dict) else None
+            if (not isinstance(key, str) or key not in expected or key in seen
+                    or binding.get('session_id') != spec['id']
                     or binding.get('run_id', '') != spec.get('run_id', '')
                     or comparison_identity(plan) != expected[key].comparison_sha256):
                 raise ValueError("The retained comparison queue does not match this evaluation. It was preserved.")
@@ -256,15 +257,22 @@ def review_cell(session, key, *, job_id, output_sha256, favorite=False, notes=""
 def matched_results(session, service, *, should_cancel=None):
     """Resolve canonical verified generation receipts; never adopt loose files."""
     cells = {c.key: c for c in evaluation_cells(session)}
-    identity = session.target_context[KEY]["id"]
+    spec = session.target_context[KEY]
     matches = {key: [] for key in cells}
     for receipt in service.history():
         if should_cancel and should_cancel(): raise InterruptedError("Evaluation result check cancelled.")
         raw = receipt.get("prepared", {}).get("plan")
         if not isinstance(raw, dict): continue
-        marker = raw.get("target_context", {}).get(CELL_KEY, {})
-        if marker.get("session_id") != identity or marker.get("cell") not in cells: continue
-        cell = cells[marker["cell"]]
+        context = raw.get("target_context")
+        marker = context.get(CELL_KEY) if isinstance(context, dict) else None
+        if not isinstance(marker, dict):
+            continue
+        key = marker.get("cell")
+        if (marker.get("session_id") != spec["id"]
+                or marker.get("run_id", "") != spec.get("run_id", "")
+                or not isinstance(key, str) or key not in cells):
+            continue
+        cell = cells[key]
         actual = GenerationPlan.from_dict(raw)
         comparable = comparison_identity(actual) == cell.comparison_sha256
         row = {"job_id": receipt["job_id"], "state": receipt["state"],

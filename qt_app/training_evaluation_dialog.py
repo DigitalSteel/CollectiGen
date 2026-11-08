@@ -28,7 +28,7 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
     batchRequested = Signal(object)
     editorCloseReady = Signal()
 
-    def __init__(self, jobs, service, template_provider, *, settings=None, run_id="", parent=None):
+    def __init__(self, jobs, service, template_provider, *, settings=None, run_id="", parent=None, batch_review_only=False):
         super().__init__(parent)
         self.jobs, self.service, self.template_provider = jobs, service, template_provider
         self.run_id = run_id
@@ -117,8 +117,13 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         self.batch = QComboBox(); self.batch.setAccessibleName('Comparison queue batch')
         self.batch.setMinimumContentsLength(14)
         self.batch.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
-        self.queue_missing = QPushButton('Queue Missing Samples…')
-        self.queue_missing.setToolTip('Prepare or reopen this batch in Generate. Review readiness and explicitly start its sequential queue there.')
+        self.batch_review_only = batch_review_only
+        self.queue_missing = QPushButton('Review Missing Samples…' if batch_review_only else 'Queue Missing Samples…')
+        self.queue_missing.setToolTip(
+            'Save or reopen the comparison batch and open its first sample in Generate.'
+            if batch_review_only else
+            'Prepare or reopen this batch in Generate. Review readiness and explicitly start its sequential queue there.'
+        )
         self.queue_missing.clicked.connect(self._queue_missing)
         self.cancel = QPushButton("Cancel Check"); self.cancel.clicked.connect(self._cancel)
         close = QDialogButtonBox(QDialogButtonBox.Close); close.rejected.connect(self.reject)
@@ -428,6 +433,9 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
             return prepare_missing_batch(session,self.service,self.service.root,
                 batch=batch,should_cancel=lambda:job.cancel_requested)
         def ready(value):
-            self.status.setText('Comparison queue retained. Review readiness and start it in Generate; reopening uses this same batch.')
+            self.status.setText(
+                'Comparison batch saved. Opening the first sample for review…' if self.batch_review_only else
+                'Comparison queue retained. Review readiness and start it in Generate; reopening uses this same batch.'
+            )
             self.batchRequested.emit(value)
         self._launch('Prepare missing comparison samples',work,ready)

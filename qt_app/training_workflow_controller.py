@@ -347,12 +347,11 @@ class TrainingWorkflowController(QObject):
         from .training_workspace import open_training_workspace
         open_training_workspace(self.parent(), draft=draft)
 
-    def evaluation(self, run_id='', required_resource=''):
+    def evaluation(self, run_id='', required_resource='', *, on_return=None, batch_review_only=False):
         if self._closing: return None
-        from core.paths import USER_DATA_DIR
         from core.generation_execution import GenerationExecutionService
         from .training_evaluation_dialog import TrainingEvaluationDialog
-        from .generation_workflow import _host, open_generation_workspace
+        from .generation_workflow import _generation_data_root, _host, open_generation_workspace
         for dialog in self.dialogs:
             if (isinstance(dialog, TrainingEvaluationDialog) and dialog.run_id == run_id
                     and getattr(dialog, 'required_resource', '') == required_resource):
@@ -371,9 +370,9 @@ class TrainingWorkflowController(QObject):
                 raise ValueError('Add the selected training result to this Generate template before saving its comparison.')
             return current.plan
         dialog = TrainingEvaluationDialog(self.jobs,
-            GenerationExecutionService(USER_DATA_DIR / 'generation', self.jobs), template,
+            GenerationExecutionService(_generation_data_root(host) / 'generation', self.jobs), template,
             settings=getattr(getattr(host, 'state', None), 'settings', None),
-            run_id=run_id, parent=self.parent())
+            run_id=run_id, parent=self.parent(), batch_review_only=batch_review_only)
         dialog.required_resource = required_resource
         def detach_generation():
             current = linked['generation']
@@ -399,7 +398,9 @@ class TrainingWorkflowController(QObject):
                 generation_closed()
                 return
             navigation = getattr(host, 'navigation', None)
-            if navigation is not None:
+            if on_return is not None:
+                on_return()
+            elif navigation is not None:
                 navigation.setCurrentRow(8)
             dialog.show()
             dialog.raise_()
@@ -469,10 +470,24 @@ class TrainingWorkflowController(QObject):
 
         dialog.templateRequested.connect(open_template)
         dialog.finished.connect(lambda *_: detach_generation())
-        dialog.generationRequested.connect(lambda plan: open_generation_workspace(
-            self.parent(), force_new=True, initial_plan=plan))
+        def open_sample(plan):
+            if batch_review_only and self._comparison_generate_busy():
+                dialog.status.setText(
+                    'Close the open Generate draft after saving any changes, then open this sample again.'
+                )
+                return
+            open_generation_workspace(self.parent(), force_new=True, initial_plan=plan)
+
+        dialog.generationRequested.connect(open_sample)
         dialog.batchRequested.connect(lambda selection: self._open_evaluation_batch(dialog, selection))
         return self._show(dialog)
+
+    def _comparison_generate_busy(self):
+        from .generation_workflow import _host
+
+        host = _host(self.parent())
+        current = getattr(host, '_generation_dialog', None)
+        return current is not None and not current._closed
 
     def _open_evaluation_batch(self, source, selection):
         """Reopen one exact saved comparison group in a fresh Generate plan."""
@@ -481,13 +496,12 @@ class TrainingWorkflowController(QObject):
         from pathlib import Path
         from core.generation_experiments import load_experiment
         from core.generation_planning import GenerationPlan
-        from core.paths import USER_DATA_DIR
         from .generation_workflow import open_generation_workspace
         try:
             group, path, digest = selection
             group_id = group['id']
             selected = Path(path).absolute()
-            if selected.parent != (USER_DATA_DIR / 'generation' / 'experiments').absolute():
+            if selected.parent != (source.service.root / 'experiments').absolute():
                 raise ValueError('The saved comparison group is outside the generation workspace.')
         except (KeyError, TypeError, ValueError) as exc:
             source.status.setText('The selected comparison group is invalid: ' + str(exc)[:1000]); return
@@ -507,8 +521,20 @@ class TrainingWorkflowController(QObject):
                 self._check_shutdown(); return
             if error:
                 source.status.setText(str(error)[:2000]); return
+            if source.batch_review_only and self._comparison_generate_busy():
+                source.status.setText(
+                    'Comparison batch saved. Close the open Generate draft after saving any changes, then reopen the saved comparison batch.'
+                )
+                return
+
             def opened(generation_dialog):
                 if self._closing or source not in self.dialogs: return
+                if source.batch_review_only:
+                    source.status.setText(
+                        'Comparison batch saved. Its first sample opened in Generate. '
+                        'Batch submission is unavailable.'
+                    )
+                    return
                 generation_dialog.open_experiment()
                 experiment = getattr(generation_dialog, '_experiment_dialog', None)
                 if experiment is None or not callable(getattr(experiment, 'open_exact_group', None)):

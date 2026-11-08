@@ -579,7 +579,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 button.setVisible(not view.synthetic and normal_entry_session is not None)
                 button.clicked.connect(action)
                 applications_layout.addWidget(button, 0, Qt.AlignLeft)
-            applications_layout.addWidget(self.krea_training_review_button, 0, Qt.AlignLeft)
+            applications_layout.addWidget(self.krea_training_review_button, 0, Qt.AlignLeft)
+            self.training_comparison_button = compact_action(QPushButton("Compare Training Samples…"))
+            self.training_comparison_button.setToolTip(
+                "Open individual samples in Generate. Batch submission is unavailable in Manager."
+            )
+            self.training_comparison_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.training_comparison_button.clicked.connect(self.open_training_comparison)
+            applications_layout.addWidget(self.training_comparison_button, 0, Qt.AlignLeft)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
             external.setWordWrap(True)
@@ -1374,6 +1381,21 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             finally:
                 self._video_draft_picker_open = False
 
+        def open_training_comparison(self):
+            state = self._offline_generation_state()
+            if state is None:
+                return
+            from qt_app.training_workflow_controller import TrainingWorkflowController
+
+            controller = getattr(self, "_training_comparison_controller", None)
+            if controller is None:
+                controller = TrainingWorkflowController(state.jobs, self)
+                self._training_comparison_controller = controller
+            controller.evaluation(
+                on_return=lambda: self.navigation.setCurrentRow(self.page_rows["Applications"]),
+                batch_review_only=True,
+            )
+
         def open_krea_training_review(self):
             registry_path = krea_registry_path
             if self.view.synthetic or self.close_policy.pending or self._krea_review_dialog is not None or self._krea_picker_open:
@@ -1955,7 +1977,18 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.statusBar().showMessage(self.close_policy.decision.reason)
             self.render_library()
 
-        def closeEvent(self, event):
+        def closeEvent(self, event):
+            comparison = getattr(self, "_training_comparison_controller", None)
+            if comparison is not None:
+                if not comparison.has_active_background_work():
+                    for review in tuple(comparison.dialogs):
+                        review.request_shell_close()
+                if comparison.dialogs or comparison.has_active_background_work():
+                    self.statusBar().showMessage(
+                        "Close held: finish or close Training comparison, then close Manager again."
+                    )
+                    event.ignore()
+                    return
             if self._generation_setup_dialog is not None:
                 event.ignore()
                 self.statusBar().showMessage("Close the generator connection review before closing Manager.")
