@@ -138,6 +138,7 @@ class SavedGenerationWorkDialog(QDialog):
         self._task = None
         self._cancel_requested = False
         self._closing = False
+        self._transfer_picker_open = False
         self._items = {}
         self._offset = 0
         self._previous_offsets = []
@@ -536,9 +537,22 @@ class SavedGenerationWorkDialog(QDialog):
             child.setWindowModality(Qt.WindowModal); child.show()
         self._run("Read retained preset recovery", lambda cancelled: collection.pending_operations(item_id), show)
 
+    def _choose_transfer_path(self, picker, *args, **kwargs):
+        if self._transfer_picker_open or self._closing:
+            return ""
+        self._transfer_picker_open = True
+        try:
+            path, _ = picker(self, *args, **kwargs)
+        finally:
+            self._transfer_picker_open = False
+            if self._closing:
+                QDialog.reject(self)
+                self.background_work_finished.emit()
+        return "" if self._closing else path
+
     def import_file(self):
         if self._task is not None: return
-        path, _ = QFileDialog.getOpenFileName(self, "Import One Saved Item", "", "Saved JSON (*.json)")
+        path = self._choose_transfer_path(QFileDialog.getOpenFileName, "Import One Saved Item", "", "Saved JSON (*.json)")
         if not path: return
         self._run("Import selected saved item",
             lambda cancelled: import_selected_saved_work(self.storage_root, self.kind, path, cancelled=cancelled),
@@ -585,7 +599,7 @@ class SavedGenerationWorkDialog(QDialog):
                 lambda _cancelled: review_setup_export(self.storage_root, item["path"]),
                 lambda review: self._review_setup_export(item, review))
             return
-        path, _ = QFileDialog.getSaveFileName(self, "Export One Saved Item", Path(item["path"]).name,
+        path = self._choose_transfer_path(QFileDialog.getSaveFileName, "Export One Saved Item", Path(item["path"]).name,
             "Saved JSON (*.json)")
         if not path: return
         self._run("Export selected saved item",
@@ -603,7 +617,7 @@ class SavedGenerationWorkDialog(QDialog):
             return
         format = dialog.format.currentData()
         include_prompts = dialog.include_prompts.isChecked()
-        path, _ = QFileDialog.getSaveFileName(self, "Export Reviewed Setup to a New File",
+        path = self._choose_transfer_path(QFileDialog.getSaveFileName, "Export Reviewed Setup to a New File",
             Path(item["path"]).stem + ("-swarmui.json" if format == "swarmui" else ".json"),
             "JSON (*.json)")
         if not path:
@@ -625,23 +639,28 @@ class SavedGenerationWorkDialog(QDialog):
         self.status.setText("Cancellation requested; waiting for the current file read to stop.")
 
     def has_active_background_work(self):
-        return self._task is not None
+        return self._task is not None or self._transfer_picker_open
 
     def request_background_shutdown(self):
         self._closing = True
         if self._task is not None:
             self.cancel_loading()
-        else:
+        elif not self._transfer_picker_open:
             QDialog.reject(self)
         return self.has_active_background_work()
 
     def reject(self):
+        if self._transfer_picker_open:
+            return
         if self._recovery_dialog is not None: self._recovery_dialog.reject()
         if self._task is not None:
             self.request_background_shutdown(); return
         QDialog.reject(self)
 
     def closeEvent(self, event):
+        if self._transfer_picker_open:
+            event.ignore()
+            return
         if self._task is not None:
             event.ignore(); self.reject()
         else:
