@@ -3170,8 +3170,8 @@
       "size_bytes": 3128
     },
     "suite_core/manager/krea_training_review.py": {
-      "sha256": "5109a50250f6c7407977580be32c93d99b772eb076f3c7ddf7ae328e6c92d028",
-      "size_bytes": 5135
+      "sha256": "9fa86ac2c2e2690a872457f09363746bab9b98777cb9b525237b8ae81720e261",
+      "size_bytes": 26769
     },
     "suite_core/manager/launcher_main.py": {
       "sha256": "33adf7ee200a23dd52062074697fc2a5a62c5ef611572c38308dada16d9b13e5",
@@ -3330,8 +3330,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "616b0a8e93ab9b1ec9818bbc91c497323a70b34681beee564f68982b543b0607",
-      "size_bytes": 177697
+      "sha256": "4ccde99cbe119bdb475cd0ba9409ed089bb93ae2469b71298e2c3da14f85e107",
+      "size_bytes": 178029
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

@@ -550,9 +550,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self._krea_picker_open = False
             self._krea_review_dialog = None
             self._close_after_krea_review = False
-            self.krea_training_review_button = compact_action(QPushButton("Review Krea 2 Training Package…"))
+            self.krea_training_review_button = compact_action(QPushButton("Review Training Package…"))
             self.krea_training_review_button.setVisible(not view.synthetic and krea_registry_path is not None)
-            self.krea_training_review_button.setToolTip("Read a selected package and check its exact registered base. No training starts.")
+            self.krea_training_review_button.setToolTip("Review a Krea 2 or SDXL package and its registered base. No training starts.")
             self.krea_training_review_button.clicked.connect(self.open_krea_training_review)
             applications_layout.addWidget(self.krea_training_review_button, 0, Qt.AlignLeft)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
@@ -1220,18 +1220,26 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from .krea_training_review import KreaTrainingReviewDialog
             self._krea_picker_open = True
             try:
-                destination = QFileDialog.getExistingDirectory(self, "Select the Krea 2 training package")
+                destination = QFileDialog.getExistingDirectory(self, "Select a verified training package")
             finally:
                 self._krea_picker_open = False
             if not destination or self.close_policy.pending:
                 return
-            dialog = KreaTrainingReviewDialog(destination, registry_path, self)
+            from core.background_jobs import BackgroundJobManager
+
+            preview_jobs = BackgroundJobManager()
+            try:
+                dialog = KreaTrainingReviewDialog(destination, registry_path, self, preview_jobs=preview_jobs)
+            except BaseException:
+                preview_jobs.shutdown(wait=True)
+                raise
             self._krea_review_dialog = dialog
             try:
                 dialog.exec()
             finally:
                 self._krea_review_dialog = None
                 dialog.deleteLater()
+                preview_jobs.shutdown(wait=True)
                 if self._close_after_krea_review:
                     self._close_after_krea_review = False
                     QTimer.singleShot(0, self.close)
