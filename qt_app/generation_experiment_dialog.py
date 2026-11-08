@@ -371,6 +371,14 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             self.refresh_actions()
         if not accepted or not browser.selected_path: return
         path = browser.selected_path
+        selected_digest = browser.selected_digest
+
+        def work():
+            value, digest = load_experiment(path)
+            if not selected_digest or digest != selected_digest:
+                raise ValueError("The selected saved group changed. Open Saved Group and select it again.")
+            return value, digest
+
         def done(result):
             self.experiment, self.digest = result; self.path = Path(path)
             self._operation_error = False
@@ -379,7 +387,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             self.safety_review.setChecked(False)
             self.status.setText("Group reopened. Reconcile uncertain outcomes; check pending candidates before resuming.")
             self.workspaces.setCurrentIndex(1)
-        self._run("Open generation alternatives", lambda: load_experiment(path), done)
+        self._run("Open generation alternatives", work, done)
 
     def open_exact_group(self, path, expected_digest, expected_group_id):
         """Open one caller-pinned saved group for review, without submitting it."""
