@@ -559,7 +559,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.generate_plan_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.generate_plan_button.setToolTip("Create or reopen an image draft. Generator access is unavailable here.")
             self.generate_plan_button.clicked.connect(self.open_generate_plan)
-            applications_layout.addWidget(self.generate_plan_button, 0, Qt.AlignLeft)
+            applications_layout.addWidget(self.generate_plan_button, 0, Qt.AlignLeft)
+            self._generation_setup_dialog = None
+            connection_review = compact_action(QPushButton("Review Generator Connection…"))
+            connection_review.setVisible(not view.synthetic and normal_entry_session is not None)
+            connection_review.clicked.connect(self.review_generator_connection)
+            applications_layout.addWidget(connection_review, 0, Qt.AlignLeft)
             self._video_draft_picker_open = False
             self.remix_plan_button = compact_action(QPushButton("Plan a Remix…"))
             self.remix_plan_button.setVisible(not view.synthetic and normal_entry_session is not None)
@@ -1232,6 +1237,53 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if self.chat_host is not None: self.chat_host.cancel_load()
             self.render_ollama_load()
 
+        def review_generator_connection(self):
+            state = self._offline_generation_state()
+            if state is None or self._generation_setup_dialog is not None:
+                return
+            from core.paths import SWARM_RUNTIME_PATH
+            from core.swarm_runtime import SwarmRuntimeManager
+            from core.training_source_io import _assert_unredirected
+            from qt_app.swarm_runtime_widget import SwarmRuntimeWidget
+
+            record_path = state.generation_data_root / SWARM_RUNTIME_PATH.name
+            try:
+                _assert_unredirected(record_path)
+            except (OSError, RuntimeError):
+                self.statusBar().showMessage("Manager's generator connection path is unavailable.", 12000)
+                return
+
+            class ConnectionDialog(QDialog):
+                def reject(dialog):
+                    if dialog.review._task is None:
+                        super().reject()
+                    else:
+                        dialog.review.state_detail.setText("Wait for the current connection check or save to finish.")
+
+                def closeEvent(dialog, event):
+                    if dialog.review._task is not None:
+                        event.ignore()
+                        dialog.reject()
+                    else:
+                        super().closeEvent(event)
+
+            dialog = ConnectionDialog(self)
+            dialog.setWindowTitle("Review Generator Connection")
+            layout = QVBoxLayout(dialog)
+            dialog.review = SwarmRuntimeWidget(
+                None, dialog, manager=SwarmRuntimeManager(record_path), adoption_only=True,
+            )
+            layout.addWidget(dialog.review)
+            buttons = QDialogButtonBox(QDialogButtonBox.Close)
+            buttons.rejected.connect(dialog.reject)
+            layout.addWidget(buttons)
+            self._generation_setup_dialog = dialog
+            try:
+                dialog.exec()
+            finally:
+                self._generation_setup_dialog = None
+                dialog.deleteLater()
+
         def _offline_generation_state(self):
             session = normal_entry_session
             if view.synthetic or session is None or session.state != "ready" or self.close_policy.pending:
@@ -1893,7 +1945,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.statusBar().showMessage(self.close_policy.decision.reason)
             self.render_library()
 
-        def closeEvent(self, event):
+        def closeEvent(self, event):
+            if self._generation_setup_dialog is not None:
+                event.ignore()
+                self.statusBar().showMessage("Close the generator connection review before closing Manager.")
+                return
             if getattr(self, "_generation_source_task", None) is not None:
                 self.statusBar().showMessage("Close held: wait for image source preparation, then close again.")
                 event.ignore()

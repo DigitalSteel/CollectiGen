@@ -90,13 +90,25 @@ class GenerationMemoryLimitedError(ValueError):
     """A fresh, measured resource observation blocked submission before send."""
 
 
+class SwarmServerIdentityChanged(ValueError):
+    """The loopback address answered with a different server identity."""
+
+
 class SwarmLocalAdapter:
     """Bounded image mapping with exact local main and companion bindings.
 
     Raw graphs, prompt directives, external resources and unknown settings remain
     export-only. Swarm tensor identity is verified separately from full-file hash.
     """
-    def __init__(self, endpoint, *, transport=None, memory_evidence_provider=None):
+    def __init__(self, endpoint, *, transport=None, memory_evidence_provider=None,
+                 expected_server_id=None):
+        if expected_server_id is not None and (
+            type(expected_server_id) is not str or not expected_server_id.strip()
+            or len(expected_server_id) > 512
+            or any(ord(char) < 32 or ord(char) == 127 for char in expected_server_id)
+        ):
+            raise ValueError("An exact checked SwarmUI server identity is required.")
+        self._expected_server_id = expected_server_id
         self.transport = transport or LocalTransport(endpoint)
         self.endpoint = self.transport.endpoint
         self.capabilities = None
@@ -119,6 +131,10 @@ class SwarmLocalAdapter:
             for key in ("session_id", "version", "server_id")
         ):
             raise SwarmCompatibilityError("api_malformed")
+        if self._expected_server_id is not None and session["server_id"] != self._expected_server_id:
+            self.capabilities = None
+            self.resource_observation = None
+            raise SwarmServerIdentityChanged("The SwarmUI server identity changed. Review the saved connection again.")
         return session
 
     def probe(self):

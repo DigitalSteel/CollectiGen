@@ -17,8 +17,9 @@ from typing import Any, Callable
 from urllib.parse import urlsplit
 
 from .external_write_transaction import file_fingerprint, write_verified_json
-from .generation_execution import SwarmCompatibilityError, SwarmLocalAdapter
-from .generation_transport import LocalTransport, local_endpoint
+from .generation_execution import SwarmCompatibilityError, SwarmLocalAdapter, SwarmServerIdentityChanged
+from .generation_transport import LocalTransport, local_endpoint, strict_json
+from .training_source_io import read_stable_training_source
 from .swarm_companion_inventory import review_companion_inventory
 from .paths import SWARM_RUNTIME_PATH
 from .swarm_source_inventory import (
@@ -28,6 +29,7 @@ from .swarm_source_inventory import (
 
 
 SCHEMA_VERSION = 1
+_MAX_RECORD_BYTES = 1024 * 1024
 DEFAULT_ENDPOINT = "http://127.0.0.1:7801"
 SWARM_SOURCE = "https://github.com/mcmonkeyprojects/SwarmUI.git"
 MANAGED_RELEASE = "0.9.8-Beta"
@@ -186,10 +188,11 @@ class SwarmRuntimeManager:
 
     def _load(self) -> tuple[dict[str, Any], str]:
         try:
-            payload = json.loads(self.record_path.read_text(encoding="utf-8"))
+            raw, _ = read_stable_training_source(self.record_path, max_bytes=_MAX_RECORD_BYTES)
+            payload = strict_json(raw.decode("utf-8"))
         except FileNotFoundError:
             return {}, ""
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        except (OSError, ValueError, RuntimeError) as exc:
             return {}, f"The saved SwarmUI connection could not be read: {_safe_message(exc)}"
         if not isinstance(payload, dict) or payload.get("schema_version") != SCHEMA_VERSION:
             return {}, "The saved SwarmUI connection uses an unsupported format."
@@ -200,6 +203,23 @@ class SwarmRuntimeManager:
         except (TypeError, ValueError) as exc:
             return {}, _safe_message(exc)
         return payload, ""
+
+    def checked_adopted_connection(self) -> tuple[str, str] | None:
+        """Return the saved loopback endpoint and server ID from a successful check."""
+        record, issue = self._load()
+        server = record.get("server_id")
+        checked = record.get("last_health_check")
+        backends = record.get("backend_ids")
+        if (issue or record.get("ownership") != "adopted" or record.get("lifecycle_pending")
+                or record.get("control_plane_online") is not True
+                or record.get("backend_state") != "ready"
+                or record.get("compatibility_state") != "supported"
+                or type(checked) is not str or not checked
+                or type(server) is not str or not server.strip()
+                or not isinstance(backends, list) or not backends
+                or any(type(item) is not str or not item.strip() for item in backends)):
+            return None
+        return record["endpoint"], server
 
     @staticmethod
     def _global_work(transport, session_id: str) -> int:
@@ -596,8 +616,13 @@ class SwarmRuntimeManager:
         enrolled_server_id = record.get("server_id")
         enrolled_version = record.get("runtime_version", "")
         enrolled_backends = record.get("backend_ids", [])
+        identity_changed = False
         try:
-            capabilities = dict(self.adapter_factory(record["endpoint"]).probe())
+            if enrolled_server_id and self.adapter_factory is SwarmLocalAdapter:
+                adapter = SwarmLocalAdapter(record["endpoint"], expected_server_id=enrolled_server_id)
+            else:
+                adapter = self.adapter_factory(record["endpoint"])
+            capabilities = dict(adapter.probe())
             record.update({
                 "runtime_version": str(capabilities.get("version") or ""),
                 "server_id": str(capabilities.get("server_id") or ""),
@@ -606,6 +631,9 @@ class SwarmRuntimeManager:
                 "control_plane_online": True, "backend_state": "ready",
                 "compatibility_state": "supported", "compatibility_issue": "",
             })
+        except SwarmServerIdentityChanged:
+            identity_changed = True
+            record.update(last_health_check=_now(), control_plane_online=True)
         except Exception as exc:
             adapter_issue = _safe_message(exc)
             try:
@@ -636,7 +664,7 @@ class SwarmRuntimeManager:
                     "last_health_check": _now(), "last_health_issue": adapter_issue,
                     "control_plane_online": False, "backend_state": "offline",
                 })
-        identity_changed = bool(enrolled_server_id and record.get("server_id") != enrolled_server_id)
+        identity_changed = identity_changed or bool(enrolled_server_id and record.get("server_id") != enrolled_server_id)
         if identity_changed:
             record.update(
                 server_id=enrolled_server_id, backend_state="needs_attention",

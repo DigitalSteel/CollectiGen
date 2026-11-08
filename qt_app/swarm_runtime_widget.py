@@ -24,9 +24,10 @@ class SwarmRuntimeWidget(QGroupBox):
     status_changed = Signal(object)
     return_requested = Signal()
 
-    def __init__(self, settings, parent=None, *, manager=None):
+    def __init__(self, settings, parent=None, *, manager=None, adoption_only=False):
         super().__init__("Local Generation (SwarmUI)", parent)
         self.settings = settings
+        self.adoption_only = adoption_only
         self.manager = manager or SwarmRuntimeManager()
         self.pool = QThreadPool.globalInstance()
         self._task = None
@@ -219,15 +220,22 @@ class SwarmRuntimeWidget(QGroupBox):
         tasks.addWidget(self.task_nav)
         tasks.addWidget(self.task_stack, 1)
         layout.addLayout(tasks, 1)
+        if adoption_only:
+            intro.setText("Review an existing local installation and save its connection for Manager.")
+            connect_note.setText("This checks the selected installation files. Generate stays in planning mode.")
+            self.task_nav.hide()
+            self.install_button.hide()
+            first_actions.insertWidget(1, self.health_button)
+            self.review_installation_button.hide()
         snapshot = self.refresh_snapshot()
-        self.select_task("run" if snapshot.configured else "connect")
+        self.select_task("run" if snapshot.configured and not adoption_only else "connect")
 
     def select_task(self, task: str) -> None:
         """Reveal one task without changing the runtime or another task's draft."""
         index = {"connect": 0, "run": 1, "models": 2, "maintenance": 3}.get(task)
         if index is None:
             raise ValueError("Choose a Local Generation setup task.")
-        self.task_nav.setCurrentRow(index)
+        self.task_nav.setCurrentRow(0 if self.adoption_only else index)
 
     def select_default_task(self) -> None:
         self.select_task("run" if self._companion_configured else "connect")
@@ -411,6 +419,19 @@ class SwarmRuntimeWidget(QGroupBox):
         )
         if self._task is not None:
             self._set_busy(True)
+        if self.adoption_only:
+            self.health_button.setEnabled(snapshot.ownership == "adopted" and self._task is None)
+        if self.adoption_only and snapshot.ownership:
+            self.state_label.setText(f"Saved for Manager: {snapshot.endpoint}")
+            if not snapshot.last_health_check:
+                detail = "The running generator has not been checked."
+            elif self.manager.checked_adopted_connection() is not None:
+                detail = "Connection checked. SwarmUI reported a compatible backend."
+            else:
+                detail = "Connection check needs attention. " + snapshot.detail
+            detail += " Generate remains in planning mode."
+            self.state_detail.setText(detail)
+            self.state_detail.setAccessibleName(detail)
         self.status_changed.emit(snapshot)
         return snapshot
 
@@ -431,7 +452,7 @@ class SwarmRuntimeWidget(QGroupBox):
         endpoint = self.endpoint.text().strip() or DEFAULT_ENDPOINT
         self._run(
             "Inspecting the selected SwarmUI…",
-            lambda: self.manager.inspect_existing(root, endpoint),
+            lambda: self.manager.inspect_existing(root, endpoint, probe=not self.adoption_only),
             self._confirm_existing,
         )
 
@@ -461,6 +482,12 @@ class SwarmRuntimeWidget(QGroupBox):
             "candidate extension folders and their revisions. Incomplete scans cannot establish "
             "which folders were added or removed. Activation and extension file changes remain unverified."
         )
+        if self.adoption_only:
+            details = (
+                f"Folder: {inspection.install_root}\nEndpoint: {inspection.endpoint}\n\n"
+                "Save this installation for Manager. This does not check the running server "
+                "or enable generation. Your models, outputs and SwarmUI settings are unchanged."
+            )
         if inspection.issue:
             details += "\n\nCurrent issue: " + inspection.issue
         box = QMessageBox(QMessageBox.Question, "Use Existing SwarmUI?", details,
@@ -533,6 +560,12 @@ class SwarmRuntimeWidget(QGroupBox):
     def refresh_health(self):
         endpoint = self.endpoint.text().strip() or DEFAULT_ENDPOINT
         snapshot = self.manager.snapshot()
+        if self.adoption_only:
+            if snapshot.ownership != "adopted":
+                return
+            if endpoint != snapshot.endpoint:
+                self.state_detail.setText("Review and save the changed endpoint before checking it.")
+                return
         if snapshot.configured and endpoint != snapshot.endpoint:
             try:
                 self.manager.change_endpoint(endpoint)

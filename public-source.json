@@ -538,8 +538,8 @@
       "size_bytes": 11356
     },
     "core/generation_execution.py": {
-      "sha256": "3c3da9f4deb61b2b5750730cdbf9f303e01f938e1a66fe82068d3120d22aa2e3",
-      "size_bytes": 95213
+      "sha256": "dc57156fdb0df03a8ce5fe47cabcf207b52ea13f65a220a524eb0e639d450f90",
+      "size_bytes": 96093
     },
     "core/generation_experiments.py": {
       "sha256": "273475091b129964df7e84b1827f3ce32802314952464f46026bac4be7277821",
@@ -1398,8 +1398,8 @@
       "size_bytes": 9027
     },
     "core/swarm_runtime.py": {
-      "sha256": "63a1f4618733f7f8dff5c533fbcc265d59a0c92209279484ae73ea1122c25941",
-      "size_bytes": 64371
+      "sha256": "0e163d5c54a4da391101e9589333f944655427c02bf7d956115cdb14a01c3ff0",
+      "size_bytes": 65967
     },
     "core/swarm_setup_file_import.py": {
       "sha256": "acec2b5de36637cb5cbdeac911cb70e9b929b2e23e5e65b90e091597a4ce02fc",
@@ -2538,8 +2538,8 @@
       "size_bytes": 12252
     },
     "qt_app/swarm_runtime_widget.py": {
-      "sha256": "b4a709b98eea787aff85b45ee42f831f8d37474eb1b3b7576f948cc9b5dcb284",
-      "size_bytes": 42987
+      "sha256": "00508177439bd7a2e33c62fadd08eee3417d319a6bf894cb06fcf80dd20414a4",
+      "size_bytes": 44983
     },
     "qt_app/swarm_setup_file_dialog.py": {
       "sha256": "aad994837ce2244ef0e36ca2f0477f9808321af1d846fa27ae0e91f3957e9ba0",
@@ -3330,8 +3330,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "34c1a8c5fdc6cd067a24a0a962c22d6913e4b8b9ce80de654cab8dc789f213c7",
-      "size_bytes": 185678
+      "sha256": "bc243c8abf54884a0f456243e535c4ea1defbf491031dcfdf6a5144e514b9711",
+      "size_bytes": 188478
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
