@@ -11,7 +11,10 @@ from pathlib import Path, PurePosixPath
 
 from .model_resource_registry import ModelResourceRegistry, ResourceResolution
 from .training_configuration import TrainingConfiguration
-from .training_package import MANIFEST_NAME, TrainingPackageService, TrainingPackageVerification, _child, _inspection_read
+from .training_package import (
+    MANIFEST_NAME, TrainingPackageInspectionLimit, TrainingPackageService, TrainingPackageVerification,
+    _child, _inspection_read,
+)
 from .training_source_io import _assert_unredirected, _identity
 from .training_runtime_contract import ADAPTER_ID, ADAPTER_VERSION, validate_configuration
 from . import training_package_effects as effects
@@ -145,18 +148,25 @@ def verified_adapter_image_path(package: TrainingPackageVerification,
             or by_path[image.caption_path].get("kind") != "caption"
             or by_path[image.caption_path].get("sha256") != image.caption_sha256):
         raise ValueError("The selected image or caption differs from the reviewed package inventory.")
+    image_size = by_path[image.image_path].get("size")
+    caption_size = by_path[image.caption_path].get("size")
+    if any(type(size) is not int or not 0 <= size <= 64 * 1024 * 1024
+           for size in (image_size, caption_size)):
+        raise ValueError("The selected image or caption exceeds the viewing limit. Verify or rebuild the package.")
     path = _child(Path(package.destination).absolute(), image.image_path)
     caption_path = _child(Path(package.destination).absolute(), image.caption_path)
+    cancel = should_cancel or (lambda: False)
     try:
-        payload, _state = _inspection_read(path, 64 * 1024 * 1024,
-            should_cancel or (lambda: False))
-        caption_payload, _caption_state = _inspection_read(caption_path, 64 * 1024 * 1024,
-            should_cancel or (lambda: False))
+        payload, _state = _inspection_read(path, image_size, cancel)
+        caption_payload, _caption_state = _inspection_read(caption_path, caption_size, cancel)
     except InterruptedError:
         raise
+    except TrainingPackageInspectionLimit as exc:
+        raise ValueError("The selected packaged image or caption changed. Verify or rebuild the package before viewing it.") from exc
     except OSError as exc:
         raise ValueError("The selected packaged image is missing or unavailable. Verify or rebuild the package.") from exc
-    if (hashlib.sha256(payload).hexdigest() != image.image_sha256
+    if (len(payload) != image_size or len(caption_payload) != caption_size
+            or hashlib.sha256(payload).hexdigest() != image.image_sha256
             or hashlib.sha256(caption_payload).hexdigest() != image.caption_sha256):
         raise ValueError("The selected packaged image or caption changed. Verify or rebuild the package before viewing it.")
     return path
