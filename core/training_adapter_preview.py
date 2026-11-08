@@ -151,7 +151,9 @@ def verified_adapter_image_path(package: TrainingPackageVerification,
             should_cancel or (lambda: False))
         caption_payload, _caption_state = _inspection_read(caption_path, 64 * 1024 * 1024,
             should_cancel or (lambda: False))
-    except (FileNotFoundError, OSError) as exc:
+    except InterruptedError:
+        raise
+    except OSError as exc:
         raise ValueError("The selected packaged image is missing or unavailable. Verify or rebuild the package.") from exc
     if (hashlib.sha256(payload).hexdigest() != image.image_sha256
             or hashlib.sha256(caption_payload).hexdigest() != image.caption_sha256):
@@ -220,6 +222,7 @@ class SdScriptsSdxlLoraPreviewService:
         if progress:
             progress(0, 0, "Verifying the exact registered base model")
         _cancel(should_cancel)
+        registered_base = registry.snapshot()[0]["resources"].get(config.base_model_id)
         resolved = registry.resolve(config.base_model_id, role="checkpoint", family="SDXL",
                                     progress=progress, should_cancel=should_cancel)
         result = self._build_verified(current, config, resolved, recipe, should_cancel)
@@ -229,8 +232,14 @@ class SdScriptsSdxlLoraPreviewService:
             raise ValueError("The training package changed during preview. Verify or rebuild it first.")
         if resolved.inspection is not None:
             _assert_unredirected(resolved.inspection.path)
-            if _identity(resolved.inspection.path.stat(follow_symlinks=False)) != resolved.inspection.file_state:
+            try:
+                state = resolved.inspection.path.stat(follow_symlinks=False)
+            except FileNotFoundError as exc:
+                raise ValueError("The base model disappeared during preview. Inspect it again.") from exc
+            if _identity(state) != resolved.inspection.file_state:
                 raise ValueError("The base model changed during preview. Inspect it again.")
+        if registry.snapshot()[0]["resources"].get(config.base_model_id) != registered_base:
+            raise ValueError("The base model registry entry changed during preview. Review it again.")
         _cancel(should_cancel)
         return result
 
