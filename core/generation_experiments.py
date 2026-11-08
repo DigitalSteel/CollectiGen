@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from .external_write_transaction import atomic_verified_bytes
 from .generation_planning import GenerationPlan
+from .generation_transport import strict_json
 from .training_source_io import _assert_unredirected, read_stable_training_source
 
 MAX_CANDIDATES = 32
@@ -261,7 +262,11 @@ def load_experiment(path):
         raw, identity = read_stable_training_source(path, max_bytes=MAX_BYTES)
     except ValueError as error:
         raise ValueError("Saved experiment is too large.") from error
-    value = validate_experiment(json.loads(raw))
+    try:
+        decoded = strict_json(raw)
+    except (ValueError, RecursionError) as error:
+        raise ValueError("The saved experiment contains invalid or ambiguous JSON.") from error
+    value = validate_experiment(decoded)
     # No process restart is permission to resubmit an uncertain GPU job.
     for row in value["candidates"]:
         if row["state"] == "submitting":
