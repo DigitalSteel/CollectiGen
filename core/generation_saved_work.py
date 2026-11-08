@@ -373,8 +373,12 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, se
         if _preset_bytes(destination, maximum=MAX_PLAN_BYTES, label="Draft export") != raw:
             raise OSError("Draft export read-back failed.")
     elif kind == "prompt_presets":
-        _atomic_create_text(destination, _preset_text(value.to_dict()))
-        if _preset_bytes(destination) != _preset_text(value.to_dict()).encode("utf-8"):
+        text = _preset_text(value.to_dict())
+        try:
+            _atomic_create_text(destination, text)
+        except FileExistsError as exc:
+            raise ValueError("Choose a new export filename; the existing file is preserved.") from exc
+        if _preset_bytes(destination) != text.encode("utf-8"):
             raise OSError("Prompt preset export read-back failed.")
     else:
         save_recipe(destination, value)
