@@ -322,11 +322,19 @@ class EncyclopediaAcquisitionPanel(QWidget):
                     self.connection_changed()
         except Exception as error:
             self.reviewed = None
+            from core.component_acquisition import ExactOfferHold
             from core.encyclopedia_update_binding import StandaloneReaderCompatibilityHold
             if operation in ("Checking app status", "Refreshing releases"):
                 self.observation_stale = self.installed is not None
             if operation == "Checking app status":
                 self.status.setText("App status is unavailable. Close the reader if it is running, then Check app status.")
+            elif isinstance(error, ExactOfferHold) and operation in (
+                    "Refreshing releases", "Reviewing installation", "Installing reviewed package"):
+                self.offer = None
+                self.status.setText(
+                    f"{self.package_review_name()} installation is held. The published offer does not match "
+                    "the release details approved for this Manager build. Your installation is unchanged."
+                )
             elif operation == "Refreshing releases":
                 self.status.setText("The release check could not finish. Your installation is unchanged. Choose Check Again to retry.")
             elif isinstance(error, InterruptedError) and operation == "Reviewing installation":
