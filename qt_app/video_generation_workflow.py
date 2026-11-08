@@ -7,7 +7,7 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QFileDialog
 
 from core.model_resource_registry import ModelResourceRegistry
-from core.paths import USER_DATA_DIR
+from core.paths import MODEL_RESOURCES_PATH, USER_DATA_DIR
 from core.video_generation_draft import load_video_draft, scoped_video_draft_path
 
 from .generation_workflow import _generation_data_root, _generation_registry_path, _host, _setup_window
@@ -129,7 +129,7 @@ def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_op
     if decoder_lifetime is not None:runtime_options["decoder_lifetime"]=decoder_lifetime
     scoped = getattr(state, "generation_data_root", None) is not None
     data_root = _generation_data_root(host) if scoped else USER_DATA_DIR
-    registry_path = _generation_registry_path(host, data_root)
+    registry_path = _generation_registry_path(host, data_root, MODEL_RESOURCES_PATH)
     dialog = VideoGenerationDialog(state.jobs, ModelResourceRegistry(registry_path),
         state.settings, data_root / "video_generation", parent=host,
         scoped_drafts=scoped, runtime_allowed=getattr(state, "generation_runtime_allowed", True),

@@ -48,11 +48,11 @@ def _generation_data_root(host):
     return root
 
 
-def _generation_registry_path(host, data_root):
+def _generation_registry_path(host, data_root, default_registry_path):
     if getattr(host.state, "generation_data_root", None) is None:
-        return MODEL_RESOURCES_PATH
+        return default_registry_path
     registry_path = getattr(host.state, "generation_registry_path", None)
-    return registry_path if registry_path is not None else data_root / MODEL_RESOURCES_PATH.name
+    return registry_path if registry_path is not None else data_root / default_registry_path.name
 
 
 def _saved_runtime_connection(setup_window, data_root=None):
@@ -488,7 +488,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
         return {"bytes": raw, "sha256": metadata["sha256"]}
 
     data_root = _generation_data_root(host)
-    model_registry = ModelResourceRegistry(_generation_registry_path(host, data_root))
+    model_registry = ModelResourceRegistry(_generation_registry_path(host, data_root, MODEL_RESOURCES_PATH))
 
     def prepare():
         if initial_plan is not None:
