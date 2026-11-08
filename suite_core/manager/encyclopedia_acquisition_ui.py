@@ -184,8 +184,10 @@ class EncyclopediaAcquisitionPanel(QWidget):
     def review_installation(self):
         if self.recovery_only:
             return
-        if self.offer is not None:
-            self._start("Reviewing installation", lambda: self.service.review(self.offer))
+        offer = self.offer
+        if offer is not None:
+            self._start("Reviewing installation", lambda: self.service.review(
+                offer, should_cancel=self.cancel.is_set))
 
     def install_reviewed(self):
         if self.recovery_only:
@@ -327,6 +329,8 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 self.status.setText("App status is unavailable. Close the reader if it is running, then Check app status.")
             elif operation == "Refreshing releases":
                 self.status.setText("The release check could not finish. Your installation is unchanged. Choose Check Again to retry.")
+            elif isinstance(error, InterruptedError) and operation == "Reviewing installation":
+                self.status.setText("Review cancelled. Your installation is unchanged.")
             elif isinstance(error, StandaloneReaderCompatibilityHold):
                 self.status.setText("Compatibility could not be confirmed. This package was not installed. Choose Check Again for a new review.")
                 self.offer = None

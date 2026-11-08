@@ -115,12 +115,13 @@ class EncyclopediaInstallation:
             installed_versions=versions, should_cancel=should_cancel, component_id=self.component)
             if offer.release.component_id == self.component)
 
-    def review(self, offer):
+    def review(self, offer, *, should_cancel=None):
         self._review = None  # failed re-admission cannot retain an earlier confirmation
+        self._cancel(should_cancel)
         require(type(offer) is ComponentOffer and offer.release.component_id == self.component,
                 "exact_encyclopedia_offer_required")
         require(self.acquisition._offers.get(offer.release.manifest_sha256) is offer, "current_signed_offer_required")
-        self.acquisition.revalidate_offer(offer)
+        self.acquisition.revalidate_offer(offer, should_cancel=should_cancel)
         with self._scope() as (root, base, owner, check):
             installed = self._observe(root, base, owner)
             require(not installed.pending and installed.phase != "activated", "Finish launch checking or recover the current installation first.")
@@ -131,6 +132,7 @@ class EncyclopediaInstallation:
             require(saved is None or saved == installed.selected, "The saved reader is externally managed. Review its managed origin before installing.")
             destination = root / "Apps" / self.component.value / offer.release.software_version
             check()
+            self._cancel(should_cancel)
             self._review = InstallationReview(offer, installed, settings, destination)
             return self._review
 
