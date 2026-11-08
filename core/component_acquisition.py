@@ -319,7 +319,7 @@ class ComponentAcquisition:
             expected_component=expected.component_id, expected_version=expected.software_version,
             expected_channel=expected.channel, expected_os=expected.os, expected_architecture=expected.architecture)
         if verified != offer.release: raise ExactOfferHold(EXACT_OFFER_HOLD)
-        self._check(should_cancel)
+        self._check_inflight_offer(offer, should_cancel)
 
     def _check_inflight_offer(self, offer, should_cancel):
         self._check(should_cancel)

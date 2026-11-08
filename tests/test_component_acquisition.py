@@ -372,3 +372,32 @@ def test_metadata_response_bound_before_parse(tmp_path):
     s.transport.opener=lambda request,timeout:Response(b' '*(1024*1024+1))
     with pytest.raises(UpdateServiceError,match='safety limit'):offers(s)
     assert list(s.root.iterdir())==[s._marker]
+
+
+def test_exact_offer_superseded_during_signature_readback(tmp_path, monkeypatch):
+    feed = FakeFeed()
+    base, _ = feed.add("collectigen.media-organizer")
+    feed.rows[0]["id"] = 51
+    for index, asset in enumerate(feed.rows[0]["assets"]):
+        asset["id"] = 61 + index
+    reviewed, = offers(service(tmp_path, feed))
+    expected = ExactComponentOffer.from_reviewed_offer(reviewed, repository_id=123)
+    feed.resources["https://api.github.com/repos/DigitalSteel/CollectiGen"] = raw(
+        dict(id=123, full_name="DigitalSteel/CollectiGen"))
+    acquisition = service(tmp_path, feed, expected_offer=expected)
+    offer, = offers(acquisition)
+    fresh = []
+
+    def opener(request, timeout):
+        if request.full_url == base + "collectigen-release.json.sig" and not fresh:
+            monkeypatch.setattr(acquisition.transport, "opener", feed)
+            fresh.extend(offers(acquisition))
+        return feed(request, timeout)
+
+    monkeypatch.setattr(acquisition.transport, "opener", opener)
+    with pytest.raises(ValueError, match="changed_inflight_offer"):
+        acquisition.revalidate_offer(offer)
+    replacement, = fresh
+    assert replacement is not offer and replacement.release == offer.release
+    acquisition.revalidate_offer(replacement)
+    assert list(acquisition.root.iterdir()) == [acquisition._marker]
