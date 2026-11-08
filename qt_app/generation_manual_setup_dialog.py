@@ -34,6 +34,7 @@ def choose_registered_setup_resource(parent, registry, jobs, role, *,
         registry, jobs, parent=parent, role=role,
         main_model_resource_id=main_model_resource_id,
         settings=settings, protected_roots=tuple(protected_model_roots),
+        **({"choice_scope_label": title} if title else {}),
     )
     if title:
         picker.setWindowTitle(title)

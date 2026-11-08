@@ -2178,8 +2178,8 @@
       "size_bytes": 58892
     },
     "qt_app/generation_manual_setup_dialog.py": {
-      "sha256": "d2b9eaf26c28ef955488277079e4342424918a3a3c76c34d837153cb6ff30661",
-      "size_bytes": 19383
+      "sha256": "85399eb8f6f1f540dcfbb6f6fa5d74dbe454346f5a291b7ec8b6888df2b32c21",
+      "size_bytes": 19443
     },
     "qt_app/generation_mask_dialog.py": {
       "sha256": "6fad96c937624da7d3c266edf21b9db65bdee772b2b6bb46b709e0785ada3e38",
@@ -2374,8 +2374,8 @@
       "size_bytes": 15696
     },
     "qt_app/model_selector_dialog.py": {
-      "sha256": "b51b28aa6010bcfc247e51390a6dddf4e3f988472ea29f0ef204222b7a8c6002",
-      "size_bytes": 71627
+      "sha256": "e6fed056e10c566809afd70f3b4c6865389ed2ffa6686a80df3c07097cbfef94",
+      "size_bytes": 71860
     },
     "qt_app/model_storage_policy_editor.py": {
       "sha256": "29e0056c011807f017caf3c95cdcaa81aeee24e7844cf80031ecc711b71dcf68",
