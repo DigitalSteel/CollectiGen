@@ -13,6 +13,7 @@ from uuid import uuid4
 from .external_write_transaction import atomic_verified_bytes
 from .generation_planning import GenerationPlan
 from .generation_transport import strict_json
+from .image_record import _atomic_create_text
 from .training_source_io import _assert_unredirected, read_stable_training_source
 
 MAX_CANDIDATES = 32
@@ -253,7 +254,17 @@ def save_experiment(path, experiment, *, expected_digest=None):
         raise ValueError("The saved experiment changed. Reopen it before saving.")
     if existing is not None:
         atomic_verified_bytes(path.with_suffix(path.suffix + ".previous"), existing, label="Experiment recovery copy")
-    atomic_verified_bytes(path, raw, label="Generation experiment")
+        atomic_verified_bytes(path, raw, label="Generation experiment")
+    else:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        _assert_unredirected(path)
+        try:
+            _atomic_create_text(path, raw.decode("utf-8"))
+        except FileExistsError as error:
+            raise ValueError("The saved experiment changed. Reopen it before saving.") from error
+        verified, _ = read_stable_training_source(path, max_bytes=len(raw))
+        if verified != raw:
+            raise RuntimeError("Generation experiment failed exact read-back verification.")
     return hashlib.sha256(raw).hexdigest()
 
 
