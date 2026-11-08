@@ -600,7 +600,7 @@ class SavedGenerationWorkDialog(QDialog):
                 lambda review: self._review_setup_export(item, review))
             return
         path, _ = QFileDialog.getSaveFileName(self, "Export One Saved Item", Path(item["path"]).name,
-            "Saved JSON (*.json)")
+            "Saved JSON (*.json)", options=QFileDialog.DontConfirmOverwrite)
         if not path: return
         self._run("Export selected saved item",
             lambda cancelled: export_selected_saved_work(self.storage_root, self.kind,
