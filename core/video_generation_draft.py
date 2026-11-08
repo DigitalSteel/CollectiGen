@@ -128,7 +128,11 @@ def load_video_draft(path: str | Path) -> VideoGenerationRequest | VideoAuthorin
     if not isinstance(payload, dict):
         raise ValueError("This is not a video draft.")
     if payload.get("schema_id") == DRAFT_SCHEMA_ID:
+        if set(payload) != {"schema_id", "request"} or not isinstance(payload["request"], dict):
+            raise ValueError("The video draft has an invalid request envelope.")
         return VideoGenerationRequest.from_dict(payload["request"])
     if payload.get("schema_id") == AUTHORING_SCHEMA_ID:
+        if set(payload) != {"schema_id", "authoring"} or not isinstance(payload["authoring"], dict):
+            raise ValueError("The video draft has an invalid authoring envelope.")
         return VideoAuthoringDraft.from_dict(payload["authoring"])
     raise ValueError("This is not a video draft.")
