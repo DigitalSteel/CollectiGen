@@ -107,15 +107,23 @@ class VerifiedReleaseManifest:
         return matches[0]
 
 
-def sha256_file(path: str | Path, *, should_cancel: Callable[[], bool] | None = None) -> str:
+def sha256_file(path: str | Path, *, should_cancel: Callable[[], bool] | None = None,
+                expected_size: int | None = None) -> str:
     digest = hashlib.sha256()
+    remaining = expected_size
     with Path(path).open("rb") as stream:
         while True:
             if should_cancel is not None and should_cancel():
                 raise InterruptedError("Release artifact verification was cancelled.")
-            block = stream.read(1024 * 1024)
+            block = stream.read(1024 * 1024 if remaining is None else min(1024 * 1024, remaining + 1))
             if not block:
+                if remaining:
+                    raise ReleaseContractError("Release artifact size does not match the signed manifest.")
                 break
+            if remaining is not None:
+                remaining -= len(block)
+                if remaining < 0:
+                    raise ReleaseContractError("Release artifact size does not match the signed manifest.")
             digest.update(block)
     return digest.hexdigest()
 
@@ -301,7 +309,8 @@ def verify_artifact(path: str | Path, artifact: ReleaseArtifact, *,
         raise ReleaseContractError(f"Release artifact is unavailable: {exc}") from exc
     if size != artifact.size_bytes:
         raise ReleaseContractError("Release artifact size does not match the signed manifest.")
-    if not hmac.compare_digest(sha256_file(source, should_cancel=should_cancel), artifact.sha256):
+    if not hmac.compare_digest(sha256_file(
+            source, should_cancel=should_cancel, expected_size=artifact.size_bytes), artifact.sha256):
         raise ReleaseContractError("Release artifact SHA-256 does not match the signed manifest.")
 
 
