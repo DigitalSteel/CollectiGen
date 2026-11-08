@@ -61,7 +61,7 @@ def has_recipe_import_evidence(storage_root, item_path):
         return False
 
 
-def read_recipe_import_evidence(storage_root, item_path):
+def read_recipe_import_evidence(storage_root, item_path, *, selected_digest=None):
     """Read one local selected-preset record only if bound to exact saved bytes."""
     from .generation_recipes import _validate
     from .swarm_setup_file_import import validate_swarm_setup_evidence
@@ -72,6 +72,8 @@ def read_recipe_import_evidence(storage_root, item_path):
         return None
     raw_recipe = _preset_bytes(recipe, maximum=RECIPE_MAX_BYTES, label="Saved setup")
     saved_recipe = _validate(strict_json(raw_recipe))[0]
+    if selected_digest is not None and recipe_storage_digest(saved_recipe) != selected_digest:
+        raise ValueError("The selected setup changed. Refresh the list and select it again.")
     raw = _preset_bytes(target, maximum=MAX_IMPORT_EVIDENCE_BYTES,
                         label="Setup import evidence")
     receipt = strict_json(raw)

@@ -421,7 +421,8 @@ class SavedGenerationWorkDialog(QDialog):
             if callable(cancelled) and cancelled():
                 raise InterruptedError("Import-detail review was cancelled.")
             try:
-                return read_recipe_import_evidence(self.storage_root, item["path"]), ""
+                return read_recipe_import_evidence(
+                    self.storage_root, item["path"], selected_digest=item.get("content_digest")), ""
             except (OSError, ValueError, RuntimeError, TypeError, KeyError, UnicodeError) as exc:
                 return None, str(exc)
 
