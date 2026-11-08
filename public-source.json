@@ -1446,8 +1446,8 @@
       "size_bytes": 7634
     },
     "core/tag_default_package.py": {
-      "sha256": "38bcf6d5a51871651816a89e02824cc1fa7b0f5234998a69d35b1a722876d996",
-      "size_bytes": 7958
+      "sha256": "062750e52f88520daec6e77c098c3ef24ab1b94c18d550c0baff3972a9eb2233",
+      "size_bytes": 8050
     },
     "core/tag_identity_merge.py": {
       "sha256": "90f8782894f54f4f14e891811fc4df36784971ba37d6bddf5c139a5d31f82395",
@@ -3762,8 +3762,8 @@
       "size_bytes": 37126
     },
     "tests/test_tag_default_package.py": {
-      "sha256": "f0ee4952848584f9567ff55294d91ade791fd4fdbd3ff34fe8a81096520a0325",
-      "size_bytes": 11712
+      "sha256": "ceab31bd62c85f775eeefd12e99d98dd04ed9734e71b79369b59febdcc2129cb",
+      "size_bytes": 12088
     },
     "tests/test_tag_details_host.py": {
       "sha256": "c1a07db8f5a3026e13ee98c086f9f1c9b75069dd6adab846c6ad24922dfc60e4",

@@ -114,7 +114,8 @@ def prepare_tag_default_package(acquired, destination, should_cancel=None, *,
     destination.mkdir()
     extraction = destination / "Apps"
     extraction.mkdir()
-    extract_component_archive(artifact, extraction, member_extracted=check)
+    extract_component_archive(artifact, extraction, member_extracted=check,
+                              copy_checkpoint=check if should_cancel is not None else None)
     check()
     require(tuple(path.name for path in extraction.iterdir()) == ("TagDatabase",),
         "exact_tag_delivery_root_required")

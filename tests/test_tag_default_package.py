@@ -119,14 +119,24 @@ def test_inventory_and_independent_foundation_closure(tmp_path, case):
         prepare_tag_default_package(acquired, tmp_path / "prepared", trust_bytes=trust, component=component, acquisition_cache_root=acquired.acquired.artifact.parent.parent)
 
 
-def test_cancel_after_member_retains_owned_partial_output(tmp_path):
-    acquired, trust, component, publication, root = acquired_fixture(tmp_path)
+def test_cancel_during_member_retains_owned_partial_output(tmp_path):
+    def large_member_first(members):
+        remaining = dict(members)
+        members.clear()
+        members["TagDatabase/README.md"] = b"x" * (3 * 65536)
+        remaining.pop("TagDatabase/README.md")
+        members.update(remaining)
+
+    acquired, trust, component, _, _ = acquired_fixture(tmp_path, mutate=large_member_first)
     destination = tmp_path / "prepared"
+    partial = destination / "Apps/TagDatabase/README.md"
+
     def cancel():
-        return (destination / "Apps/TagDatabase/data/BOOTSTRAP_INVENTORY.json").exists()
+        return partial.exists() and partial.stat().st_size >= 65536
     with pytest.raises(InterruptedError):
         prepare_tag_default_package(acquired, destination, cancel, trust_bytes=trust, component=component, acquisition_cache_root=acquired.acquired.artifact.parent.parent)
-    assert destination.exists()
+    assert partial.stat().st_size == 65536
+    assert not (destination / "Apps/TagDatabase/data").exists()
     with pytest.raises(ValueError, match="new_disposable"):
         prepare_tag_default_package(acquired, destination, trust_bytes=trust, component=component, acquisition_cache_root=acquired.acquired.artifact.parent.parent)
 
