@@ -349,10 +349,9 @@ class TrainingWorkflowController(QObject):
 
     def evaluation(self, run_id='', required_resource=''):
         if self._closing: return None
-        from core.paths import USER_DATA_DIR
         from core.generation_execution import GenerationExecutionService
         from .training_evaluation_dialog import TrainingEvaluationDialog
-        from .generation_workflow import _host, open_generation_workspace
+        from .generation_workflow import _generation_data_root, _host, open_generation_workspace
         for dialog in self.dialogs:
             if (isinstance(dialog, TrainingEvaluationDialog) and dialog.run_id == run_id
                     and getattr(dialog, 'required_resource', '') == required_resource):
@@ -371,7 +370,7 @@ class TrainingWorkflowController(QObject):
                 raise ValueError('Add the selected training result to this Generate template before saving its comparison.')
             return current.plan
         dialog = TrainingEvaluationDialog(self.jobs,
-            GenerationExecutionService(USER_DATA_DIR / 'generation', self.jobs), template,
+            GenerationExecutionService(_generation_data_root(host) / 'generation', self.jobs), template,
             settings=getattr(getattr(host, 'state', None), 'settings', None),
             run_id=run_id, parent=self.parent())
         dialog.required_resource = required_resource
@@ -481,13 +480,13 @@ class TrainingWorkflowController(QObject):
         from pathlib import Path
         from core.generation_experiments import load_experiment
         from core.generation_planning import GenerationPlan
-        from core.paths import USER_DATA_DIR
-        from .generation_workflow import open_generation_workspace
+        from .generation_workflow import _generation_data_root, _host, open_generation_workspace
         try:
             group, path, digest = selection
             group_id = group['id']
             selected = Path(path).absolute()
-            if selected.parent != (USER_DATA_DIR / 'generation' / 'experiments').absolute():
+            directory = _generation_data_root(_host(self.parent())) / 'generation' / 'experiments'
+            if selected.parent != directory:
                 raise ValueError('The saved comparison group is outside the generation workspace.')
         except (KeyError, TypeError, ValueError) as exc:
             source.status.setText('The selected comparison group is invalid: ' + str(exc)[:1000]); return
