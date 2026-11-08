@@ -354,6 +354,8 @@ def inspect_swarm_setup_lora_stack(preset: SwarmSetupPreset):
                 len(value) > 32 or not re.fullmatch(r"[+-]?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)", value)
                 for value in values):
             raise ValueError("Provide one explicit numeric strength per LoRA in each supplied weight list.")
+        if any(len(value.partition(".")[2].rstrip("0")) > 3 for value in values):
+            raise ValueError("The setup editor can preserve up to three decimal places in LoRA strengths.")
         if any(not -10 <= float(value) <= 10 for value in values):
             raise ValueError("Each LoRA strength must be between -10 and 10.")
         return values
@@ -428,15 +430,13 @@ def _validate_resolved_loras(evidence, preset, recipe):
     if not stack or not isinstance(decisions, list) or len(decisions) != len(stack):
         raise ValueError("Match every LoRA in this source stack or leave the stack unmatched.")
     resource_ids = []
-    for decision, (name, model, encoder, _) in zip(decisions, stack, strict=True):
+    for decision, (name, _, _, _) in zip(decisions, stack, strict=True):
         if (not isinstance(decision, dict) or set(decision) != {"name", "resource_id", "sha256"}
                 or decision["name"] != name or not isinstance(decision["resource_id"], str)
                 or not decision["resource_id"] or len(decision["resource_id"]) > 128
                 or not isinstance(decision["sha256"], str)
                 or not re.fullmatch(r"[0-9a-f]{64}", decision["sha256"])):
             raise ValueError("A SwarmUI LoRA match does not identify its exact ordered source row.")
-        if any(len(value.partition(".")[2].rstrip("0")) > 3 for value in (model, encoder)):
-            raise ValueError("The setup editor can preserve up to three decimal places in LoRA strengths.")
         resource_ids.append(decision["resource_id"])
     if len(set(resource_ids)) != len(resource_ids) or len({row["sha256"] for row in decisions}) != len(decisions):
         raise ValueError("Choose a distinct exact registered copy for each LoRA in the stack.")
