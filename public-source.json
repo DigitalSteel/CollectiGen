@@ -274,8 +274,8 @@
       "size_bytes": 4938
     },
     "core/component_acquisition.py": {
-      "sha256": "04304db96f595b6d7a1a9f62e6645c506a3ea9ae642d73b2c2efec22172b93ce",
-      "size_bytes": 21343
+      "sha256": "d8b65bb2e9c1097479309530198e22d444557f023d82d11debc549fc36f7b6fd",
+      "size_bytes": 21580
     },
     "core/component_release_identity.py": {
       "sha256": "20d4730db277ed2629391dcf64ee84ee4707151112f60608e4f24490e8b05b96",
@@ -450,8 +450,8 @@
       "size_bytes": 2724
     },
     "core/encyclopedia_installation.py": {
-      "sha256": "16c6a6f3069158defbaf51a3ae526dd7c7c0757f177a68db7252eaddbe198179",
-      "size_bytes": 20750
+      "sha256": "7a15f62dd0631cff32dcb2a3d8bbba9d3f3fd7ddaa76a8c5f78dd7bc31e8bd5e",
+      "size_bytes": 20903
     },
     "core/encyclopedia_read_admission.py": {
       "sha256": "1dc12c7eced1844515439bb2ff8de31c5b28a330177adafb3abd6afe091849ef",

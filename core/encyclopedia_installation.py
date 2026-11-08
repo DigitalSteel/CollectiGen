@@ -161,6 +161,8 @@ class EncyclopediaInstallation:
         acquired = self.acquisition.acquire(reviewed.offer, progress=progress, should_cancel=should_cancel)
         phase('Verifying the downloaded reader')
         self._cancel(should_cancel)
+        self.acquisition.revalidate_offer(reviewed.offer, should_cancel=should_cancel,
+                                          refresh_listing=True)
         # Network/cache work does not hold root maintenance exclusion. Re-admit
         # exactly the same original owners and stale tokens before any mutation.
         with self._scope() as (root, base, owner, check):

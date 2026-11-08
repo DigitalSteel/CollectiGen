@@ -296,30 +296,49 @@ class ComponentAcquisition:
         self._offers = {o.release.manifest_sha256: o for o in offers}
         return tuple(offers)
 
-    def revalidate_offer(self, offer, *, should_cancel=None):
+    def revalidate_offer(self, offer, *, should_cancel=None, refresh_listing=False):
         """Before confirmation and acquisition: fresh identity, bytes and crypto."""
         self._trust()
         self._check(should_cancel)
         require(type(offer) is ComponentOffer and self._offers.get(offer.release.manifest_sha256) is offer,
                 "current_signed_offer_required")
         expected = self._expected_offer
-        if expected is None: return
-        expected.check_offer(offer)
-        listing, repository_id = self._listing(should_cancel)
-        selected = discover_releases(listing, component_id=expected.component_id, channel=expected.channel,
-            current_version=offer.current_version, complete=True).candidate
-        expected.check_locator(selected)
-        if selected != offer.locator or repository_id != offer.repository_id:
-            raise ExactOfferHold(EXACT_OFFER_HOLD)
-        message = self._fetch(offer.manifest_url, should_cancel)
-        signature = self._fetch(offer.signature_url, should_cancel)
-        if message != offer.manifest_bytes or signature != offer.signature_bytes:
-            raise ExactOfferHold(EXACT_OFFER_HOLD)
-        verified = verify_component_release(message, signature, self.trust,
-            expected_component=expected.component_id, expected_version=expected.software_version,
-            expected_channel=expected.channel, expected_os=expected.os, expected_architecture=expected.architecture)
-        if verified != offer.release: raise ExactOfferHold(EXACT_OFFER_HOLD)
+        if expected is None and not refresh_listing:
+            return
+        try:
+            if expected is not None:
+                expected.check_offer(offer)
+            changed = (EXACT_OFFER_HOLD if expected is not None else
+                       "The reviewed release changed during preparation. No update was staged.")
+            release = offer.release
+            listing, repository_id = self._listing(should_cancel)
+            selected = discover_releases(listing, component_id=release.component_id, channel=release.channel,
+                current_version=offer.current_version, complete=True).candidate
+            if expected is not None:
+                expected.check_locator(selected)
+            if selected != offer.locator or repository_id != offer.repository_id:
+                raise ExactOfferHold(changed)
+            message = self._fetch(offer.manifest_url, should_cancel)
+            signature = self._fetch(offer.signature_url, should_cancel)
+            if message != offer.manifest_bytes or signature != offer.signature_bytes:
+                raise ExactOfferHold(changed)
+            verified = verify_component_release(message, signature, self.trust,
+                expected_component=release.component_id, expected_version=release.software_version,
+                expected_channel=release.channel, expected_os=release.os, expected_architecture=release.architecture)
+            if verified != offer.release:
+                raise ExactOfferHold(changed)
+        except ExactOfferHold:
+            key = offer.release.manifest_sha256
+            if self._offers.get(key) is offer:
+                del self._offers[key]
+            raise
+        self._check_inflight_offer(offer, should_cancel)
+
+    def _check_inflight_offer(self, offer, should_cancel):
         self._check(should_cancel)
+        self._trust()
+        require(offer.trust_sha256 == self.trust_pin
+                and self._offers.get(offer.release.manifest_sha256) is offer, "changed_inflight_offer")
 
     def acquire(self, offer, *, progress=None, should_cancel=None):
         self._trust()
@@ -327,15 +346,9 @@ class ComponentAcquisition:
         require(type(offer) is ComponentOffer and self._offers.get(offer.release.manifest_sha256) is offer,
                 "current_signed_offer_required")
         require(offer.trust_sha256 == self.trust_pin, "changed_trust_evidence")
-        self.revalidate_offer(offer, should_cancel=should_cancel)
-        # Fresh exact metadata prevents mutation between review and transfer.
-        require(self._fetch(offer.manifest_url, should_cancel) == offer.manifest_bytes
-                and self._fetch(offer.signature_url, should_cancel) == offer.signature_bytes,
-                "changed_offer_metadata")
-        verified = verify_component_release(offer.manifest_bytes, offer.signature_bytes, self.trust,
-            expected_component=offer.release.component_id, expected_version=offer.release.software_version,
-            expected_channel=offer.release.channel, expected_os=self.os, expected_architecture=self.arch)
-        require(verified == offer.release and verified.artifact.size_bytes <= self.maximum, "changed_verified_offer")
+        self.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
+        verified = offer.release
+        require(verified.artifact.size_bytes <= self.maximum, "artifact_bound")
         cached = self._acquired.get(verified.manifest_sha256)
         if cached is not None:
             guard(cached)
