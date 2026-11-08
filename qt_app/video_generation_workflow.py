@@ -8,9 +8,9 @@ from PySide6.QtWidgets import QFileDialog
 
 from core.model_resource_registry import ModelResourceRegistry
 from core.paths import MODEL_RESOURCES_PATH, USER_DATA_DIR
-from core.video_generation_draft import load_video_draft
+from core.video_generation_draft import load_video_draft, scoped_video_draft_path
 
-from .generation_workflow import _host, _setup_window
+from .generation_workflow import _generation_data_root, _host, _setup_window
 from .status_notifications import FooterMessageBox as QMessageBox
 from .video_generation_dialog import VideoGenerationDialog
 from .workers import CoordinatedCallTask
@@ -19,18 +19,22 @@ from shiboken6 import isValid
 
 def choose_video_generation_draft(parent):
     """Select and read one explicit saved file before adding a video workspace."""
+    host = _host(parent)
+    scoped = getattr(host.state, "generation_data_root", None) is not None
+    directory = (_generation_data_root(host) if scoped else USER_DATA_DIR) / "video_generation"
     path, _ = QFileDialog.getOpenFileName(
-        parent, "Open video draft", str(USER_DATA_DIR / "video_generation"),
+        parent, "Open video draft", str(directory),
         "Video draft (*.json)",
     )
     if not path:
         return None
     try:
-        request = load_video_draft(Path(path).absolute())
+        target = scoped_video_draft_path(directory, path) if scoped else Path(path).absolute()
+        request = load_video_draft(target)
         dialog = open_video_generation_workspace(
             parent, initial_request=request, draft_label=Path(path).name,
         )
-    except (OSError, ValueError, TypeError, KeyError, OverflowError) as exc:
+    except (OSError, RuntimeError, ValueError, TypeError, KeyError, OverflowError) as exc:
         QMessageBox.information(
             parent, "Video draft needs attention",
             "The selected video draft could not be opened. Existing work was not changed. "
@@ -58,7 +62,7 @@ def open_video_generation_workspace(parent, *, source_path=None, on_opened=None,
     options=dict(source_path=source_path,on_opened=on_opened,
                  frame_reference_provider=frame_reference_provider,
                  initial_request=initial_request,draft_label=draft_label)
-    if factory is None:
+    if factory is None or not getattr(state, "generation_runtime_allowed", True):
         return _open_prepared_video_generation_workspace(parent,decoder_lifetime=lifetime,**options)
     if getattr(host,"_video_runtime_admission_task",None) is not None:
         return None
@@ -118,8 +122,13 @@ def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_op
     runtime_options={}
     if runtime_binding is not None:runtime_options["runtime_binding"]=runtime_binding
     if decoder_lifetime is not None:runtime_options["decoder_lifetime"]=decoder_lifetime
-    dialog = VideoGenerationDialog(state.jobs, ModelResourceRegistry(MODEL_RESOURCES_PATH),
-        state.settings, USER_DATA_DIR / "video_generation", parent=host,**runtime_options)
+    scoped = getattr(state, "generation_data_root", None) is not None
+    data_root = _generation_data_root(host) if scoped else USER_DATA_DIR
+    registry_path = data_root / MODEL_RESOURCES_PATH.name if scoped else MODEL_RESOURCES_PATH
+    dialog = VideoGenerationDialog(state.jobs, ModelResourceRegistry(registry_path),
+        state.settings, data_root / "video_generation", parent=host,
+        scoped_drafts=scoped, runtime_allowed=getattr(state, "generation_runtime_allowed", True),
+        **runtime_options)
     if initial_request is not None:
         if source_path is not None:
             dialog.deleteLater()

@@ -30,7 +30,7 @@ from core.model_resource_registry import ModelResourceError
 from core.model_organization import normalize_model_family
 from core.model_selection import protected_model_roots
 from core.training_source_io import read_stable_training_source
-from core.video_generation_draft import VideoAuthoringDraft, load_video_draft, save_video_draft
+from core.video_generation_draft import VideoAuthoringDraft, load_video_draft, save_video_draft, scoped_video_draft_path
 from core.video_runtime_preferences import load_video_runtime_preferences, save_video_runtime_preferences
 from core.video_decoder import verify_video_output
 from core.video_generation import ImageSourceReference, Rational, VideoGenerationRequest, VideoSourceAsset
@@ -110,10 +110,12 @@ class VideoGenerationDialog(QDialog):
 
     def __init__(self, jobs, registry, settings, storage_root, parent=None, *,
                  adapter_factory=None, verify_output=None, pinned_wan_resource_id="",
-                 runtime_binding=None, decoder_lifetime=None):
+                 runtime_binding=None, decoder_lifetime=None, scoped_drafts=False, runtime_allowed=True):
         super().__init__(parent)
         self.jobs, self.registry, self.settings = jobs, registry, settings
         self.storage_root = Path(storage_root).absolute()
+        self.scoped_drafts = scoped_drafts
+        self.runtime_allowed = runtime_allowed
         self.adapter_factory = adapter_factory
         self.pinned_wan_resource_id = pinned_wan_resource_id
         self.runtime_binding, self.decoder_lifetime = runtime_binding, decoder_lifetime
@@ -183,13 +185,15 @@ class VideoGenerationDialog(QDialog):
         self._job_timer.setInterval(300)
         self._job_timer.timeout.connect(self._poll_job)
         self.job_finished.connect(self._job_terminal)
-        self.setWindowTitle("Generate Video")
+        self.setWindowTitle("Generate Video" if runtime_allowed else "Plan a Video")
         self.setMinimumSize(900, 700)
         outer = QVBoxLayout(self)
-        heading = QLabel("Generate a short, silent video")
+        heading = QLabel("Generate a short, silent video" if runtime_allowed else "Plan a short, silent video")
         heading.setObjectName("sectionTitle")
         outer.addWidget(heading)
         intro = QLabel("Use one exact Wan2.2 TI2V-5B transformer, UMT5 text encoder and VAE in an isolated local Comfy process. Review the graph and any source crop before submitting. Verified clips return to Ingest unreviewed.")
+        if not runtime_allowed:
+            intro.setText("Describe the video, review its output settings, and save a draft. Generator access is unavailable here.")
         intro.setWordWrap(True)
         outer.addWidget(intro)
         self.section_bar = QTabBar()
@@ -501,6 +505,12 @@ class VideoGenerationDialog(QDialog):
                                  (models_box,), (runtime_box,))
         form_stack.addStretch(1)
         self.section_bar.currentChanged.connect(self._show_section)
+        if not runtime_allowed:
+            self.section_bar.removeTab(2)
+            self.section_bar.removeTab(1)
+            self.section_bar.hide()
+            self.setup_jump_button.hide()
+            save_scope.setText("Save Draft keeps this request in Manager's Video draft folder.")
         self._show_section(0)
 
         self.review = QPlainTextEdit()
@@ -570,7 +580,10 @@ class VideoGenerationDialog(QDialog):
         self.append_intent.toggled.connect(self._invalidate)
         self._task_changed()
         try:
-            self._apply_local_setup()
+            if runtime_allowed:
+                self._apply_local_setup()
+            else:
+                self._set_status("Enter a prompt, then save the draft when ready.")
         except Exception as exc:
             self._set_status(f"Saved local video setup was not loaded: {exc}")
         self._clean_draft_snapshot = self._draft_display_snapshot()
@@ -928,6 +941,8 @@ class VideoGenerationDialog(QDialog):
         self.scroll.verticalScrollBar().setValue(0)
 
     def show_local_setup(self):
+        if not self.runtime_allowed:
+            return
         self.section_bar.setCurrentIndex(2)
         if self._runtime_storage_locator is not None:
             self.storage_options_button.setChecked(True)
@@ -960,6 +975,8 @@ class VideoGenerationDialog(QDialog):
         self._clean_setup_snapshot = self._setup_snapshot()
 
     def save_local_setup(self, *, on_saved=None):
+        if not self.runtime_allowed:
+            return
         fields = self._setup_fields()
         snapshot = self._setup_snapshot()
         expected = self._setup_digest
@@ -976,6 +993,8 @@ class VideoGenerationDialog(QDialog):
         return True
 
     def reload_local_setup(self):
+        if not self.runtime_allowed:
+            return
         if self._runtime_storage_locator is not None or self._runtime_receipt is not None:
             self._set_status("Close the retained preparation through recovery before changing runtime setup.")
             return
@@ -1078,6 +1097,8 @@ class VideoGenerationDialog(QDialog):
         return identity
 
     def choose_model(self, component):
+        if not self.runtime_allowed:
+            return
         if self._runtime_storage_locator is not None or self._runtime_receipt is not None or self._busy():
             return
         from .model_selector_dialog import ModelSelectorDialog
@@ -1211,6 +1232,8 @@ class VideoGenerationDialog(QDialog):
             "port": self.port.value(), "free_gib": self.free_gib.value()}
 
     def preview_setup(self):
+        if not self.runtime_allowed:
+            return
         if self._runtime_storage_locator is not None or self._runtime_receipt is not None:
             self._set_status("Close the retained preparation through recovery before changing runtime setup.")
             return
@@ -1231,6 +1254,8 @@ class VideoGenerationDialog(QDialog):
         self._run("Preview isolated Comfy setup", prepare, complete)
 
     def prepare_model_storage(self):
+        if not self.runtime_allowed:
+            return
         if self._busy() or self._runtime_receipt is not None or self._runtime_start_uncertain:
             return
         if self._runtime_storage_locator is not None:
@@ -1241,6 +1266,8 @@ class VideoGenerationDialog(QDialog):
             lambda config: self._open_runtime_storage(config=config))
 
     def recover_model_storage(self):
+        if not self.runtime_allowed:
+            return
         if self._busy() or self._runtime_receipt is not None:
             return
         locator = self._runtime_storage_locator
@@ -1338,6 +1365,8 @@ class VideoGenerationDialog(QDialog):
         self._clean_setup_snapshot = self._setup_snapshot()
 
     def start_runtime(self):
+        if not self.runtime_allowed:
+            return
         if self._busy() or self._runtime_receipt is not None or self._shutdown_requested:
             return
         if self._runtime_storage_locator is not None:
@@ -1486,6 +1515,8 @@ class VideoGenerationDialog(QDialog):
             source_state_provider=self._source_state_provider)
 
     def prepare_video(self):
+        if not self.runtime_allowed:
+            return
         try:
             draft = self._typed_request()
         except Exception as exc:
@@ -1553,6 +1584,8 @@ class VideoGenerationDialog(QDialog):
         return f"{prefix}: {state}."
 
     def submit_video(self):
+        if not self.runtime_allowed:
+            return
         if self._prepared is None or self._adapter is None:
             self._set_status("Prepare and review a video first."); return
         graph = self._prepared["graph_plan"]
@@ -1629,6 +1662,8 @@ class VideoGenerationDialog(QDialog):
                   complete, cancelable=False)
 
     def preview_video(self):
+        if not self.runtime_allowed:
+            return
         if self._verified_receipt is None:
             return
         output = self._verified_receipt["outputs"][0]
@@ -1648,6 +1683,8 @@ class VideoGenerationDialog(QDialog):
         self._advance_shutdown()
 
     def finish_video(self):
+        if not self.runtime_allowed:
+            return
         if self._verified_receipt is None:
             return
         output = self._verified_receipt["outputs"][0]
@@ -1685,6 +1722,8 @@ class VideoGenerationDialog(QDialog):
             frame_reference_provider=handoff["frame_reference_provider"])
 
     def send_to_ingest(self):
+        if not self.runtime_allowed:
+            return
         if self._verified_receipt is None:
             return
         def complete(outputs):
@@ -1997,14 +2036,20 @@ class VideoGenerationDialog(QDialog):
         except Exception as exc:
             self._set_status(f"Video draft could not be saved: {exc}"); return False
         try:
+            if self.scoped_drafts:
+                scoped_video_draft_path(self.storage_root, self.storage_root / "draft.json")
             self.storage_root.mkdir(parents=True, exist_ok=True)
-        except OSError as exc:
+        except (OSError, RuntimeError, ValueError) as exc:
             self._set_status(f"Video draft location is unavailable: {exc}"); return False
         path, _ = QFileDialog.getSaveFileName(self, "Save new video draft",
             str(self.storage_root / f"video-draft-{uuid4().hex}.json"), "Video draft (*.json)")
         if not path:
             return False
-        target = Path(path).absolute()
+        try:
+            target = scoped_video_draft_path(self.storage_root, path) if self.scoped_drafts else Path(path).absolute()
+        except (OSError, RuntimeError, ValueError) as exc:
+            self._set_status(str(exc))
+            return False
         if target.exists() or target.suffix.casefold() != ".json":
             self._set_status("Choose a new .json filename. Existing drafts are never overwritten."); return False
         snapshot = self._draft_display_snapshot()
@@ -2031,7 +2076,11 @@ class VideoGenerationDialog(QDialog):
             str(self.storage_root), "Video draft (*.json)")
         if not path:
             return
-        target = Path(path).absolute()
+        try:
+            target = scoped_video_draft_path(self.storage_root, path) if self.scoped_drafts else Path(path).absolute()
+        except (OSError, RuntimeError, ValueError) as exc:
+            self._set_status(str(exc))
+            return
         self._run("Load video draft", lambda: load_video_draft(target), self._restore_draft)
 
     def _restore_draft(self, request):
@@ -2124,6 +2173,8 @@ class VideoGenerationDialog(QDialog):
         self._set_status(
             "Exact draft retained for inspect and save; its fields cannot all execute in these controls."
             if self._loaded_future is not None else
+            "Draft loaded. Edit and save a new copy when ready."
+            if not self.runtime_allowed else
             "Draft loaded. Reattach the exact source, then review models and local runtime with Preview Setup."
             if request.source_image is not None else
             "Draft loaded. Review models and local runtime with Preview Setup before execution."
@@ -2166,8 +2217,11 @@ class VideoGenerationDialog(QDialog):
         self._clean_draft_snapshot = self._loaded_display_snapshot
         self._refresh_request_summary()
         self._refresh_video_output_summary()
-        self._set_status("Unfinished draft loaded. Complete the missing source or model choices, "
-            "then review local runtime with Preview Setup before execution.")
+        self._set_status(
+            "Unfinished draft loaded. Continue planning or save a new copy." if not self.runtime_allowed else
+            "Unfinished draft loaded. Complete the missing source or model choices, "
+            "then review local runtime with Preview Setup before execution."
+        )
         self._update_actions()
 
     def new_draft(self):
@@ -2236,6 +2290,8 @@ class VideoGenerationDialog(QDialog):
         self.close_workspace()
 
     def open_dependency_pack(self):
+        if not self.runtime_allowed:
+            return
         if self._shutdown_requested:
             return
         if self._pack_dialog is None:
@@ -2263,6 +2319,18 @@ class VideoGenerationDialog(QDialog):
         self.native_source_preview.prepare_for_privacy_capture()
 
     def _update_actions(self, *_args):
+        if not self.runtime_allowed:
+            idle = not self._busy() and not self._shutdown_requested
+            self.scroll.setEnabled(idle and self._loaded_future is None)
+            self.review.setVisible(self._loaded_future is not None)
+            self.review_loss.hide()
+            self.save_button.setEnabled(idle)
+            self.load_button.setEnabled(idle)
+            self.new_button.setEnabled(idle)
+            self.cancel_step_button.setEnabled(self._busy() and self._task_cancelable)
+            self.close_button.setEnabled(idle)
+            self._update_action_presentation()
+            return
         self._refresh_runtime_summary()
         busy = self._busy()
         retained = self._runtime_storage_locator is not None
@@ -2329,7 +2397,9 @@ class VideoGenerationDialog(QDialog):
 
     def _update_action_presentation(self, *_args):
         """Disclose the existing action buttons without changing their safety gates."""
-        if self.more_actions_button.isChecked():
+        if not self.runtime_allowed:
+            chosen = [button for button in (self.cancel_step_button, self.save_button) if button.isEnabled()]
+        elif self.more_actions_button.isChecked():
             chosen = list(self._action_buttons)
         else:
             chosen = []
@@ -2373,7 +2443,8 @@ class VideoGenerationDialog(QDialog):
             "Fewer Video Actions" if self.more_actions_button.isChecked()
             else "More Video Actions…"
         )
-        order = tuple((*chosen, self.more_actions_button, self.close_button))
+        disclosure = (self.more_actions_button,) if self.runtime_allowed else ()
+        order = (*chosen, *disclosure, self.close_button)
         if order == self._shown_action_buttons:
             return
         for button in (*self._action_buttons, self.more_actions_button, self.close_button):

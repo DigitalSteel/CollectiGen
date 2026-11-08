@@ -560,6 +560,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.generate_plan_button.setToolTip("Create or reopen an image draft. Generator access is unavailable here.")
             self.generate_plan_button.clicked.connect(self.open_generate_plan)
             applications_layout.addWidget(self.generate_plan_button, 0, Qt.AlignLeft)
+            self._video_draft_picker_open = False
+            for label, action in (
+                ("Plan a Video…", self.open_video_plan),
+                ("Open Video Draft…", lambda: self.open_video_plan(reopen=True)),
+            ):
+                button = compact_action(QPushButton(label))
+                button.setVisible(not view.synthetic and normal_entry_session is not None)
+                button.clicked.connect(action)
+                applications_layout.addWidget(button, 0, Qt.AlignLeft)
             applications_layout.addWidget(self.krea_training_review_button, 0, Qt.AlignLeft)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
@@ -1218,19 +1227,24 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if self.chat_host is not None: self.chat_host.cancel_load()
             self.render_ollama_load()
 
-        def open_generate_plan(self):
+        def _offline_generation_state(self):
             session = normal_entry_session
-            if (view.synthetic or session is None or session.state != "ready"
-                    or self.close_policy.pending or self._image_draft_picker_open):
+            if view.synthetic or session is None or session.state != "ready" or self.close_policy.pending:
                 return
             from types import SimpleNamespace
             from core.background_jobs import BackgroundJobManager
-            from qt_app.generation_workflow import choose_generation_draft, open_generation_workspace
 
             if not hasattr(self, "state"):
                 root = Path(session.admitted.layout.data_root) / "Manager"
                 self.state = SimpleNamespace(jobs=BackgroundJobManager(), settings=None,
                     generation_data_root=root, generation_runtime_allowed=False)
+            return self.state
+
+        def open_generate_plan(self):
+            if self._image_draft_picker_open or self._offline_generation_state() is None:
+                return
+            from qt_app.generation_workflow import choose_generation_draft, open_generation_workspace
+
             if getattr(self, "_generation_dialog", None) is not None:
                 open_generation_workspace(self)
                 return
@@ -1239,6 +1253,25 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 choose_generation_draft(self, allow_draft_transfer=True)
             finally:
                 self._image_draft_picker_open = False
+
+        def open_video_plan(self, *, reopen=False):
+            if self._video_draft_picker_open or self._offline_generation_state() is None:
+                return
+            from qt_app.video_generation_workflow import choose_video_generation_draft, open_video_generation_workspace
+            current = getattr(self, "_video_generation_dialog", None)
+            if not reopen:
+                open_video_generation_workspace(self)
+                return
+            self._video_draft_picker_open = True
+            try:
+                if current is None:
+                    choose_video_generation_draft(self)
+                else:
+                    current.show()
+                    current.raise_()
+                    current.load_draft()
+            finally:
+                self._video_draft_picker_open = False
 
         def open_krea_training_review(self):
             registry_path = krea_registry_path
@@ -1830,6 +1863,17 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.statusBar().showMessage("Close held: wait for image plan work to finish, then close again.")
                 event.ignore()
                 return
+            if self._video_draft_picker_open:
+                self.statusBar().showMessage("Close the video draft chooser before closing Manager.")
+                event.ignore()
+                return
+            video = getattr(self, "_video_generation_dialog", None)
+            if video is not None:
+                video.close_workspace()
+                if self._video_generation_dialog is video:
+                    self.statusBar().showMessage("Close held. Finish or save the video draft, then close Manager again.")
+                    event.ignore()
+                    return
             generation_state = getattr(self, "state", None)
             if generation_state is not None:
                 if not generation_state.jobs.shutdown(wait=False):
