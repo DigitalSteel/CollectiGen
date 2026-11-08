@@ -450,8 +450,8 @@
       "size_bytes": 2724
     },
     "core/encyclopedia_installation.py": {
-      "sha256": "cae69617acdc66d19e724090d5d04748d5f947c37331b6e12fae9fa96401092a",
-      "size_bytes": 20433
+      "sha256": "16c6a6f3069158defbaf51a3ae526dd7c7c0757f177a68db7252eaddbe198179",
+      "size_bytes": 20750
     },
     "core/encyclopedia_read_admission.py": {
       "sha256": "1dc12c7eced1844515439bb2ff8de31c5b28a330177adafb3abd6afe091849ef",

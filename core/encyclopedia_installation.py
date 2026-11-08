@@ -234,11 +234,14 @@ class EncyclopediaInstallation:
                         self.store.save(installed.selected, expected=expected)
                 require(self.store.selected(self.store.observe()) == installed.selected, "connection_publication_readback")
                 check()
+                require(self._observe(root, base, owner) == replace(installed, connection_pending=True),
+                        "changed_component_before_connection_completion")
+                require(read_json(path) == intent, "changed_connection_publication_intent")
                 path.unlink()
                 require(not path.exists(), "connection_intent_clear_readback")
                 installed = replace(installed, connection_pending=False)
             except Exception as error:
-                return InstallationResult(installed, False,
+                return InstallationResult(replace(installed, connection_pending=path.exists()), False,
                     f"Executable transaction saved; connection publication needs Retry save. {error}")
         if restoring:
             return InstallationResult(installed, True,
