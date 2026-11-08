@@ -126,7 +126,11 @@ class KreaTrainingCompatibilityService:
             raise ValueError("The training package changed during the report. Verify or rebuild it first.")
         if resolved.inspection is not None:
             _assert_unredirected(resolved.inspection.path)
-            if _identity(resolved.inspection.path.stat(follow_symlinks=False)) != resolved.inspection.file_state:
+            try:
+                state = resolved.inspection.path.stat(follow_symlinks=False)
+            except FileNotFoundError as exc:
+                raise ValueError("The base model disappeared during the report. Inspect it again.") from exc
+            if _identity(state) != resolved.inspection.file_state:
                 raise ValueError("The base model changed during the report. Inspect it again.")
         _cancel(should_cancel)
         return KreaTrainingCompatibilityReport(**payload, fingerprint=fingerprint)

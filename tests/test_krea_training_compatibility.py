@@ -192,13 +192,17 @@ def test_current_package_verifier_remains_authority_for_unknown_schema(tmp_path)
         KreaTrainingCompatibilityService().report(result.verification, registry)
 
 
-def test_changed_base_during_report_is_refused(tmp_path, monkeypatch):
+@pytest.mark.parametrize("change", ["changed", "disappeared"])
+def test_changed_base_during_report_is_refused(tmp_path, monkeypatch, change):
     result, registry, base = adapter_package(tmp_path)
     resolve = registry.resolve
     def changed(*a, **k):
         value = resolve(*a, **k)
-        base.write_bytes(base.read_bytes() + b"changed")
+        if change == "disappeared":
+            base.unlink()
+        else:
+            base.write_bytes(base.read_bytes() + b"changed")
         return value
     monkeypatch.setattr(registry, "resolve", changed)
-    with pytest.raises(ValueError, match="base model changed"):
+    with pytest.raises(ValueError, match=f"base model {change}"):
         KreaTrainingCompatibilityService().report(result.verification, registry)
