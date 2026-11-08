@@ -73,7 +73,8 @@ class DetachedAdmissionPlan(AdmissionPlan):
         return selected
 
 
-    def provision_training_worker(self, proof_bytes, *, code_root, data_root, should_cancel=None):
+    def provision_training_worker(self, proof_bytes, *, code_root, data_root, should_cancel=None,
+                                  prepare_workspace=False):
         """Bind a previously admitted worker to an explicitly owned installation."""
         rows = self.training_worker_file_rows(proof_bytes)
         if rows is None:
@@ -88,6 +89,10 @@ class DetachedAdmissionPlan(AdmissionPlan):
                 "training_worker_code_and_data_must_be_separate")
         runtime = _path(code / "training-worker" / "python")
         work = _path(data / "Manager" / "TrainingReview")
+        if prepare_workspace:
+            require(work.parent.is_dir(), "training_review_manager_data_required")
+            work.mkdir(exist_ok=True)
+            work = _path(work)
         require(work.is_dir(), "training_review_owned_directory_required")
         from tempfile import mkdtemp
         receipt_root = Path(mkdtemp(prefix="worker-pin-", dir=work))

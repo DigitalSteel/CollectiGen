@@ -2874,8 +2874,8 @@
       "size_bytes": 2988
     },
     "suite_core/discovery/manager_runtime_detached_admission.py": {
-      "sha256": "a7ac7a785cd528872831438d67cbbebf5f93b5fa87eb7711686cb8aa50412367",
-      "size_bytes": 12014
+      "sha256": "43bcef039d1ca2715dd261eda85ceac8caf32b5a872f2cea16f166b9a71c2a98",
+      "size_bytes": 12260
     },
     "suite_core/discovery/offline_component_producer.py": {
       "sha256": "ae8399f38fa12af7f5329056ec1291bcd7a49dcf7368e6359ae16f02c4c72ef8",
@@ -3182,8 +3182,8 @@
       "size_bytes": 9718
     },
     "suite_core/manager/entry_binding.py": {
-      "sha256": "be4ed31ec8852112a335b370bf2866a97aa7ab39444be9b1852ec822b3e9bf9a",
-      "size_bytes": 13086
+      "sha256": "e0263377300ee6ae3091dd57b5a7b4a9360bab5b2af82e958183fe422d3d3a4b",
+      "size_bytes": 12766
     },
     "suite_core/manager/frozen_entry.py": {
       "sha256": "45378a465e85cc418e4d96bed17439dabd4024cc7553c3256c7718239f945dfd",

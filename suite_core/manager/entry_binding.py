@@ -181,15 +181,10 @@ def _bind_training_worker(admitted, signed_worker, *, prepare_workspace=False):
     manager = next((row for row in rows if row["path"] == PAYLOAD_ENTRY), None)
     if manager is None or not executable.is_file() or sha256_file(executable) != manager["sha256"]:
         raise EntryHold("training_worker_manager_identity_changed")
-    data = _path(admitted.layout.data_root)
-    if prepare_workspace and plan.training_worker_file_rows(proof) is not None:
-        manager_data = _path(data / "Manager")
-        if not manager_data.is_dir():
-            raise EntryHold("training_review_manager_data_required")
-        workspace = _path(manager_data / "TrainingReview")
-        workspace.mkdir(exist_ok=True)
-        _path(workspace)
-    return plan.provision_training_worker(proof, code_root=code, data_root=data)
+    return plan.provision_training_worker(
+        proof, code_root=code, data_root=admitted.layout.data_root,
+        prepare_workspace=prepare_workspace,
+    )
 
 
 def launch_manager(*, normal_entry_session=None, argv=None, executable=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None, signed_training_worker=None):
