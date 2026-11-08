@@ -333,7 +333,7 @@ def save_named_recipe(storage_root, recipe, *, operation_id=None, import_evidenc
     return target
 
 
-def export_selected_saved_work(storage_root, kind, item_path, destination, *, cancelled=None):
+def export_selected_saved_work(storage_root, kind, item_path, destination, *, cancelled=None, selected_draft_digest=None):
     """Export one managed item to an explicitly chosen new path without replacing it."""
     source = _checked_managed_path(storage_root, kind, item_path)
     destination = Path(destination).absolute()
@@ -342,7 +342,12 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, ca
     _assert_unredirected(destination)
     if callable(cancelled) and cancelled():
         raise InterruptedError("Saved-work export was cancelled.")
-    value = _load(kind, source)
+    if kind == "drafts" and selected_draft_digest is not None:
+        value, digest = load_plan_with_digest(source)
+        if digest != selected_draft_digest:
+            raise ValueError("The selected draft changed. Refresh the list and choose it again before exporting.")
+    else:
+        value = _load(kind, source)
     if source == destination or destination.exists():
         raise ValueError("Choose a new export filename; the existing file is preserved.")
     if callable(cancelled) and cancelled():

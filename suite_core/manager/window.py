@@ -1236,7 +1236,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 return
             self._image_draft_picker_open = True
             try:
-                choose_generation_draft(self)
+                choose_generation_draft(self, allow_draft_transfer=True)
             finally:
                 self._image_draft_picker_open = False
 

@@ -614,8 +614,8 @@
       "size_bytes": 4170
     },
     "core/generation_saved_work.py": {
-      "sha256": "65dd8b7af3c46aca1cf603fd2c38531ee0d19f438ceb976ab7e0861b59ed5c14",
-      "size_bytes": 36460
+      "sha256": "aec4ffb8b27a4a31816183e72257b4a4774e512c9e7e088ceee7d78757e3de59",
+      "size_bytes": 36778
     },
     "core/generation_swarm_components.py": {
       "sha256": "7130176ef4314a16f1a5910e89e79a462564b770932e92004f2d9f84ebd40e73",
@@ -2210,8 +2210,8 @@
       "size_bytes": 11633
     },
     "qt_app/generation_saved_work_dialog.py": {
-      "sha256": "0c6ab4f9548b06464c7d5968b761318a08a07bf2020f4b32f433f80f0393eea1",
-      "size_bytes": 35545
+      "sha256": "8ded154ee4aedcfc3741d12c226c1ba7ae1058e293d66be9964f9b6c3bbbc890",
+      "size_bytes": 36537
     },
     "qt_app/generation_setup_save.py": {
       "sha256": "88e4ae0cc0db47eb0bd4cd0f62ba16608b702e46f3dd95b5f3f2324b6dc1b511",
@@ -2222,8 +2222,8 @@
       "size_bytes": 4593
     },
     "qt_app/generation_workflow.py": {
-      "sha256": "bb3e834db9fbdbcc58b54815ae4cda96da6e531e3d60cec1371a1571b01783f3",
-      "size_bytes": 41515
+      "sha256": "acbd3a20f312b9495a12f6d779d91136e4cddfd404de259d7de9765a3bc8a02e",
+      "size_bytes": 41589
     },
     "qt_app/guided_review_dialog.py": {
       "sha256": "1c24d12a6c63b31a698ca98e17e8d6c9816c4f333e48e9e0ab767c0522ce6b62",
@@ -3330,8 +3330,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "37e51b2a0b11a8eba95361a97e596bfe199f9fb9ca6ee58029e7f35acec215a4",
-      "size_bytes": 180585
+      "sha256": "57368218c9f55eaac44bdb6aa46be71fa4fada15eb0a62f40f03ae5f7f73f9c9",
+      "size_bytes": 180612
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

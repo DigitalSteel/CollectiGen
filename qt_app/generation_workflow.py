@@ -358,7 +358,7 @@ def _apply_finishing_draft(target, value):
     target._refresh_from_plan("Winner opened for refinement at its source size. Review the final size, then preview and apply its output stages.")
 
 
-def choose_generation_draft(parent):
+def choose_generation_draft(parent, *, allow_draft_transfer=False):
     """Choose and validate a saved request before adding a Generate workspace."""
     from core.generation_planning import load_plan_with_digest
     from .generation_saved_work_dialog import SavedGenerationWorkDialog
@@ -366,7 +366,7 @@ def choose_generation_draft(parent):
     host = _host(parent)
     browser = SavedGenerationWorkDialog(
         host.state.jobs, _generation_data_root(host) / "generation", "drafts",
-        parent=parent, selection_only=True,
+        parent=parent, selection_only=True, allow_draft_transfer=allow_draft_transfer,
     )
     if browser.exec() != QDialog.Accepted:
         return
