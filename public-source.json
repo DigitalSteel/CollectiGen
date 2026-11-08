@@ -1442,8 +1442,8 @@
       "size_bytes": 3330
     },
     "core/tag_default_acquisition.py": {
-      "sha256": "291b60a41cb4570e872f37447a2c382b602545128a62ceb6bafe780daaf00131",
-      "size_bytes": 7534
+      "sha256": "69c119d8c0cd291f7c67ecaefbfb7e8821be86711ed995aeb5984f05412976c6",
+      "size_bytes": 7634
     },
     "core/tag_default_package.py": {
       "sha256": "8c205b57659271b04d134bed2ac59231db2c891958effc9d4362edfe23b8e888",

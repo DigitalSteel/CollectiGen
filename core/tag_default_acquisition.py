@@ -142,6 +142,7 @@ class TagDefaultAcquisition:
         self._discovery = None  # One-shot; every failed/cancelled transfer needs fresh review.
         self.acquisition.revalidate_offer(offer, should_cancel=should_cancel)
         acquired = self.acquisition.acquire(offer, progress=progress, should_cancel=should_cancel)
+        self.acquisition.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
         self._check(baseline, should_cancel)
         if type(acquired) is not AcquiredComponent or acquired.offer is not offer:
             raise ValueError("Original acquired Tag data artifact required")
