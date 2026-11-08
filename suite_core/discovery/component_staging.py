@@ -426,6 +426,7 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         os.replace(staging, destination)  # same filesystem; absent immutable destination
         failpoint("version_published")
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_commit")
+        payload(root, target, component, platform, payload_policy=policy)
         atomic(base / "active.json", target)
         failpoint("active_reference_replaced")
         journal["phase"] = "activated"
