@@ -37,7 +37,7 @@ def _directory(storage_root, kind):
 def _checked_managed_path(storage_root, kind, path):
     directory = _directory(storage_root, kind)
     selected = Path(path).absolute()
-    if selected.parent != directory or selected.suffix.lower() != ".json":
+    if selected.parent != directory or selected.suffix.lower() != ".json" or ":" in selected.name:
         raise ValueError("Choose one saved item from this generation workspace.")
     _assert_unredirected(selected)
     return selected
@@ -337,6 +337,8 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, ca
     """Export one managed item to an explicitly chosen new path without replacing it."""
     source = _checked_managed_path(storage_root, kind, item_path)
     destination = Path(destination).absolute()
+    if kind == "drafts" and ":" in destination.name:
+        raise ValueError("Choose a regular file for the draft copy.")
     _assert_unredirected(destination)
     if callable(cancelled) and cancelled():
         raise InterruptedError("Saved-work export was cancelled.")
