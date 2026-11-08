@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 975,
+  "allowlisted_source_file_count": 981,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1752,6 +1752,10 @@
     "core/training_resource_guidance.py": {
       "sha256": "b658c92be2d5db07c457d40600c4ae2dec2b5a18a25d7bcc5f9fcdaff04c1413",
       "size_bytes": 9840
+    },
+    "core/training_restricted_loading_contract.py": {
+      "sha256": "0032817951aba8261def4981c91d2265176d2a266738ceb107180d772eb08801",
+      "size_bytes": 8442
     },
     "core/training_result.py": {
       "sha256": "96ac20e4fb2b484ab8afa9b14a8426ac5d7a11024cb6d0e5682c11cc5883f664",
@@ -3912,6 +3916,26 @@
     "tools/test_suites.py": {
       "sha256": "f7161af6f6ae0d02bd14671f0926e2615bb4be791138fd80ecf5b213d5e03162",
       "size_bytes": 62717
+    },
+    "tools/training_dataset_package.json": {
+      "sha256": "b4f8e7a7c3bc2d82189ea8e3b2e77bcbabab9f67c7404863549b24bf20d610eb",
+      "size_bytes": 166397
+    },
+    "tools/training_dataset_profile_worker.py": {
+      "sha256": "0668f30b8dad24c28d4424fb3c95e0eab4fff53f3819a7277f2b565ec1e0eac1",
+      "size_bytes": 4346
+    },
+    "tools/training_runtime_probe.py": {
+      "sha256": "ac4b82610ed3afe39b9c216a620c0dcebe1a358c88d912b06fcb11cb5cc2e585",
+      "size_bytes": 42561
+    },
+    "tools/training_runtime_sources.json": {
+      "sha256": "93895f4aed34e4e81b42951348f241346b07e3beb10c5fcdc56a2318082bb750",
+      "size_bytes": 21202
+    },
+    "tools/training_verification_worker.py": {
+      "sha256": "347399a0512db30103e59562c46d98590e629a3740396c5492f11b3e989cef63",
+      "size_bytes": 4141
     },
     "version.py": {
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48",
