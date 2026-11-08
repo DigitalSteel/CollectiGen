@@ -109,6 +109,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         swarm_preset_service=None,
         runtime_allowed=True,
         review_verified_results=False,
+        checked_connection=None,
+        checked_connection_provider=None,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -127,6 +129,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.prompt_knowledge = prompt_knowledge
         self.swarm_preset_service = swarm_preset_service
         self.runtime_allowed = runtime_allowed
+        self._checked_connection = checked_connection
+        self._checked_connection_provider = checked_connection_provider
         self._review_verified_results = review_verified_results and not runtime_allowed
         self.storage_root = Path(storage_root)
         self.source_record = GenerationRecord.from_dict(source_record.to_dict()) if source_record else None
@@ -242,7 +246,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         if self._review_verified_results:
             self.tabs.setTabText(results_tab, "Verified Results")
         self.tabs.setTabVisible(results_tab, self.runtime_allowed or self._review_verified_results)
-        self.tabs.setTabVisible(self._readiness_tab_index, self.runtime_allowed)
+        self.tabs.setTabVisible(self._readiness_tab_index, self.runtime_allowed or self._checked_connection is not None)
         body = QHBoxLayout()
         body.addWidget(self.tabs, 1)
         self.source_panel = self._build_source_panel()
@@ -1766,7 +1770,11 @@ class GenerationDialog(FeedbackEnabledDialog):
 
     def _build_connection_tab(self) -> QWidget:
         page = QWidget(); layout = QVBoxLayout(page)
-        note = QLabel("Check your generator, selected model and request before generating. Checks do not start generation. Manage the generator in Setup.")
+        note = QLabel(
+            "Check the saved generator, bind the exact model and prepare the request for review."
+            if self._checked_connection is not None else
+            "Check your generator, selected model and request before generating. Checks do not start generation. Manage the generator in Setup."
+        )
         note.setWordWrap(True); layout.addWidget(note)
         self.alternatives_return_button = QPushButton("Return to Saved Alternatives")
         self.alternatives_return_button.clicked.connect(self.return_to_alternatives)
@@ -1780,7 +1788,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         layout.addWidget(self.setup_button, 0, Qt.AlignRight)
         manual = QWidget(); form = QFormLayout(manual)
         self.endpoint = QLineEdit(self.initial_endpoint); self.endpoint.setAccessibleName("Local generator endpoint")
-        self.endpoint.setReadOnly(self.setup_available)
+        self.endpoint.setReadOnly(self.setup_available or self._checked_connection is not None)
         self.local_model_name = QLineEdit(); self.local_model_name.setPlaceholderText("Exact model name reported by the generator")
         self.local_model_path = QLineEdit(); self.local_model_path.setPlaceholderText("User-chosen local .safetensors file")
         form.addRow("Local endpoint", self.endpoint); form.addRow("Generator model name", self.local_model_name); form.addRow("Local safe tensor file", self.local_model_path)
@@ -2632,7 +2640,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         output_blocker = self._output_followup_blocker()
         memory_blocker = self._memory_submission_blocker()
         input_issue, _target = self._ordinary_input_issue()
-        self.submit_button.setEnabled(prepared_valid and self._seed_input_valid() and not output_blocker and not memory_blocker and not input_issue and self.safety_ack.isChecked() and not self._pending and not active and source_ready)
+        self.submit_button.setEnabled(self.runtime_allowed and prepared_valid and self._seed_input_valid() and not output_blocker and not memory_blocker and not input_issue and self.safety_ack.isChecked() and not self._pending and not active and source_ready)
         self.submit_button.setToolTip("Reconnect the exact source image before submitting Remix." if not source_ready else input_issue or memory_blocker)
         idle = not self._pending and not active
         if (getattr(self, "_memory_observation_plan_digest", None) != self.plan.digest
@@ -2688,7 +2696,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         if self._output_preview and self._output_preview.get("application_blocker"):
             self.output_apply_button.setEnabled(False)
         self.output_apply_button.setToolTip((self._output_preview or {}).get("application_blocker", ""))
-        self.check_button.setEnabled(idle and self.runtime_allowed)
+        self.check_button.setEnabled(idle and (self.runtime_allowed or self._checked_connection is not None))
         self.choose_resource_button.setEnabled(self.registry is not None and not self._pending and not active)
         for button in (self.add_lora_button, self.choose_vae_button, self.choose_other_resource_button):
             button.setEnabled(self.registry is not None and not self._pending and not active)
@@ -3226,6 +3234,14 @@ class GenerationDialog(FeedbackEnabledDialog):
                      if callable(self.source_image_provider) else "Saved image reference; reconnect the exact original to continue.")
 
         if not self.runtime_allowed:
+            if self._checked_connection is not None:
+                self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
+                    result="A prepared request for review, or a saved draft.",
+                    readiness="Preparation only. Manager cannot submit this request.",
+                    next_step=("Save the draft or export the request." if prepared_valid else
+                               "Open Readiness to check the saved generator, bind an exact model and prepare the request."))
+                self._next_step_tab = self._readiness_tab_index
+                return
             next_step = ("Enter an image prompt on Request." if not self.plan.request.positive_prompt
                          else input_issue or "Review your request, then save the draft or export the request.")
             self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
@@ -3447,14 +3463,26 @@ class GenerationDialog(FeedbackEnabledDialog):
         if not self._pending:
             self._io_timer.stop()
 
-    def _require_generation_runtime(self):
+    def _require_generation_runtime(self, *, preparation=False):
         if self.runtime_allowed:
             return True
+        if self._checked_connection is not None:
+            if not preparation:
+                self.status.setText("Manager can prepare this request for review. Submission is unavailable.")
+                return False
+            if (callable(self._checked_connection_provider)
+                    and self._checked_connection_provider() == self._checked_connection
+                    and self.endpoint.text() == self._checked_connection[0]):
+                return True
+            self.adapter = self.binding = self.prepared = None
+            self.status.setText("The saved generator connection changed. Reopen the image plan after reviewing it.")
+            self._update_actions()
+            return False
         self.status.setText("This workspace supports planning and export. Generator access is unavailable here.")
         return False
 
     def check_connection(self) -> None:
-        if not self._require_generation_runtime():
+        if not self._require_generation_runtime(preparation=True):
             return
         if self._pending or self._execution_active(): return
         if self.connection_issue:
@@ -3465,13 +3493,18 @@ class GenerationDialog(FeedbackEnabledDialog):
         if not endpoint.startswith("http://127.0.0.1") and not endpoint.startswith("http://localhost"):
             self.status.setText("Choose a localhost endpoint before checking a generator."); return
         try:
+            options = {}
+            if self._checked_connection is not None:
+                options["expected_server_id"] = self._checked_connection[1]
             adapter = SwarmLocalAdapter(endpoint, memory_evidence_provider=
-                GenerationExecutionService(self.storage_root, self.jobs).memory_evidence_provider())
+                GenerationExecutionService(self.storage_root, self.jobs).memory_evidence_provider(), **options)
         except ValueError as exc:
             self.status.setText(str(exc)); return
         self.adapter = None; self.binding = None; self.prepared = None
         self.status.setText("Checking the selected local connection…")
         def done(probe):
+            if self._checked_connection is not None and not self._require_generation_runtime(preparation=True):
+                return
             self.adapter = adapter
             context = self.plan.target_context
             context.update(adapter_id=probe.get("adapter_id", ""), adapter_version=probe.get("version", ""), fingerprint=probe.get("fingerprint", ""))
@@ -3480,6 +3513,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._run("probe", adapter.probe, done)
 
     def bind_local_model(self) -> None:
+        if not self._require_generation_runtime(preparation=True):
+            return
         if self._pending or self._execution_active() or self.adapter is None: return
         name, path = self.local_model_name.text().strip(), Path(self.local_model_path.text().strip())
         if not name or path.suffix.casefold() != ".safetensors":
@@ -3490,6 +3525,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._run("binding", lambda: adapter.bind_model(name, path, self.registry), self._bound)
 
     def find_selected_model(self):
+        if not self._require_generation_runtime(preparation=True):
+            return
         if self._pending or self._execution_active() or self.adapter is None:
             self.status.setText("Check the local connection first, then find the selected main model.")
             return
@@ -3544,6 +3581,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         next_resource(0)
 
     def _bound(self, binding: Any) -> None:
+        if self._checked_connection is not None and not self._require_generation_runtime(preparation=True):
+            return
         self.binding = _mapping(binding)
         resource_id = str(self.binding.get("resource_id", "")).removeprefix("sha256:")
         self.plan = self.plan.revise({"request": {"model": self.binding.get("name", ""), "model_hash": resource_id}}, source="binding", consequence="Exact local model binding selected")
@@ -3551,6 +3590,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.prepared = None; self.connection_detail.setPlainText(_plain_json(binding)); self._refresh_from_plan("Exact local model is bound. Review its visible name and hash, then prepare.")
 
     def prepare_request(self) -> None:
+        if not self._require_generation_runtime(preparation=True):
+            return
         if self._pending or self._execution_active(): return
         input_issue, _target = self._ordinary_input_issue()
         if input_issue:
@@ -3629,11 +3670,16 @@ class GenerationDialog(FeedbackEnabledDialog):
         return ""
 
     def _prepared(self, prepared: Any) -> None:
+        if self._checked_connection is not None and not self._require_generation_runtime(preparation=True):
+            return
         self.prepared = _mapping(prepared)
         valid = bool(self.prepared and self.prepared.get("valid", self.prepared.get("request") is not None))
         self.connection_detail.setPlainText(_plain_json(prepared))
-        self.status.setText("Prepared request is ready for explicit submission; GPU memory fit remains unproven. Review the memory observation in Readiness." if valid else "Preflight blocked this request. Review the reported blockers before preparing again.")
-        if valid and self._memory_submission_blocker():
+        if valid and self._checked_connection is not None:
+            self.status.setText("Request prepared for review. Manager cannot submit it.")
+        else:
+            self.status.setText("Prepared request is ready for explicit submission; GPU memory fit remains unproven. Review the memory observation in Readiness." if valid else "Preflight blocked this request. Review the reported blockers before preparing again.")
+        if valid and self.runtime_allowed and self._memory_submission_blocker():
             self.status.setText(self._memory_submission_blocker())
         if valid and self.binding:
             from core.generation_execution import GenerationExecutionService

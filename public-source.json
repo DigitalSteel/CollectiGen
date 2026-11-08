@@ -2170,8 +2170,8 @@
       "size_bytes": 79634
     },
     "qt_app/generation_dialog.py": {
-      "sha256": "98fa336b7b87b036017ffc749dbd9b5ed0273ea670c680aeb2edce76496df712",
-      "size_bytes": 267586
+      "sha256": "8c0c84a60a4c2db1b7aa2212ab42e83406dd8f4d22faaa2758f6e01a04ddbae1",
+      "size_bytes": 270495
     },
     "qt_app/generation_experiment_dialog.py": {
       "sha256": "a7b66ad345d40ed7dd84441a6232a9e0599ad478251ba1e57bf22a3eab990eba",
@@ -2222,8 +2222,8 @@
       "size_bytes": 4593
     },
     "qt_app/generation_workflow.py": {
-      "sha256": "4788cdeba0f8d2a02d223aeb5c4c996913eebfab70cff5e133a670eb33101850",
-      "size_bytes": 41686
+      "sha256": "d53b013cce6b7e30efe9791f2630e46895ebdf794b2e78e7cba7e8caab1348e6",
+      "size_bytes": 42049
     },
     "qt_app/guided_review_dialog.py": {
       "sha256": "1c24d12a6c63b31a698ca98e17e8d6c9816c4f333e48e9e0ab767c0522ce6b62",
@@ -3330,8 +3330,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "bc243c8abf54884a0f456243e535c4ea1defbf491031dcfdf6a5144e514b9711",
-      "size_bytes": 188478
+      "sha256": "5d61a651b145f535a0fe50181f7f90e8166712ee90882c29d15489191bbc9b68",
+      "size_bytes": 189055
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

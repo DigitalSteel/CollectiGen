@@ -529,10 +529,14 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
                     "text": ", ".join(o.sdxl_tags), "reviewed": True}
                    for o in getattr(character_db, "outfits", {}).values()][:1000]
         runtime_allowed = getattr(state, "generation_runtime_allowed", True)
+        provider = getattr(state, "checked_image_connection", None)
+        checked_connection = provider() if not runtime_allowed and callable(provider) else None
         endpoint, connection_issue = (
             _saved_runtime_connection(setup_window, data_root) if runtime_allowed else
             ("", "Generator access is unavailable in this workspace.")
         )
+        if checked_connection is not None:
+            endpoint, connection_issue = checked_connection[0], ""
         dialog = GenerationDialog(state.jobs, registry=model_registry,
             storage_root=data_root / "generation", source_record=source,
             source_identity=identity, knowledge_fragments=fragments,
@@ -546,7 +550,8 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             initial_endpoint=endpoint, connection_issue=connection_issue,
             prompt_knowledge=getattr(state, "knowledge", None),
             characters=characters, outfits=outfits, runtime_allowed=runtime_allowed,
-            review_verified_results=getattr(state, "generation_review_verified_results", False), parent=host)
+            review_verified_results=getattr(state, "generation_review_verified_results", False),
+            checked_connection=checked_connection, checked_connection_provider=provider, parent=host)
         dialog.source_records = saved_records
         if preloaded_draft is not None:
             plan, target, token = preloaded_draft
