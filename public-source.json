@@ -614,8 +614,8 @@
       "size_bytes": 4170
     },
     "core/generation_saved_work.py": {
-      "sha256": "904f22fc4049329978e1a27fd47a0128e40ba62e950ab2394bd7221e42f8e647",
-      "size_bytes": 37801
+      "sha256": "01519e6ae31e5567670cb05a4d35fb4055b7f4a93ae7038b0ad7034aced3642f",
+      "size_bytes": 38333
     },
     "core/generation_swarm_components.py": {
       "sha256": "7130176ef4314a16f1a5910e89e79a462564b770932e92004f2d9f84ebd40e73",
@@ -2234,8 +2234,8 @@
       "size_bytes": 11633
     },
     "qt_app/generation_saved_work_dialog.py": {
-      "sha256": "8abd68bd5a0a3bc14440a6cb7e933dbc92e0992fe91fd6063e7c1a9128923350",
-      "size_bytes": 36602
+      "sha256": "056b2f890410ae99aa8e0e0eef755e40d4ade5a6899d4fd7e2764db27de84c91",
+      "size_bytes": 36667
     },
     "qt_app/generation_setup_save.py": {
       "sha256": "88e4ae0cc0db47eb0bd4cd0f62ba16608b702e46f3dd95b5f3f2324b6dc1b511",
