@@ -17,19 +17,22 @@ from .workers import CoordinatedCallTask
 from shiboken6 import isValid
 
 
-def choose_video_generation_draft(parent):
+def choose_video_generation_draft(parent, *, import_copy=False):
     """Select and read one explicit saved file before adding a video workspace."""
     host = _host(parent)
     scoped = getattr(host.state, "generation_data_root", None) is not None
     directory = (_generation_data_root(host) if scoped else USER_DATA_DIR) / "video_generation"
+    if import_copy and (not scoped or getattr(host.state, "generation_runtime_allowed", True)):
+        raise ValueError("Import a copy from Manager's offline video workspace.")
+    title = "Import a copy of a video draft" if import_copy else "Open video draft"
     path, _ = QFileDialog.getOpenFileName(
-        parent, "Open video draft", str(directory),
+        parent, title, str(directory),
         "Video draft (*.json)",
     )
     if not path:
         return None
     try:
-        target = scoped_video_draft_path(directory, path) if scoped else Path(path).absolute()
+        target = scoped_video_draft_path(directory, path) if scoped and not import_copy else Path(path).absolute()
         request = load_video_draft(target)
         dialog = open_video_generation_workspace(
             parent, initial_request=request, draft_label=Path(path).name,
@@ -49,6 +52,8 @@ def choose_video_generation_draft(parent):
         "Video draft needs attention\n"
     ):
         footer.show_message("")
+    if import_copy and dialog is not None:
+        dialog.status.setText("Draft opened as a copy. Choose Save Draft to keep a new copy in Manager.")
     return dialog
 
 

@@ -564,6 +564,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             for label, action in (
                 ("Plan a Video…", self.open_video_plan),
                 ("Open Video Draft…", lambda: self.open_video_plan(reopen=True)),
+                ("Import Video Draft Copy…", lambda: self.open_video_plan(import_copy=True)),
             ):
                 button = compact_action(QPushButton(label))
                 button.setVisible(not view.synthetic and normal_entry_session is not None)
@@ -1254,18 +1255,23 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             finally:
                 self._image_draft_picker_open = False
 
-        def open_video_plan(self, *, reopen=False):
+        def open_video_plan(self, *, reopen=False, import_copy=False):
             if self._video_draft_picker_open or self._offline_generation_state() is None:
                 return
             from qt_app.video_generation_workflow import choose_video_generation_draft, open_video_generation_workspace
             current = getattr(self, "_video_generation_dialog", None)
-            if not reopen:
+            if import_copy and current is not None:
+                current.show()
+                current.raise_()
+                current.status.setText("Close this draft before importing another video draft copy.")
+                return
+            if not reopen and not import_copy:
                 open_video_generation_workspace(self)
                 return
             self._video_draft_picker_open = True
             try:
                 if current is None:
-                    choose_video_generation_draft(self)
+                    choose_video_generation_draft(self, import_copy=import_copy)
                 else:
                     current.show()
                     current.raise_()
