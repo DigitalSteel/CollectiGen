@@ -407,6 +407,8 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
             "manifest": base64.b64encode(manifest_bytes).decode(), "signature": base64.b64encode(signature_bytes).decode(),
             "prior_journal": None}
         require(len(canonical(journal)) <= MAX_METADATA_BYTES, "journal_size")
+        if copy_checkpoint is not None:
+            copy_checkpoint()
         atomic(pending_path, journal)
         staging.mkdir()
         failpoint("staging_created")

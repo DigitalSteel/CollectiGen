@@ -274,6 +274,26 @@ def test_failed_recovery_clear_retries_publication_after_restart_without_rollbac
     assert (f.root / "State" / COMPONENT.value / "transaction.json").read_bytes() == journal
 
 
+def test_cancel_after_archive_hash_leaves_no_pending_install(fixture, monkeypatch):
+    f = fixture
+    reviewed = f.reviewed()
+    cancelled = False
+    original = staging.verify_artifact
+
+    def verify(path, artifact):
+        nonlocal cancelled
+        original(path, artifact)
+        cancelled = True
+
+    monkeypatch.setattr(staging, "verify_artifact", verify)
+    with pytest.raises(InterruptedError):
+        f.service.install(reviewed, confirmed=True, should_cancel=lambda: cancelled)
+    assert cancelled
+    assert not f.service.observe().pending
+    assert not reviewed.destination.exists()
+    assert f.sentinel.read_bytes() == b'{"unknown_future":[1,2]}\n'
+
+
 @pytest.mark.parametrize("phase,settled", [("member_extracted", False), ("version_published", True)])
 def test_cancel_during_staging_retains_recovery_and_after_publish_settles(fixture, monkeypatch, phase, settled):
     import core.encyclopedia_installation as service_module

@@ -2834,8 +2834,8 @@
       "size_bytes": 9361
     },
     "suite_core/discovery/component_staging.py": {
-      "sha256": "db3c44d2f0aaafa88ba2c0742768ba79ff8334d6a4126d67f8725971c8f01065",
-      "size_bytes": 31487
+      "sha256": "67ab0dfa5fc59dd2eea53ca868425ce7c21d27c78b225ddc926c1ea8cf8d4fff",
+      "size_bytes": 31559
     },
     "suite_core/discovery/github_component_releases.py": {
       "sha256": "b18b23ba7b4b96df22e1659801694c28742f32ac79651c72416fe354f0263c08",
@@ -3694,8 +3694,8 @@
       "size_bytes": 6065
     },
     "tests/test_encyclopedia_installation.py": {
-      "sha256": "215ea0e23efeb7c26354f403bd19c21221524b47cf514b94c1fc1355ad958fec",
-      "size_bytes": 18256
+      "sha256": "2995756aa89a817384d4d5e9666a410df2b0cc9b4d53ed173aaebb7f66d77c99",
+      "size_bytes": 18930
     },
     "tests/test_encyclopedia_qualification_build.py": {
       "sha256": "e6dbdbf48a59210e1d5a9a606f0cb3aef90d0b3dce9b7286e9d809582a48ee39",
