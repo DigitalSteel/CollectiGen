@@ -211,6 +211,12 @@ class SdScriptsSdxlLoraPreviewService:
     The prior result is an expected snapshot, never trusted as current evidence.
     No package, source, registry, config, environment or output file is written.
     """
+    @staticmethod
+    def require_supported_configuration(config: TrainingConfiguration) -> None:
+        config.require_single_checkpoint_adapter()
+        if config.target_model_family.casefold() != "sdxl" or config.target_model_version not in {"", "1.0", "base-1.0"} or config.output_kind != "lora":
+            raise ValueError("This proposal covers SDXL 1.0 ordinary LoRA only. The manual package remains available.")
+
     def preview(self, package: TrainingPackageVerification, registry: ModelResourceRegistry,
                 recipe: SdxlLoraRecipe = SdxlLoraRecipe(), *, progress=None, should_cancel=None) -> TrainingAdapterPreview:
         recipe.validate()
@@ -227,9 +233,7 @@ class SdScriptsSdxlLoraPreviewService:
         if current.manifest != package.manifest:
             raise ValueError("The cached package inventory differs from its verified manifest. Verify it again.")
         config = TrainingConfiguration.from_dict(current.manifest["training_configuration"])
-        config.require_single_checkpoint_adapter()
-        if config.target_model_family.casefold() != "sdxl" or config.target_model_version not in {"", "1.0", "base-1.0"} or config.output_kind != "lora":
-            raise ValueError("This proposal covers SDXL 1.0 ordinary LoRA only. The manual package remains available.")
+        self.require_supported_configuration(config)
         if progress:
             progress(0, 0, "Verifying the exact registered base model")
         _cancel(should_cancel)

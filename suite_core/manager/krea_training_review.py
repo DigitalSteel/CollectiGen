@@ -62,7 +62,7 @@ class KreaTrainingReviewDialog(QDialog):
         self.dataset_button.hide()
         self.dataset_button.clicked.connect(self._verify_dataset)
         layout.addWidget(self.dataset_button, 0, Qt.AlignLeft)
-        self.adapter_button = QPushButton("Review SDXL Trainer Settings?")
+        self.adapter_button = QPushButton("Review SDXL Trainer Settings…")
         self.adapter_button.hide()
         self.adapter_button.clicked.connect(self._open_adapter_preview)
         layout.addWidget(self.adapter_button, 0, Qt.AlignLeft)
@@ -182,8 +182,15 @@ class KreaTrainingReviewDialog(QDialog):
             if (self._registry_path is not None and self._preview_jobs is not None
                     and configuration.target_model_family.casefold() == "sdxl"
                     and configuration.output_kind == "lora"):
-                self._verification = verification
-                self.adapter_button.show()
+                from core.training_adapter_preview import SdScriptsSdxlLoraPreviewService
+
+                try:
+                    SdScriptsSdxlLoraPreviewService.require_supported_configuration(configuration)
+                except ValueError as exc:
+                    self.status.setText(f"Trainer Settings unavailable. {exc}")
+                else:
+                    self._verification = verification
+                    self.adapter_button.show()
             if (self._dataset_verifier is not None
                            and configuration.target_model_family.casefold() == "sdxl"
                            and configuration.output_kind == "lora"):

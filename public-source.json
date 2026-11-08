@@ -1566,8 +1566,8 @@
       "size_bytes": 9207
     },
     "core/training_adapter_preview.py": {
-      "sha256": "0df4fb786f223f77d2615b23c498a4280fde29f8e575f6919754d3b996a1d29c",
-      "size_bytes": 24175
+      "sha256": "b18f001a6572cddb3d3571708c61988d47a226177644ae442efdd2e2eb33001a",
+      "size_bytes": 24327
     },
     "core/training_anima.py": {
       "sha256": "4368627fccab95e9d5d3bc38ad1fea4ddbbdc5d82483bf7e70f7c19c3040894d",
@@ -3170,8 +3170,8 @@
       "size_bytes": 3128
     },
     "suite_core/manager/krea_training_review.py": {
-      "sha256": "866f131a24ba874e07505600b0128deb00637f02581bb509cea52a5a242dd58a",
-      "size_bytes": 27510
+      "sha256": "79da656a960259d4f6ac33de42b61f10410d4d0da5e374cf12dced4a9b19cb80",
+      "size_bytes": 27875
     },
     "suite_core/manager/launcher_main.py": {
       "sha256": "33adf7ee200a23dd52062074697fc2a5a62c5ef611572c38308dada16d9b13e5",
