@@ -74,6 +74,7 @@ class KreaTrainingCompatibilityService:
         config = TrainingConfiguration.from_dict(current.manifest["training_configuration"])
         if config.target_model_family.casefold() not in {"krea 2", "krea2"} or config.output_kind != "lora":
             raise ValueError("This report covers Krea 2 LoRA packages only.")
+        registered_base = registry.snapshot()[0]["resources"].get(config.base_model_id)
         resolved = registry.resolve(config.base_model_id, role="checkpoint", family="Krea 2",
                                     progress=progress, should_cancel=should_cancel)
         manifest = current.manifest
@@ -132,6 +133,8 @@ class KreaTrainingCompatibilityService:
                 raise ValueError("The base model disappeared during the report. Inspect it again.") from exc
             if _identity(state) != resolved.inspection.file_state:
                 raise ValueError("The base model changed during the report. Inspect it again.")
+        if registry.snapshot()[0]["resources"].get(config.base_model_id) != registered_base:
+            raise ValueError("The base model registry entry changed during the report. Review it again.")
         _cancel(should_cancel)
         return KreaTrainingCompatibilityReport(**payload, fingerprint=fingerprint)
 

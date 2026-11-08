@@ -3334,12 +3334,12 @@
       "size_bytes": 324
     },
     "core/krea_training_compatibility.py": {
-      "sha256": "3f6c0ce6dbaa84627a48f550e91c5da04aa0f609ef3be9cec144cd8ee470e145",
-      "size_bytes": 11279
+      "sha256": "b69495d190e694cc290187afdd230e502e37621a79c3a6425c4ce713da67727c",
+      "size_bytes": 11566
     },
     "tests/test_krea_training_compatibility.py": {
-      "sha256": "942a8966372d47da5461f602f43ee7673ac4da38bebea8ecee40c74b958d3aea",
-      "size_bytes": 11657
+      "sha256": "06d06eebbfa781a05fdd540caaf416d136d0d484d6f1616494db0168d6ede6e3",
+      "size_bytes": 12507
     },
     "docs/KREA2_PACKAGE_REPORT.md": {
       "sha256": "1878ac08c9f96bc7c353f708671147136b1cda803a574ec46189c67a07a34c4a",

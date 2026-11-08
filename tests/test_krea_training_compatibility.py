@@ -206,3 +206,24 @@ def test_changed_base_during_report_is_refused(tmp_path, monkeypatch, change):
     monkeypatch.setattr(registry, "resolve", changed)
     with pytest.raises(ValueError, match=f"base model {change}"):
         KreaTrainingCompatibilityService().report(result.verification, registry)
+
+
+def test_changed_base_registration_during_report_is_refused(tmp_path, monkeypatch):
+    result, registry, base = adapter_package(tmp_path)
+    original = base.read_bytes()
+    resolve = registry.resolve
+
+    def changed(*args, **kwargs):
+        resolved = resolve(*args, **kwargs)
+        alternate = tmp_path / "alternate-base.safetensors"
+        alternate.write_bytes(original)
+        registry.attach_verified_location(
+            resolved.resource_id, inspect_model_resource(alternate),
+            expected_registry=registry.snapshot()[1],
+        )
+        return resolved
+
+    monkeypatch.setattr(registry, "resolve", changed)
+    with pytest.raises(ValueError, match="registry entry changed"):
+        KreaTrainingCompatibilityService().report(result.verification, registry)
+    assert base.read_bytes() == original
