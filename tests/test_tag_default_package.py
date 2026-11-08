@@ -164,16 +164,26 @@ def test_attempt_directory_cannot_masquerade_as_cache_root(tmp_path):
     assert not destination.exists()
 
 
-def test_cancel_during_final_hashing_holds_success_and_retains_output(tmp_path, monkeypatch):
+@pytest.mark.parametrize("hash_to_cancel", [1, 2, 3])
+def test_cancel_during_hashing_stops_before_next_phase(tmp_path, monkeypatch, hash_to_cancel):
     acquired, trust, component, publication, root = acquired_fixture(tmp_path)
     import core.tag_default_package as module
+    from core import knowledge_pack
     original = module.verify_artifact
+    load_foundation = knowledge_pack.load_foundation_pack
+    decoded = []
+
+    def load(path):
+        decoded.append(path)
+        return load_foundation(path)
+
+    monkeypatch.setattr(knowledge_pack, "load_foundation_pack", load)
     cancelled = [False]
     calls = []
     def verify(path, artifact):
         original(path, artifact)
         calls.append(1)
-        if len(calls) == 3:  # Pre-extract, before decode, then final verification.
+        if len(calls) == hash_to_cancel:
             cancelled[0] = True
     monkeypatch.setattr(module, "verify_artifact", verify)
     destination = tmp_path / "prepared"
@@ -181,8 +191,10 @@ def test_cancel_during_final_hashing_holds_success_and_retains_output(tmp_path, 
         module.prepare_tag_default_package(acquired, destination, lambda: cancelled[0],
             trust_bytes=trust, component=component,
             acquisition_cache_root=acquired.acquired.artifact.parent.parent)
-    assert len(calls) == 3
-    assert (destination / "Apps/TagDatabase/data/TagDatabase.zip").exists()
+    assert len(calls) == hash_to_cancel
+    assert destination.exists() == (hash_to_cancel > 1)
+    assert (destination / "Apps/TagDatabase/data/TagDatabase.zip").exists() == (hash_to_cancel > 1)
+    assert len(decoded) == (1 if hash_to_cancel == 3 else 0)
 
 
 @pytest.mark.parametrize("case", ["traversal", "symlink", "duplicate", "nonempty"])

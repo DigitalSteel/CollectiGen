@@ -110,6 +110,7 @@ def prepare_tag_default_package(acquired, destination, should_cancel=None, *,
         guard(artifact)
     check()
     verify_artifact(artifact, verified.artifact)
+    check()
     destination.mkdir()
     extraction = destination / "Apps"
     extraction.mkdir()
@@ -126,6 +127,7 @@ def prepare_tag_default_package(acquired, destination, should_cancel=None, *,
             "tag_inventory_platform_mismatch")
         verify_artifact(artifact, verified.artifact)
     validate()
+    check()
     pack = source / "TagDatabase.zip"
     companion = source / "metadata/TagDatabase.source-snapshot.json"
     guard(pack)
