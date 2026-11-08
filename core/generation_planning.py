@@ -935,7 +935,13 @@ def export_plan(plan: GenerationPlan) -> bytes:
 def _read_plan_bytes(path: Path, limit: int = MAX_PLAN_BYTES) -> bytes | None:
     _assert_unredirected(path)
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    flags |= getattr(os, "O_NONBLOCK", 0)
     try:
+        initial = path.stat(follow_symlinks=False)
+        if not stat.S_ISREG(initial.st_mode):
+            raise GenerationPlanValidationError("Choose a regular generation-plan file.")
+        if initial.st_size > limit:
+            raise GenerationPlanValidationError("The saved generation plan exceeds the supported size limit.")
         descriptor = os.open(path, flags)
     except FileNotFoundError:
         return None
@@ -943,7 +949,7 @@ def _read_plan_bytes(path: Path, limit: int = MAX_PLAN_BYTES) -> bytes | None:
         before = os.fstat(handle.fileno())
         current = path.stat(follow_symlinks=False)
         _assert_unredirected(path)
-        if not stat.S_ISREG(before.st_mode) or _identity(before) != _identity(current):
+        if not stat.S_ISREG(before.st_mode) or _identity(before) != _identity(current) or _identity(before) != _identity(initial):
             raise GenerationPlanValidationError("The generation-plan path changed before it could be read.")
         raw = handle.read(limit + 1)
         after = os.fstat(handle.fileno())
@@ -953,6 +959,8 @@ def _read_plan_bytes(path: Path, limit: int = MAX_PLAN_BYTES) -> bytes | None:
         raise GenerationPlanValidationError("The generation-plan path changed while it was read.")
     if len(raw) > limit:
         raise GenerationPlanValidationError("The saved generation plan exceeds the supported size limit.")
+    if len(raw) != before.st_size:
+        raise GenerationPlanValidationError("The generation-plan file could not be read completely.")
     return raw
 
 
