@@ -65,7 +65,10 @@ class KreaTrainingCompatibilityService:
         if progress:
             progress(0, 0, "Verifying the exact package for the Krea compatibility report")
         _cancel(should_cancel)
-        current = TrainingPackageService().verify(expected.destination, should_cancel=should_cancel, limits=limits)
+        current = TrainingPackageService().verify(
+            expected.destination, should_cancel=should_cancel, limits=limits,
+            expected_package_fingerprint=expected.package_fingerprint,
+        )
         _cancel(should_cancel)
         if current.inspection_limited:
             raise ValueError("The package exceeds the review limits. Choose a smaller package.")

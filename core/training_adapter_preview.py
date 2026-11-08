@@ -226,7 +226,10 @@ class SdScriptsSdxlLoraPreviewService:
         if progress:
             progress(0, 0, "Verifying the exact training package")
         _cancel(should_cancel)
-        current = TrainingPackageService().verify(package.destination, should_cancel=should_cancel)
+        current = TrainingPackageService().verify(
+            package.destination, should_cancel=should_cancel,
+            expected_package_fingerprint=package.package_fingerprint,
+        )
         _cancel(should_cancel)
         if not current.valid or current.package_fingerprint != package.package_fingerprint:
             raise ValueError("The training package changed or failed verification. Verify or rebuild it first.")

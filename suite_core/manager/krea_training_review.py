@@ -123,7 +123,9 @@ class KreaTrainingReviewDialog(QDialog):
             )
         except ModelResourceError:
             current = TrainingPackageService().verify(
-                package_path, should_cancel=self._cancel.is_set, limits=limits)
+                package_path, should_cancel=self._cancel.is_set, limits=limits,
+                expected_package_fingerprint=verification.package_fingerprint,
+            )
             if (not current.valid or current.inspection_limited
                     or current.package_fingerprint != verification.package_fingerprint):
                 raise ValueError("The package changed or could not be rechecked. Select a current package.") from None
