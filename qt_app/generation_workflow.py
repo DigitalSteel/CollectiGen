@@ -48,6 +48,13 @@ def _generation_data_root(host):
     return root
 
 
+def _generation_registry_path(host, data_root):
+    if getattr(host.state, "generation_data_root", None) is None:
+        return MODEL_RESOURCES_PATH
+    registry_path = getattr(host.state, "generation_registry_path", None)
+    return registry_path if registry_path is not None else data_root / MODEL_RESOURCES_PATH.name
+
+
 def _saved_runtime_connection(setup_window, data_root=None):
     """Read enrolled loopback metadata only; this never checks or starts SwarmUI."""
     from core.generation_transport import local_endpoint
@@ -481,11 +488,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
         return {"bytes": raw, "sha256": metadata["sha256"]}
 
     data_root = _generation_data_root(host)
-    registry_path = (
-        MODEL_RESOURCES_PATH if getattr(state, "generation_data_root", None) is None
-        else data_root / MODEL_RESOURCES_PATH.name
-    )
-    model_registry = ModelResourceRegistry(registry_path)
+    model_registry = ModelResourceRegistry(_generation_registry_path(host, data_root))
 
     def prepare():
         if initial_plan is not None:

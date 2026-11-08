@@ -1311,6 +1311,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 root = Path(session.admitted.layout.data_root) / "Manager"
                 self.state = SimpleNamespace(jobs=BackgroundJobManager(), settings=None,
                     generation_data_root=root, generation_runtime_allowed=False,
+                    generation_registry_path=Path(session.admitted.settings_path).parent / "model_resources.json",
                     generation_review_verified_results=True, checked_image_connection=self.checked_image_connection,
                     checked_image_submission=True)
             return self.state
