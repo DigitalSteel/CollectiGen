@@ -116,6 +116,7 @@ class VideoGenerationDialog(QDialog):
         self.storage_root = Path(storage_root).absolute()
         self.scoped_drafts = scoped_drafts
         self.runtime_allowed = runtime_allowed
+        self._draft_model_selection = scoped_drafts and not runtime_allowed
         self.adapter_factory = adapter_factory
         self.pinned_wan_resource_id = pinned_wan_resource_id
         self.runtime_binding, self.decoder_lifetime = runtime_binding, decoder_lifetime
@@ -507,8 +508,9 @@ class VideoGenerationDialog(QDialog):
         self.section_bar.currentChanged.connect(self._show_section)
         if not runtime_allowed:
             self.section_bar.removeTab(2)
-            self.section_bar.removeTab(1)
-            self.section_bar.hide()
+            if not self._draft_model_selection:
+                self.section_bar.removeTab(1)
+                self.section_bar.hide()
             self.setup_jump_button.hide()
             save_scope.setText("Save Draft keeps this request in Manager's Video draft folder.")
         self._show_section(0)
@@ -1097,7 +1099,7 @@ class VideoGenerationDialog(QDialog):
         return identity
 
     def choose_model(self, component):
-        if not self.runtime_allowed:
+        if not self.runtime_allowed and not self._draft_model_selection:
             return
         if self._runtime_storage_locator is not None or self._runtime_receipt is not None or self._busy():
             return
@@ -1127,10 +1129,13 @@ class VideoGenerationDialog(QDialog):
         transformer_role = (_wan_recipe_selected_role("transformer", selected_transformer,
             records.get(selected_transformer, {})) or self._model_roles["transformer"])
         selector = ModelSelectorDialog(self.registry, self.jobs, role=role,
-            settings=self.settings, parent=self, task_focused=True,
+            settings=self.settings, parent=self, task_focused=True, allow_manage=self.runtime_allowed,
             allowed_declarations=_wan_recipe_declarations(component),
-            choice_scope_label=("This first Video workflow uses one exact qualified "
-                f"Wan2.2 TI2V-5B {dict(transformer='transformer', text_encoder='text encoder', vae='VAE')[component]}."),
+            choice_scope_label=(
+                ("Choose a registered component for this draft. Runtime readiness is unchecked. "
+                 if self._draft_model_selection else "This first Video workflow uses one exact qualified ")
+                + f"Wan2.2 TI2V-5B {dict(transformer='transformer', text_encoder='text encoder', vae='VAE')[component]}."
+            ),
             current_choice_label=(f"{dict(transformer='Transformer', text_encoder='Text encoder', vae='VAE')[component]}: "
                                   f"{self.model_names[component].text()}"),
             selected_resources=tuple(retained),
