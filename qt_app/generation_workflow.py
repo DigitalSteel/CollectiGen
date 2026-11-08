@@ -38,14 +38,24 @@ def _setup_window(host):
     return None
 
 
-def _saved_runtime_connection(setup_window):
+def _generation_data_root(host):
+    root = getattr(host.state, "generation_data_root", None)
+    if root is None:
+        return USER_DATA_DIR
+    root = Path(root)
+    if not root.is_absolute():
+        raise ValueError("Generation data root must be absolute.")
+    return root
+
+
+def _saved_runtime_connection(setup_window, data_root=None):
     """Read enrolled loopback metadata only; this never checks or starts SwarmUI."""
     from core.generation_transport import local_endpoint
     from core.swarm_runtime import SwarmRuntimeManager
 
     panel = getattr(getattr(setup_window, "setup_page", None), "swarm_runtime", None)
     manager = getattr(panel, "manager", None) or SwarmRuntimeManager(
-        record_path=USER_DATA_DIR / SWARM_RUNTIME_PATH.name)
+        record_path=(USER_DATA_DIR if data_root is None else data_root) / SWARM_RUNTIME_PATH.name)
     try:
         snapshot = manager.snapshot()
         if not snapshot.configured:
@@ -85,7 +95,7 @@ def _connect_setup_return(window, dialog):
 
         def resume():
             try:
-                endpoint, issue = _saved_runtime_connection(window)
+                endpoint, issue = _saved_runtime_connection(window, dialog.storage_root.parent)
                 dialog.resume_from_setup(endpoint, issue)
             except Exception as exc:
                 # A damaged/unavailable management record cannot lose the saved plan.
@@ -355,7 +365,7 @@ def choose_generation_draft(parent):
 
     host = _host(parent)
     browser = SavedGenerationWorkDialog(
-        host.state.jobs, USER_DATA_DIR / "generation", "drafts",
+        host.state.jobs, _generation_data_root(host) / "generation", "drafts",
         parent=parent, selection_only=True,
     )
     if browser.exec() != QDialog.Accepted:
@@ -471,7 +481,12 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
         raw, metadata = read_stable_training_source(selected[0])
         return {"bytes": raw, "sha256": metadata["sha256"]}
 
-    model_registry = ModelResourceRegistry(MODEL_RESOURCES_PATH)
+    data_root = _generation_data_root(host)
+    registry_path = (
+        MODEL_RESOURCES_PATH if getattr(state, "generation_data_root", None) is None
+        else data_root / MODEL_RESOURCES_PATH.name
+    )
+    model_registry = ModelResourceRegistry(registry_path)
 
     def prepare():
         if initial_plan is not None:
@@ -513,9 +528,13 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
         outfits = [{**o.to_dict(), "associated_character_ids": list(character_db.associated_character_ids(o.id)),
                     "text": ", ".join(o.sdxl_tags), "reviewed": True}
                    for o in getattr(character_db, "outfits", {}).values()][:1000]
-        endpoint, connection_issue = _saved_runtime_connection(setup_window)
+        runtime_allowed = getattr(state, "generation_runtime_allowed", True)
+        endpoint, connection_issue = (
+            _saved_runtime_connection(setup_window, data_root) if runtime_allowed else
+            ("", "Generator access is unavailable in this workspace.")
+        )
         dialog = GenerationDialog(state.jobs, registry=model_registry,
-            storage_root=USER_DATA_DIR / "generation", source_record=source,
+            storage_root=data_root / "generation", source_record=source,
             source_identity=identity, knowledge_fragments=fragments,
             source_current_provider=current_source if selected or initial_plan is not None else None,
             source_image_provider=source_image if remix or (initial_plan is not None and (source_context or {}).get("image_provider")) else None,
@@ -526,7 +545,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             setup_available=setup_window is not None,
             initial_endpoint=endpoint, connection_issue=connection_issue,
             prompt_knowledge=getattr(state, "knowledge", None),
-            characters=characters, outfits=outfits, parent=host)
+            characters=characters, outfits=outfits, runtime_allowed=runtime_allowed, parent=host)
         dialog.source_records = saved_records
         if preloaded_draft is not None:
             plan, target, token = preloaded_draft
@@ -715,7 +734,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
                 on_opened(dialog)
             if setup_from_image:
                 QTimer.singleShot(0, dialog.start_setup_from_image)
-        if not force_new and not selected and not resource_id and initial_plan is None:
+        if runtime_allowed and not force_new and not selected and not resource_id and initial_plan is None:
             dialog.load_history(on_open=True)
 
     if not selected and not resource_id and initial_plan is None:

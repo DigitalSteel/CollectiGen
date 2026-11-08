@@ -554,6 +554,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.krea_training_review_button.setVisible(not view.synthetic and krea_registry_path is not None)
             self.krea_training_review_button.setToolTip("Review a Krea 2 or SDXL package and its registered base. No training starts.")
             self.krea_training_review_button.clicked.connect(self.open_krea_training_review)
+            self._image_draft_picker_open = False
+            self.generate_plan_button = compact_action(QPushButton("Plan an Image…"))
+            self.generate_plan_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.generate_plan_button.setToolTip("Create or reopen an image draft. Generator access is unavailable here.")
+            self.generate_plan_button.clicked.connect(self.open_generate_plan)
+            applications_layout.addWidget(self.generate_plan_button, 0, Qt.AlignLeft)
             applications_layout.addWidget(self.krea_training_review_button, 0, Qt.AlignLeft)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
@@ -1212,6 +1218,28 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if self.chat_host is not None: self.chat_host.cancel_load()
             self.render_ollama_load()
 
+        def open_generate_plan(self):
+            session = normal_entry_session
+            if (view.synthetic or session is None or session.state != "ready"
+                    or self.close_policy.pending or self._image_draft_picker_open):
+                return
+            from types import SimpleNamespace
+            from core.background_jobs import BackgroundJobManager
+            from qt_app.generation_workflow import choose_generation_draft, open_generation_workspace
+
+            if not hasattr(self, "state"):
+                root = Path(session.admitted.layout.data_root) / "Manager"
+                self.state = SimpleNamespace(jobs=BackgroundJobManager(), settings=None,
+                    generation_data_root=root, generation_runtime_allowed=False)
+            if getattr(self, "_generation_dialog", None) is not None:
+                open_generation_workspace(self)
+                return
+            self._image_draft_picker_open = True
+            try:
+                choose_generation_draft(self)
+            finally:
+                self._image_draft_picker_open = False
+
         def open_krea_training_review(self):
             registry_path = krea_registry_path
             if self.view.synthetic or self.close_policy.pending or registry_path is None or self._krea_review_dialog is not None or self._krea_picker_open:
@@ -1793,6 +1821,21 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.render_library()
 
         def closeEvent(self, event):
+            if self._image_draft_picker_open:
+                self.statusBar().showMessage("Close the image draft chooser before closing Manager.")
+                event.ignore()
+                return
+            dialog = getattr(self, "_generation_dialog", None)
+            if dialog is not None and (dialog.has_active_background_work() or not dialog.close()):
+                self.statusBar().showMessage("Close held: wait for image plan work to finish, then close again.")
+                event.ignore()
+                return
+            generation_state = getattr(self, "state", None)
+            if generation_state is not None:
+                if not generation_state.jobs.shutdown(wait=False):
+                    event.ignore()
+                    return
+                del self.state
             if self._krea_picker_open:
                 self.statusBar().showMessage("Close the Training package chooser before closing Manager.")
                 event.ignore()
