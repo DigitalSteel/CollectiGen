@@ -283,7 +283,8 @@ class KreaTrainingReviewDialog(QDialog):
         try:
             self._future = self._executor.submit(
                 partial(TrainingPackageService().verify, self._handoff_folder,
-                        should_cancel=self._cancel.is_set, limits=TrainingPackageVerificationLimits()),
+                        should_cancel=self._cancel.is_set, limits=TrainingPackageVerificationLimits(),
+                        expected_package_fingerprint=self._handoff_fingerprint),
             )
         except (RuntimeError, ValueError):
             self.status.setText("Package recheck could not start. Return to Applications and review it again.")
