@@ -155,6 +155,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._advanced_base_digest = self.plan.digest
         from core.generation_saved_work import new_draft_path
         self._draft_path = new_draft_path(self.storage_root)
+        self._reconnect_picker_open = False
         self._draft_saved_digest = "" if source_record or self.source_identity else self.plan.digest
         self._draft_close_pending = False
         self._draft_close_workspace = False
@@ -657,12 +658,16 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.reference_cards_layout.addWidget(card)
 
     def reconnect_sources(self):
-        if self._pending or self._execution_active(): return
+        if self._reconnect_picker_open or self._pending or self._execution_active(): return
         expected = self.plan.source_identity
         if expected.get("derived_frame"):
             self.status.setText("Reopen this extracted frame from its verified video result, then Open Draft to restore the request and frame lineage.")
             return
-        files, _ = QFileDialog.getOpenFileNames(self, "Reconnect Exact Original Images", "", "Images (*.png *.jpg *.jpeg *.webp)")
+        self._reconnect_picker_open = True
+        try:
+            files, _ = QFileDialog.getOpenFileNames(self, "Reconnect Exact Original Images", "", "Images (*.png *.jpg *.jpeg *.webp)")
+        finally:
+            self._reconnect_picker_open = False
         if not files: return
         collection = expected.get("collection", [])
         if not 1 <= len(collection) <= 4 or len(files) != len(collection):
@@ -696,7 +701,10 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.source_current_provider = self._reference_current
             self.source_current = deepcopy(expected)
             self.prepared = self.binding = None
-            self._refresh_from_plan("Exact source images reconnected. Check the model and prepare this draft again.")
+            message = "Exact source images reconnected. Check the model and prepare this draft again."
+            if not self.runtime_allowed:
+                message = "Exact source images reconnected for offline review."
+            self._refresh_from_plan(message)
         self._run("reconnect-sources", prepare, done)
 
     def clear_reference_images(self):
@@ -3830,6 +3838,16 @@ class GenerationDialog(FeedbackEnabledDialog):
             checked, digest = load_plan_with_digest(target)
             if checked.digest != plan.digest:
                 raise ValueError("The draft changed while loading. Open it again before editing.")
+        if not self.runtime_allowed:
+            self.source_record = None
+            self.source_identity = deepcopy(plan.source_identity)
+            self.source_current = {}
+            self.source_current_provider = None
+            self.source_image_provider = None
+            self.source_image_bytes = None
+            self._primary_source_identity = {}
+            self._primary_current_provider = None
+            self._additional_references = []
         self.plan = plan; self.prepared = None; self.binding = None; self.receipt = None; self.adapter = None
         self._sync_advanced_json_from_plan(force=True)
         self._output_preview = self._output_preview_plan = None
@@ -4018,6 +4036,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         return str(getattr(self._submitted_progress, "state", ""))
 
     def has_active_background_work(self) -> bool:
+        if self._reconnect_picker_open:
+            return True
         if self._prompt_templates_dialog and self._prompt_templates_dialog.has_active_background_work():
             return True
         if self._saved_work_dialog and self._saved_work_dialog.has_active_background_work():
@@ -4072,6 +4092,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._closed = True; self._generation += 1; self._io_timer.stop(); self._progress_timer.stop()
 
     def reject(self) -> None:
+        if self._reconnect_picker_open:
+            return
         if self.has_active_background_work():
             self.hide()
             return
@@ -4083,6 +4105,9 @@ class GenerationDialog(FeedbackEnabledDialog):
         super().reject()
 
     def closeEvent(self, event) -> None:
+        if self._reconnect_picker_open:
+            event.ignore()
+            return
         if self.has_active_background_work():
             event.ignore()
             self.hide()
@@ -4170,7 +4195,27 @@ class GenerationDialog(FeedbackEnabledDialog):
         path, _ = QFileDialog.getOpenFileName(self, "Load Generation Plan", str(self.storage_root), "Generation plan (*.json)")
         if path:
             target = Path(path).absolute()
-            self._run("load", lambda: load_plan_with_digest(target), lambda result: self._apply_loaded_plan(result[0], target, result[1]))
+            import_copy = not self.runtime_allowed and target.parent != self._draft_path.parent
+
+            def load():
+                local_path = target
+                if import_copy:
+                    from core.generation_saved_work import import_selected_saved_work
+
+                    local_path = Path(import_selected_saved_work(self.storage_root, "drafts", target))
+                plan, token = load_plan_with_digest(local_path)
+                return plan, local_path, token
+
+            def opened(result):
+                self._apply_loaded_plan(*result)
+                if import_copy:
+                    self._draft_path = result[1]
+                    message = "Imported a local draft. The original request file was preserved."
+                    if self.plan.source_identity:
+                        message += " Use Reconnect Source Images to verify the recorded source."
+                    self.status.setText(message)
+
+            self._run("load", load, opened)
     def _choose_export(self):
         if not self._draft_inputs_valid():
             self.status.setText("Complete invalid values or apply the Advanced edits before exporting.")
