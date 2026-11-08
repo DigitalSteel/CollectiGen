@@ -12,7 +12,9 @@ from uuid import uuid4
 
 from .external_write_transaction import atomic_verified_bytes
 from .generation_planning import GenerationPlan
-from .training_source_io import _assert_unredirected
+from .generation_transport import strict_json
+from .image_record import _atomic_create_text
+from .training_source_io import _assert_unredirected, read_stable_training_source
 
 MAX_CANDIDATES = 32
 MAX_BYTES = 24 * 1024 * 1024
@@ -241,30 +243,52 @@ def save_experiment(path, experiment, *, expected_digest=None):
     path = Path(path).absolute()
     _assert_unredirected(path)
     raw = _bytes(validate_experiment(experiment))
-    existing = path.read_bytes() if path.exists() and path.stat().st_size <= MAX_BYTES else None
-    if path.exists() and existing is None:
-        raise ValueError("Existing experiment is too large.")
-    digest = hashlib.sha256(existing).hexdigest() if existing is not None else ""
+    existing, digest = None, ""
+    if path.exists():
+        try:
+            existing, identity = read_stable_training_source(path, max_bytes=MAX_BYTES)
+        except ValueError as error:
+            raise ValueError("Existing experiment is too large.") from error
+        digest = identity["sha256"]
     if expected_digest is None and existing is not None or expected_digest is not None and digest != expected_digest:
         raise ValueError("The saved experiment changed. Reopen it before saving.")
     if existing is not None:
-        atomic_verified_bytes(path.with_suffix(path.suffix + ".previous"), existing, label="Experiment recovery copy")
-    atomic_verified_bytes(path, raw, label="Generation experiment")
+        recovery = path.with_suffix(path.suffix + ".previous")
+        _assert_unredirected(recovery)
+        atomic_verified_bytes(recovery, existing, label="Experiment recovery copy")
+        current, _ = read_stable_training_source(path, max_bytes=MAX_BYTES)
+        if current != existing:
+            raise ValueError("The saved experiment changed. Reopen it before saving.")
+        atomic_verified_bytes(path, raw, label="Generation experiment")
+    else:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        _assert_unredirected(path)
+        try:
+            _atomic_create_text(path, raw.decode("utf-8"))
+        except FileExistsError as error:
+            raise ValueError("The saved experiment changed. Reopen it before saving.") from error
+        verified, _ = read_stable_training_source(path, max_bytes=len(raw))
+        if verified != raw:
+            raise RuntimeError("Generation experiment failed exact read-back verification.")
     return hashlib.sha256(raw).hexdigest()
 
 
 def load_experiment(path):
-    path = Path(path).absolute(); _assert_unredirected(path)
-    if path.stat().st_size > MAX_BYTES:
-        raise ValueError("Saved experiment is too large.")
-    raw = path.read_bytes()
-    value = validate_experiment(json.loads(raw))
+    try:
+        raw, identity = read_stable_training_source(path, max_bytes=MAX_BYTES)
+    except ValueError as error:
+        raise ValueError("Saved experiment is too large.") from error
+    try:
+        decoded = strict_json(raw)
+    except (ValueError, RecursionError) as error:
+        raise ValueError("The saved experiment contains invalid or ambiguous JSON.") from error
+    value = validate_experiment(decoded)
     # No process restart is permission to resubmit an uncertain GPU job.
     for row in value["candidates"]:
         if row["state"] == "submitting":
             row["state"] = "outcome_unknown"
             row["error"] = "Reconcile retained jobs before resuming. This candidate will not be resubmitted automatically."
-    return value, hashlib.sha256(raw).hexdigest()
+    return value, identity["sha256"]
 
 
 def reconcile_experiment(experiment, receipts):
