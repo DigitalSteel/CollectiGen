@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 984,
+  "allowlisted_source_file_count": 989,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1573,6 +1573,10 @@
       "sha256": "4368627fccab95e9d5d3bc38ad1fea4ddbbdc5d82483bf7e70f7c19c3040894d",
       "size_bytes": 79078
     },
+    "core/training_appcontainer.py": {
+      "sha256": "92c752292d63c084affc7a4bc3240bc05f6ec2bf26dc0d5936a9cba4f8cbf46e",
+      "size_bytes": 22646
+    },
     "core/training_candidate_selection.py": {
       "sha256": "925a706bf798c0118591b00cc8f8914f8709af1c04a600e85be5ee00331fb1bd",
       "size_bytes": 60711
@@ -1713,6 +1717,10 @@
       "sha256": "22304254e128273bbc6f993b4456365661d264e67972263f7e6c00fea828592d",
       "size_bytes": 5285
     },
+    "core/training_offline_policy.py": {
+      "sha256": "620d95b69c820e5f2fe7f7b44e0057014df5c1ae4f3bc364cf5c4796425cabfb",
+      "size_bytes": 11099
+    },
     "core/training_package.py": {
       "sha256": "0e79b2324f9dba016188fca0db81318633328f054e72be013311090d4c2c2bb6",
       "size_bytes": 118253
@@ -1752,6 +1760,10 @@
     "core/training_reference_tokenizers.py": {
       "sha256": "16092a54c0d91e1f18d7c3faf37554dc9869de9850484c1486d5d0751901acb5",
       "size_bytes": 8213
+    },
+    "core/training_registry_policy.py": {
+      "sha256": "5eb3913b1c50e42d0e837c1822e51a2a1e0d2fcc1504281eabf8b992c681630d",
+      "size_bytes": 10720
     },
     "core/training_resource_guidance.py": {
       "sha256": "b658c92be2d5db07c457d40600c4ae2dec2b5a18a25d7bcc5f9fcdaff04c1413",
@@ -1840,6 +1852,14 @@
     "core/training_verification.py": {
       "sha256": "9243c9a5c2663b6fa0da90e3c31a1cd0a8dca1bc582deb783857063896fc5029",
       "size_bytes": 6601
+    },
+    "core/training_wfp.py": {
+      "sha256": "3602109fe8219a865564c53008488e2a5dd8b0b66d2ceccf5e7378e33ec57a82",
+      "size_bytes": 21826
+    },
+    "core/training_wfp_policy.py": {
+      "sha256": "396581fd67a2438fa84f1e19c25327b797d2fe8a5dca4dbf311c153f53aafead",
+      "size_bytes": 12678
     },
     "core/training_windows_file_identity.py": {
       "sha256": "3ec95c2119e2208c8685d616570dd106025b5d328520d621b127dde6843b7cb4",
@@ -3038,8 +3058,8 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "65ba31b16d2755850278fb7989ad8f3edcc2b2024f40b20a78a4be0b919ef342",
-      "size_bytes": 34108
+      "sha256": "82153712f4461127a3da13f5776f3b7cb9ec665f0e7d47e04001b8406836fdfe",
+      "size_bytes": 34287
     },
     "suite_core/manager/README.md": {
       "sha256": "c1e2868bced18b4b10646f0e55c707bbaafb036459cf22324149cdbb739c681f",
