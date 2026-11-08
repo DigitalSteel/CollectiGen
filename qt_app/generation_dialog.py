@@ -156,6 +156,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         from core.generation_saved_work import new_draft_path
         self._draft_path = new_draft_path(self.storage_root)
         self._reconnect_picker_open = False
+        self._export_picker_open = False
         self._draft_saved_digest = "" if source_record or self.source_identity else self.plan.digest
         self._draft_close_pending = False
         self._draft_close_workspace = False
@@ -4036,7 +4037,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         return str(getattr(self._submitted_progress, "state", ""))
 
     def has_active_background_work(self) -> bool:
-        if self._reconnect_picker_open:
+        if self._reconnect_picker_open or self._export_picker_open:
             return True
         if self._prompt_templates_dialog and self._prompt_templates_dialog.has_active_background_work():
             return True
@@ -4092,7 +4093,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._closed = True; self._generation += 1; self._io_timer.stop(); self._progress_timer.stop()
 
     def reject(self) -> None:
-        if self._reconnect_picker_open:
+        if self._reconnect_picker_open or self._export_picker_open:
             return
         if self.has_active_background_work():
             self.hide()
@@ -4105,7 +4106,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         super().reject()
 
     def closeEvent(self, event) -> None:
-        if self._reconnect_picker_open:
+        if self._reconnect_picker_open or self._export_picker_open:
             event.ignore()
             return
         if self.has_active_background_work():
@@ -4217,10 +4218,28 @@ class GenerationDialog(FeedbackEnabledDialog):
 
             self._run("load", load, opened)
     def _choose_export(self):
+        if self._export_picker_open or self._reconnect_picker_open or self._pending:
+            return
         if not self._draft_inputs_valid():
             self.status.setText("Complete invalid values or apply the Advanced edits before exporting.")
             return
-        path, _ = QFileDialog.getSaveFileName(self, "Export Generation Request", str(self.storage_root / "generation-request.json"), "JSON (*.json)")
+        options = QFileDialog.Option(0) if self.runtime_allowed else QFileDialog.DontConfirmOverwrite
+        self._export_picker_open = not self.runtime_allowed
+        try:
+            path, _ = QFileDialog.getSaveFileName(
+                self, "Export Generation Request", str(self.storage_root / "generation-request.json"),
+                "JSON (*.json)", options=options,
+            )
+        finally:
+            self._export_picker_open = False
         if path:
             snapshot = self.plan
+            if not self.runtime_allowed:
+                from core.generation_saved_work import export_draft_copy
+
+                self._run(
+                    "export", lambda: export_draft_copy(path, snapshot),
+                    lambda _result: self.status.setText("Portable request exported and verified."),
+                )
+                return
             self._run("export", lambda: self._save_path(path, snapshot), lambda result: (self._remember_saved(*result), self.status.setText("Complete request exported with recovery evidence.")))
