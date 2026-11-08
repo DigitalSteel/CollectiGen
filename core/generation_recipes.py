@@ -10,7 +10,8 @@ import re
 
 from .annotation import GenerationRecord, GenerationResource, GenerationStage
 from .generation_planning import GenerationPlan
-from .training_source_io import _assert_unredirected
+from .generation_transport import strict_json
+from .training_source_io import _assert_unredirected, read_stable_training_source
 
 MAX_BYTES = 256 * 1024
 SETTINGS = ("model", "model_hash", "vae", "width", "height", "steps", "sampler", "scheduler", "cfg_scale")
@@ -661,7 +662,8 @@ def save_recipe(path, recipe):
         stream.write(raw); stream.flush()
         import os
         os.fsync(stream.fileno())
-    if hashlib.sha256(path.read_bytes()).digest() != hashlib.sha256(raw).digest():
+    observed, _ = read_stable_training_source(path, max_bytes=len(raw))
+    if observed != raw:
         raise ValueError("Recipe read-back verification failed.")
 
 
@@ -671,7 +673,5 @@ def recipe_storage_digest(recipe):
 
 
 def load_recipe(path):
-    path = Path(path).absolute(); _assert_unredirected(path)
-    if path.stat().st_size > MAX_BYTES:
-        raise ValueError("Recipe exceeds its size limit.")
-    return _validate(json.loads(path.read_bytes()))[0]
+    raw, _ = read_stable_training_source(path, max_bytes=MAX_BYTES)
+    return _validate(strict_json(raw))[0]

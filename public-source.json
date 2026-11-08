@@ -590,8 +590,8 @@
       "size_bytes": 16219
     },
     "core/generation_recipes.py": {
-      "sha256": "1324637599567d60defd2c2100aeb62ba300e2c15d7ccfc4b3b7d2d8db35f7f2",
-      "size_bytes": 41171
+      "sha256": "9a706e11cde1a2acf4524720ff5b31055d62cb2f13f57b50c4372fd187a6d28e",
+      "size_bytes": 41154
     },
     "core/generation_reference_inputs.py": {
       "sha256": "b95fa9240cd9517b80f891afc2643e848adbfa565abb1443148bb0f0e4afa611",
