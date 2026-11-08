@@ -1882,8 +1882,8 @@
       "size_bytes": 24485
     },
     "core/video_generation_draft.py": {
-      "sha256": "6c5816cebdbd1b0ba5a1abae70a3f314c24a61fd7b0118467c7054ac9bb3fa81",
-      "size_bytes": 6573
+      "sha256": "fc1cb4cd84258e851bfed5a181dc530abf8b12929dcb917310c81193753d5709",
+      "size_bytes": 6770
     },
     "core/video_generation_execution.py": {
       "sha256": "9f5ceacbdc3dbae469b2d25ab176aad83309268fde16363bf85cd4ce2f430b99",

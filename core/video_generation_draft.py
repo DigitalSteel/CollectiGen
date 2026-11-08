@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Mapping
 from uuid import uuid4
 
+from .generation_transport import strict_json
 from .training_source_io import _assert_unredirected, read_stable_training_source
 from .video_generation import MAX_JSON_BYTES, VideoGenerationRequest
 
@@ -120,7 +121,10 @@ def save_video_draft(path: str | Path, request: VideoGenerationRequest | VideoAu
 
 def load_video_draft(path: str | Path) -> VideoGenerationRequest | VideoAuthoringDraft:
     raw, _ = read_stable_training_source(path, max_bytes=MAX_JSON_BYTES)
-    payload = json.loads(raw)
+    try:
+        payload = strict_json(raw)
+    except (ValueError, RecursionError) as exc:
+        raise ValueError("The video draft contains invalid or ambiguous JSON.") from exc
     if not isinstance(payload, dict):
         raise ValueError("This is not a video draft.")
     if payload.get("schema_id") == DRAFT_SCHEMA_ID:
