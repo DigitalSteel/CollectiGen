@@ -371,6 +371,8 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, se
         value, digest = load_experiment(source)
         if selected_digest is not None and digest != selected_digest:
             raise ValueError("The selected group changed. Refresh the list and choose it again before exporting.")
+    elif kind == "recipes" and selected_digest is not None:
+        value = review_setup_export(storage_root, source, selected_digest=selected_digest)["recipe"]
     else:
         value = _load(kind, source)
     if kind == "prompt_presets" and selected_digest is not None and _preset_digest(value.to_dict()) != selected_digest:
