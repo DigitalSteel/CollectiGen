@@ -27,7 +27,7 @@ from .generation_resource_guard import (assess_memory_evidence, memory_request_k
 from .generation_masks import MaskPayload, composite_masked_result, validate_mask_payload, prepare_masked_input
 from .generation_transport import LocalTransport, strict_json
 from .model_resource_registry import inspect_model_resource
-from .training_source_io import _assert_unredirected, _identity
+from .training_source_io import _assert_unredirected, _identity, read_stable_training_source
 
 ADAPTER_ID = "collectigen.swarmui.t2i.v1"
 _LOCK = threading.RLock()
@@ -1330,10 +1330,8 @@ class GenerationExecutionService:
             if receipt["state"] == "verified":
                 self._check_outputs(receipt)
             elif returned.exists() and receipt.get("stream_completed") and receipt["state"] not in {"cancelled", "cancelling"}:
-                _assert_unredirected(returned)
-                if returned.stat().st_size > 96 * 1024 * 1024:
-                    raise ValueError("Retained response exceeds recovery limit.")
-                receipt["outputs"] = [self._verify_result(receipt, strict_json(returned.read_bytes()))]
+                raw, _ = read_stable_training_source(returned, max_bytes=96 * 1024 * 1024)
+                receipt["outputs"] = [self._verify_result(receipt, strict_json(raw))]
                 receipt["state"] = "verified"; self._write(receipt)
             elif receipt["state"] not in {"cancelled", "failed"}:
                 receipt["state"] = "outcome_unknown"; self._write(receipt)
