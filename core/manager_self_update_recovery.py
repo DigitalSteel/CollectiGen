@@ -303,11 +303,11 @@ class ManagerRecovery:
         with self.owned():
             j = self.load()
             require(j["phase"] == "prepared", "apply_phase")
+            self.gate("prepare_admission", j)
+            self.gate("exclusive_owner", j)
             self.retained_context(j)
             self.current_code(j["binding"]["prior"])
             self.check_data(j, "before")
-            self.gate("prepare_admission", j)
-            self.gate("exclusive_owner", j)
             return self.save(j, "launch_ready", "normal_apply_authorized")
 
     def starting(self, owner):
