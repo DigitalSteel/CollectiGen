@@ -52,9 +52,10 @@ def prepare_missing_batch(session, service, storage_root, *, batch=0, should_can
         seen = set()
         for candidate in group['candidates']:
             plan = GenerationPlan.from_dict(candidate['plan'])
-            binding = plan.target_context.get(CELL_KEY, {})
-            key = binding.get('cell')
-            if (key not in expected or key in seen or binding.get('session_id') != spec['id']
+            binding = plan.target_context.get(CELL_KEY)
+            key = binding.get('cell') if isinstance(binding, dict) else None
+            if (not isinstance(key, str) or key not in expected or key in seen
+                    or binding.get('session_id') != spec['id']
                     or binding.get('run_id', '') != spec.get('run_id', '')
                     or comparison_identity(plan) != expected[key].comparison_sha256):
                 raise ValueError("The retained comparison queue does not match this evaluation. It was preserved.")
