@@ -94,8 +94,8 @@
       "size_bytes": 5789
     },
     "core/application_update.py": {
-      "sha256": "4036eaa7894ffa54b61498f6f26776605f81e285dfa9113ae984b5c278b05cf7",
-      "size_bytes": 24615
+      "sha256": "37d10301866e2cfa4c429473f93ba0134c851db5f81fc45ea3dcb975b85c19c1",
+      "size_bytes": 24846
     },
     "core/automatic_ai_analysis.py": {
       "sha256": "282ec46c931c2811f121abba212762264325ed3d9f74050189bea92282c53627",

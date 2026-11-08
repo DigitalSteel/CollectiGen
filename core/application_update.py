@@ -257,21 +257,24 @@ class ApplicationUpdateService:
                     part.unlink(missing_ok=True)
                     response = self.opener(urllib.request.Request(source.url, headers={"User-Agent": headers["User-Agent"]}), timeout=60)
                 mode = "ab" if offset else "wb"
-                with response, part.open(mode) as output:
-                    copied = offset
-                    while True:
-                        if should_cancel and should_cancel():
-                            raise InterruptedError("The update download was cancelled safely.")
-                        remaining = artifact.size_bytes - copied
-                        block = response.read(min(1024 * 1024, remaining + 1))
-                        if not block:
-                            break
-                        if len(block) > remaining:
-                            raise UpdateServiceError("Downloaded release exceeds its signed size.")
-                        output.write(block)
-                        copied += len(block)
-                        if progress:
-                            progress(copied, artifact.size_bytes, artifact.name)
+                with response:
+                    if should_cancel and should_cancel():
+                        raise InterruptedError("The update download was cancelled safely.")
+                    with part.open(mode) as output:
+                        copied = offset
+                        while True:
+                            if should_cancel and should_cancel():
+                                raise InterruptedError("The update download was cancelled safely.")
+                            remaining = artifact.size_bytes - copied
+                            block = response.read(min(1024 * 1024, remaining + 1))
+                            if not block:
+                                break
+                            if len(block) > remaining:
+                                raise UpdateServiceError("Downloaded release exceeds its signed size.")
+                            output.write(block)
+                            copied += len(block)
+                            if progress:
+                                progress(copied, artifact.size_bytes, artifact.name)
             except InterruptedError:
                 raise
             except (OSError, urllib.error.URLError) as exc:
