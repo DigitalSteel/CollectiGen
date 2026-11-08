@@ -87,7 +87,7 @@ class KreaTrainingReviewDialog(QDialog):
 
     def _review(self, package_path, registry_path):
         from core.krea_training_compatibility import KreaTrainingCompatibilityService
-        from core.model_resource_registry import ModelResourceRegistry
+        from core.model_resource_registry import ModelResourceError, ModelResourceRegistry
         from core.training_configuration import TrainingConfiguration
         from core.training_package import TrainingPackageService, TrainingPackageVerificationLimits
 
@@ -115,9 +115,17 @@ class KreaTrainingReviewDialog(QDialog):
             return verification, configuration, None
         if registry_path is None:
             return verification, configuration, None
-        report = KreaTrainingCompatibilityService().report(
-            verification, ModelResourceRegistry(registry_path), should_cancel=self._cancel.is_set, limits=limits,
-        )
+        try:
+            report = KreaTrainingCompatibilityService().report(
+                verification, ModelResourceRegistry(registry_path), should_cancel=self._cancel.is_set, limits=limits,
+            )
+        except ModelResourceError:
+            current = TrainingPackageService().verify(
+                package_path, should_cancel=self._cancel.is_set, limits=limits)
+            if (not current.valid or current.inspection_limited
+                    or current.package_fingerprint != verification.package_fingerprint):
+                raise ValueError("The package changed or could not be rechecked. Select a current package.") from None
+            return current, configuration, None
 
         return verification, configuration, report
 
@@ -161,10 +169,12 @@ class KreaTrainingReviewDialog(QDialog):
             identity += (f"\nCollection version: {binding['version_id']}"
                          f"\nCandidate plan: {binding['candidate_plan_fingerprint']}")
         if report is None:
-            self.status.setText(
-                "Package verified for manual handoff. Krea 2 compatibility review needs an admitted model registry."
-                if self._krea_package else "Package verified for manual handoff. Trainer readiness is unverified."
-            )
+            status = "Package verified for manual handoff. Trainer readiness is unverified."
+            if self._krea_package:
+                status = "Package verified for manual handoff. Krea 2 compatibility review needs an admitted model registry."
+                if self._registry_path is not None:
+                    status = "Package verified for manual handoff. The model registry needs attention before Krea 2 compatibility review."
+            self.status.setText(status)
             self.tabs.setTabText(2, "Dataset")
             self.sections[2].setAccessibleName("Training dataset")
             self.sections[0].setPlainText(identity + (
