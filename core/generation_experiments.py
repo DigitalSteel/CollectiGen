@@ -253,7 +253,12 @@ def save_experiment(path, experiment, *, expected_digest=None):
     if expected_digest is None and existing is not None or expected_digest is not None and digest != expected_digest:
         raise ValueError("The saved experiment changed. Reopen it before saving.")
     if existing is not None:
-        atomic_verified_bytes(path.with_suffix(path.suffix + ".previous"), existing, label="Experiment recovery copy")
+        recovery = path.with_suffix(path.suffix + ".previous")
+        _assert_unredirected(recovery)
+        atomic_verified_bytes(recovery, existing, label="Experiment recovery copy")
+        current, _ = read_stable_training_source(path, max_bytes=MAX_BYTES)
+        if current != existing:
+            raise ValueError("The saved experiment changed. Reopen it before saving.")
         atomic_verified_bytes(path, raw, label="Generation experiment")
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
