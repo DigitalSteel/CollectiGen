@@ -622,7 +622,7 @@ class SavedGenerationWorkDialog(QDialog):
         self._run("Export selected saved item",
             lambda cancelled: export_selected_saved_work(self.storage_root, self.kind,
                 item["path"], path, cancelled=cancelled,
-                selected_draft_digest=item.get("content_digest") if self.kind == "drafts" else None),
+                selected_digest=item.get("content_digest")),
             lambda _path: self.status.setText(
                 "Selected setup exported and verified; local source and omission details were not included."
                 if self.kind == "recipes" else "Selected item exported and verified."

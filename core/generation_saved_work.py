@@ -208,6 +208,8 @@ def list_recent_saved_work(storage_root, kind, *, limit=40, scan_limit=256, offs
                     raise ValueError("Saved item exceeds its size limit.")
                 if kind == "drafts":
                     value, item["content_digest"] = load_plan_with_digest(path)
+                elif kind == "groups":
+                    value, item["content_digest"] = load_experiment(path)
                 else:
                     value = _load(kind, path)
                 if kind == "drafts":
@@ -224,6 +226,7 @@ def list_recent_saved_work(storage_root, kind, *, limit=40, scan_limit=256, offs
                     item["name"] = value.name
                     held = value.extra_fields["import_semantics"]["held_fields"] if value.schema_version == 2 else []
                     item["summary"] = f"Prompt preset · {len(held)} unsupported fields" if held else "Prompt preset · review before applying"
+                    item["content_digest"] = _preset_digest(value.to_dict())
                     item["preset_id"] = value.preset_id
                     item["browser"] = prompt_preset_browser_metadata(value)
                     item["size_bytes"] = state.st_size
@@ -352,7 +355,8 @@ def export_draft_copy(destination, plan):
         raise OSError("Draft copy read-back failed.")
 
 
-def export_selected_saved_work(storage_root, kind, item_path, destination, *, cancelled=None, selected_draft_digest=None):
+def export_selected_saved_work(storage_root, kind, item_path, destination, *, cancelled=None,
+                               selected_digest=None, selected_draft_digest=None):
     """Export one managed item to an explicitly chosen new path without replacing it."""
     source = _checked_managed_path(storage_root, kind, item_path)
     destination = Path(destination).absolute()
@@ -361,12 +365,24 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, ca
     _assert_unredirected(destination)
     if callable(cancelled) and cancelled():
         raise InterruptedError("Saved-work export was cancelled.")
-    if kind == "drafts" and selected_draft_digest is not None:
+    if kind == "drafts":
+        if selected_digest is None:
+            selected_digest = selected_draft_digest
+        elif selected_draft_digest is not None and selected_draft_digest != selected_digest:
+            raise ValueError("The selected draft version is ambiguous. Refresh the list and choose it again.")
         value, digest = load_plan_with_digest(source)
-        if digest != selected_draft_digest:
+        if selected_digest is not None and digest != selected_digest:
             raise ValueError("The selected draft changed. Refresh the list and choose it again before exporting.")
+    elif kind == "groups":
+        value, digest = load_experiment(source)
+        if selected_digest is not None and digest != selected_digest:
+            raise ValueError("The selected group changed. Refresh the list and choose it again before exporting.")
+    elif kind == "recipes" and selected_digest is not None:
+        value = review_setup_export(storage_root, source, selected_digest=selected_digest)["recipe"]
     else:
         value = _load(kind, source)
+    if kind == "prompt_presets" and selected_digest is not None and _preset_digest(value.to_dict()) != selected_digest:
+        raise ValueError("The selected prompt preset changed. Refresh the list and choose it again before exporting.")
     if source == destination or destination.exists():
         raise ValueError("Choose a new export filename; the existing file is preserved.")
     if callable(cancelled) and cancelled():
@@ -376,9 +392,17 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, ca
     elif kind == "drafts":
         export_draft_copy(destination, value)
     elif kind == "prompt_presets":
-        _atomic_create_text(destination, _preset_text(value.to_dict()))
-        if _preset_bytes(destination) != _preset_text(value.to_dict()).encode("utf-8"):
-            raise OSError("Prompt preset export read-back failed.")
+        text = _preset_text(value.to_dict())
+        try:
+            _atomic_create_text(destination, text)
+        except FileExistsError as exc:
+            raise ValueError("Choose a new export filename; the existing file is preserved.") from exc
+        try:
+            if _preset_bytes(destination) != text.encode("utf-8"):
+                raise ValueError("Exported bytes differ from the selected prompt preset.")
+        except (OSError, ValueError) as exc:
+            raise OSError("Prompt preset export failed exact read-back verification. The export file may exist; "
+                          "inspect it before retrying with a new filename.") from exc
     else:
         save_recipe(destination, value)
     return str(destination)
