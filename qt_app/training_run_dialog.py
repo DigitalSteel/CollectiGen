@@ -256,6 +256,9 @@ class TrainingRunDialog(FeedbackEnabledDialog):
         self.verify_button = self._button('Retry Output Verification', self._retry_verification, actions)
         self.register_button = self._button('Review Registration', self._register, actions)
         recovery_layout.addLayout(actions)
+        self.history_retry_button = QPushButton('Retry Saving to Training History')
+        self.history_retry_button.clicked.connect(self._retry_history)
+        recovery_layout.addWidget(self.history_retry_button)
         self.validation_button = QPushButton('Measure Held-Out Validation…')
         self.validation_button.clicked.connect(lambda: self.validationRequested.emit(self._outcome.verified)
             if self.validation_button.isEnabled() else None)
@@ -587,6 +590,25 @@ class TrainingRunDialog(FeedbackEnabledDialog):
         if self._trial_limits is None and self._state == 'completed' and self._outcome is not None:
             self.generationPlanningRequested.emit(self._outcome.resource_id)
 
+    def _retry_history(self):
+        if not self.history_retry_button.isEnabled():
+            return
+        outcome = self._outcome
+        self._cancel_event.clear()
+        self._phase = 'Saving the registered result to Training History'
+
+        def work(job, _token):
+            fingerprint, raw = self.plan.fingerprint, _bytes(self.contract)
+            result = outcome
+            if not job.cancel_requested:
+                try:
+                    result = self.service.retry_completed_history(self.plan, outcome)
+                except (OSError, RuntimeError, ValueError) as exc:
+                    result = replace(outcome, message='Training History still needs attention: ' + str(exc)[:1500])
+            return _validated_outcome(result, self.plan, self.contract, fingerprint, raw)
+
+        self._launch('Save registered result to Training History', work)
+
     def _update_actions(self):
         idle = self._task is None
         self.start_button.setEnabled(idle and self._ready and not self._attempted
@@ -597,6 +619,10 @@ class TrainingRunDialog(FeedbackEnabledDialog):
         self.recover_button.setEnabled(idle and self._state in {'stopping', 'cancelling', 'recovery_required', 'trial_recovery_required'})
         self.verify_button.setEnabled(idle and self._trial_limits is None and self._state == 'verification_required')
         self.register_button.setEnabled(idle and self._trial_limits is None and self._state == 'registration_required')
+        history_retry = (self._state == 'completed' and self._outcome is not None
+                         and self._outcome.history_retry_required)
+        self.history_retry_button.setVisible(history_retry)
+        self.history_retry_button.setEnabled(idle and history_retry)
         self.resume_button.setEnabled(idle and self._trial_limits is None and self._state not in {'stopping', 'cancelling', 'recovery_required'} and self.checkpoint_picker.count() > 0)
         stopped_checkpoint = (idle and self._outcome is not None
             and self._outcome.process.tree_stopped is True

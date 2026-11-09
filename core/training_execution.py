@@ -43,6 +43,7 @@ class TrainingExecutionOutcome:
     metrics: TrainingMetricsSnapshot | None = field(default=None, repr=False)
     metrics_error: str = ''
     memory: TrialMemoryObservation | None = None
+    history_retry_required: bool = False
 
 
 def _write_exact(path, value):
@@ -310,8 +311,28 @@ class TrainingExecutionService:
                 result_pin = (RegisteredTrainingResult(result.resource_id, result.verified.receipt_sha256, tip),)
             if not note_outcome(self.run_index, plan, phase, tip, *result_pin):
                 result = replace(result, message=result.message +
-                    ' The saved run list needs recovery; keep this run workspace and review.')
+                    ' The saved run list needs recovery; keep this run workspace and review.',
+                    history_retry_required=bool(result_pin))
         return result
+
+    def retry_completed_history(self, plan, outcome):
+        """Retry only the original completed result's index publication."""
+        from .training_run_index import RegisteredTrainingResult
+        from .training_run_recovery import note_outcome
+
+        if (self.run_index is None or type(outcome) is not TrainingExecutionOutcome
+                or outcome.status != 'completed' or not outcome.history_retry_required
+                or type(outcome.verified) is not VerifiedTrainingResult
+                or outcome.verified.plan != plan or outcome.verified.outcome != outcome.process
+                or outcome.verified.receipt['output']['resource_id'] != outcome.resource_id):
+            raise ValueError('The original verified Training result is required to retry History.')
+        tip = outcome.process.journal_tip
+        pin = RegisteredTrainingResult(outcome.resource_id, outcome.verified.receipt_sha256, tip)
+        if not note_outcome(self.run_index, plan, 'completed', tip, pin):
+            return replace(outcome, message='The result remains registered. If History reports an interrupted '
+                           'update, recover it in Training History, then retry this save.')
+        return replace(outcome, history_retry_required=False,
+                       message='The registered result was saved to Training History.')
 
     def _finish_trial(self, plan, contract, outcome, limits, stop_reason, metrics):
         limits.validate(contract['result_binding']['expected_final_step'])
