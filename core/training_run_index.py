@@ -674,7 +674,11 @@ class ScopedTrainingHistory:
         exit_code = terminal["details"].get("exit_code")
         if exit_code is not None and (type(exit_code) is not int or not -(2**31) <= exit_code < 2**32):
             raise TrainingRunIndexError("The saved execution journal has an invalid exit code.")
-        return terminal["state"], exit_code
+        registered = record.registered_result if record.phase == "completed" else None
+        if registered is not None and (registered.journal_tip != tip
+                or terminal["state"] != "exited_unverified" or exit_code != 0):
+            raise TrainingRunIndexError("The saved registered result does not match the stopped execution.")
+        return terminal["state"], exit_code, registered
 
     def review_validation(self, record, revision):
         """Read a completed saved validation measurement from the host's run store."""

@@ -1607,7 +1607,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                                f"Sample count: {len(result['values'])}. "
                                f"{integrity}Live inputs were not rechecked. MSE does not measure image quality.")
                     elif execution:
-                        terminal_state, exit_code = result
+                        terminal_state, exit_code, registered = result
                         outcome = {
                             "exited_unverified": "exited",
                             "cancelled": "was cancelled",
@@ -1615,8 +1615,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                             "interrupted": "was interrupted",
                         }[terminal_state]
                         exit_detail = f"Exit code: {exit_code}. " if exit_code is not None else ""
+                        result_detail = (f"Recorded registered result: {registered.resource_id}. "
+                                         if registered is not None else "")
                         finish(f"Saved journal verified: the training process {outcome} and its process tree stopped. "
-                               f"{exit_detail}Output files and live inputs were not checked.")
+                               f"{exit_detail}{result_detail}Output files and live inputs were not checked.")
                     else:
                         finish(f"Saved preparation verified for {record.annotation.name or record.run_id}. "
                                f"Configured time limit: {result:g} seconds. Results have not been checked.")
