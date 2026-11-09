@@ -657,6 +657,12 @@ class VideoGenerationDialog(QDialog):
             self._task_label = ""
             self._task_cancelable = False
             message = str(error)
+            if label == "Export video draft":
+                message = (
+                    "The draft copy could not be exported. Your draft is still open. "
+                    "Choose Export Draft Copy again and select a new filename."
+                    f"\n\n{error}"
+                )
             if label == "Preview isolated Comfy setup":
                 for role, name in (("transformer", "transformer"),
                                    ("text_encoder", "text encoder"),
@@ -2101,7 +2107,7 @@ class VideoGenerationDialog(QDialog):
             return
         target = Path(path).absolute()
         if ":" in target.name or target.exists():
-            self._set_status("Choose a new .json filename. Existing files are never overwritten.")
+            self._set_status("Choose Export Draft Copy again and select a new .json filename. Existing files are never overwritten.")
             return
         self._run("Export video draft", lambda: save_video_draft(target, request),
                   lambda saved: self._set_status(f"Exported video draft copy: {saved.name}"),
