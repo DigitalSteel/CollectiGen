@@ -298,6 +298,25 @@ def _refresh_knowledge_relationship_authority(knowledge,categories):
     return workspace
 
 
+def admit_dataset_caption_root(data_root: Path, registry):
+    """Admit only a selected Dataset root within a recognized non-private library."""
+    from .library_profiles import LibraryPrivacyPolicy, _is_within
+    from suite_core.installation import _path
+
+    if not data_root.is_absolute() or ".." in data_root.parts:
+        raise ValueError("Choose an absolute Dataset data folder.")
+    profile = registry.profile_for_path(data_root)
+    if profile is None or not LibraryPrivacyPolicy.permits_derived_network_content(profile):
+        raise ValueError("Caption review requires a registered library outside Local Only storage.")
+    if any(
+        item.root and _is_within(item.root, data_root)
+        and not LibraryPrivacyPolicy.permits_derived_network_content(item)
+        for item in registry.profiles
+    ):
+        raise ValueError("The selected folder contains a restricted library.")
+    return _path(data_root)
+
+
 def prepare_dataset_caption_review(data_root: Path):
     """Prepare caption comparison for a caller-admitted read-only Dataset root."""
     from functools import partial

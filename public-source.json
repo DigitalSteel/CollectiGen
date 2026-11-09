@@ -82,8 +82,8 @@
       "size_bytes": 7261
     },
     "core/app_state.py": {
-      "sha256": "8e26da055d2702943372e073e8f894e981aa8da9118731d6b3b2d243be884caf",
-      "size_bytes": 47543
+      "sha256": "b76c49e1dae60f68002fb7cbf655a485dc23fb8c1200bf2e4439cc6da80bad34",
+      "size_bytes": 48474
     },
     "core/application_categories.py": {
       "sha256": "7cc8359297243588c036910f6d63d69ecbc24ca2645c6264a23ae199d5b7ce67",
@@ -3370,8 +3370,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "20e7b77a06406a7ffe20ea8a78476b7b0c5bf0e9c03a52ae757956d3ad3909bb",
-      "size_bytes": 212663
+      "sha256": "5498d707da3c980bd2a2f8a3a1292455c6b83e0102d2b17632520ece5bf9e629",
+      "size_bytes": 214212
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

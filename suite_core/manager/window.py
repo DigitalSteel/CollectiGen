@@ -1622,11 +1622,17 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 "Check Source Images", QDialogButtonBox.ActionRole,
             )
             button.setEnabled(training_draft_settings_path is not None)
-            status.setText("Checks only the exact images from configured libraries."
+            caption_button = dialog.findChild(QDialogButtonBox).addButton(
+                "Check Captions…", QDialogButtonBox.ActionRole,
+            )
+            caption_button.setEnabled(button.isEnabled() and bool(
+                draft.plan_manifest.get("assessment_context_fingerprint")
+            ))
+            status.setText("Check the saved images or choose their Dataset data folder to compare captions."
                            if button.isEnabled() else "Source checks require a configured Manager profile.")
             task = None
 
-            def check(job):
+            def check(job, selected_root):
                 try:
                     raw, _ = read_stable_training_source(training_draft_settings_path, max_bytes=16 * 1024 * 1024)
                     registry = AppSettings._from_bytes(raw).library_registry()
@@ -1642,7 +1648,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     )
 
                 caption_status = "unavailable"
-                if training_caption_review_factory is not None and draft.plan_manifest.get("assessment_context_fingerprint"):
+                if selected_root is not None:
+                    from core.app_state import admit_dataset_caption_root, prepare_dataset_caption_review
+
+                    root = admit_dataset_caption_root(selected_root, registry)
+                    review = prepare_dataset_caption_review(root)
+                    caption_status = review(
+                        draft.plan_manifest, read_sources, cancel=lambda: job.cancel_requested,
+                    )
+                elif training_caption_review_factory is not None and draft.plan_manifest.get("assessment_context_fingerprint"):
                     try:
                         review = training_caption_review_factory()
                     except (OSError, RuntimeError, ValueError):
@@ -1659,15 +1673,21 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 nonlocal task
                 task = None
                 status.setText(message)
-                button.setEnabled(self.generation_state() is state)
+                enabled = self.generation_state() is state
+                button.setEnabled(enabled)
+                caption_button.setEnabled(enabled and bool(draft.plan_manifest.get("assessment_context_fingerprint")))
 
-            def start():
+            def start(selected_root=None):
                 nonlocal task
                 if task is not None or self.generation_state() is not state:
                     return
                 button.setEnabled(False)
-                status.setText("Checking saved source images…")
-                task = CoordinatedCallTask(state.jobs, "Check Training draft images", check, resource="io")
+                caption_button.setEnabled(False)
+                status.setText("Checking saved source images…" if selected_root is None else "Checking Dataset context and saved captions…")
+                task = CoordinatedCallTask(
+                    state.jobs, "Check Training draft images",
+                    lambda job: check(job, selected_root), resource="io",
+                )
                 def show_result(result):
                     counts, caption_status = result
                     captions = {
@@ -1695,7 +1715,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if task is not None:
                     task.cancel()
 
-            button.clicked.connect(start)
+            def choose_caption_root():
+                from PySide6.QtWidgets import QFileDialog
+
+                selected = QFileDialog.getExistingDirectory(dialog, "Choose the Dataset data folder")
+                if selected:
+                    start(Path(selected))
+
+            button.clicked.connect(lambda: start())
+            caption_button.clicked.connect(choose_caption_root)
             return cancel
 
         def open_training_history(self, *, preparations=False):
