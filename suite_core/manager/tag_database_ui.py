@@ -45,10 +45,9 @@ class TagDatabasePane(QWidget):
         self.review_connection = compact_action(QPushButton("Review connection"))
         self.open_connection = compact_action(QPushButton("Open saved connection"))
         self.connect_catalog = compact_action(QPushButton("Connect reviewed catalog"))
-        for button in (self.review_connection, self.connect_catalog): row.addWidget(button)
+        row.addWidget(self.review_connection)
         row.addStretch(); connection_layout.addLayout(row)
         self.confirm_connection = QCheckBox("I reviewed the exact source, catalog folder and creation decision")
-        connection_layout.addWidget(self.confirm_connection)
         connection_actions = QHBoxLayout()
         self.connection_options = compact_action(QPushButton("Connection settings"))
         self.connection_options.setCheckable(True)
@@ -111,6 +110,11 @@ class TagDatabasePane(QWidget):
         # Loading the saved catalog and settling work must stay reachable while
         # connection settings and content-review details scroll independently.
         footer = QVBoxLayout(); footer.setContentsMargins(12, 6, 12, 12)
+        self.connection_confirmation = QGroupBox("Confirm reviewed connection")
+        confirmation_layout = QVBoxLayout(self.connection_confirmation)
+        confirmation_layout.addWidget(self.confirm_connection)
+        confirmation_layout.addWidget(self.connect_catalog, alignment=Qt.AlignRight)
+        footer.addWidget(self.connection_confirmation)
         footer.addWidget(self.progress)
         actions = QHBoxLayout(); actions.addWidget(self.status, 1)
         actions.addWidget(self.cancel); actions.addWidget(self.reload)
@@ -215,6 +219,7 @@ class TagDatabasePane(QWidget):
         self.review_connection.setEnabled(c.can_connect and bool(self.source_directory.text().strip()) and bool(self.catalog_directory.text().strip()))
         self.open_connection.setEnabled(c.can_connect)
         self.connection_options.setEnabled(c.can_connect)
+        self.connection_confirmation.setVisible(c.connection_review is not None)
         self.confirm_connection.setEnabled(c.can_connect and c.connection_review is not None)
         self.connect_catalog.setEnabled(c.can_connect and c.connection_review is not None and self.confirm_connection.isChecked())
         if c.review is not self._review:

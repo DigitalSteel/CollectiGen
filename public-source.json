@@ -3350,8 +3350,8 @@
       "size_bytes": 35618
     },
     "suite_core/manager/tag_database_ui.py": {
-      "sha256": "60711f2c59084c664a91053cf9225bb7f3524d298fe561d401110634fb0bfcf8",
-      "size_bytes": 24823
+      "sha256": "c103e205b633575b3c04f0313a52b9856dd787dd6574e566fb5e6b89d2b9916d",
+      "size_bytes": 25157
     },
     "suite_core/manager/tag_entry_recovery.py": {
       "sha256": "8caf43f70a6e16b7031f5e58b56743f49d0d61a6347e321623a3e03a60932e2d",
