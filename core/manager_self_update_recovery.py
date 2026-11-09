@@ -165,7 +165,8 @@ class ManagerRecovery:
             yield
         finally:
             # Never automatically reclaim a lock left by an abruptly dead host.
-            require(safe_path(lock).read_bytes() == lock_bytes, "owner_lock_changed")
+            require(_bounded_metadata(lock, len(lock_bytes), "owner_lock_changed") == lock_bytes,
+                    "owner_lock_changed")
             lock.unlink()
 
     def gate(self, name, journal):
@@ -174,6 +175,18 @@ class ManagerRecovery:
                 and result.get("binding_sha256") == digest(journal["binding"])
                 and result.get("status") == name, "unqualified_" + name)
         return result
+
+    def _active_bytes(self, journal):
+        return encoded({"transaction": self.id, "binding_sha256": digest(journal["binding"])})
+
+    def _check_active(self, journal):
+        path = safe_path(self.active_path)
+        if not path.exists():
+            return False
+        expected = self._active_bytes(journal)
+        require(_bounded_metadata(path, len(expected), "another_active_transaction") == expected,
+                "another_active_transaction")
+        return True
 
     def load(self):
         j = json.loads(_bounded_metadata(self.journal_path, MAX_JOURNAL_BYTES, "journal_bound"))
@@ -186,10 +199,7 @@ class ManagerRecovery:
         require(j["binding"].get("migration") is False and
                 all(row["expected_b"] == row["before"] for row in j["binding"]["data"].values()),
                 "migration_recovery_unqualified")
-        if self.active_path.exists():
-            require(json.loads(safe_path(self.active_path).read_bytes()) ==
-                    {"transaction": self.id, "binding_sha256": digest(j["binding"])}, "another_active_transaction")
-        else:
+        if not self._check_active(j):
             require(j["phase"] in ("healthy", "recovery_verified"), "active_transaction_missing")
         return j
 
@@ -300,7 +310,7 @@ class ManagerRecovery:
                  "phase": "preparing", "events": [], "restore_intents": [], "restored": []}
             self.gate("prepare_admission", j)
             self.gate("exclusive_owner", j)
-            atomic(self.active_path, encoded({"transaction": self.id, "binding_sha256": digest(j["binding"])}))
+            atomic(self.active_path, self._active_bytes(j))
             self.save(j, "preparing", "preparation_started")
             for n, row in data.items():
                 if row["before"]["exists"] and j["binding"]["migration"]:
@@ -446,9 +456,7 @@ class ManagerRecovery:
             require(j["phase"] in ("healthy", "recovery_verified"), "pending_transaction_cannot_retire")
             self.gate("exclusive_owner", j)
             self.save(j, j["phase"], "transaction_retired")
-            if self.active_path.exists():
-                require(json.loads(self.active_path.read_bytes()) ==
-                        {"transaction": self.id, "binding_sha256": digest(j["binding"])}, "another_active_transaction")
+            if self._check_active(j):
                 self.active_path.unlink()
                 require(not self.active_path.exists(), "active_retire_readback")
             return j
