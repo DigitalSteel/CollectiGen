@@ -587,6 +587,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             generation_layout.setContentsMargins(0, 0, 0, 0)
             generation_layout.addWidget(QLabel("Generate · Plan offline or submit with a checked generator"))
             generation_layout.addLayout(generation_actions)
+            generation_history = compact_action(QPushButton("Review Generation Jobs…"))
+            generation_history.clicked.connect(self.review_generation_jobs)
+            generation_layout.addWidget(generation_history, 0, Qt.AlignLeft)
             generation_panel.setVisible(not view.synthetic and normal_entry_session is not None)
             applications_layout.insertWidget(applications_layout.indexOf(self.categories_toggle), generation_panel)
             training_panel = QWidget()
@@ -1355,6 +1358,18 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         self.statusBar().clearMessage()
             else:
                 open_generation_workspace(self)
+        def review_generation_jobs(self):
+            if self._image_draft_picker_open or self.generation_state() is None:
+                return
+            from qt_app.generation_workflow import open_generation_workspace
+
+            def review(dialog):
+                dialog.tabs.setCurrentIndex(3)
+                if dialog.history_button.isEnabled():
+                    dialog.load_history(on_open=True)
+
+            open_generation_workspace(self, on_opened=review)
+
         def open_remix_plan(self):
             if (self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None
                     or self.generation_state() is None):
