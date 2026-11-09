@@ -376,17 +376,23 @@ def choose_generation_draft(parent, *, allow_draft_transfer=False):
         host.state.jobs, _generation_data_root(host) / "generation", "drafts",
         parent=parent, selection_only=True, allow_draft_transfer=allow_draft_transfer,
     )
-    if browser.exec() != QDialog.Accepted:
-        return
-    if browser.requested_action == "create":
+    try:
+        if browser.exec() != QDialog.Accepted:
+            return
+        requested_action = browser.requested_action
+        selected_path = browser.selected_path
+        selected_digest = browser.selected_digest
+    finally:
+        browser.deleteLater()
+    if requested_action == "create":
         open_generation_workspace(parent, force_new=True)
         return
-    if not browser.selected_path:
+    if not selected_path:
         return
-    target = Path(browser.selected_path).absolute()
+    target = Path(selected_path).absolute()
     try:
         plan, token = load_plan_with_digest(target)
-        if not browser.selected_digest or token != browser.selected_digest:
+        if not selected_digest or token != selected_digest:
             raise ValueError("This saved draft changed since the list was shown. Refresh and choose it again.")
     except (OSError, ValueError, RuntimeError, TypeError, KeyError) as exc:
         QMessageBox.information(
