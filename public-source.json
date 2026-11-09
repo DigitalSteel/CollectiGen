@@ -786,8 +786,8 @@
       "size_bytes": 15441
     },
     "core/krea_training_compatibility.py": {
-      "sha256": "f2e8dd9627521d776f57279c2582d889304693920e387bbb398e8bbc2f7ac758",
-      "size_bytes": 11824
+      "sha256": "afd9b9e8b5cc202fc67a8d9a7b7f18f6c9f97fe53780cc216937ad385a9ad309",
+      "size_bytes": 12748
     },
     "core/learning_help_catalog.py": {
       "sha256": "4760a89115a20d735c209717e0df3281f52dcdadd57b0b5491e504ac4f941448",
@@ -1910,8 +1910,8 @@
       "size_bytes": 24485
     },
     "core/video_generation_draft.py": {
-      "sha256": "6534cffc60244fff2f83b78eafd48ed0f8249e2609fdadc63095c00666031b08",
-      "size_bytes": 7769
+      "sha256": "54eb2be08feced8c94e4eda0fc1a447be96c010020a9cb014541604464f578b6",
+      "size_bytes": 7926
     },
     "core/video_generation_execution.py": {
       "sha256": "9f5ceacbdc3dbae469b2d25ab176aad83309268fde16363bf85cd4ce2f430b99",
@@ -2746,8 +2746,8 @@
       "size_bytes": 141229
     },
     "qt_app/video_generation_workflow.py": {
-      "sha256": "2c05f1a3bcb9639eed995c1653061e95989b8f04b8aade4f52ca8c33a03fcb38",
-      "size_bytes": 13401
+      "sha256": "b8a2eaf96826e3d1e8274c50a9f40686c1f30bb0864b01996fc78b18a7067734",
+      "size_bytes": 13483
     },
     "qt_app/video_ingest_dialog.py": {
       "sha256": "0ab21a0c718e1d3bc4e81beb1a4d593a9a1210aabd91329a47a0863f31af4fd5",
@@ -3174,8 +3174,8 @@
       "size_bytes": 5245
     },
     "suite_core/manager/encyclopedia_acquisition_ui.py": {
-      "sha256": "459da56856b8d6a7f38c475e71d11a68276564da580653ab89b00ecc00e82f22",
-      "size_bytes": 30517
+      "sha256": "7049c29ef156555288c0224498b9687e230dfc7a935ce87eb14dd8bfd5a9db0b",
+      "size_bytes": 30682
     },
     "suite_core/manager/encyclopedia_connection_ui.py": {
       "sha256": "60675d41a1efffa13f835aa32606bf8dfd54f87eb33dde0be4d56aa2f0946ef4",
@@ -3334,8 +3334,8 @@
       "size_bytes": 33848
     },
     "suite_core/manager/tag_database_ui.py": {
-      "sha256": "53a748ae5e87c162ef380a68f9e9ff6ecacaa1a43427c54292eb57f92ce877f4",
-      "size_bytes": 24728
+      "sha256": "60711f2c59084c664a91053cf9225bb7f3524d298fe561d401110634fb0bfcf8",
+      "size_bytes": 24823
     },
     "suite_core/manager/tag_entry_recovery.py": {
       "sha256": "8caf43f70a6e16b7031f5e58b56743f49d0d61a6347e321623a3e03a60932e2d",
@@ -3354,8 +3354,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "abd35afaef90af2a173580e3181ac141e643d13e14712d71d1471226f8669364",
-      "size_bytes": 192271
+      "sha256": "4534fa4fc6df6464ff9d3900822b57b31c66ee6ad45d13b9ac968905babe248e",
+      "size_bytes": 192813
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3518,8 +3518,8 @@
       "size_bytes": 14098
     },
     "suite_core/tests/test_encyclopedia_acquisition_ui.py": {
-      "sha256": "850aa2d954f43eef2d0b838fb5c99d47c53ca3ee7550f7e108f2d0f47deb1b3e",
-      "size_bytes": 20787
+      "sha256": "d728c5f7723586163e02862f34e6f9bbf62fab94e21cd547bfeebdba67f396df",
+      "size_bytes": 22176
     },
     "suite_core/tests/test_encyclopedia_adapter_delivery.py": {
       "sha256": "b7427246b7edd31d871b0e2b5288ea5478ca6e92c7b2433794aa61af088ea081",
@@ -3634,8 +3634,8 @@
       "size_bytes": 8919
     },
     "suite_core/tests/test_tag_database_apply_delivery.py": {
-      "sha256": "b589cd028f163f8b6e0e60ff8065a3915abd092de1327fe8f38f13264dbae7e0",
-      "size_bytes": 5745
+      "sha256": "84dd49a4853eda44d1d305696eca2d1b36f2e0324b456737a4fce315d0a1b185",
+      "size_bytes": 7704
     },
     "suite_core/version.py": {
       "sha256": "2235cee9c44d591ec185ba44b85acef2c8be3ba0a8305c7b0762bf603db9b847",
