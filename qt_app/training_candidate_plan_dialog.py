@@ -1156,11 +1156,42 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
         profile=draft.profile
         if self.saved_details_only:
             goal = draft.goal
-            target = " ".join(filter(None, (goal.target_model_family, goal.target_model_version)))
+            target = " ".join(filter(None, (
+                goal.target_model_family or profile.target_model_family, goal.target_model_version,
+            )))
+            candidates = draft.plan_manifest["candidates"]
+            counts = {"training": 0, "validation": 0, "holdout": 0, "excluded": 0}
+            for candidate in candidates:
+                role = candidate["role"] if candidate["decision"] == "include" else "excluded"
+                counts[role] += 1
+            blockers = []
+            for group in (draft.plan_manifest.get("issues"), draft.plan_manifest.get("training_configuration_issues"),
+                          *(candidate.get("issues") for candidate in candidates)):
+                if isinstance(group, list):
+                    blockers.extend(
+                        issue["summary"].strip()[:180] for issue in group
+                        if isinstance(issue, dict) and issue.get("level") == "blocking"
+                        and isinstance(issue.get("summary"), str) and issue["summary"].strip()
+                    )
+            pending = draft.candidate_count - len(candidates)
+            notes = []
+            if pending:
+                notes.append(f"{pending:,} selected image(s) were not assessed.")
+            if not counts["training"]:
+                notes.append("No images are assigned to training.")
+            unique_blockers = list(dict.fromkeys(blockers))
+            notes.extend(unique_blockers[:3])
+            if len(unique_blockers) > 3:
+                notes.append(f"{len(unique_blockers) - 3:,} more saved blocker(s).")
+            if not notes:
+                notes.append("No blockers were recorded in this draft.")
             self.detail.setText(
                 f"Goal: {goal.text}\nTarget: {target or 'Not recorded'}\n"
                 f"Profile: {profile.name} v{profile.version}\n"
-                f"Saved selection: {draft.candidate_count:,} image(s)"
+                f"Saved selection: {draft.candidate_count:,} image(s)\n"
+                f"Training: {counts['training']:,} · Validation: {counts['validation']:,} · "
+                f"Holdout: {counts['holdout']:,} · Excluded: {counts['excluded']:,}\n\n"
+                "Saved checks\n" + "\n".join(notes)
             )
             return
         self.detail.setText(

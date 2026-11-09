@@ -2654,8 +2654,8 @@
       "size_bytes": 56357
     },
     "qt_app/training_candidate_plan_dialog.py": {
-      "sha256": "bd4ee90d909795f9cd97586bc677ca53c0cc3cc5ecda116ea36396720300a805",
-      "size_bytes": 132956
+      "sha256": "397f3ff73af5118d8a797bbb50440505d3fa5c1d3860d526d982e372070249d3",
+      "size_bytes": 134787
     },
     "qt_app/training_candidate_review.py": {
       "sha256": "d57655a0dc41b01067cdfac09f6b4fc068183e870602b637fe51185207737893",
