@@ -4166,13 +4166,14 @@ class GenerationDialog(FeedbackEnabledDialog):
         receipt = self.history_choice.currentData()
         if not isinstance(receipt, dict) or not receipt.get("job_id"):
             self.status.setText("Load and select a retained job first."); return
-        from core.generation_execution import GenerationExecutionService
+        from core.generation_execution import GenerationExecutionService, digest
         service = GenerationExecutionService(self.storage_root, self.jobs)
         offline_recovery = (self._offline_job_recovery and receipt.get("state") != "verified")
         self.status.setText("Checking locally saved job files…" if offline_recovery else
                             "Checking the retained verified result…" if self._review_verified_results else
                             "Reconciling the retained local session without resubmitting…")
         expected_id = str(receipt["job_id"])
+        expected_digest = digest(receipt)
         def opened(current):
             if str(_mapping(current).get("job_id") or "") != expected_id:
                 self.status.setText("Recovery returned a different job. Select and open the intended job again.")
@@ -4186,11 +4187,10 @@ class GenerationDialog(FeedbackEnabledDialog):
 
         def open_result():
             if self._review_verified_results:
-                from core.generation_execution import digest
                 if offline_recovery:
-                    return service.recover(expected_id, expected_receipt_digest=digest(receipt))
-                return service.review_verified_result(expected_id, digest(receipt))
-            return service.recover(expected_id, adapter=self.adapter)
+                    return service.recover(expected_id, expected_receipt_digest=expected_digest)
+                return service.review_verified_result(expected_id, expected_digest)
+            return service.recover(expected_id, adapter=self.adapter, expected_receipt_digest=expected_digest)
 
         self._run("recovery", open_result, opened,
                   lambda error: self.status.setText(
