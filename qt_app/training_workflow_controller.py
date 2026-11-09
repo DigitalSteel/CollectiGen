@@ -449,13 +449,12 @@ class TrainingWorkflowController(QObject):
                     'Return to it or close that review before setting up this one.'
                 )
                 return
-            if linked['generation'] is current:
-                return
-            detach_generation()
-            linked['generation'] = current
-            current._training_comparison_return_owner = dialog
-            current.training_comparison_return_requested.connect(return_to_review)
-            current.workspace_closed.connect(generation_closed)
+            if linked['generation'] is not current:
+                detach_generation()
+                linked['generation'] = current
+                current._training_comparison_return_owner = dialog
+                current.training_comparison_return_requested.connect(return_to_review)
+                current.workspace_closed.connect(generation_closed)
             current.training_comparison_return.show()
             current.training_comparison_return_button.setFocus()
             dialog.hide()
