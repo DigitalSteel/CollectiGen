@@ -1389,8 +1389,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             open_generation_workspace(self, on_opened=review)
 
         def open_remix_plan(self):
-            if (self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None
-                    or self.generation_state() is None):
+            if self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None:
+                return
+            state = self.generation_state()
+            if state is None:
                 return
             from PySide6.QtWidgets import QFileDialog
             from qt_app.generation_workflow import open_generation_workspace
@@ -1411,8 +1413,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self._image_draft_picker_open = False
                 if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:
                     self.statusBar().clearMessage()
-            if path and self.generation_state() is not None:
-                open_generation_workspace(self, paths=(Path(path),), remix=True, force_new=True)
+            if path and self.generation_state() is state:
+                open_generation_workspace(
+                    self, paths=(Path(path),), remix=True, force_new=True,
+                    source_result_allowed=lambda: self.generation_state() is state,
+                )
 
         def open_video_plan(self, *, reopen=False):
             if self.generation_state() is None or self._video_draft_picker_open:

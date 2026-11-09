@@ -407,7 +407,7 @@ def choose_generation_draft(parent, *, allow_draft_transfer=False, selection_all
                               preloaded_draft=(plan, target, token))
 
 
-def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", selected_role="", selected_family="", remix=False, force_new=False, on_opened=None, initial_plan=None, source_context=None, initial_task="remix", initial_image_intent=None, repair_context=None, setup_from_image=False, preloaded_draft=None):
+def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", selected_role="", selected_family="", remix=False, force_new=False, on_opened=None, initial_plan=None, source_context=None, initial_task="remix", initial_image_intent=None, repair_context=None, setup_from_image=False, preloaded_draft=None, source_result_allowed=None):
     """Bounded selected-image context; source hashing and loading use shared I/O."""
     if repair_context is not None:
         allowed = {"reason", "original_location", "source_workspace"}
@@ -762,7 +762,8 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
     host._generation_source_task = task
     def completed(result):
         host._generation_source_task = None
-        show(result)
+        if source_result_allowed is None or source_result_allowed():
+            show(result)
     def failed(error):
         host._generation_source_task = None
         QMessageBox.information(parent, "Generation planning unavailable", error)
