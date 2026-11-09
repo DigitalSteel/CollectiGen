@@ -1,11 +1,13 @@
 """Read-only Krea package review owned by the Manager window."""
 from functools import partial
+from pathlib import Path
 from threading import Event
 
 from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
-    QDialog, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QTabWidget, QVBoxLayout,
+    QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel,
+    QLineEdit, QPlainTextEdit, QPushButton, QTabWidget, QVBoxLayout, QWidget,
 )
 
 from .resource_executor import ResourceExecutorOwner
@@ -22,6 +24,7 @@ class KreaTrainingReviewDialog(QDialog):
         self._verification = None
         self._handoff_folder = None
         self._checking_dataset = False
+        self._preparing_dataset = False
         self._dataset_overview = None
         self._checking_handoff = False
         self._handoff_fingerprint = None
@@ -62,6 +65,10 @@ class KreaTrainingReviewDialog(QDialog):
         self.dataset_button.hide()
         self.dataset_button.clicked.connect(self._verify_dataset)
         layout.addWidget(self.dataset_button, 0, Qt.AlignLeft)
+        self.prepare_button = QPushButton("Prepare SDXL Dataset…")
+        self.prepare_button.hide()
+        self.prepare_button.clicked.connect(self._prepare_dataset)
+        layout.addWidget(self.prepare_button, 0, Qt.AlignLeft)
         self.adapter_button = QPushButton("Review SDXL Trainer Settings…")
         self.adapter_button.hide()
         self.adapter_button.clicked.connect(self._open_adapter_preview)
@@ -144,6 +151,22 @@ class KreaTrainingReviewDialog(QDialog):
         if self._checking_handoff:
             self._finish_package_handoff()
             return
+        if self._preparing_dataset:
+            self._preparing_dataset = False
+            for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
+                action.setEnabled(True)
+            try:
+                inspection, plan, request, receipt = self._future.result()
+            except Exception:
+                self.status.setText("Preparation did not finish. Check the selected folders, then choose Prepare SDXL Dataset to retry.")
+            else:
+                if plan is None:
+                    self.status.setText("The selected trainer software is not ready for dataset preparation. Choose Prepare SDXL Dataset to review the folders.")
+                else:
+                    self.status.setText("SDXL dataset prepared in Manager’s Training workspace. Training has not started.")
+                    self.sections[0].appendPlainText(f"\nPrepared workspace: {plan.root}")
+                    self.tabs.setCurrentIndex(0)
+            return
         if self._checking_dataset:
             self._checking_dataset = False
             self.adapter_button.setEnabled(True)
@@ -200,6 +223,17 @@ class KreaTrainingReviewDialog(QDialog):
                            and configuration.output_kind == "lora"):
                 self._verification = verification
                 self.dataset_button.show()
+                from core.training_dataset_binding import ReviewedDatasetVerifier
+
+                if type(self._dataset_verifier) is ReviewedDatasetVerifier and self._preview_jobs is not None:
+                    from core.training_adapter_preview import SdScriptsSdxlLoraPreviewService
+
+                    try:
+                        SdScriptsSdxlLoraPreviewService.require_supported_configuration(configuration)
+                    except ValueError:
+                        pass
+                    else:
+                        self.prepare_button.show()
             self.sections[1].setPlainText(
                 f"Model family: {configuration.target_model_family}\n"
                 f"Model version: {configuration.target_model_version or 'Unspecified'}\n"
@@ -382,6 +416,69 @@ class KreaTrainingReviewDialog(QDialog):
             preview.deleteLater()
             if self._cancel.is_set():
                 self.reject()
+
+    def _prepare_dataset(self):
+        if (not self.prepare_button.isVisible() or not self.prepare_button.isEnabled()
+                or self._checking_dataset or self._checking_handoff or self._preparing_dataset
+                or self._adapter_preview is not None or self._cancel.is_set()
+                or self._verification is None):
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Prepare SDXL Dataset")
+        layout = QVBoxLayout(dialog)
+        note = QLabel("Select your existing SDXL trainer source, its Python environment, and the base Python directory. This prepares a separate dataset copy.")
+        note.setWordWrap(True)
+        layout.addWidget(note)
+        form = QFormLayout()
+        layout.addLayout(form)
+        fields = []
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        prepare = buttons.button(QDialogButtonBox.Ok)
+        prepare.setText("Prepare Dataset")
+        prepare.setEnabled(False)
+        for label in ("Trainer source", "Trainer environment", "Base Python"):
+            row = QWidget(dialog)
+            row_layout = QHBoxLayout(row)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            field = QLineEdit(row)
+            field.setAccessibleName(label)
+            browse = QPushButton("Browse…", row)
+            browse.setAccessibleName(f"Browse {label.lower()}")
+            def choose(_checked=False, field=field, label=label):
+                folder = QFileDialog.getExistingDirectory(dialog, f"Select {label.lower()}")
+                if folder:
+                    field.setText(folder)
+            browse.clicked.connect(choose)
+            fields.append(field)
+            field.textChanged.connect(lambda: prepare.setEnabled(
+                len(fields) == 3 and all(Path(item.text().strip()).is_absolute() for item in fields)))
+            row_layout.addWidget(field)
+            row_layout.addWidget(browse)
+            form.addRow(label, row)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        try:
+            if dialog.exec() != QDialog.Accepted or self._cancel.is_set():
+                return
+            source, environment, python_base = (field.text().strip() for field in fields)
+        finally:
+            dialog.deleteLater()
+        try:
+            self._future = self._executor.submit(partial(
+                self._dataset_verifier.prepare, self._verification, source=source,
+                environment=environment, python_base=python_base, jobs=self._preview_jobs,
+                should_cancel=self._cancel.is_set,
+            ))
+        except (RuntimeError, ValueError):
+            self.status.setText("Preparation could not start. Choose Prepare SDXL Dataset to retry.")
+            return
+        self._preparing_dataset = True
+        for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
+            action.setEnabled(False)
+        self.return_button.setText("Cancel Check and Return")
+        self.status.setText("Preparing the selected SDXL dataset in the reviewed worker…")
+        self._timer.start(50)
 
     def _verify_dataset(self):
         if (not self.dataset_button.isVisible() or not self.dataset_button.isEnabled()
