@@ -611,7 +611,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.saved_preparation_button.clicked.connect(lambda: self.open_training_history(preparations=True))
             training_layout.addWidget(self.saved_preparation_button, 0, Qt.AlignLeft)
             self.training_merge_button = compact_action(QPushButton("Inspect Merge Inputs…"))
-            self.training_merge_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.training_merge_button.setVisible(
+                not view.synthetic and getattr(normal_entry_session, "state", None) == "ready")
             self.training_merge_button.clicked.connect(self.open_training_merge)
             training_layout.addWidget(self.training_merge_button, 0, Qt.AlignLeft)
             training_panel.setVisible(not view.synthetic)
@@ -1654,7 +1655,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     QTimer.singleShot(0, self.close)
 
         def open_training_merge(self):
-            if self.view.synthetic or normal_entry_session is None or self.close_policy.pending:
+            if (self.view.synthetic or getattr(normal_entry_session, "state", None) != "ready"
+                    or self.close_policy.pending):
                 return
             if getattr(self, "_training_merge_dialog", None) is not None:
                 return
