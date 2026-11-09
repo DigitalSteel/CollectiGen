@@ -551,7 +551,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self._training_package_picker_open = False
             self._close_after_krea_review = False
             self.krea_training_review_button = compact_action(QPushButton("Review Training Package…"))
-            self.krea_training_review_button.setVisible(not view.synthetic)
+            self.krea_training_review_button.setVisible(
+                not view.synthetic and getattr(normal_entry_session, "state", None) == "ready"
+            )
             self.krea_training_review_button.setToolTip("Verify a selected package for manual handoff and see which checks are available.")
             self.krea_training_review_button.clicked.connect(self.open_krea_training_review)
             self.generate_plan_button = compact_action(QPushButton("Plan an Image…"))
@@ -1621,8 +1623,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         def open_krea_training_review(self):
             registry_path = krea_registry_path
-            if (self.view.synthetic or self.close_policy.pending or self._training_package_picker_open
-                or self._krea_review_dialog is not None):
+            if (self.view.synthetic or getattr(normal_entry_session, "state", None) != "ready"
+                    or self.close_policy.pending or self._training_package_picker_open
+                    or self._krea_review_dialog is not None):
                 return
             from PySide6.QtWidgets import QFileDialog
             from .krea_training_review import KreaTrainingReviewDialog
@@ -1633,7 +1636,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self._training_package_picker_open = False
                 if self.statusBar().currentMessage() == self._TRAINING_PICKER_CLOSE_NOTICE:
                     self.statusBar().clearMessage()
-            if not destination or self.close_policy.pending:
+            if (not destination or self.close_policy.pending
+                    or getattr(normal_entry_session, "state", None) != "ready"):
                 return
             from core.background_jobs import BackgroundJobManager
             preview_jobs = BackgroundJobManager()
