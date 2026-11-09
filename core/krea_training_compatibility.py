@@ -8,7 +8,7 @@ import json
 from .model_resource_registry import ModelResourceRegistry
 from .training_adapter_preview import AdapterImage, AdapterRequirement, AdapterSetting, _package_states
 from .training_configuration import TrainingConfiguration
-from .training_package import TrainingPackageService, TrainingPackageVerification
+from .training_package import TrainingPackageService, TrainingPackageVerification, _json_bytes
 from .training_source_io import _assert_unredirected, _identity
 
 
@@ -75,7 +75,10 @@ class KreaTrainingCompatibilityService:
             if too_many:
                 raise ValueError("The package exceeds the review limits. Choose a smaller package.")
         # Freeze caller-owned mutable evidence before callbacks or verification.
-        expected = replace(expected_package, manifest=json.loads(_json(expected_package.manifest)))
+        manifest_bytes = _json_bytes(expected_package.manifest)
+        if limits is not None and len(manifest_bytes) > min(limits.manifest_bytes, limits.total_bytes):
+            raise ValueError("The package exceeds the review limits. Choose a smaller package.")
+        expected = replace(expected_package, manifest=json.loads(manifest_bytes))
         before = _package_states(expected, should_cancel)
         if progress:
             progress(0, 0, "Verifying the exact package for the Krea compatibility report")
