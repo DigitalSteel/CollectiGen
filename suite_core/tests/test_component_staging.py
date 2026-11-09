@@ -9,7 +9,7 @@ import pytest
 from suite_core.installation import ComponentId
 from suite_core.discovery.component_staging import (
     create_disposable_root, stage_and_activate, finish_or_recover, active_token,
-    verify_directory, StagingHold, INVENTORY,
+    verify_directory, StagingHold, INVENTORY, extract_component_archive,
 )
 
 COMPONENT = ComponentId("collectigen.suite-manager")
@@ -142,6 +142,23 @@ def test_case_alias_or_unlisted_archive_bytes_rejected(tmp_path, extra):
         activate(root, before, package(tmp_path, extra=extra))
     assert read_active(root) == before
     finish_or_recover(root, component=COMPONENT, trust_bytes=TRUST)
+
+
+@pytest.mark.parametrize("members", [
+    ("Bin/child.txt", "bin"), ("bin", "bin/child.txt"),
+])
+def test_archive_file_directory_conflict_refused_before_extraction(tmp_path, members):
+    source = tmp_path / "conflict.zip"
+    with zipfile.ZipFile(source, "w") as archive:
+        for name in members:
+            archive.writestr(name, b"INERT")
+    destination = tmp_path / "stage"
+    destination.mkdir()
+
+    with pytest.raises(StagingHold, match="archive_file_directory_conflict"):
+        extract_component_archive(source, destination)
+
+    assert list(destination.iterdir()) == []
 
 
 def test_zip_symlink_entry_rejected(tmp_path):

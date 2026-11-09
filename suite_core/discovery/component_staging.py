@@ -326,9 +326,13 @@ def extract_component_archive(archive_path, destination, *, member_extracted=lam
     with zipfile.ZipFile(archive_path) as archive:
         infos = archive.infolist()
         require(0 < len(infos) <= policy.max_zip_entries and sum(i.file_size for i in infos) <= policy.max_unpacked_bytes, "archive_bounds")
-        safe_zip_members([i.filename for i in infos])
+        paths = safe_zip_members(i.filename for i in infos)
+        file_entries = {path.as_posix().casefold() for info, path in zip(infos, paths, strict=True)
+                        if not info.is_dir()}
         tree_entries = set()
-        for info in infos:
+        for info, path in zip(infos, paths, strict=True):
+            require(not any(parent.as_posix().casefold() in file_entries for parent in path.parents),
+                    "archive_file_directory_conflict")
             parts = payload_relative(info.filename[:-1] if info.is_dir() else info.filename, payload_policy=policy)
             if policy.max_assembly_tree_entries is not None:
                 # Count every file and unique implied parent before any mkdir/open.

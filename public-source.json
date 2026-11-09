@@ -2858,8 +2858,8 @@
       "size_bytes": 9361
     },
     "suite_core/discovery/component_staging.py": {
-      "sha256": "67ab0dfa5fc59dd2eea53ca868425ce7c21d27c78b225ddc926c1ea8cf8d4fff",
-      "size_bytes": 31559
+      "sha256": "d239d7df9d4c71708207208c4058f2bf46f18640301035d97e8c85b47156d566",
+      "size_bytes": 31903
     },
     "suite_core/discovery/github_component_releases.py": {
       "sha256": "b18b23ba7b4b96df22e1659801694c28742f32ac79651c72416fe354f0263c08",
@@ -3506,8 +3506,8 @@
       "size_bytes": 10497
     },
     "suite_core/tests/test_component_staging.py": {
-      "sha256": "37b16f2c7f512c4ec01a9a77cf84d56323f55fd0a9b3c275668011b264dc4668",
-      "size_bytes": 13769
+      "sha256": "030cfd7b212e2d3f0779d9cdd541d543acded41479ec082fbfc72253e9f5442e",
+      "size_bytes": 14386
     },
     "suite_core/tests/test_dependency_status_ui.py": {
       "sha256": "102a48650fb151ef51bec00c7693e868cd95712ebe6e1e221f319ab79ebdb408",
