@@ -98,6 +98,44 @@ def test_public_subset_preflights_all_participants_before_output(public_inputs,d
     assert not kw['output'].parent.exists()
 
 
+@pytest.mark.parametrize(('name', 'declared', 'accepted'), [
+    ('tools/training_dataset_package.json', True, True),
+    ('tools/training_dataset_package.json', False, False),
+    ('tools/training_preflight_worker.py', True, True),
+    ('tools/unreviewed_training_worker.py', True, False),
+])
+def test_public_subset_requires_allowed_declared_training_input(public_inputs, name, declared, accepted):
+    root = public_inputs['source_root']
+    path = root / name
+    path.parent.mkdir()
+    path.write_bytes(b'{}\n' if path.suffix == '.json' else b'# synthetic worker\n')
+    manifest_name = 'suite_core/manager/MODULE_MANIFEST.json'
+    manifest = root / manifest_name
+    contents = json.loads(manifest.read_bytes())
+    if declared:
+        contents['runtime_files'].append(name)
+    manifest.write_text(json.dumps(contents), encoding='utf-8')
+    inventory = root / 'public-source.json'
+    contents = json.loads(inventory.read_bytes())
+    contents['files'][name] = {'size_bytes': path.stat().st_size, 'sha256': H(path)}
+    contents['files'][manifest_name] = {'size_bytes': manifest.stat().st_size, 'sha256': H(manifest)}
+    inventory.write_text(json.dumps(contents), encoding='utf-8')
+    subset = public_inputs['frozen_sources']
+    contents = json.loads(subset.read_bytes())
+    contents['source_rows'].append({'path': name, 'bytes': path.stat().st_size, 'sha256': H(path)})
+    subset.write_text(json.dumps(contents), encoding='utf-8')
+    public_inputs.update(manifest_sha256=H(manifest), public_inventory_sha256=H(inventory),
+                         frozen_sources_sha256=H(subset))
+
+    if accepted:
+        stage = candidate.prepare_public_stage(**public_inputs)
+        assert (stage / 'source' / name).read_bytes() == path.read_bytes()
+    else:
+        with pytest.raises(ValueError):
+            candidate.prepare_public_stage(**public_inputs)
+        assert not public_inputs['output'].exists()
+
+
 def test_public_subset_refuses_output_inside_accepted_source(public_inputs):
     public_inputs['output']=public_inputs['source_root']/'new-stage'
     with pytest.raises(ValueError,match='new_unredirected_public_stage_required'):

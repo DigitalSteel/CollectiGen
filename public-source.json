@@ -3766,8 +3766,8 @@
       "size_bytes": 22355
     },
     "tests/test_manager_production_stage.py": {
-      "sha256": "825d645f102aee180f032b48b2bbb8d9be2e437ae1dbe5214135e6ed10b25daf",
-      "size_bytes": 22059
+      "sha256": "f1b95c7817d60a8badfadb87d4e6878eaeba4d3d121b134e1301694ee9c5bcd5",
+      "size_bytes": 24015
     },
     "tests/test_organizer_portable_runtime.py": {
       "sha256": "cd9761acdfe29fa12a52f43dbfb20b682a02fb395f730b29d4aa0ddc305b9303",
