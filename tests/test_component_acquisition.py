@@ -500,3 +500,28 @@ def test_scoped_refresh_retires_only_offers_for_the_selected_component(tmp_path)
     with pytest.raises(ValueError, match="current_signed_offer"):
         acquisition.acquire(reviewed[selected])
     assert acquisition.acquire(reviewed[other_id]).artifact.read_bytes() == PAYLOAD
+
+
+def test_manager_stage_rechecks_only_its_signed_release_before_publication(tmp_path, monkeypatch):
+    from core import manager_update_service
+
+    feed = FakeFeed()
+    feed.add(manager_update_service.MANAGER.value)
+    feed.add(component="collectigen.unrelated", platform={"os": "linux", "architecture": "x86_64"})
+    acquisition = service(tmp_path, feed)
+    updater = manager_update_service.ManagerUpdateService(
+        acquisition, current_version="0.1.0-alpha.7", channel="beta",
+    )
+    offer = updater.discover()
+    assert offer.release.component_id == manager_update_service.MANAGER
+
+    monkeypatch.setattr(manager_update_service, "produce_detached_inventory", lambda *_a, **_kw: b"inert")
+    def withdraw_during_admission(*_args, **_kwargs):
+        feed.rows.pop(0)
+        return object()
+    monkeypatch.setattr(updater, "_admit", withdraw_during_admission)
+
+    with pytest.raises(ExactOfferHold, match="reviewed release changed"):
+        updater.prepare(offer)
+    assert updater._prepared is None
+    assert not any("collectigen.unrelated" in url for url, _, _ in feed.calls)

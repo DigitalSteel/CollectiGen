@@ -212,7 +212,8 @@ class ManagerUpdateService:
         # Failed rediscovery also invalidates the preceding review/stage.
         self._offer = self._prepared = None
         offers = self.acquisition.discover(channel=self.channel,
-            installed_versions={MANAGER.value: self.current_version}, should_cancel=should_cancel)
+            installed_versions={MANAGER.value: self.current_version}, should_cancel=should_cancel,
+            component_id=MANAGER)
         selected = tuple(o for o in offers if o.release.component_id == MANAGER)
         require(len(selected) <= 1, "ambiguous_manager_offer")
         if not selected:
@@ -319,6 +320,7 @@ class ManagerUpdateService:
         proof = produce_detached_inventory(acquired.artifact, inventory_profile=PROFILE,
             expected_version=offer.release.software_version, expected_channel=self.channel)
         admission = self._admit(acquired.artifact, offer, proof, trust_pin=offer.trust_sha256)
+        self.acquisition.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
         if should_cancel and should_cancel():
             raise InterruptedError("Manager update staging cancelled safely.")
         require(offer is self._offer, "changed_manager_offer")
