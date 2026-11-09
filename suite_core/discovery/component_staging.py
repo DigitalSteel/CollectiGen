@@ -443,7 +443,9 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         failpoint("new_journal_established")
         pending_path.unlink()
         destination.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(staging, destination)  # same filesystem; absent immutable destination
+        guard(destination)
+        require(not destination.exists(), "immutable_version_already_exists")
+        os.rename(staging, destination)  # same filesystem; Windows refuses an existing destination
         failpoint("version_published")
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_commit")
         atomic(base / "active.json", target)
