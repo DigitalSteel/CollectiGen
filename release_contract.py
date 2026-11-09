@@ -7,7 +7,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 
 RELEASE_MANIFEST_SCHEMA = 1
@@ -107,10 +107,23 @@ class VerifiedReleaseManifest:
         return matches[0]
 
 
-def sha256_file(path: str | Path) -> str:
+def sha256_file(path: str | Path, *, should_cancel: Callable[[], bool] | None = None,
+                expected_size: int | None = None) -> str:
     digest = hashlib.sha256()
+    remaining = expected_size
     with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
+        while True:
+            if should_cancel is not None and should_cancel():
+                raise InterruptedError("Release artifact verification was cancelled.")
+            block = stream.read(1024 * 1024 if remaining is None else min(1024 * 1024, remaining + 1))
+            if not block:
+                if remaining:
+                    raise ReleaseContractError("Release artifact size does not match the signed manifest.")
+                break
+            if remaining is not None:
+                remaining -= len(block)
+                if remaining < 0:
+                    raise ReleaseContractError("Release artifact size does not match the signed manifest.")
             digest.update(block)
     return digest.hexdigest()
 
@@ -287,15 +300,25 @@ def ensure_supported_upgrade(current_version: str, release: VerifiedReleaseManif
         )
 
 
-def verify_artifact(path: str | Path, artifact: ReleaseArtifact) -> None:
+def verify_artifact(path: str | Path, artifact: ReleaseArtifact, *,
+                    should_cancel: Callable[[], bool] | None = None) -> None:
     source = Path(path)
     try:
-        size = source.stat().st_size
+        before = source.stat()
     except OSError as exc:
         raise ReleaseContractError(f"Release artifact is unavailable: {exc}") from exc
-    if size != artifact.size_bytes:
+    if before.st_size != artifact.size_bytes:
         raise ReleaseContractError("Release artifact size does not match the signed manifest.")
-    if not hmac.compare_digest(sha256_file(source), artifact.sha256):
+    actual_digest = sha256_file(
+        source, should_cancel=should_cancel, expected_size=artifact.size_bytes)
+    try:
+        after = source.stat()
+    except OSError as exc:
+        raise ReleaseContractError(f"Release artifact is unavailable: {exc}") from exc
+    if ((before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns)
+            != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)):
+        raise ReleaseContractError("Release artifact changed during verification.")
+    if not hmac.compare_digest(actual_digest, artifact.sha256):
         raise ReleaseContractError("Release artifact SHA-256 does not match the signed manifest.")
 
 
