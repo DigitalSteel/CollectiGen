@@ -1554,6 +1554,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self._training_history_dialog = dialog
             task = None
 
+            def has_saved_outcome(record):
+                return (record.kind == "execution" and bool(record.latest_journal_tip)
+                        and record.phase in {"stopped", "cancelled", "failed", "interrupted",
+                                             "verification_required", "registration_required", "completed"})
+
             def verify(record, revision):
                 nonlocal task
                 if self.generation_state() is not state:
@@ -1565,7 +1570,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         "A saved review is still being checked. Wait for it to finish, then try again.")
                     return
                 validation = record.kind == "validation" and record.phase == "completed"
-                execution = record.kind == "execution" and bool(record.latest_journal_tip)
+                execution = has_saved_outcome(record)
                 if validation:
                     review = history.review_validation
                 elif execution:
@@ -1630,7 +1635,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 completed_validation = selected is not None and selected.kind == "validation" and selected.phase == "completed"
                 if completed_validation:
                     dialog.open_button.setText("Review Saved Measurement")
-                elif selected is not None and selected.kind == "execution" and selected.latest_journal_tip:
+                elif selected is not None and has_saved_outcome(selected):
                     dialog.open_button.setText("Review Saved Process Outcome")
                 else:
                     dialog.open_button.setText("Review Selected Preparation")
