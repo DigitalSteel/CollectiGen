@@ -1892,7 +1892,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.copy_receipt_path_button.setVisible(self._review_verified_results)
         handoff_row.insertWidget(2, self.copy_receipt_path_button)
         outcome_form.addRow(self.choose_ingested_button, self.record_outcome_button)
-        self.finish_result_button = QPushButton("Finish Result…")
+        self.finish_result_button = QPushButton(
+            "Resize a Copy…" if self._save_verified_result_draft else "Finish Result…")
         self.finish_result_button.clicked.connect(self.finish_result)
         handoff_row.insertWidget(1, self.finish_result_button)
         outcome_actions.addLayout(history_row)
@@ -1927,9 +1928,10 @@ class GenerationDialog(FeedbackEnabledDialog):
                 if self._offline_job_recovery else
                 "Refresh recent jobs, then open and preview a verified result."
             )
-            for widget in (self.ingest_button, self.finish_result_button,
+            for widget in (self.ingest_button,
                            self.outcome_toggle, self.results_experiment_button):
                 widget.hide()
+            self.finish_result_button.setVisible(self._save_verified_result_draft)
             self.result_action.setVisible(self._save_verified_result_draft)
             self.result_action_button.setVisible(self._save_verified_result_draft)
         layout.addStretch(1)
@@ -2832,7 +2834,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.open_experiment()
 
     def finish_result(self):
-        if self._review_verified_results:
+        if self._review_verified_results and not self._save_verified_result_draft:
             return
         if (self._pending or self._execution_active() or self._selected_job_needs_open()
                 or not self.receipt or self.receipt.get("state") != "verified"):
@@ -2850,7 +2852,8 @@ class GenerationDialog(FeedbackEnabledDialog):
             goal = plan.target_context.get("deferred_finishing", {}).get("output_goal",
                 plan.target_context.get("output_goal", {}))
             child = GenerationFinishingDialog(self.jobs, self.storage_root, paths, verified_source,
-                parent=self, settings=self.settings, initial_goals={Path(path).absolute(): goal for path in paths})
+                parent=self, settings=self.settings, initial_goals={Path(path).absolute(): goal for path in paths},
+                allow_handoff=not self._review_verified_results)
             child.ingest_requested.connect(self.ingest_requested.emit)
             def refine(value):
                 self.result_action_requested.emit({"action": "remix", "plan": None, "paths": [value["path"]],

@@ -2206,16 +2206,16 @@
       "size_bytes": 79634
     },
     "qt_app/generation_dialog.py": {
-      "sha256": "116facc1eee110ff1cf393e211bf6e2431db639817c2998469affc7a1fefdd6d",
-      "size_bytes": 279224
+      "sha256": "5c814629ce4e74e7b91d5db731d2e2613dd0ffea60f436fa7d36a2a5c00ac936",
+      "size_bytes": 279459
     },
     "qt_app/generation_experiment_dialog.py": {
       "sha256": "a72464d14ed9942150100d8c55cbdf8061c728cfae7f6d002c363fce16d77186",
       "size_bytes": 55395
     },
     "qt_app/generation_finishing_dialog.py": {
-      "sha256": "2b4dffc08f4a98d580b4e3a2d1c4380c939ff97c1dd68970147ecfec8ae898ac",
-      "size_bytes": 26154
+      "sha256": "0984fde389ae5d1ea17978a0a2c485dfdb509c6f0927c527bf85b449b546a314",
+      "size_bytes": 26861
     },
     "qt_app/generation_image_setup_dialog.py": {
       "sha256": "7a6c91b39aeba796ef6958b26b1f7b7b8918698ea71f6cca8a02fa6ba6d48af9",

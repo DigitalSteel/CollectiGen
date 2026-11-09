@@ -26,7 +26,7 @@ class GenerationFinishingDialog(QDialog):
     refine_requested = Signal(object)
 
     def __init__(self, jobs, storage_root, selected_paths, verified_source, parent=None,
-                 *, initial_goals=None, settings=None):
+                 *, initial_goals=None, settings=None, allow_handoff=True):
         super().__init__(parent)
         paths = tuple(Path(value).absolute() for value in selected_paths)
         if not paths or len(paths) > 32 or len(set(paths)) != len(paths) or not callable(verified_source):
@@ -34,6 +34,7 @@ class GenerationFinishingDialog(QDialog):
         self.jobs = jobs
         self.storage_root = Path(storage_root).absolute()
         self.verified_source = verified_source
+        self.allow_handoff = allow_handoff
         self.paths = paths
         self._initial_goals = {Path(key).absolute(): value for key, value in
                                (initial_goals or {}).items() if isinstance(value, dict)}
@@ -54,7 +55,8 @@ class GenerationFinishingDialog(QDialog):
         heading = QLabel("Finish a selected generated image")
         heading.setObjectName("sectionTitle")
         layout.addWidget(heading)
-        note = QLabel("Faithful Resize makes a separate version at your chosen size while keeping the original image and its history. Enlarging pixels does not add detail. Generative Refinement opens a new Remix draft for review.")
+        note = QLabel("Faithful Resize makes a separate version at your chosen size while keeping the original image and its history. Enlarging pixels does not add detail."
+                      + (" Generative Refinement opens a new Remix draft for review." if allow_handoff else ""))
         note.setWordWrap(True); layout.addWidget(note)
         self.winner = QComboBox()
         for path in paths:
@@ -123,6 +125,8 @@ class GenerationFinishingDialog(QDialog):
         self.ingest_button.clicked.connect(self.send_to_ingest)
         self.refine_button.clicked.connect(self.refine_winner)
         next_buttons.addWidget(self.ingest_button); next_buttons.addWidget(self.refine_button)
+        self.ingest_button.setVisible(allow_handoff)
+        self.refine_button.setVisible(allow_handoff)
         layout.addLayout(next_buttons)
         self.status = QLabel("Inspect a winner, then review its processing before creating a version.")
         self.status.setTextFormat(Qt.PlainText); self.status.setWordWrap(True)
@@ -180,7 +184,8 @@ class GenerationFinishingDialog(QDialog):
         self._preview = None
         native = detail and (detail["width"], detail["height"])
         self.review.setText(
-            "Native size: Generative Refinement can open a new Remix draft. Faithful Resize needs a different final size."
+            ("Native size: Generative Refinement can open a new Remix draft. Faithful Resize needs a different final size."
+             if self.allow_handoff else "Choose a different size to create a resized copy.")
             if native == (self.final_width.value(), self.final_height.value()) else
             (f"Native {detail['width']} × {detail['height']} → faithful local resize → "
              f"Final {self.final_width.value()} × {self.final_height.value()}. "
@@ -348,7 +353,9 @@ class GenerationFinishingDialog(QDialog):
                 if detail.get("initial_goal_invalid") else
                 "Source verified. Review or edit the final dimensions, then preview the resize.")
             if (self.final_width.value(), self.final_height.value()) == (detail["width"], detail["height"]):
-                self.review.setText("Native size: Generative Refinement opens a new Remix draft for review. Faithful Resize needs a different final size; the original remains available.")
+                self.review.setText(
+                    "Native size: Generative Refinement opens a new Remix draft for review. Faithful Resize needs a different final size; the original remains available."
+                    if self.allow_handoff else "Choose a different size to create a resized copy.")
             else:
                 self.review.setText(f"Native {detail['width']} × {detail['height']} → faithful local resize → Final {self.final_width.value()} × {self.final_height.value()}. Review the processing before creating a separate version.")
         self._run("Inspect verified winner", work, complete)
@@ -429,7 +436,9 @@ class GenerationFinishingDialog(QDialog):
                     versions.append(result)
                 self._selected_version_fingerprint[source] = result["fingerprint"]
                 self._refresh_versions()
-                self.status.setText("Separate version verified. Review it in Ingest; the original remains unchanged. You can finish another selected winner.")
+                self.status.setText(
+                    "Separate version verified. Review it in Ingest; the original remains unchanged. You can finish another selected winner."
+                    if self.allow_handoff else "Resized copy saved and verified. Preview the saved version here. The original is unchanged.")
             else:
                 self.status.setText("Finishing was cancelled before publication. Review and retry.")
         self._run("Create separate finishing version", lambda job: execute_generation_finish(plan,
@@ -437,6 +446,8 @@ class GenerationFinishingDialog(QDialog):
             cancelled=lambda: job.cancel_requested), complete)
 
     def send_to_ingest(self):
+        if not self.allow_handoff:
+            return
         source = self._selected()
         result = self._finished.get(source)
         if result is None:
@@ -448,6 +459,8 @@ class GenerationFinishingDialog(QDialog):
             storage_root=self.storage_root, verified_source=self.verified_source), complete)
 
     def refine_winner(self):
+        if not self.allow_handoff:
+            return
         source = self._selected()
         width, height = self.final_width.value(), self.final_height.value()
         def complete(payload):
