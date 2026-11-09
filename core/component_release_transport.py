@@ -75,8 +75,10 @@ class ReleaseTransportPolicy:
             # API relocation is not silently accepted as a changed repository.
             if url != initial_url:
                 raise TransportHold("release_listing_redirect_held")
-        elif url != initial_url and f"https://{parsed.netloc}" not in self.asset_redirect_origins:
-            raise TransportHold("unqualified_asset_redirect_origin")
+        elif url != initial_url:
+            origin = f"https://{parsed.netloc}"
+            if origin not in self.asset_redirect_origins and origin + "/" not in self.asset_redirect_origins:
+                raise TransportHold("unqualified_asset_redirect_origin")
 
 
 class _ReleaseRedirects(HTTPRedirectHandler):
