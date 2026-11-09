@@ -53,19 +53,34 @@ class KreaTrainingCompatibilityService:
 
     def report(self, expected_package: TrainingPackageVerification,
                registry: ModelResourceRegistry, *, progress=None,
-               should_cancel=None) -> KreaTrainingCompatibilityReport:
+               should_cancel=None, limits=None) -> KreaTrainingCompatibilityReport:
         _cancel(should_cancel)
         if (expected_package.valid is not True or not isinstance(expected_package.manifest, dict)
                 or not isinstance(expected_package.package_fingerprint, str)
                 or len(expected_package.package_fingerprint) != 64):
             raise ValueError("Start from a verified training package.")
+        if limits is not None:
+            manifest = expected_package.manifest
+            plan = manifest.get("candidate_plan")
+            candidates = plan.get("candidates") if isinstance(plan, dict) else None
+            artifacts = manifest.get("artifacts")
+            too_many = ((isinstance(candidates, list) and len(candidates) > limits.candidates)
+                        or (isinstance(artifacts, list) and len(artifacts) > limits.artifacts))
+            if not too_many and isinstance(artifacts, list):
+                for artifact in artifacts:
+                    path = artifact.get("path") if isinstance(artifact, dict) else None
+                    if isinstance(path, str) and path.count("/") > limits.depth:
+                        too_many = True
+                        break
+            if too_many:
+                raise ValueError("The package exceeds the review limits. Choose a smaller package.")
         # Freeze caller-owned mutable evidence before callbacks or verification.
         expected = replace(expected_package, manifest=json.loads(_json(expected_package.manifest)))
         before = _package_states(expected, should_cancel)
         if progress:
             progress(0, 0, "Verifying the exact package for the Krea compatibility report")
         _cancel(should_cancel)
-        current = TrainingPackageService().verify(expected.destination, should_cancel=should_cancel)
+        current = TrainingPackageService().verify(expected.destination, should_cancel=should_cancel, limits=limits)
         _cancel(should_cancel)
         if not current.valid or current.package_fingerprint != expected.package_fingerprint:
             raise ValueError("The training package changed or failed verification. Verify or rebuild it first.")
