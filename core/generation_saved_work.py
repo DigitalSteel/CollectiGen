@@ -268,6 +268,8 @@ def import_selected_saved_work(storage_root, kind, source_path, *, cancelled=Non
     """Validate one user-selected file and publish a separate no-clobber copy."""
     directory = _directory(storage_root, kind)
     source = Path(source_path).absolute()
+    if ":" in source.name:
+        raise ValueError("Choose a regular file to import.")
     _assert_unredirected(source)
     if callable(cancelled) and cancelled():
         raise InterruptedError("Saved-work import was cancelled.")

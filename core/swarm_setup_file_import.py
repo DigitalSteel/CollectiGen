@@ -125,6 +125,8 @@ def _cancel(should_cancel):
 def _read_source(path, should_cancel):
     source = Path(path).absolute()
     _cancel(should_cancel)
+    if ":" in source.name:
+        raise ValueError("Choose one regular SwarmUI JSON export file.")
     _assert_unredirected(source)
     before = source.stat(follow_symlinks=False)
     if not stat.S_ISREG(before.st_mode):

@@ -614,8 +614,8 @@
       "size_bytes": 4170
     },
     "core/generation_saved_work.py": {
-      "sha256": "36be636f33b7064c1e3c316a6e63b41d646d89bfaa3b24cd14ce803d3a35cd48",
-      "size_bytes": 40593
+      "sha256": "5fd0ba97f14f67e9b2360929b9fad57ffd230ef2937771c0afdb6e89198f08bf",
+      "size_bytes": 40681
     },
     "core/generation_swarm_components.py": {
       "sha256": "7130176ef4314a16f1a5910e89e79a462564b770932e92004f2d9f84ebd40e73",
@@ -1402,8 +1402,8 @@
       "size_bytes": 65967
     },
     "core/swarm_setup_file_import.py": {
-      "sha256": "5b79d275e596569c57f343999cfe179a21733ba379c6527be425e6dd28c6a4fb",
-      "size_bytes": 40747
+      "sha256": "506e0069583eccd049981f6039fbaa1cf46dd9409f56c1a04e3706d84f5025e8",
+      "size_bytes": 40847
     },
     "core/swarm_source_inventory.py": {
       "sha256": "0af5a61582d7a55350624c37ec5a1f8c4dee60fd4cb25b1229b1584ada21de64",
