@@ -73,7 +73,7 @@ def observe(path, *, bounded=False):
     return {"exists": True, "size": path.stat().st_size, "sha256": h.hexdigest()}
 
 
-def atomic(path, raw):
+def atomic(path, raw, *, create_only=False):
     path = safe_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + "." + uuid4().hex + ".tmp")
@@ -82,7 +82,12 @@ def atomic(path, raw):
             stream.write(raw)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        if not create_only:
+            os.replace(temporary, path)
+        elif os.name == "nt":
+            os.rename(temporary, path)
+        else:
+            os.link(temporary, path)
         require(_bounded_metadata(path, len(raw), "atomic_readback_failed") == raw,
                 "atomic_readback_failed")
         # Directory fsync is available on POSIX; Windows qualification must prove
@@ -310,7 +315,11 @@ class ManagerRecovery:
                  "phase": "preparing", "events": [], "restore_intents": [], "restored": []}
             self.gate("prepare_admission", j)
             self.gate("exclusive_owner", j)
-            atomic(self.active_path, self._active_bytes(j))
+            try:
+                atomic(self.active_path, self._active_bytes(j), create_only=True)
+            except FileExistsError as exc:
+                raise RecoveryHold("another_active_transaction") from exc
+            require(self._check_active(j), "active_transaction_missing")
             self.save(j, "preparing", "preparation_started")
             for n, row in data.items():
                 if row["before"]["exists"] and j["binding"]["migration"]:
