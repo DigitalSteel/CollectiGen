@@ -579,6 +579,36 @@ class ScopedTrainingHistory:
 
     def verify_selected(self, record, revision):
         """Verify the indexed receipt bytes without following paths in the receipt."""
+        self._selected_receipt(record, revision)
+        return record
+
+    def review_preparation(self, record, revision):
+        """Return the checked preparation deadline without opening linked files."""
+        from .training_run_recovery import _plan
+
+        raw = self._selected_receipt(record, revision)
+        kinds = {
+            "execution": "sdxl_training_execution_review",
+            "readiness": "sdxl_training_readiness_review",
+            "anima": "collectigen_anima_retained_review",
+            "validation": "sdxl_heldout_validation_review",
+        }
+        try:
+            value = _decode(raw)
+            if (type(value) is not dict or type(value.get("schema_version")) is not int
+                    or value["schema_version"] != 1 or value.get("kind") != kinds[record.kind]):
+                raise ValueError("Unexpected receipt format")
+            plan = _plan(value["plan"])
+        except (KeyError, TypeError, ValueError, RuntimeError) as exc:
+            raise TrainingRunIndexError("The selected training preparation receipt is invalid.") from exc
+        if (plan.run_id != record.run_id or plan.fingerprint != record.plan_fingerprint
+                or str(plan.destination) != record.destination
+                or (record.kind in {"execution", "readiness"}
+                    and value.get("fingerprint") != plan.fingerprint)):
+            raise TrainingRunIndexError("The training preparation differs from the saved run identity.")
+        return plan.timeout_seconds
+
+    def _selected_receipt(self, record, revision):
         records, current = self.snapshot()
         if current != revision or record not in records:
             raise TrainingRunIndexError("Training history changed. Refresh and select the review again.")
@@ -591,4 +621,4 @@ class ScopedTrainingHistory:
             raise TrainingRunIndexError("The selected training receipt changed or is unavailable.")
         if self.snapshot()[1] != revision:
             raise TrainingRunIndexError("Training history changed while opening the review.")
-        return record
+        return raw

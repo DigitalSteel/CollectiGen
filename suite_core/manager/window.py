@@ -1495,7 +1495,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
             history = ScopedTrainingHistory(state.generation_data_root / "training")
             dialog = TrainingHistoryDialog(history, state.jobs, self, read_only=True)
-            dialog.open_button.setText("Verify Selected Receipt")
+            dialog.open_button.setText("Review Selected Preparation")
             self._training_history_dialog = dialog
             task = None
 
@@ -1505,7 +1505,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     return
                 dialog.set_retained_index_status("Checking the selected receipt…")
                 task = CoordinatedCallTask(state.jobs, "Verify Training receipt",
-                                           lambda _job: history.verify_selected(record, revision),
+                                           lambda _job: history.review_preparation(record, revision),
                                            resource="io")
 
                 def finish(message):
@@ -1517,9 +1517,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         else:
                             dialog.set_retained_index_status("")
 
-                task.signals.complete.connect(lambda selected: finish(
-                    f"Receipt verified for {selected.annotation.name or selected.run_id}. "
-                    "This confirms the saved receipt bytes."))
+                task.signals.complete.connect(lambda seconds: finish(
+                    f"Saved preparation verified for {record.annotation.name or record.run_id}. "
+                    f"Configured time limit: {seconds:g} seconds. Results have not been checked."))
                 task.signals.failed.connect(finish)
                 task.signals.cancelled.connect(lambda: finish("Receipt check cancelled."))
                 try:
