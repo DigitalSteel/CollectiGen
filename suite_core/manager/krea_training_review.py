@@ -25,6 +25,7 @@ class KreaTrainingReviewDialog(QDialog):
         self._handoff_folder = None
         self._checking_dataset = False
         self._preparing_dataset = False
+        self._prepared_folder = None
         self._dataset_overview = None
         self._checking_handoff = False
         self._handoff_fingerprint = None
@@ -80,6 +81,10 @@ class KreaTrainingReviewDialog(QDialog):
         self.folder_button.hide()
         self.folder_button.clicked.connect(self._open_package_folder)
         actions.addWidget(self.folder_button)
+        self.prepared_folder_button = QPushButton("Open Prepared Workspace")
+        self.prepared_folder_button.hide()
+        self.prepared_folder_button.clicked.connect(self._open_prepared_folder)
+        actions.addWidget(self.prepared_folder_button)
         actions.addStretch()
         self.return_button = QPushButton("Cancel Check and Return")
         self.return_button.setMinimumWidth(self.return_button.fontMetrics().horizontalAdvance('Return to Applications') + 32)
@@ -165,6 +170,16 @@ class KreaTrainingReviewDialog(QDialog):
                 else:
                     self.status.setText("SDXL dataset prepared in Manager’s Training workspace. Training has not started.")
                     self.sections[0].appendPlainText(f"\nPrepared workspace: {plan.root}")
+                    try:
+                        folder = Path(plan.root)
+                        root = self._dataset_verifier.work_root
+                        if not folder.is_absolute() or ".." in folder.parts or folder == root or not folder.is_relative_to(root):
+                            raise ValueError("Preparation workspace outside the reviewed worker root")
+                        self._prepared_folder = folder, self._handoff_directory_state(folder)
+                    except (OSError, RuntimeError, ValueError):
+                        self.status.setText("Dataset prepared, but the workspace could not be verified for opening.")
+                    else:
+                        self.prepared_folder_button.show()
                     self.tabs.setCurrentIndex(0)
             return
         if self._checking_dataset:
@@ -317,6 +332,21 @@ class KreaTrainingReviewDialog(QDialog):
             self.sections[1].appendPlainText(
                 "\nRecorded model companions (verify in your Trainer)\n" + "\n".join(rows)
             )
+
+    def _open_prepared_folder(self):
+        if self._prepared_folder is None or self._executor.close_held or self._cancel.is_set():
+            return
+        folder, identity = self._prepared_folder
+        try:
+            if self._handoff_directory_state(folder) != identity:
+                raise ValueError("Preparation workspace changed")
+        except (OSError, RuntimeError, ValueError):
+            self._prepared_folder = None
+            self.prepared_folder_button.hide()
+            self.status.setText("The prepared workspace changed and could not be opened. Prepare the dataset again to create a new workspace.")
+            return
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder))):
+            self.status.setText("The system could not open the prepared workspace. Choose Open Prepared Workspace to retry.")
 
     def _open_package_folder(self):
         if (not self.folder_button.isVisible() or not self.folder_button.isEnabled()
@@ -473,6 +503,8 @@ class KreaTrainingReviewDialog(QDialog):
         except (RuntimeError, ValueError):
             self.status.setText("Preparation could not start. Choose Prepare SDXL Dataset to retry.")
             return
+        self._prepared_folder = None
+        self.prepared_folder_button.hide()
         self._preparing_dataset = True
         for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
             action.setEnabled(False)
