@@ -117,6 +117,25 @@ def test_cache_claim_preserves_owner_created_after_empty_check(tmp_path, monkeyp
     assert marker.read_bytes() == b"other owner"
 
 
+def test_replaced_cache_root_with_copied_marker_is_refused(tmp_path):
+    from suite_core.discovery.component_staging import StagingHold
+
+    feed = FakeFeed()
+    acquisition = service(tmp_path, feed)
+    root = acquisition.root
+    moved = root.with_name("original-cache")
+    root.rename(moved)
+    root.mkdir()
+    marker_name = ".component-acquisition-owner.json"
+    marker = (moved / marker_name).read_bytes()
+    (root / marker_name).write_bytes(marker)
+    with pytest.raises(StagingHold, match="cache_root_changed"):
+        offers(acquisition)
+    assert not feed.calls
+    assert (root / marker_name).read_bytes() == marker
+    assert (moved / marker_name).read_bytes() == marker
+
+
 def offers(service, installed=None):
     return service.discover(channel='beta', installed_versions={} if installed is None else installed)
 

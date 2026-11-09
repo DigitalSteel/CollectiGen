@@ -191,6 +191,8 @@ class ComponentAcquisition:
         root = Path(cache_root)
         require(root.is_absolute(), "absolute_cache_required")
         guard(root)
+        root_info = root.stat()
+        self._root_identity = (root_info.st_dev, root_info.st_ino)
         require(root.is_dir() and not any(root.iterdir()), "empty_owned_cache_required")
         require(type(cache_owner) is str and 1 <= len(cache_owner) <= 128, "cache_owner")
         require(type(max_artifact_bytes) is int and 0 < max_artifact_bytes <= 512 * 1024 * 1024, "artifact_bound")
@@ -214,13 +216,15 @@ class ComponentAcquisition:
                 marker.write(self._owner)
         except FileExistsError as exc:
             raise StagingHold("empty_owned_cache_required") from exc
-        require(self._marker.read_bytes() == self._owner, "cache_owner_readback")
+        self._check(None)
         # The default app trust path is never read: only transport methods are used.
         self.transport = ApplicationUpdateService(root, host_version, opener=opener)
         self._offers = {}
 
     def _check(self, cancel):
         guard(self.root)
+        root_info = self.root.stat()
+        require((root_info.st_dev, root_info.st_ino) == self._root_identity, "cache_root_changed")
         guard(self._marker)
         require(self._marker.stat().st_size == len(self._owner), "cache_owner_changed")
         with self._marker.open("rb") as marker:
