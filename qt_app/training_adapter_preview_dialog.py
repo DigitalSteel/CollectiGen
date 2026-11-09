@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QSpinBox, QSplitter, QTabWidget, QTreeWidget, QTreeWidgetItem,
@@ -9,9 +10,9 @@ from PySide6.QtWidgets import (
 
 from core.training_adapter_preview import (
     ADAPTER_VERSION, SOURCE_REVISION, SdScriptsSdxlLoraPreviewService, SdxlLoraRecipe,
-    verified_adapter_image_path,
+    verified_adapter_image,
 )
-from .gallery import EmbeddedGallery
+from .gallery import ProtectedImageView, content_safety_policy
 from .modal_feedback import FeedbackEnabledDialog
 from .training_caption_review_view import PagedCaptionText
 from .workers import CoordinatedCallTask
@@ -189,13 +190,12 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         self.caption = PagedCaptionText("Exact training caption, image effects and identity")
         image_details_layout.addWidget(self.caption, 1)
         image_split.addWidget(image_details)
-        self.image_preview = EmbeddedGallery(page_size=1, card_width=180, show_open_dataset=False)
+        policy = content_safety_policy()
+        self.image_preview = ProtectedImageView(policy=policy, settings=getattr(policy, "settings", None))
         self.image_preview.setAccessibleName("Selected verified packaged training image")
         # The one-image gallery already shows its loading, empty and error text
         # in the card area; the adjacent count would truncate this task title.
-        self.image_preview.status.hide()
-        self.image_preview.set_unavailable("Choose a packaged image to review it beside its exact caption.",
-                                           "Packaged training image")
+        self.image_preview.clear("Choose a packaged image to review it beside its exact caption.")
         self.image_preview.setMinimumWidth(220)
         self.image_preview.setMaximumWidth(285)
         image_split.addWidget(self.image_preview)
@@ -486,14 +486,20 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         value = self.preview.images[index]
         current_preview = self.preview
         self.caption.set_text("Checking this packaged image and exact caption…")
-        self.image_preview.set_loading("Packaged training image")
+        self.image_preview.clear("Checking packaged training image…")
         self._image_selection = (self.preview, index)
         def work(job):
-            return verified_adapter_image_path(self.package, current_preview, value,
+            if value.width * value.height > 32_000_000:
+                raise ValueError("The packaged image exceeds the preview pixel limit.")
+            path, payload = verified_adapter_image(self.package, current_preview, value,
                 should_cancel=lambda: job.cancel_requested)
+            image = QImage.fromData(payload)
+            if image.isNull():
+                raise ValueError("The verified packaged image cannot be decoded.")
+            return path, image
         task = CoordinatedCallTask(self.jobs, "Check packaged training image", work, resource="io")
         self._image_task = task
-        task.signals.complete.connect(lambda path: self._finish_image(task, path=path))
+        task.signals.complete.connect(lambda image: self._finish_image(task, verified=image))
         task.signals.failed.connect(lambda message: self._finish_image(task, error=message))
         task.signals.cancelled.connect(lambda: self._finish_image(task, error="Image preview cancelled."))
         try:
@@ -512,10 +518,9 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
             self._image_task = None
             self.jobs.cancel(task.job_id)
         self._image_selection = None
-        self.image_preview.set_unavailable("Choose a packaged image to review it beside its exact caption.",
-                                           "Packaged training image")
+        self.image_preview.clear("Choose a packaged image to review it beside its exact caption.")
 
-    def _finish_image(self, task, *, path=None, error=None):
+    def _finish_image(self, task, *, verified=None, error=None):
         if task in self._superseded_image_tasks:
             self._superseded_image_tasks.remove(task)
             if self._closing:
@@ -535,18 +540,13 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
             return
         if error:
             self.caption.set_text("This packaged image and caption could not be rechecked. Verify or rebuild the training package before reviewing them.")
-            self.image_preview.set_unavailable(
-                f"Image unavailable: {error} Recheck or rebuild the training package.",
-                "Packaged training image")
+            self.image_preview.clear(f"Image unavailable: {error} Recheck or rebuild the training package.")
             return
         value = self.preview.images[selection[1]]
         assessment = value.effects.detail() if value.effects else "Image effects remain unverified."
         self.caption.set_text(f"Exact package caption (no additional prefix):\n{value.caption}\n\nImage effects and readiness:\n{assessment}\n\nTechnical identity:\n{value.stable_id}\nImage SHA-256: {value.image_sha256}\nCaption SHA-256: {value.caption_sha256}\nRole: {value.role}")
-        def configure(_path, card):
-            card.set_compact_mode(True)
-            card.allow_data_edit = False
-            card.set_note("Read-only packaged image")
-        self.image_preview.set_paths((path,), context="Packaged training image", configure=configure)
+        path, image = verified
+        self.image_preview.set_image(QPixmap.fromImage(image), path)
 
     def _filter_settings(self, *_):
         self.settings.clear(); self.setting_detail.set_text("")

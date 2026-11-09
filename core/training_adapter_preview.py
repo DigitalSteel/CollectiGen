@@ -126,7 +126,13 @@ class TrainingAdapterPreview:
 def verified_adapter_image_path(package: TrainingPackageVerification,
                                 preview: TrainingAdapterPreview,
                                 image: AdapterImage, *, should_cancel=None) -> Path:
-    """Resolve one exact packaged image only after a fresh bounded byte check.
+    return verified_adapter_image(package, preview, image, should_cancel=should_cancel)[0]
+
+
+def verified_adapter_image(package: TrainingPackageVerification,
+                           preview: TrainingAdapterPreview,
+                           image: AdapterImage, *, should_cancel=None) -> tuple[Path, bytes]:
+    """Return the exact verified packaged image bytes for a read-only view.
 
     This is a viewing check, not permission to alter the frozen package or the
     source Image Knowledge. The caller must discard the path when selection or
@@ -169,7 +175,7 @@ def verified_adapter_image_path(package: TrainingPackageVerification,
             or hashlib.sha256(payload).hexdigest() != image.image_sha256
             or hashlib.sha256(caption_payload).hexdigest() != image.caption_sha256):
         raise ValueError("The selected packaged image or caption changed. Verify or rebuild the package before viewing it.")
-    return path
+    return path, bytes(payload)
 
 
 def _package_states(package: TrainingPackageVerification, cancel=None):

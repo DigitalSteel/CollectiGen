@@ -1566,8 +1566,8 @@
       "size_bytes": 9207
     },
     "core/training_adapter_preview.py": {
-      "sha256": "805fdef33bcf4bc78fbd5540c561ca487005bc25281ed945ce0c6e640595fe42",
-      "size_bytes": 25474
+      "sha256": "09d44416bc85f048b427447452654c249d8a25a64cf3e48d71c1d8613bf6f3c2",
+      "size_bytes": 25799
     },
     "core/training_anima.py": {
       "sha256": "4368627fccab95e9d5d3bc38ad1fea4ddbbdc5d82483bf7e70f7c19c3040894d",
@@ -2634,8 +2634,8 @@
       "size_bytes": 2355
     },
     "qt_app/training_adapter_preview_dialog.py": {
-      "sha256": "c515666a10eee998db3b6157fadf4c0042e0baae7628fcce1470c06a70a5462e",
-      "size_bytes": 33794
+      "sha256": "31e523cfb1155b812fa2c663a3062ab12d4bb3d4bc1ca6803828b992932381f2",
+      "size_bytes": 33816
     },
     "qt_app/training_anima_dialog.py": {
       "sha256": "1af9da78575c58c0cb96db38f37a693582d8b2c9fec14b709a45c86fca51bab2",
