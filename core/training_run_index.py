@@ -663,7 +663,12 @@ class ScopedTrainingHistory:
             raise TrainingRunIndexError("Training history changed. Refresh and select the review again.")
         receipt = Path(record.review_path)
         self._check_read_path(receipt)
-        raw = _read_optional(receipt, limit=256 * 1024)
+        limit = 256 * 1024
+        if record.kind == "readiness":
+            from .training_run_recovery import MAX_REVIEW_BYTES
+
+            limit = MAX_REVIEW_BYTES
+        raw = _read_optional(receipt, limit=limit)
         if raw is None or hashlib.sha256(raw).hexdigest() != record.review_sha256:
             raise TrainingRunIndexError("The selected training receipt changed or is unavailable.")
         if self.snapshot()[1] != revision:
