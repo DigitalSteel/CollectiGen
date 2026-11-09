@@ -1338,6 +1338,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 choose_generation_setup(self)
             finally:
                 self._image_draft_picker_open = False
+                if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:
+                    self.statusBar().clearMessage()
 
         def open_generate_plan(self):
             if (self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None
