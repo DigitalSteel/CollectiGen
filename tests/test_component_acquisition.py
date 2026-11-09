@@ -525,3 +525,32 @@ def test_manager_stage_rechecks_only_its_signed_release_before_publication(tmp_p
         updater.prepare(offer)
     assert updater._prepared is None
     assert not any("collectigen.unrelated" in url for url, _, _ in feed.calls)
+
+
+def test_manager_stage_refuses_archive_replaced_during_final_offer_check(tmp_path, monkeypatch):
+    from core import manager_update_service
+
+    feed = FakeFeed()
+    feed.add(manager_update_service.MANAGER.value)
+    acquisition = service(tmp_path, feed)
+    updater = manager_update_service.ManagerUpdateService(
+        acquisition, current_version="0.1.0-alpha.7", channel="beta",
+    )
+    offer = updater.discover()
+    monkeypatch.setattr(manager_update_service, "produce_detached_inventory", lambda *_a, **_kw: b"inert")
+    original_opener = acquisition.transport.opener
+
+    def replace_cached_archive(request, timeout):
+        cached = acquisition._acquired.get(offer.release.manifest_sha256)
+        if cached is not None:
+            cached.write_bytes(b"X" * len(PAYLOAD))
+        return original_opener(request, timeout)
+
+    def simulate_admission(*_args, **_kwargs):
+        acquisition.transport.opener = replace_cached_archive
+        return object()
+
+    monkeypatch.setattr(updater, "_admit", simulate_admission)
+    with pytest.raises(ValueError, match="SHA-256"):
+        updater.prepare(offer)
+    assert updater._prepared is None

@@ -13,7 +13,8 @@ from core.component_acquisition import ComponentAcquisition, ComponentOffer
 from core.manager_stock_apply import StockApplyRequest, queue_stock_apply, readback
 from core.connected_version_observation import VersionBinding, VersionObservation, VersionStatus, derive_version_status
 from core.connected_version_projection import newer_offer_comparison
-from suite_core.discovery.component_staging import require
+from suite_core.discovery.component_release_signature import verify_component_artifact
+from suite_core.discovery.component_staging import guard, require
 from suite_core.discovery.manager_runtime_detached_admission import (
     MANAGER, PROFILE, DetachedAdmissionPlan, admit_detached, produce_detached_inventory,
 )
@@ -321,6 +322,8 @@ class ManagerUpdateService:
             expected_version=offer.release.software_version, expected_channel=self.channel)
         admission = self._admit(acquired.artifact, offer, proof, trust_pin=offer.trust_sha256)
         self.acquisition.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
+        guard(acquired.artifact)
+        verify_component_artifact(acquired.artifact, offer.release)
         if should_cancel and should_cancel():
             raise InterruptedError("Manager update staging cancelled safely.")
         require(offer is self._offer, "changed_manager_offer")

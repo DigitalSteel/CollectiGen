@@ -894,8 +894,8 @@
       "size_bytes": 25540
     },
     "core/manager_update_service.py": {
-      "sha256": "47a9d3df15878122c62f7a2e0a7b0d005166464f4005a06649a9ed78bb3991cd",
-      "size_bytes": 22018
+      "sha256": "f52fd44bb4ee79f61d06d5be5097d0610acd77d921b63074512c2cff688148b3",
+      "size_bytes": 22213
     },
     "core/media_inventory.py": {
       "sha256": "5117d1bcec46ca4f0b2e9d0caee3648a8f2384cfdff95f4a21c2344624cbcf41",
@@ -3646,8 +3646,8 @@
       "size_bytes": 3827
     },
     "tests/test_component_acquisition.py": {
-      "sha256": "12075a24665256cef16d03d65459dd4590297444775e4ad5279606d62d6e60f8",
-      "size_bytes": 24072
+      "sha256": "3d9d764301c108b90f0619e114e2f1c7a67bb3aa6dba67a7d9e49ee21049f1da",
+      "size_bytes": 25231
     },
     "tests/test_component_release_identity.py": {
       "sha256": "3d7667461d5360b3c56d7cb97fe704a7c4482e3f9dd220b18d7398c4a207c997",
