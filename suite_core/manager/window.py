@@ -1381,6 +1381,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if path and not self.close_policy.pending:
                 open_generation_workspace(self, paths=(Path(path),), remix=True, force_new=True)
 
+        _VIDEO_PICKER_CLOSE_NOTICE = "Close the video draft chooser before closing Manager."
+
         def open_video_plan(self, *, reopen=False, import_copy=False):
             if self._video_draft_picker_open or self._offline_generation_state() is None:
                 return
@@ -1404,6 +1406,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     current.load_draft()
             finally:
                 self._video_draft_picker_open = False
+                if self.statusBar().currentMessage() == self._VIDEO_PICKER_CLOSE_NOTICE:
+                    self.statusBar().clearMessage()
 
         def open_training_comparison(self):
             state = self._offline_generation_state()
@@ -2044,7 +2048,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 event.ignore()
                 return
             if self._video_draft_picker_open:
-                self.statusBar().showMessage("Close the video draft chooser before closing Manager.")
+                self.statusBar().showMessage(self._VIDEO_PICKER_CLOSE_NOTICE)
                 event.ignore()
                 return
             video = getattr(self, "_video_generation_dialog", None)
