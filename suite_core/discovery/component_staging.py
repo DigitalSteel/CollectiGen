@@ -369,6 +369,10 @@ def extract_component_archive(archive_path, destination, *, member_extracted=lam
 def _stage_and_activate(root, base, owner, archive_path, *, component, version, os_name,
         architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token, failpoint,
         payload_policy=None, copy_checkpoint=None):
+    def check_verification_cancel():
+        if copy_checkpoint is not None:
+            copy_checkpoint()
+
     policy = require_payload_policy(payload_policy, component, {"os": os_name, "architecture": architecture})
     with lock(base):
         journal_path = base / "transaction.json"
@@ -397,7 +401,7 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         archive_path = Path(archive_path)
         guard(archive_path)
         require(archive_path.stat().st_size <= policy.max_archive_bytes, "archive_size")
-        verify_artifact(archive_path, verified.artifact)
+        verify_artifact(archive_path, verified.artifact, should_cancel=check_verification_cancel)
         target = {"component_id": component.value, "version": version,
                   "directory": f"Apps/{component.value}/{version}", "inventory_sha256": verified.artifact.portable_manifest_sha256}
         destination = root / target["directory"]
@@ -421,7 +425,7 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
             copy_checkpoint=copy_checkpoint)
         profile = verify_directory(staging, target["inventory_sha256"], component, version, payload_policy=policy)
         require(profile["platform"] == {"os": os_name, "architecture": architecture}, "inventory_platform")
-        verify_artifact(archive_path, verified.artifact)
+        verify_artifact(archive_path, verified.artifact, should_cancel=check_verification_cancel)
         journal["phase"] = "activation_pending"
         atomic(pending_path, journal)
         failpoint("before_version_publish")
