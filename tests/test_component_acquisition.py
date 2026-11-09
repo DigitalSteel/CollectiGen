@@ -94,6 +94,29 @@ def service(tmp_path, feed=None, **kwargs):
     return ComponentAcquisition(**values)
 
 
+def test_cache_claim_preserves_owner_created_after_empty_check(tmp_path, monkeypatch):
+    from pathlib import Path
+    from suite_core.discovery.component_staging import StagingHold
+
+    root = tmp_path / "cache"
+    root.mkdir()
+    marker = root / ".component-acquisition-owner.json"
+    original = Path.iterdir
+
+    def claim_after_listing(path):
+        entries = list(original(path))
+        if path == root:
+            assert not entries
+            marker.write_bytes(b"other owner")
+        return iter(entries)
+
+    monkeypatch.setattr(Path, "iterdir", claim_after_listing)
+    with pytest.raises(StagingHold, match="empty_owned_cache_required"):
+        ComponentAcquisition(cache_root=root, cache_owner="second", opener=FakeFeed(),
+                             host_version="0.2.1-alpha.4")
+    assert marker.read_bytes() == b"other owner"
+
+
 def offers(service, installed=None):
     return service.discover(channel='beta', installed_versions={} if installed is None else installed)
 

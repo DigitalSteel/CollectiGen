@@ -209,7 +209,11 @@ class ComponentAcquisition:
         self.manifest_name, self.signature_name = manifest_name, signature_name
         self._owner = json.dumps(dict(purpose="COMPONENT_ACQUISITION_CACHE", owner=cache_owner), sort_keys=True).encode()
         self._marker = root / ".component-acquisition-owner.json"
-        self._marker.write_bytes(self._owner)
+        try:
+            with self._marker.open("xb") as marker:
+                marker.write(self._owner)
+        except FileExistsError as exc:
+            raise StagingHold("empty_owned_cache_required") from exc
         require(self._marker.read_bytes() == self._owner, "cache_owner_readback")
         # The default app trust path is never read: only transport methods are used.
         self.transport = ApplicationUpdateService(root, host_version, opener=opener)
