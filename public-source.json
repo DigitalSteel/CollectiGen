@@ -1622,8 +1622,8 @@
       "size_bytes": 23930
     },
     "core/training_dataset_binding.py": {
-      "sha256": "5d674d1424380272ea2ec8a38ebb51490380d6027e19a1abd56a9db104426604",
-      "size_bytes": 17817
+      "sha256": "bc67e835a2befd2686656e2ba35592f94cdda3c88c66d13e232e6ea5dd81b7f4",
+      "size_bytes": 17915
     },
     "core/training_dataset_package_contract.py": {
       "sha256": "1aff0241f5094fb302a3b201faf932429c29d4901e56cdbd1635f139325ed8ae",
