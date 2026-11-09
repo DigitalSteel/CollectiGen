@@ -1782,8 +1782,8 @@
       "size_bytes": 8442
     },
     "core/training_result.py": {
-      "sha256": "96ac20e4fb2b484ab8afa9b14a8426ac5d7a11024cb6d0e5682c11cc5883f664",
-      "size_bytes": 28753
+      "sha256": "364f8d3381dd967b30eda1e9538a799f90caccfd11b56367670946dac72d3e0d",
+      "size_bytes": 28947
     },
     "core/training_resume_adapter.py": {
       "sha256": "2bbed799135641cb01a25903f8bf5749029368a196ea39e162985acf2a3e26a6",

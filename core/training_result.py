@@ -568,7 +568,7 @@ class SdxlTrainingResultService:
             parents.append(resolution.inspection)
         with registry._writer():
             value, current = registry.snapshot()
-            if current != expected_registry:
+            if current != expected_registry and checked.receipt["output"]["resource_id"] not in value["resources"]:
                 raise TrainingResultError("training_result_registry_changed")
             # Repeat every non-parent proof while holding the publication lock.
             final = self.verify(
@@ -630,6 +630,8 @@ class SdxlTrainingResultService:
                 if _canonical(existing) != _canonical(record):
                     raise TrainingResultError("training_result_output_collision")
                 return inspection.resource_id
+            if current != expected_registry:
+                raise TrainingResultError("training_result_registry_changed")
             value["resources"][inspection.resource_id] = record
             registry._save(value, current)
         return inspection.resource_id
