@@ -325,7 +325,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
                     self.connection_changed()
         except Exception as error:
             self.reviewed = None
-            from core.component_acquisition import ExactOfferHold
+            from core.component_acquisition import CachedComponentRejected, ExactOfferHold
             from core.encyclopedia_update_binding import StandaloneReaderCompatibilityHold
             if operation in ("Checking app status", "Refreshing releases"):
                 self.observation_stale = self.installed is not None
@@ -347,6 +347,12 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 self.status.setText("Installation stopped. Checking whether setup needs recovery.")
                 if not self.recovery_only:
                     recovery_check = 'Checking cancellation outcome'
+            elif isinstance(error, CachedComponentRejected) and operation == "Installing reviewed package":
+                self.offer = None
+                self.status.setText(
+                    "The cached download failed verification and was kept. "
+                    "Choose Check Again to review and download a fresh copy."
+                )
             elif isinstance(error, StandaloneReaderCompatibilityHold):
                 self.status.setText("Compatibility could not be confirmed. This package was not installed. Choose Check Again for a new review.")
                 self.offer = None

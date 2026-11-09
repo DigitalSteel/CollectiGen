@@ -357,3 +357,33 @@ def test_new_offer_cannot_update_until_original_launch_and_close_settle(tmp_path
             assert panel.refresh.property('primary') is not True
         finally:
             panel.timer.stop();panel.close()
+
+
+def test_rejected_cached_download_explains_fresh_review(tmp_path, monkeypatch):
+    application = app()
+    fixture = Fixture(tmp_path, monkeypatch)
+    fixture.add()
+    with executor_scope() as executor:
+        panel = EncyclopediaAcquisitionPanel(fixture.service, executor)
+        panel.resize(900, 650)
+        panel.show()
+        application.processEvents()
+        try:
+            click(panel.refresh)
+            wait(panel)
+            cached = fixture.acquisition.acquire(panel.offer).artifact
+            altered = b"X" * cached.stat().st_size
+            cached.write_bytes(altered)
+            install_with_confirmation(panel)
+            assert panel.offer is None
+            assert "download a fresh copy" in panel.status.text()
+            assert cached.read_bytes() == altered
+            assert not (fixture.root / "Apps").exists()
+
+            click(panel.refresh)
+            wait(panel)
+            install_with_confirmation(panel)
+            assert fixture.store.selected(fixture.store.observe()) is not None
+        finally:
+            panel.timer.stop()
+            panel.close()

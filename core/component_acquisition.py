@@ -22,6 +22,10 @@ from suite_core.installation import ComponentId
 EXACT_OFFER_HOLD = "This release changed or differs from the exact package approved for this test. Installation is held; review the approved release again."
 
 
+class CachedComponentRejected(ReleaseContractError):
+    """Previously verified cache bytes failed revalidation and were retained."""
+
+
 class ExactOfferHold(ValueError):
     pass
 
@@ -363,11 +367,11 @@ class ComponentAcquisition:
             if cached.exists():
                 try:
                     verify_component_artifact(cached, verified)
-                except ReleaseContractError:
+                except ReleaseContractError as exc:
                     # Preserve the rejected bytes and keep counting them against quota.
                     self._rejected_cache_paths.add(cached)
                     del self._acquired[verified.manifest_sha256]
-                    raise
+                    raise CachedComponentRejected(str(exc)) from exc
                 self._check_inflight_offer(offer, should_cancel)
                 return AcquiredComponent(offer, cached)
         used = 0
