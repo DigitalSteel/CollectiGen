@@ -160,27 +160,20 @@ class KreaTrainingReviewDialog(QDialog):
             self._preparing_dataset = False
             for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
                 action.setEnabled(True)
+            from core.training_dataset_binding import TrainingPreparationRetentionError
+
             try:
                 inspection, plan, request, receipt = self._future.result()
+            except TrainingPreparationRetentionError as exc:
+                self._show_prepared_workspace(exc.workspace, str(exc))
             except Exception:
                 self.status.setText("Preparation did not finish. Check the selected folders, then choose Prepare SDXL Dataset to retry.")
             else:
                 if plan is None:
                     self.status.setText("The selected trainer software is not ready for dataset preparation. Choose Prepare SDXL Dataset to review the folders.")
                 else:
-                    self.status.setText("SDXL dataset prepared in Manager’s Training workspace. Training has not started.")
-                    self.sections[0].appendPlainText(f"\nPrepared workspace: {plan.root}")
-                    try:
-                        folder = Path(plan.root)
-                        root = self._dataset_verifier.work_root
-                        if not folder.is_absolute() or ".." in folder.parts or folder == root or not folder.is_relative_to(root):
-                            raise ValueError("Preparation workspace outside the reviewed worker root")
-                        self._prepared_folder = folder, self._handoff_directory_state(folder)
-                    except (OSError, RuntimeError, ValueError):
-                        self.status.setText("Dataset prepared, but the workspace could not be verified for opening.")
-                    else:
-                        self.prepared_folder_button.show()
-                    self.tabs.setCurrentIndex(0)
+                    self._show_prepared_workspace(
+                        plan.root, "SDXL dataset prepared in Manager’s Training workspace. Training has not started.")
             return
         if self._checking_dataset:
             self._checking_dataset = False
@@ -332,6 +325,21 @@ class KreaTrainingReviewDialog(QDialog):
             self.sections[1].appendPlainText(
                 "\nRecorded model companions (verify in your Trainer)\n" + "\n".join(rows)
             )
+
+    def _show_prepared_workspace(self, path, status):
+        self.sections[0].appendPlainText(f"\nPrepared workspace: {path}")
+        self.tabs.setCurrentIndex(0)
+        try:
+            folder = Path(path)
+            root = self._dataset_verifier.work_root
+            if not folder.is_absolute() or ".." in folder.parts or folder == root or not folder.is_relative_to(root):
+                raise ValueError("Preparation workspace outside the reviewed worker root")
+            self._prepared_folder = folder, self._handoff_directory_state(folder)
+        except (OSError, RuntimeError, ValueError):
+            status += " The workspace could not be verified for opening."
+        else:
+            self.prepared_folder_button.show()
+        self.status.setText(status)
 
     def _open_prepared_folder(self):
         if self._prepared_folder is None or self._executor.close_held or self._cancel.is_set():

@@ -606,6 +606,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.training_history_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.training_history_button.clicked.connect(self.open_training_history)
             training_layout.addWidget(self.training_history_button, 0, Qt.AlignLeft)
+            self.saved_preparation_button = compact_action(QPushButton("Review Saved SDXL Preparations…"))
+            self.saved_preparation_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.saved_preparation_button.clicked.connect(lambda: self.open_training_history(preparations=True))
+            training_layout.addWidget(self.saved_preparation_button, 0, Qt.AlignLeft)
             training_panel.setVisible(not view.synthetic)
             applications_layout.insertWidget(applications_layout.indexOf(self.categories_toggle), training_panel)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
@@ -1515,16 +1519,19 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         _TRAINING_PICKER_CLOSE_NOTICE = "Close held. Finish or close the training package chooser, then close Manager again."
 
-        def open_training_history(self):
+        def open_training_history(self, *, preparations=False):
             state = self.generation_state()
             if state is None or getattr(self, "_training_history_dialog", None) is not None:
                 return
-            from core.training_run_index import ScopedTrainingHistory
+            from core.training_run_index import ScopedPreparationHistory, ScopedTrainingHistory
             from qt_app.training_history_dialog import TrainingHistoryDialog
             from qt_app.workers import CoordinatedCallTask
 
-            history = ScopedTrainingHistory(state.generation_data_root / "training")
+            history = (ScopedPreparationHistory(state.generation_data_root / "TrainingReview") if preparations
+                       else ScopedTrainingHistory(state.generation_data_root / "training"))
             dialog = TrainingHistoryDialog(history, state.jobs, self, read_only=True)
+            if preparations:
+                dialog.setWindowTitle("Saved SDXL Preparations")
             dialog.open_button.setText("Review Selected Preparation")
             self._training_history_dialog = dialog
             task = None
@@ -1554,7 +1561,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                             dialog.set_retained_index_status(message)
 
                 def complete(result):
-                    if validation:
+                    if preparations:
+                        finish("Saved SDXL preparation receipt verified. Training was not started. Live inputs were not rechecked.")
+                    elif validation:
                         qualification = ("Candidate measurement. " if result["qualification"] == "candidate_only" else "")
                         integrity = ("Saved report hash verified. " if record.validation_report_sha256
                                      else "Older record has no saved report hash. ")

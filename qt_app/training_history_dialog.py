@@ -485,7 +485,8 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         for record in page.records:
             name = record.annotation.name or Path(record.destination).name or record.run_id[:8]
             kind = {"execution": "Training run", "readiness": "Readiness check",
-                "anima": "Anima run", "validation": "Held-out validation"}[record.kind]
+                "anima": "Anima run", "validation": "Held-out validation",
+                "preflight": "SDXL dataset preparation"}[record.kind]
             phase = record.phase.replace("_", " ").title()
             item = QTreeWidgetItem([name, kind, phase, record.destination])
             item.setData(0, Qt.UserRole, (record.run_id, record.sequence))
@@ -558,7 +559,8 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
             self.detail.setText("Select a saved run to see its details.")
         else:
             kind = {"execution": "Local training run", "readiness": "Local readiness check",
-                "anima": "Retained Anima run", "validation": "Held-out validation"}[record.kind]
+                "anima": "Retained Anima run", "validation": "Held-out validation",
+                "preflight": "SDXL dataset preparation"}[record.kind]
             self.detail.setText(
                 f"{kind} · {record.phase.replace('_', ' ')}\n"
                 + (f"Name: {record.annotation.name}\n" if record.annotation.name else "") +

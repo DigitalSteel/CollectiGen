@@ -5,6 +5,7 @@ from dataclasses import asdict
 import io
 import os
 from pathlib import Path
+import re
 from uuid import uuid4
 import zipfile
 
@@ -265,6 +266,14 @@ class ContainedDatasetPreparationService(ContainedRuntimeQualificationService):
         return report, destination
 
 
+class TrainingPreparationRetentionError(TrainingProcessError):
+    """The prepared workspace exists, but its history pointer could not be saved."""
+
+    def __init__(self, workspace):
+        super().__init__("The dataset was prepared, but its receipt could not be saved to history.")
+        self.workspace = workspace
+
+
 class ReviewedDatasetVerifier:
     """Bind Manager review to an explicitly reviewed worker and owned work directory."""
 
@@ -334,10 +343,26 @@ class ReviewedDatasetVerifier:
         work = Path(mkdtemp(prefix="dataset-preparation-", dir=root))
         memory = selected.SelectionMemory(selection)
         try:
-            return worker.preflight(paths[0], paths[1], work, jobs, prepare=True,
+            result = worker.preflight(paths[0], paths[1], work, jobs, prepare=True,
                 python_base=paths[2], selected_dataset={"memory": memory.descriptor,
                     "binding": selected.binding(selection), "summary": selected.assess_manifest(package.manifest)},
                 should_cancel=should_cancel, progress=progress)
+            if result[1] is not None:
+                from .training_process import TrainingRunJournal
+                from .training_run_index import ScopedPreparationHistory
+
+                receipt = result[3]
+                nonce = receipt["nonce"]
+                if type(nonce) is not str or re.fullmatch(r"[0-9a-f]{32}", nonce) is None:
+                    raise TrainingProcessError("The completed preparation receipt has an invalid identity.")
+                directory = work / ("preflight-" + nonce)
+                try:
+                    _, tip = TrainingRunJournal(directory).read()
+                    ScopedPreparationHistory(root).retain(
+                        directory, receipt_sha256=_sha(_bytes(receipt)), journal_tip=tip)
+                except (OSError, ValueError, RuntimeError) as exc:
+                    raise TrainingPreparationRetentionError(result[1].root) from exc
+            return result
         finally:
             memory.close()
 

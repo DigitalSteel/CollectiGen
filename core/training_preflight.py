@@ -28,6 +28,46 @@ PREFLIGHT_SECONDS = 300
 SHA = re.compile(r'[0-9a-f]{64}')
 
 
+def read_preparation_receipt(directory, *, owned_root, receipt_sha256, journal_tip):
+    """Verify an explicitly retained preparation receipt without opening its inputs."""
+    from .training_source_io import _assert_unredirected
+
+    directory, root = Path(directory), Path(owned_root)
+    if (not directory.is_absolute() or not root.is_absolute()
+            or ".." in directory.parts or ".." in root.parts
+            or directory == root or not directory.is_relative_to(root)
+            or any(type(pin) is not str or SHA.fullmatch(pin) is None
+                   for pin in (receipt_sha256, journal_tip))):
+        raise TrainingProcessError("Use an exact preparation receipt inside the owned Training workspace.")
+    _assert_unredirected(directory)
+    journal = TrainingRunJournal(directory)
+    rows, tip = journal.read()
+    if tip != journal_tip or not rows or rows[-1]["state"] != "exited_unverified":
+        raise TrainingProcessError("The saved preparation journal changed or did not complete.")
+    details = rows[-1]["details"]
+    if (details.get("exit_code") != 0 or details.get("tree_stopped") is not True
+            or details.get("preflight_receipt_sha256") != receipt_sha256):
+        raise TrainingProcessError("The journal does not attest the saved preparation receipt.")
+    path = directory / "preflight-result.json"
+    raw = _read(path, limit=4096)
+    if _sha(raw) != receipt_sha256:
+        raise TrainingProcessError("The saved preparation receipt changed.")
+    receipt = runtime._json(raw)
+    pins = ("process_fingerprint", "request_sha256", "result_sha256")
+    if (type(receipt) is not dict or set(receipt) !=
+            {"schema_version", "nonce", "operation", "status", *pins}
+            or _bytes(receipt) != raw or type(receipt["schema_version"]) is not int
+            or receipt["schema_version"] != 1 or receipt["operation"] != "prepare"
+            or receipt["status"] != "complete" or type(receipt["nonce"]) is not str
+            or directory.name != "preflight-" + receipt["nonce"]
+            or re.fullmatch(r"[0-9a-f]{32}", receipt["nonce"]) is None
+            or any(type(receipt[key]) is not str or SHA.fullmatch(receipt[key]) is None for key in pins)
+            or rows[0]["details"].get("plan", {}).get("process_fingerprint") != receipt["process_fingerprint"]
+            or journal.read()[1] != journal_tip):
+        raise TrainingProcessError("The saved preparation receipt does not match its journal.")
+    return receipt
+
+
 def _inputs(rows):
     if type(rows) is not list or len(rows) > 128:
         raise ValueError('preflight_input_bound')

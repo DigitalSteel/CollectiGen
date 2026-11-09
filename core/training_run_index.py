@@ -29,7 +29,7 @@ MAX_RECOVERY_DIRECTORIES = 100
 ABSENT_REVISION = hashlib.sha256(b"<absent>").hexdigest()
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 RUN_ID = re.compile(r"[0-9a-f]{32}\Z")
-KINDS = {"execution", "readiness", "anima", "validation"}
+KINDS = {"execution", "readiness", "anima", "validation", "preflight"}
 PHASES = {"prepared", "ready", "starting", "running", "held", "stopping",
           "recovery_required", "stopped", "cancelled", "failed", "interrupted",
           "verification_required", "registration_required", "completed"}
@@ -669,3 +669,53 @@ class ScopedTrainingHistory:
         if self.snapshot()[1] != revision:
             raise TrainingRunIndexError("Training history changed while opening the review.")
         return raw
+
+
+class ScopedPreparationHistory(ScopedTrainingHistory):
+    """Manager preparation pointers in their own rollback-compatible index."""
+
+    def __init__(self, root):
+        super().__init__(root)
+        self._index = TrainingRunIndex(self._root / "sdxl-preflight-runs.json")
+
+    def _check_records(self, records):
+        super()._check_records(records)
+        for record in records:
+            destination = Path(record.destination)
+            if (record.kind != "preflight" or record.phase != "prepared"
+                    or record.registry_path or record.registry_revision
+                    or destination.name != "preflight-" + record.run_id
+                    or Path(record.review_path) != destination / "preflight-result.json"
+                    or not record.latest_journal_tip):
+                raise TrainingRunIndexError("The saved SDXL preparation pointer is invalid.")
+
+    def retain(self, directory, *, receipt_sha256, journal_tip):
+        from .training_preflight import read_preparation_receipt
+
+        directory = Path(directory)
+        receipt = read_preparation_receipt(directory, owned_root=self._root,
+            receipt_sha256=receipt_sha256, journal_tip=journal_tip)
+        record = TrainingRunRecord(receipt["nonce"], "preflight",
+            str(directory / "preflight-result.json"), receipt_sha256,
+            receipt["process_fingerprint"], str(directory), latest_journal_tip=journal_tip)
+        self._check_records((record,))
+        records, revision = self.snapshot()
+        previous = next((row for row in records if row.run_id == record.run_id), None)
+        if previous is not None:
+            if replace(previous, sequence=0) != record:
+                raise TrainingRunIndexError("The saved SDXL preparation pointer changed.")
+            return revision
+        return self._index.register(record, revision)
+
+    def review_preparation(self, record, revision):
+        from .training_preflight import read_preparation_receipt
+
+        records, current = self.snapshot()
+        if revision != current or record not in records:
+            raise TrainingRunIndexError("Training history changed. Refresh and select the review again.")
+        receipt = read_preparation_receipt(record.destination, owned_root=self._root,
+            receipt_sha256=record.review_sha256, journal_tip=record.latest_journal_tip)
+        if (receipt["nonce"] != record.run_id or receipt["process_fingerprint"] != record.plan_fingerprint
+                or self.snapshot()[1] != revision):
+            raise TrainingRunIndexError("The saved SDXL preparation differs from the selected record.")
+        return receipt
