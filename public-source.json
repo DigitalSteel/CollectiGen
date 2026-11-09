@@ -1782,12 +1782,12 @@
       "size_bytes": 5989
     },
     "core/training_retained_history.py": {
-      "sha256": "87781735cdf49e793c3cacd31b3280a04eb8ba18aa06ff396fd24f0614b264d9",
-      "size_bytes": 7608
+      "sha256": "6ca3d866e46e490b86c18ec0e4cd1c6b05f2b2b630d04ffb8b44ae5de6f41c38",
+      "size_bytes": 8255
     },
     "core/training_run_index.py": {
-      "sha256": "e5f7c575f39bdbd6800869d92534802befef50f81b3ff04dead0e80f8a24ba42",
-      "size_bytes": 32247
+      "sha256": "296eb997a2cd78d95847c78482aa7c64622c316f8f4011c6eb4834ec16e74954",
+      "size_bytes": 33644
     },
     "core/training_run_recovery.py": {
       "sha256": "c1388e24b8e6ae920101d36a56fe9159d734491568fbbf15e2a0a00cf17c92fe",
@@ -3354,8 +3354,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "5bc735fbda727dbc5120e7c8a522f5c7c2a5c0519ed3e51f279b78a14ac4870a",
-      "size_bytes": 193578
+      "sha256": "82ff7d5916058f40c26323493ee58bb0a8d95b08fb3a94492ab130a30b974266",
+      "size_bytes": 193778
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

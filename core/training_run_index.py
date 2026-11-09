@@ -38,6 +38,7 @@ _RECORD_FIELDS = {"run_id", "kind", "review_path", "review_sha256",
     "phase", "latest_journal_tip", "sequence"}
 _INDEX_FIELDS = {"schema_version", "kind", "next_sequence", "records"}
 _ANNOTATION_FIELD = "experiment_annotation"
+_VALIDATION_REPORT_FIELD = "validation_report_sha256"
 
 
 class TrainingRunIndexError(RuntimeError):
@@ -168,6 +169,7 @@ class TrainingRunRecord:
     sequence: int = 0
     annotation: "TrainingRunAnnotation" = field(default_factory=lambda: TrainingRunAnnotation())
     _forward: tuple[tuple[str, bytes], ...] = field(default=(), repr=False)
+    validation_report_sha256: str = ""
 
     def validate(self, *, stored=False) -> None:
         if type(self.run_id) is not str or RUN_ID.fullmatch(self.run_id) is None:
@@ -179,6 +181,9 @@ class TrainingRunRecord:
         _sha(self.review_sha256, "training review")
         _sha(self.plan_fingerprint, "training plan")
         _sha(self.latest_journal_tip, "latest training journal", optional=True)
+        _sha(self.validation_report_sha256, "validation report", optional=True)
+        if self.validation_report_sha256 and self.kind != "validation":
+            raise TrainingRunIndexError("Only validation pointers can bind a measurement report.")
         if type(self.phase) is not str or self.phase not in PHASES:
             raise TrainingRunIndexError("The training run phase is unsupported.")
         if type(self.sequence) is not int or self.sequence < (1 if stored else 0):
@@ -193,7 +198,8 @@ class TrainingRunRecord:
             raise TrainingRunIndexError("A non-execution pointer cannot claim model registry authority.")
         seen = set()
         for key, raw in self._forward:
-            if (type(key) is not str or not key or len(key) > 100 or key in _RECORD_FIELDS or key == _ANNOTATION_FIELD
+            if (type(key) is not str or not key or len(key) > 100 or key in _RECORD_FIELDS
+                    or key in {_ANNOTATION_FIELD, _VALIDATION_REPORT_FIELD}
                     or key in seen or type(raw) is not bytes):
                 raise TrainingRunIndexError("A forward training run field is invalid.")
             _decode(raw)
@@ -204,6 +210,8 @@ class TrainingRunRecord:
         value = {name: getattr(self, name) for name in _RECORD_FIELDS}
         if self.annotation != TrainingRunAnnotation():
             value[_ANNOTATION_FIELD] = self.annotation.payload()
+        if self.validation_report_sha256:
+            value[_VALIDATION_REPORT_FIELD] = self.validation_report_sha256
         return _with_unknown(value, self._forward)
 
     @classmethod
@@ -212,7 +220,8 @@ class TrainingRunRecord:
             raise TrainingRunIndexError("A training run pointer is incomplete.")
         record = cls(**{name: value[name] for name in _RECORD_FIELDS},
             annotation=TrainingRunAnnotation.from_dict(value.get(_ANNOTATION_FIELD, {})),
-            _forward=_unknown(value, _RECORD_FIELDS | {_ANNOTATION_FIELD}))
+            _forward=_unknown(value, _RECORD_FIELDS | {_ANNOTATION_FIELD, _VALIDATION_REPORT_FIELD}),
+            validation_report_sha256=value.get(_VALIDATION_REPORT_FIELD, ""))
         record.validate(stored=True)
         return record
 
@@ -373,22 +382,27 @@ class TrainingRunIndex:
         return self._mutate(expected_revision, change)
 
     def update_phase(self, run_id: str, phase: str, expected_revision: str,
-                     *, latest_journal_tip=None) -> str:
+                     *, latest_journal_tip=None, validation_report_sha256=None) -> str:
         if type(run_id) is not str or RUN_ID.fullmatch(run_id) is None:
             raise TrainingRunIndexError("The training run identity is invalid.")
         if type(phase) is not str or phase not in PHASES:
             raise TrainingRunIndexError("The training run phase is unsupported.")
         if latest_journal_tip is not None:
             _sha(latest_journal_tip, "latest training journal", optional=True)
+        if validation_report_sha256 is not None:
+            _sha(validation_report_sha256, "validation report")
         def change(current):
             found = False
             records = []
             for item in current.records:
                 if item.run_id == run_id:
                     found = True
+                    if validation_report_sha256 and item.validation_report_sha256 not in {"", validation_report_sha256}:
+                        raise TrainingRunIndexError("The saved validation report identity changed.")
                     item = replace(item, phase=phase,
                         latest_journal_tip=(item.latest_journal_tip
-                            if latest_journal_tip is None else latest_journal_tip))
+                            if latest_journal_tip is None else latest_journal_tip),
+                        validation_report_sha256=validation_report_sha256 or item.validation_report_sha256)
                 records.append(item)
             if not found:
                 raise TrainingRunIndexError("The selected training run is not indexed.")
@@ -610,6 +624,10 @@ class ScopedTrainingHistory:
         self._check_read_path(plan.destination / "work" / RESULT_NAME)
         prepared = restore_prepared(record.review_path, record.review_sha256)
         report = read_retained_report(prepared, record.latest_journal_tip)
+        if record.validation_report_sha256:
+            from .training_process import _bytes
+            if hashlib.sha256(_bytes(report)).hexdigest() != record.validation_report_sha256:
+                raise TrainingRunIndexError("The saved validation measurement changed after indexing.")
         if self.snapshot()[1] != revision:
             raise TrainingRunIndexError("Training history changed while opening the review.")
         return report

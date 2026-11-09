@@ -49,6 +49,7 @@ def upsert_retained_review(index, kind, payload):
     path, digest, restored_process = _review(prepared, kind)
     plan = prepared.plan
     plan.validate()
+    report_sha256 = ""
     if kind == "anima":
         from .training_process import TrainingProcessResult
         if outcome is not None and type(outcome) is not TrainingProcessResult:
@@ -71,8 +72,14 @@ def upsert_retained_review(index, kind, payload):
                   "verification_required" if outcome.status == "exited_unverified" else outcome.status)
                  if outcome else "prepared")
         tip = outcome.process.journal_tip if outcome else ""
+        if phase == "completed":
+            from .training_process import _bytes
+            if type(outcome.report) is not dict:
+                raise TrainingRunIndexError("A completed validation needs its verified measurement report.")
+            report_sha256 = sha256(_bytes(outcome.report)).hexdigest()
     record = TrainingRunRecord(plan.run_id, kind, str(Path(path).absolute()), digest,
-        plan.fingerprint, str(plan.destination), phase=phase, latest_journal_tip=tip)
+        plan.fingerprint, str(plan.destination), phase=phase, latest_journal_tip=tip,
+        validation_report_sha256=report_sha256)
     record.validate()
     for _attempt in range(3):
         records, revision = index.snapshot()
@@ -82,18 +89,21 @@ def upsert_retained_review(index, kind, payload):
                     prior.plan_fingerprint, prior.destination) != (record.kind, record.review_path,
                     record.review_sha256, record.plan_fingerprint, record.destination):
                 raise TrainingRunIndexError("The run identity already points to another retained review.")
-            if prior.phase == phase and prior.latest_journal_tip == tip:
+            if (prior.phase == phase and prior.latest_journal_tip == tip
+                    and (not report_sha256 or prior.validation_report_sha256 == report_sha256)):
                 return prior
             # A delayed prepared notification must never downgrade a newer outcome.
             if outcome is None and prior.phase != "prepared":
                 return prior
             try:
-                index.update_phase(plan.run_id, phase, revision, latest_journal_tip=tip)
+                index.update_phase(plan.run_id, phase, revision, latest_journal_tip=tip,
+                    validation_report_sha256=report_sha256 or None)
             except TrainingRunIndexError as exc:
                 if "changed after review" in str(exc):
                     continue
                 raise
-            return replace(prior, phase=phase, latest_journal_tip=tip)
+            return replace(prior, phase=phase, latest_journal_tip=tip,
+                validation_report_sha256=report_sha256 or prior.validation_report_sha256)
         try:
             index.register(record, revision)
         except TrainingRunIndexError as exc:

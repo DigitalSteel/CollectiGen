@@ -1522,9 +1522,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 def complete(result):
                     if validation:
                         qualification = ("Candidate measurement. " if result["qualification"] == "candidate_only" else "")
+                        integrity = ("Saved report hash verified. " if record.validation_report_sha256
+                                     else "Older record has no saved report hash. ")
                         finish(f"{qualification}Saved held-out denoising MSE: {result['mean_mse']:.6g}. "
                                f"Sample count: {len(result['values'])}. "
-                               "Live inputs were not rechecked. MSE does not measure image quality.")
+                               f"{integrity}Live inputs were not rechecked. MSE does not measure image quality.")
                     else:
                         finish(f"Saved preparation verified for {record.annotation.name or record.run_id}. "
                                f"Configured time limit: {result:g} seconds. Results have not been checked.")
