@@ -1499,7 +1499,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 parent=self, selection_only=True, allow_setup_transfer=True,
                 registry=_generation_model_registry(self),
             )
-            if not self.run_generation_setup_dialog(browser):
+            if not self.run_generation_setup_dialog(browser) or self.generation_state() is not state:
                 return
             if browser.requested_action == "create":
                 self.create_generation_setup()
