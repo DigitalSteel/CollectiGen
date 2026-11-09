@@ -148,6 +148,6 @@ class TagDefaultAcquisition:
         if type(acquired) is not AcquiredComponent or acquired.offer is not offer:
             raise ValueError("Original acquired Tag data artifact required")
         guard(acquired.artifact)
-        verify_component_artifact(acquired.artifact, offer.release)
+        verify_component_artifact(acquired.artifact, offer.release, should_cancel=should_cancel)
         self._check(baseline, should_cancel)
         return AcquiredTagDefault(baseline, acquired)
