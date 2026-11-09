@@ -136,9 +136,9 @@ class ConflictRuleEngine:
         }
 
     @classmethod
-    def load(cls, path: str | Path, *, tags=None) -> "ConflictRuleEngine":
+    def load(cls, path: str | Path, *, tags=None, relationship_evaluator=None) -> "ConflictRuleEngine":
         source=Path(path)
-        if not source.exists():
+        if relationship_evaluator is None and not source.exists():
             return cls()
         payload=json.loads(source.read_text(encoding="utf-8"))
         raw=payload.get("rules",payload.get("conflicts",[])) if isinstance(payload,dict) else payload
@@ -148,21 +148,22 @@ class ConflictRuleEngine:
                 rules.append(ConflictRule(f"legacy_{index}",[str(value) for value in item]))
             elif isinstance(item,dict):
                 rules.append(ConflictRule.from_dict(item))
-        evaluator = None
+        evaluator = relationship_evaluator
         relationship_error = ""
-        from .relationship_evaluator import active_relationship_evaluator
+        if evaluator is None:
+            from .relationship_evaluator import active_relationship_evaluator
 
-        try:
-            evaluator = (
-                active_relationship_evaluator()
-                if tags is None
-                else active_relationship_evaluator(tags)
-            )
-        except Exception as exc:
-            # Keep the application available without reinterpreting a typed
-            # rule as its superseded flat pairwise fallback. Training export
-            # remains fail-closed and reports the store error separately.
-            relationship_error = str(exc)
+            try:
+                evaluator = (
+                    active_relationship_evaluator()
+                    if tags is None
+                    else active_relationship_evaluator(tags)
+                )
+            except Exception as exc:
+                # Keep the application available without reinterpreting a typed
+                # rule as its superseded flat pairwise fallback. Training export
+                # remains fail-closed and reports the store error separately.
+                relationship_error = str(exc)
         if evaluator is not None:
             canonical = {
                 relationship.id: relationship
