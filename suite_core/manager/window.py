@@ -1565,7 +1565,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         "A saved review is still being checked. Wait for it to finish, then try again.")
                     return
                 validation = record.kind == "validation" and record.phase == "completed"
-                review = history.review_validation if validation else history.review_preparation
+                execution = record.kind == "execution" and bool(record.latest_journal_tip)
+                if validation:
+                    review = history.review_validation
+                elif execution:
+                    review = history.review_execution_outcome
+                else:
+                    review = history.review_preparation
                 dialog.set_retained_index_status("Checking the selected saved review…")
                 task = CoordinatedCallTask(state.jobs, "Verify Training receipt",
                                            lambda _job: review(record, revision),
@@ -1595,6 +1601,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         finish(f"{qualification}Saved held-out denoising MSE: {result['mean_mse']:.6g}. "
                                f"Sample count: {len(result['values'])}. "
                                f"{integrity}Live inputs were not rechecked. MSE does not measure image quality.")
+                    elif execution:
+                        outcome = {
+                            "exited_unverified": "exited",
+                            "cancelled": "was cancelled",
+                            "failed": "failed",
+                            "interrupted": "was interrupted",
+                        }[result]
+                        finish(f"Saved journal verified: the training process {outcome} and its process tree stopped. "
+                               "Output files and live inputs were not checked.")
                     else:
                         finish(f"Saved preparation verified for {record.annotation.name or record.run_id}. "
                                f"Configured time limit: {result:g} seconds. Results have not been checked.")
@@ -1611,8 +1626,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 dialog.set_retained_index_status("")
                 selected = dialog._selected()
                 completed_validation = selected is not None and selected.kind == "validation" and selected.phase == "completed"
-                dialog.open_button.setText("Review Saved Measurement" if completed_validation
-                                           else "Review Selected Preparation")
+                if completed_validation:
+                    dialog.open_button.setText("Review Saved Measurement")
+                elif selected is not None and selected.kind == "execution" and selected.latest_journal_tip:
+                    dialog.open_button.setText("Review Saved Process Outcome")
+                else:
+                    dialog.open_button.setText("Review Selected Preparation")
 
             dialog.runs.itemSelectionChanged.connect(selection_changed)
             dialog.openRunRequested.connect(verify)

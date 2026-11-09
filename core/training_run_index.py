@@ -606,15 +606,36 @@ class ScopedTrainingHistory:
     def review_preparation(self, record, revision):
         """Return the checked preparation deadline without opening linked files."""
         if record.kind in {"execution", "readiness"}:
-            from .training_run_recovery import restore_indexed_review
-
-            records, current = self.snapshot()
-            if current != revision or record not in records:
-                raise TrainingRunIndexError("Training history changed. Refresh and select the review again.")
-            self._check_read_path(Path(record.review_path))
-            return restore_indexed_review(self, record.run_id, revision).plan.timeout_seconds
+            return self._review_sdxl_plan(record, revision).timeout_seconds
         plan, _ = self._preparation(record, revision)
         return plan.timeout_seconds
+
+    def _review_sdxl_plan(self, record, revision):
+        from .training_run_recovery import restore_indexed_review
+
+        records, current = self.snapshot()
+        if current != revision or record not in records:
+            raise TrainingRunIndexError("Training history changed. Refresh and select the review again.")
+        self._check_read_path(Path(record.review_path))
+        return restore_indexed_review(self, record.run_id, revision).plan
+
+    def review_execution_outcome(self, record, revision):
+        """Read a stopped process outcome without inspecting outputs or live inputs."""
+        from .training_process import TERMINAL, TrainingProcessService, TrainingRunJournal, _bytes
+
+        if record.kind != "execution" or not record.latest_journal_tip:
+            raise TrainingRunIndexError("Choose an execution with a saved process journal.")
+        plan = self._review_sdxl_plan(record, revision)
+        self._check_read_path(plan.destination / "events")
+        rows, tip = TrainingRunJournal(plan.destination).read()
+        reserved = TrainingProcessService._receipt(plan)
+        expected = {"plan": reserved, "fingerprint": hashlib.sha256(_bytes(reserved)).hexdigest()}
+        if (not rows or tip != record.latest_journal_tip or _bytes(rows[0]["details"]) != _bytes(expected)
+                or rows[-1]["state"] not in TERMINAL or rows[-1]["details"].get("tree_stopped") is not True):
+            raise TrainingRunIndexError("The saved execution journal changed or does not confirm a stopped process.")
+        if self.snapshot()[1] != revision:
+            raise TrainingRunIndexError("Training history changed while opening the review.")
+        return rows[-1]["state"]
 
     def review_validation(self, record, revision):
         """Read a completed saved validation measurement from the host's run store."""
