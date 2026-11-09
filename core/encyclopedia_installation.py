@@ -121,7 +121,7 @@ class EncyclopediaInstallation:
         require(type(offer) is ComponentOffer and offer.release.component_id == self.component,
                 "exact_encyclopedia_offer_required")
         require(self.acquisition._offers.get(offer.release.manifest_sha256) is offer, "current_signed_offer_required")
-        self.acquisition.revalidate_offer(offer, should_cancel=should_cancel)
+        self.acquisition.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
         with self._scope() as (root, base, owner, check):
             installed = self._observe(root, base, owner)
             require(not installed.pending and installed.phase != "activated", "Finish launch checking or recover the current installation first.")

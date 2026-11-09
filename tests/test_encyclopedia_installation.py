@@ -369,3 +369,18 @@ def test_reader_scoped_discovery_still_rejects_invalid_target(tmp_path, monkeypa
     with pytest.raises(ValueError): caller.discover(channel='beta')
     assert not any('collectigen.unrelated' in url for url, *_rest in feed.calls)
     assert not caller.store.settings.path.exists()
+
+
+def test_review_rechecks_withdrawal_before_confirmation(fixture):
+    from core.component_acquisition import ExactOfferHold
+
+    offer, = fixture.service.discover(channel="beta")
+    settings = fixture.settings.read_bytes()
+    fixture.rows.clear()
+
+    with pytest.raises(ExactOfferHold, match="reviewed release changed"):
+        fixture.service.review(offer)
+
+    assert fixture.service._review is None
+    assert fixture.settings.read_bytes() == settings
+    assert all(url != offer.artifact_source.url for url, _, _ in fixture.calls)
