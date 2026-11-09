@@ -643,7 +643,8 @@ def test_scoped_refresh_retires_only_offers_for_the_selected_component(tmp_path)
     assert acquisition.acquire(reviewed[other_id]).artifact.read_bytes() == PAYLOAD
 
 
-def test_scoped_invalid_release_retires_only_its_previous_review(tmp_path):
+@pytest.mark.parametrize("fault", ["assets", "signature"])
+def test_scoped_invalid_release_retires_only_its_previous_review(tmp_path, fault):
     feed = FakeFeed()
     feed.add()
     other = ComponentId("collectigen.second-reader")
@@ -652,11 +653,17 @@ def test_scoped_invalid_release_retires_only_its_previous_review(tmp_path):
     selected = ComponentId(ID)
     reviewed = {offer.release.component_id: offer for offer in offers(acquisition)}
     assets = feed.rows[0]["assets"]
-    feed.rows[0]["assets"] = []
+    signature_url = reviewed[selected].signature_url
+    signature = feed.resources[signature_url]
+    if fault == "assets":
+        feed.rows[0]["assets"] = []
+    else:
+        feed.resources[signature_url] = b"{}"
 
-    with pytest.raises(DiscoveryHold, match="release_assets_missing"):
+    with pytest.raises(ValueError):
         acquisition.discover(channel="beta", installed_versions={}, component_id=selected)
     feed.rows[0]["assets"] = assets
+    feed.resources[signature_url] = signature
     with pytest.raises(ValueError, match="current_signed_offer"):
         acquisition.acquire(reviewed[selected])
     assert acquisition.acquire(reviewed[other]).artifact.read_bytes() == PAYLOAD

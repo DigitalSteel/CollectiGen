@@ -297,36 +297,36 @@ class ComponentAcquisition:
                     assets = {asset.name: asset for asset in selected.assets}
                     require(self.manifest_name in assets and self.signature_name in assets,
                             "signed_asset_pair_required")
-            except (DiscoveryHold, StagingHold):
+                if selected is None:
+                    continue
+                if self._expected_offer is not None: self._expected_offer.check_locator(selected)
+                manifest_url, signature_url = assets[self.manifest_name].url, assets[self.signature_name].url
+                message = self._fetch(manifest_url, should_cancel)
+                signature = self._fetch(signature_url, should_cancel)
+                verified = verify_component_release(message, signature, self.trust,
+                    expected_component=component, expected_version=selected.software_version,
+                    expected_channel=channel, expected_os=self.os, expected_architecture=self.arch)
+                if current is not None:
+                    release = verify_release_manifest(message, signature, json.loads(self.trust), expected_channel=channel)
+                    ensure_supported_upgrade(current, release)
+                if verified.artifact.size_bytes > self.maximum:
+                    raise ComponentArchiveTooLarge("artifact_bound")
+                if verified.artifact.size_bytes > self.cache_maximum:
+                    raise ComponentArchiveTooLarge("artifact_exceeds_cache_capacity")
+                source = assets.get(verified.artifact.name)
+                require(source is not None and source.declared_size == verified.artifact.size_bytes, "signed_asset_binding")
+                offer = ComponentOffer(verified, "install" if current is None else "update",
+                    json.loads(message.decode("utf-8-sig"))["release_notes"], message, signature,
+                    manifest_url, signature_url,
+                    ReleaseAssetSource(source.name, source.url, source.declared_size), self.trust_pin, current,
+                    selected, repository_id)
+                if self._expected_offer is not None: self._expected_offer.check_offer(offer)
+                offers.append(offer)
+            except (DiscoveryHold, StagingHold, ReleaseContractError, ExactOfferHold):
                 if component_id is not None:
                     self._offers = {key: offer for key, offer in self._offers.items()
                                     if offer.release.component_id != component_id}
                 raise
-            if selected is None:
-                continue
-            if self._expected_offer is not None: self._expected_offer.check_locator(selected)
-            manifest_url, signature_url = assets[self.manifest_name].url, assets[self.signature_name].url
-            message = self._fetch(manifest_url, should_cancel)
-            signature = self._fetch(signature_url, should_cancel)
-            verified = verify_component_release(message, signature, self.trust,
-                expected_component=component, expected_version=selected.software_version,
-                expected_channel=channel, expected_os=self.os, expected_architecture=self.arch)
-            if current is not None:
-                release = verify_release_manifest(message, signature, json.loads(self.trust), expected_channel=channel)
-                ensure_supported_upgrade(current, release)
-            if verified.artifact.size_bytes > self.maximum:
-                raise ComponentArchiveTooLarge("artifact_bound")
-            if verified.artifact.size_bytes > self.cache_maximum:
-                raise ComponentArchiveTooLarge("artifact_exceeds_cache_capacity")
-            source = assets.get(verified.artifact.name)
-            require(source is not None and source.declared_size == verified.artifact.size_bytes, "signed_asset_binding")
-            offer = ComponentOffer(verified, "install" if current is None else "update",
-                json.loads(message.decode("utf-8-sig"))["release_notes"], message, signature,
-                manifest_url, signature_url,
-                ReleaseAssetSource(source.name, source.url, source.declared_size), self.trust_pin, current,
-                selected, repository_id)
-            if self._expected_offer is not None: self._expected_offer.check_offer(offer)
-            offers.append(offer)
         self._check(should_cancel)
         refreshed = {o.release.manifest_sha256: o for o in offers}
         if component_id is not None:
