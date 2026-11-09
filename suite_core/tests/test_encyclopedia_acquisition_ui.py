@@ -137,6 +137,15 @@ def test_save_failure_visible_retry_does_not_reapply(tmp_path, monkeypatch):
             assert panel.retry_save.isEnabled() and "Retry Save" in panel.status.text()
             calls = list(f.calls)
             monkeypatch.setattr(f.store, "save", original)
+            with monkeypatch.context() as failed_start:
+                def fail_submit(_work):
+                    raise RuntimeError("synthetic executor refusal")
+                failed_start.setattr(executor, "submit", fail_submit)
+                click(panel.retry_save)
+                assert panel.retry_save.isVisible() and panel.retry_save.isEnabled()
+                assert not panel.refresh.isVisible()
+                assert "Choose Retry Save" in panel.status.text()
+                assert f.calls == calls
             click(panel.retry_save); wait(panel)
             assert f.calls == calls and not panel.retry_save.isEnabled()
         finally:
@@ -228,8 +237,8 @@ def test_refresh_failure_names_enabled_retry_and_preserves_installed_state(tmp_p
 def test_stale_confirmed_review_requires_a_new_visible_review_and_confirmation(tmp_path, monkeypatch):
     application = app(); f = Fixture(tmp_path, monkeypatch); f.add()
     reviews = []; original_review = f.service.review; original_unchanged = f.service._unchanged
-    def reviewed(offer):
-        result = original_review(offer); reviews.append(result); return result
+    def reviewed(offer, **kwargs):
+        result = original_review(offer, **kwargs); reviews.append(result); return result
     monkeypatch.setattr(f.service, 'review', reviewed)
     with executor_scope() as executor:
         panel = EncyclopediaAcquisitionPanel(f.service, executor)
@@ -319,7 +328,10 @@ def test_cancel_review_drains_without_confirmation_or_install(tmp_path, monkeypa
     try:
         click(panel.install);click(panel.stop)
         assert 'Keep this window open' in panel.status.text() and 'Manager' not in panel.status.text()
-        future.set_result(executor.work());panel.poll()
+        with pytest.raises(InterruptedError) as cancelled:
+            executor.work()
+        future.set_exception(cancelled.value)
+        panel.poll()
         assert panel.reviewed is None and not panel.close_held and not (f.root/'Apps').exists()
         assert 'Review cancelled' in panel.status.text()
     finally:

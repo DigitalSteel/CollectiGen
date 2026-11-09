@@ -153,7 +153,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
         return ("No installable reader was found on this channel. Check Again later." if self.installed.selected is None else
             "No newer reader was found on this channel.")
 
-    def _start(self, operation, work):
+    def _start(self, operation, work, *, retry_action="Check Again"):
         if self.close_held or self.closing:
             return
         self.cancel = Event()
@@ -166,7 +166,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
             self.future = self.executor.submit(work)
         except Exception as error:
             self.operation = None
-            self.status.setText("Could not start. Choose Check Again to retry; your installation is unchanged.")
+            self.status.setText(f"Could not start. Choose {retry_action} to retry. Your installation is unchanged.")
             self.details.setPlainText(str(error))
         self.render()
 
@@ -219,7 +219,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
     def retry_connection(self):
         if self.recovery_only and not self.service.can_retry:
             return
-        self._start("Saving installed connection", self.service.retry_connection)
+        self._start("Saving installed connection", self.service.retry_connection, retry_action="Retry Save")
 
     def recover_installation(self):
         if self.recovery_only and not self.service.can_recover:
