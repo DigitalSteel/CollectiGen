@@ -425,6 +425,7 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         journal["phase"] = "activation_pending"
         atomic(pending_path, journal)
         failpoint("before_version_publish")
+        verify_directory(staging, target["inventory_sha256"], component, version, payload_policy=policy)
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_handoff")
         if previous_bytes is not None:
             require(journal_path.exists() and read_metadata_bytes(journal_path) == previous_bytes, "current_journal_changed")
@@ -448,6 +449,7 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         os.rename(staging, destination)  # same filesystem; Windows refuses an existing destination
         failpoint("version_published")
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_commit")
+        payload(root, target, component, platform, payload_policy=policy)
         atomic(base / "active.json", target)
         failpoint("active_reference_replaced")
         journal["phase"] = "activated"
