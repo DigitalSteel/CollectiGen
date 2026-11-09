@@ -127,4 +127,6 @@ def check_retained_pointer(index, record, revision):
             or str(prepared.plan.destination) != record.destination
             or _read_optional(Path(record.review_path), limit=limit) != raw):
         raise TrainingRunIndexError("The selected retained review does not match its saved run identity.")
+    if index.snapshot()[1] != revision:
+        raise TrainingRunIndexError("Training history changed while opening the review. Refresh and select it again.")
     return record
