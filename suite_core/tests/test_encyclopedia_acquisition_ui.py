@@ -116,6 +116,17 @@ def test_visible_panel_review_confirm_install_save_and_recovery(tmp_path, monkey
             panel.reconcile_launch(); wait(panel)  # existing-owner settlement callback
             assert panel.installed.phase == "healthy" and "setup is complete" in panel.status.text()
             toggle_details(panel.technical)
+            selected = f.store.selected(f.store.observe())
+            calls = list(f.calls)
+            with monkeypatch.context() as failed_start:
+                def fail_submit(_work):
+                    raise RuntimeError("synthetic recovery submission refusal")
+                failed_start.setattr(executor, "submit", fail_submit)
+                click(panel.recovery_confirm); click(panel.recover)
+                assert "Recover installation" in panel.status.text()
+                assert panel.recover.isVisible() and not panel.recover.isEnabled()
+                assert panel.recovery_confirm.isEnabled() and not panel.recovery_confirm.isChecked()
+                assert f.store.selected(f.store.observe()) == selected and f.calls == calls
             click(panel.recovery_confirm); click(panel.recover); wait(panel)
             assert f.store.selected(f.store.observe()) is None and "Recovery settled" in panel.status.text()
             if captures:

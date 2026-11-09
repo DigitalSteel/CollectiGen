@@ -227,7 +227,10 @@ class EncyclopediaAcquisitionPanel(QWidget):
         if not self.recovery_confirm.isChecked():
             return
         self.recovery_confirm.setChecked(False)
-        self._start("Recovering installation", lambda: self.service.recover(confirmed=True))
+        self._start(
+            "Recovering installation", lambda: self.service.recover(confirmed=True),
+            retry_action="the recovery confirmation and then Recover installation",
+        )
 
     def reconcile_launch(self):
         if not self.service.install_available or self.closing:
