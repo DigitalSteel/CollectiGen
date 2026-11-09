@@ -894,8 +894,8 @@
       "size_bytes": 25540
     },
     "core/manager_update_service.py": {
-      "sha256": "8b2870b36b3b5cebe2ac0e2a1425e94c49a15b6cc7cc662d743de21a3058d5b3",
-      "size_bytes": 22436
+      "sha256": "bddf037a0ab6e92b3c0fb20feba3bee4ff081906c9c71950311b590ce7082565",
+      "size_bytes": 22632
     },
     "core/media_inventory.py": {
       "sha256": "5117d1bcec46ca4f0b2e9d0caee3648a8f2384cfdff95f4a21c2344624cbcf41",

@@ -321,7 +321,14 @@ class ManagerUpdateService:
         proof = produce_detached_inventory(acquired.artifact, inventory_profile=PROFILE,
             expected_version=offer.release.software_version, expected_channel=self.channel, should_cancel=should_cancel)
         admission = self._admit(acquired.artifact, offer, proof, trust_pin=offer.trust_sha256, should_cancel=should_cancel)
-        self.acquisition.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
+        try:
+            self.acquisition.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
+        except InterruptedError:
+            raise
+        except (ValueError, OSError):
+            if self._offer is offer:
+                self._offer = None
+            raise
         guard(acquired.artifact)
         verify_component_artifact(acquired.artifact, offer.release, should_cancel=should_cancel)
         if should_cancel and should_cancel():
