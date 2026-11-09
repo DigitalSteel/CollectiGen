@@ -50,10 +50,10 @@ class FakeFeed:
         self.resources, self.rows, self.calls = {}, [], []
         self.failure, self.responses = None, []
 
-    def add(self, component=ID, version=VERSION, payload=PAYLOAD, **changes):
+    def add(self, component=ID, version=VERSION, payload=PAYLOAD, *, asset_name=None, **changes):
         tag = component + '/v' + version
         base = 'https://github.com/DigitalSteel/CollectiGen/releases/download/' + quote(tag, safe='') + '/'
-        name = component + '-' + version + '.zip'
+        name = asset_name or (component + '-' + version + '.zip')
         message = dict(schema_version=1, product='collectigen', component_id=component,
             version=version, channel='beta' if '-' in version else 'stable', published_at='2026-10-08T00:00:00Z',
             supported_from='0.1.0-alpha.1', release_notes='SIGNED: Read an explicit published snapshot.',
@@ -583,3 +583,43 @@ def test_signed_offer_larger_than_empty_cache_is_not_reviewable(tmp_path):
     assert not acquisition._offers
     assert list(acquisition.root.iterdir()) == [acquisition._marker]
     assert not any(url.endswith(".zip") for url, _, _ in feed.calls)
+
+
+def test_manager_prepares_test_signed_stock_package_without_admission_stub(tmp_path):
+    import zipfile
+    from core.manager_update_service import ManagerUpdateService, reviewed_stage_identity
+    from suite_core.discovery.manager_runtime_detached_admission import (
+        MANAGER, PACKAGE_STUB, PAYLOAD_ENTRY, PROFILE, produce_detached_inventory,
+    )
+    from suite_core.discovery.manager_runtime_admission_support import NS, PREFIX
+
+    fields = dict(id=MANAGER.value, version=VERSION, channel="beta-win-x64", os="win",
+                  rid="win-x64", machineArchitecture="x64", mainExe=PAYLOAD_ENTRY)
+    contents = "".join(f"<{key}>{value}</{key}>" for key, value in fields.items())
+    nuspec = f'<package xmlns="{NS[1:-1]}"><metadata>{contents}</metadata></package>'.encode()
+    archive_path = tmp_path / f"{MANAGER.value}-{VERSION}-full.nupkg"
+    with zipfile.ZipFile(archive_path, "w") as archive:
+        archive.writestr("[Content_Types].xml", b"<Types/>")
+        archive.writestr("_rels/.rels", b"<Relationships/>")
+        archive.writestr(MANAGER.value + ".nuspec", nuspec)
+        archive.writestr(PREFIX + "sq.version", nuspec)
+        for name in (PAYLOAD_ENTRY, PACKAGE_STUB, "Squirrel.exe"):
+            archive.writestr(PREFIX + name, b"INERT NOT EXECUTABLE")
+
+    proof = produce_detached_inventory(archive_path, inventory_profile=PROFILE,
+                                       expected_version=VERSION, expected_channel="beta")
+    payload = archive_path.read_bytes()
+    feed = FakeFeed()
+    feed.add(MANAGER.value, payload=payload, asset_name=archive_path.name, artifacts=[dict(
+        name=archive_path.name, kind="component-package", size_bytes=len(payload),
+        sha256=sha256(payload).hexdigest(), portable_manifest_sha256=sha256(proof).hexdigest(),
+    )])
+    updater = ManagerUpdateService(service(tmp_path, feed),
+                                   current_version="0.1.0-alpha.7", channel="beta")
+
+    prepared = updater.prepare(updater.discover())
+    assert prepared.artifact.read_bytes() == payload
+    assert prepared.proof == proof
+    assert updater.revalidate(prepared) == prepared.admission
+    assert reviewed_stage_identity(prepared)["inventory_sha256"] == sha256(proof).hexdigest()
+    assert not prepared.production_install_authorized
