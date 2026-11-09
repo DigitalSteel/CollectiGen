@@ -527,6 +527,8 @@ class ContainedRuntimeQualificationService:
             if request.get('selected_dataset') is not None:
                 from .training_dataset_binding import PACKAGE_CODE
                 extra_code = (*extra_code, *PACKAGE_CODE)
+            if worker == WORKER:
+                extra_code = (*extra_code, Path(__file__).with_name('training_source_loader.py'))
             code_inputs = tuple(dict.fromkeys((*code, *extra_code)))
             helper = self.process.prepare(root, 'preflight-' + request['nonce'],
                 (program, '-I', '-S', '-B', str(worker), reply.name, str(len(reply.raw)), _sha(reply.raw)),
