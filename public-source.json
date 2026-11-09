@@ -894,8 +894,8 @@
       "size_bytes": 25540
     },
     "core/manager_update_service.py": {
-      "sha256": "f52fd44bb4ee79f61d06d5be5097d0610acd77d921b63074512c2cff688148b3",
-      "size_bytes": 22213
+      "sha256": "c3597c58ecb26893db8189316c394ff4e0e6244fea307bc382592daa1a65fa64",
+      "size_bytes": 22407
     },
     "core/media_inventory.py": {
       "sha256": "5117d1bcec46ca4f0b2e9d0caee3648a8f2384cfdff95f4a21c2344624cbcf41",
@@ -2874,8 +2874,8 @@
       "size_bytes": 2988
     },
     "suite_core/discovery/manager_runtime_detached_admission.py": {
-      "sha256": "43bcef039d1ca2715dd261eda85ceac8caf32b5a872f2cea16f166b9a71c2a98",
-      "size_bytes": 12260
+      "sha256": "17a103200e2ec33957ab6774cd99f200ac6af5c6170872a1d4c25deefd89398f",
+      "size_bytes": 12678
     },
     "suite_core/discovery/offline_component_producer.py": {
       "sha256": "ae8399f38fa12af7f5329056ec1291bcd7a49dcf7368e6359ae16f02c4c72ef8",

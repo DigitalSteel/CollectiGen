@@ -112,7 +112,7 @@ class DetachedAdmissionPlan(AdmissionPlan):
 
 def produce_detached_inventory(archive, *, inventory_profile, expected_version,
                                expected_channel, expected_component=MANAGER,
-                               expected_os="windows", expected_architecture="x86_64"):
+                               expected_os="windows", expected_architecture="x86_64", should_cancel=None):
     """Read final archive; return unsigned canonical proof bytes, never write them.
 
     Members are read sequentially in bounded chunks. Each actual payload member
@@ -129,7 +129,7 @@ def produce_detached_inventory(archive, *, inventory_profile, expected_version,
     guard(archive)
     require(archive.name.endswith("-full.nupkg"), "full_nupkg_required")
     require(archive.stat().st_size <= MAX_ARCHIVE, "archive_size")
-    before = sha256_file(archive)
+    before = sha256_file(archive, should_cancel=should_cancel)
     before_size = archive.stat().st_size
     wrappers = {"[Content_Types].xml", "_rels/.rels", MANAGER.value + ".nuspec"}
     files = []
@@ -160,7 +160,12 @@ def produce_detached_inventory(archive, *, inventory_profile, expected_version,
                 require(info.file_size <= MAX_METADATA_BYTES, "sq_version_size")
             member = bytearray()
             with z.open(info) as stream:
-                for block in iter(lambda: stream.read(65536), b""):
+                while True:
+                    if should_cancel is not None and should_cancel():
+                        raise InterruptedError("Manager package proof was cancelled.")
+                    block = stream.read(65536)
+                    if not block:
+                        break
                     member.extend(block)
                     require(len(member) <= info.file_size, "member_bounds")
             require(len(member) == info.file_size, "member_size")
@@ -187,7 +192,7 @@ def produce_detached_inventory(archive, *, inventory_profile, expected_version,
                            "mainExe": PAYLOAD_ENTRY}.items():
             require(fields.get(key) == value, "nuspec_" + key + "_binding")
     guard(archive)
-    require(sha256_file(archive) == before and archive.stat().st_size == before_size,
+    require(sha256_file(archive, should_cancel=should_cancel) == before and archive.stat().st_size == before_size,
             "changed_archive_during_proof")
     profile["files"] = sorted(files, key=lambda row: row["path"])
     profile["inventory_profile"] = PROFILE
@@ -205,7 +210,7 @@ def admit_detached(archive, *, inventory_profile, detached_inventory_bytes,
                    expected_trust_sha256, expected_inventory_sha256,
                    expected_version, expected_channel, current_version,
                    expected_component=MANAGER, expected_os="windows",
-                   expected_architecture="x86_64"):
+                   expected_architecture="x86_64", should_cancel=None):
     """Exact signed pair admission only. No profile default or embedded fallback."""
     require(inventory_profile == PROFILE, "explicit_detached_profile_required")
     require(sha256(trust_bytes).hexdigest() == expected_trust_sha256,
@@ -223,14 +228,14 @@ def admit_detached(archive, *, inventory_profile, detached_inventory_bytes,
     archive = Path(archive)
     guard(archive)
     require(archive.name == verified.artifact.name, "archive_name_binding")
-    verify_component_artifact(archive, verified)
+    verify_component_artifact(archive, verified, should_cancel=should_cancel)
     observed = produce_detached_inventory(archive, inventory_profile=inventory_profile,
         expected_component=expected_component, expected_version=expected_version,
         expected_channel=expected_channel, expected_os=expected_os,
-        expected_architecture=expected_architecture)
+        expected_architecture=expected_architecture, should_cancel=should_cancel)
     require(detached_inventory_bytes == observed, "exact_detached_proof_equality")
     guard(archive)
-    verify_component_artifact(archive, verified)
+    verify_component_artifact(archive, verified, should_cancel=should_cancel)
     rows = _json(observed, "observed inventory")["files"]
     return DetachedAdmissionPlan(MANAGER.value, expected_version, expected_channel,
         verified.artifact.sha256, verified.manifest_sha256, expected_trust_sha256,

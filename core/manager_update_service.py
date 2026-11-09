@@ -180,8 +180,8 @@ class ManagerUpdateService:
         if should_cancel and should_cancel(): raise InterruptedError('Root update review cancelled safely.')
         readback(artifact, expected['artifact_size'], expected['artifact_sha256'])
         proof = produce_detached_inventory(artifact, inventory_profile=PROFILE,
-            expected_version=expected['version'], expected_channel=self.channel)
-        admission = self._admit(artifact, offer, proof, trust_pin=offer.trust_sha256)
+            expected_version=expected['version'], expected_channel=self.channel, should_cancel=should_cancel)
+        admission = self._admit(artifact, offer, proof, trust_pin=offer.trust_sha256, should_cancel=should_cancel)
         if should_cancel and should_cancel(): raise InterruptedError('Root update review cancelled safely.')
         self._prepared = PreparedManagerUpdate(offer,artifact,proof,admission)
         return self._prepared
@@ -301,14 +301,14 @@ class ManagerUpdateService:
             evidence_ref=offer.trust_sha256 if offer else None)
         return ManagerVersionCheck(offer, derive_version_status(binding, after, running, comparison, now=checked))
 
-    def _admit(self, artifact, offer, proof, *, trust_pin):
+    def _admit(self, artifact, offer, proof, *, trust_pin, should_cancel=None):
         return admit_detached(artifact, inventory_profile=PROFILE,
             detached_inventory_bytes=proof, manifest_bytes=offer.manifest_bytes,
             signature_bytes=offer.signature_bytes, trust_bytes=self.acquisition.trust,
             expected_trust_sha256=trust_pin,
             expected_inventory_sha256=offer.release.artifact.portable_manifest_sha256,
             expected_version=offer.release.software_version, expected_channel=self.channel,
-            current_version=self.current_version)
+            current_version=self.current_version, should_cancel=should_cancel)
 
     def prepare(self, offer, *, progress=None, should_cancel=None):
         require(offer is self._offer and type(offer) is ComponentOffer, "current_manager_offer_required")
@@ -319,11 +319,11 @@ class ManagerUpdateService:
         require(offer.current_version == self.current_version
                 and offer.release.channel == self.channel, "changed_installed_context")
         proof = produce_detached_inventory(acquired.artifact, inventory_profile=PROFILE,
-            expected_version=offer.release.software_version, expected_channel=self.channel)
-        admission = self._admit(acquired.artifact, offer, proof, trust_pin=offer.trust_sha256)
+            expected_version=offer.release.software_version, expected_channel=self.channel, should_cancel=should_cancel)
+        admission = self._admit(acquired.artifact, offer, proof, trust_pin=offer.trust_sha256, should_cancel=should_cancel)
         self.acquisition.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
         guard(acquired.artifact)
-        verify_component_artifact(acquired.artifact, offer.release)
+        verify_component_artifact(acquired.artifact, offer.release, should_cancel=should_cancel)
         if should_cancel and should_cancel():
             raise InterruptedError("Manager update staging cancelled safely.")
         require(offer is self._offer, "changed_manager_offer")
