@@ -34,9 +34,7 @@ def _source(source, storage_root, verified_source):
 def inspect_generation_finish_source(source, *, storage_root, verified_source):
     """Read a selected, verified source only; return bounded display dimensions."""
     path = _source(source, storage_root, verified_source)
-    if path.stat().st_size > MAX_SOURCE_BYTES:
-        raise ValueError("The generated source exceeds the bounded resize input limit.")
-    raw, identity = read_stable_training_source(path)
+    raw, identity = read_stable_training_source(path, max_bytes=MAX_SOURCE_BYTES)
     from io import BytesIO
     with Image.open(BytesIO(raw)) as image:
         if image.format != "PNG" or getattr(image, "n_frames", 1) != 1:

@@ -389,14 +389,16 @@ class GenerationFinishingDialog(QDialog):
     def _preview_image(self, path, *, result=None):
         def work(_job):
             if result is None:
-                inspect_generation_finish_source(path, storage_root=self.storage_root,
-                                                 verified_source=self.verified_source)
+                detail = inspect_generation_finish_source(path, storage_root=self.storage_root,
+                                                          verified_source=self.verified_source)
+                expected_sha256 = detail["sha256"]
             else:
                 verify_generation_finish(result, storage_root=self.storage_root,
                                          verified_source=self.verified_source)
-            raw, _ = read_stable_training_source(path)
-            if len(raw) > 128 * 1024 * 1024:
-                raise ValueError("The verified preview exceeds the image byte limit.")
+                expected_sha256 = result["files"][path.name]
+            raw, identity = read_stable_training_source(path, max_bytes=128 * 1024 * 1024)
+            if identity["sha256"] != expected_sha256:
+                raise ValueError("The image bytes changed while opening the verified preview.")
             if result is None:
                 inspect_generation_finish_source(path, storage_root=self.storage_root,
                                                  verified_source=self.verified_source)

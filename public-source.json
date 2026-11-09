@@ -546,8 +546,8 @@
       "size_bytes": 18880
     },
     "core/generation_finishing.py": {
-      "sha256": "6ef1428007a8419c3d9f999c6ef5979b1dfab84202f5257012cc417619353fa1",
-      "size_bytes": 8802
+      "sha256": "06b6f31cfcfb995db274c700290e6824840b6095bcc2e3b9ed5f13b304a64e83",
+      "size_bytes": 8694
     },
     "core/generation_image_suggestions.py": {
       "sha256": "b728cdc1078155b298847c4cf9993c33f65b339a981614101c3eb8a16a516c7a",
@@ -2214,8 +2214,8 @@
       "size_bytes": 55395
     },
     "qt_app/generation_finishing_dialog.py": {
-      "sha256": "0984fde389ae5d1ea17978a0a2c485dfdb509c6f0927c527bf85b449b546a314",
-      "size_bytes": 26861
+      "sha256": "27622ee5278666e5656c16aee290867388d9098250bd6a4e294856a95d89ffb2",
+      "size_bytes": 27045
     },
     "qt_app/generation_image_setup_dialog.py": {
       "sha256": "7a6c91b39aeba796ef6958b26b1f7b7b8918698ea71f6cca8a02fa6ba6d48af9",
