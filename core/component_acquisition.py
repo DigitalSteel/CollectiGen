@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 from uuid import uuid4
-from release_contract import verify_release_manifest, ensure_supported_upgrade
+from release_contract import ReleaseContractError, verify_release_manifest, ensure_supported_upgrade
 
 from core.application_update import ApplicationUpdateService, ReleaseAssetSource, MANIFEST_ASSET, SIGNATURE_ASSET
 from suite_core.discovery.github_component_releases import (
@@ -191,6 +191,7 @@ class ComponentAcquisition:
         self.maximum = max_artifact_bytes
         self.cache_maximum = max_cache_bytes
         self._acquired = {}
+        self._rejected_cache_paths = set()
         self.manifest_name, self.signature_name = manifest_name, signature_name
         self._owner = json.dumps(dict(purpose="COMPONENT_ACQUISITION_CACHE", owner=cache_owner), sort_keys=True).encode()
         self._marker = root / ".component-acquisition-owner.json"
@@ -360,11 +361,17 @@ class ComponentAcquisition:
         if cached is not None:
             guard(cached)
             if cached.exists():
-                verify_component_artifact(cached, verified)
+                try:
+                    verify_component_artifact(cached, verified)
+                except ReleaseContractError:
+                    # Preserve the rejected bytes and keep counting them against quota.
+                    self._rejected_cache_paths.add(cached)
+                    del self._acquired[verified.manifest_sha256]
+                    raise
                 self._check_inflight_offer(offer, should_cancel)
                 return AcquiredComponent(offer, cached)
         used = 0
-        for path in self._acquired.values():
+        for path in (*self._acquired.values(), *self._rejected_cache_paths):
             guard(path)
             try:
                 used += path.stat().st_size

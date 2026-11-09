@@ -384,11 +384,27 @@ def test_missing_cached_artifact_allows_a_fresh_signed_download(tmp_path, same_o
     assert not first.artifact.exists()
 
 
-def test_changed_cached_artifact_not_overwritten(tmp_path):
-    f=FakeFeed();f.add();s=service(tmp_path,f);o,=offers(s)
-    first=s.acquire(o);first.artifact.write_bytes(b'foreign-changed-cache')
-    with pytest.raises(ValueError):s.acquire(o)
-    assert first.artifact.read_bytes()==b'foreign-changed-cache'
+@pytest.mark.parametrize("enough_cache", [True, False])
+def test_changed_cached_artifact_not_overwritten(tmp_path, enough_cache):
+    feed = FakeFeed()
+    feed.add()
+    acquisition = service(tmp_path, feed, max_cache_bytes=len(PAYLOAD) * (2 if enough_cache else 1))
+    offer, = offers(acquisition)
+    first = acquisition.acquire(offer)
+    altered = b"X" * len(PAYLOAD)
+    first.artifact.write_bytes(altered)
+
+    with pytest.raises(ValueError, match="SHA-256"):
+        acquisition.acquire(offer)
+
+    if enough_cache:
+        replacement = acquisition.acquire(offer)
+        assert replacement.artifact != first.artifact
+        assert replacement.artifact.read_bytes() == PAYLOAD
+    else:
+        with pytest.raises(ValueError, match="cache_bound"):
+            acquisition.acquire(offer)
+    assert first.artifact.read_bytes() == altered
 
 
 def test_metadata_response_bound_before_parse(tmp_path):
