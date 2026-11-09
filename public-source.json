@@ -3646,8 +3646,8 @@
       "size_bytes": 3827
     },
     "tests/test_component_acquisition.py": {
-      "sha256": "79937f6226b65ad07a18c0b8bd61d22df7b1468b2af59b63ae4281da3d280f14",
-      "size_bytes": 28573
+      "sha256": "678972f66d1ab95542a029ec027d281fa0774290b0b120eac954c9eb649e6b77",
+      "size_bytes": 29115
     },
     "tests/test_component_release_identity.py": {
       "sha256": "3d7667461d5360b3c56d7cb97fe704a7c4482e3f9dd220b18d7398c4a207c997",

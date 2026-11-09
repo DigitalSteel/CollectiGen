@@ -585,7 +585,8 @@ def test_signed_offer_larger_than_empty_cache_is_not_reviewable(tmp_path):
     assert not any(url.endswith(".zip") for url, _, _ in feed.calls)
 
 
-def test_manager_prepares_test_signed_stock_package_without_admission_stub(tmp_path):
+@pytest.mark.parametrize("hold", [None, "archive_member_count", "detached_inventory_pin"])
+def test_manager_stages_only_packages_that_pass_stock_admission(tmp_path, hold):
     import zipfile
     from core.manager_update_service import ManagerUpdateService, reviewed_stage_identity
     from suite_core.discovery.manager_runtime_detached_admission import (
@@ -606,18 +607,32 @@ def test_manager_prepares_test_signed_stock_package_without_admission_stub(tmp_p
         for name in (PAYLOAD_ENTRY, PACKAGE_STUB, "Squirrel.exe"):
             archive.writestr(PREFIX + name, b"INERT NOT EXECUTABLE")
 
-    proof = produce_detached_inventory(archive_path, inventory_profile=PROFILE,
-                                       expected_version=VERSION, expected_channel="beta")
+        if hold == "archive_member_count":
+            for index in range(509):
+                archive.writestr(PREFIX + f"inert-{index}.bin", b"INERT")
+
+    proof = None
+    if hold != "archive_member_count":
+        proof = produce_detached_inventory(archive_path, inventory_profile=PROFILE,
+                                           expected_version=VERSION, expected_channel="beta")
+    signed_proof = sha256(proof).hexdigest() if hold is None else "0" * 64
     payload = archive_path.read_bytes()
     feed = FakeFeed()
     feed.add(MANAGER.value, payload=payload, asset_name=archive_path.name, artifacts=[dict(
         name=archive_path.name, kind="component-package", size_bytes=len(payload),
-        sha256=sha256(payload).hexdigest(), portable_manifest_sha256=sha256(proof).hexdigest(),
+        sha256=sha256(payload).hexdigest(), portable_manifest_sha256=signed_proof,
     )])
     updater = ManagerUpdateService(service(tmp_path, feed),
                                    current_version="0.1.0-alpha.7", channel="beta")
 
-    prepared = updater.prepare(updater.discover())
+    offer = updater.discover()
+    if hold:
+        with pytest.raises(ValueError, match=hold):
+            updater.prepare(offer)
+        assert updater._prepared is None
+        return
+
+    prepared = updater.prepare(offer)
     assert prepared.artifact.read_bytes() == payload
     assert prepared.proof == proof
     assert updater.revalidate(prepared) == prepared.admission
