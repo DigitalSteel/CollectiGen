@@ -254,7 +254,15 @@ class ComponentAcquisition:
             except (ValueError, UnicodeError, RecursionError) as exc:
                 raise ValueError("release_listing_syntax") from exc
             require(type(values) is list and len(values) <= 50, "release_page_bound")
-            rows.extend(values)
+            for row in values:
+                if type(row) is dict:
+                    row = {key: row[key] for key in ("id", "tag_name", "draft", "prerelease", "assets") if key in row}
+                    if type(row.get("assets")) is list:
+                        row["assets"] = [
+                            {key: asset[key] for key in ("id", "name", "size", "browser_download_url") if key in asset}
+                            if type(asset) is dict else asset for asset in row["assets"]
+                        ]
+                rows.append(row)
             require(len(rows) <= MAX_RELEASES, "release_listing_bound")
             if len(values) < 50:
                 break
