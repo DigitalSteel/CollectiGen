@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 from copy import copy, deepcopy
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import io
@@ -27,7 +28,7 @@ from .generation_resource_guard import (assess_memory_evidence, memory_request_k
 from .generation_masks import MaskPayload, composite_masked_result, validate_mask_payload, prepare_masked_input
 from .generation_transport import LocalTransport, strict_json
 from .model_resource_registry import inspect_model_resource
-from .training_source_io import _assert_unredirected, _identity
+from .training_source_io import _assert_unredirected, _identity, read_stable_training_source
 
 ADAPTER_ID = "collectigen.swarmui.t2i.v1"
 _LOCK = threading.RLock()
@@ -693,6 +694,40 @@ class SwarmLocalAdapter:
         return session
 
 
+@dataclass(frozen=True)
+class GenerationIngestHandoff:
+    """Retain the exact Manager job through Ingest preview and retry."""
+
+    store_root: Path
+    job_id: str
+    receipt_digest: str
+    output: Path
+
+    @classmethod
+    def from_selected_manager_receipt(cls, selected_path):
+        selected = Path(selected_path).absolute()
+        root = selected.parent.parent
+        if selected.name != "receipt.json" or root.name != "generation" or root.parent.name != "Manager":
+            raise ValueError("Choose receipt.json from a Manager generation job folder.")
+        service = GenerationExecutionService(root, None)
+        receipt = service._read(selected.parent.name)
+        if receipt.get("state") != "verified" or len(receipt["outputs"]) != 1:
+            raise ValueError("Choose a Manager job with one verified image.")
+        return cls(root, receipt["job_id"], digest(receipt), selected.with_name("result.png"))
+
+    def verify(self):
+        service = GenerationExecutionService(self.store_root, None)
+        receipt = service._read(self.job_id)
+        if digest(receipt) != self.receipt_digest:
+            raise ValueError("The selected generation receipt changed; review it again.")
+        paths = service.verified_output_paths(receipt)
+        if paths != [str(self.output)]:
+            raise ValueError("The selected generation output changed; review it again.")
+        member = receipt["outputs"][0]
+        return ((str(self.output), member["sha256"]),
+                (str(self.output.with_suffix(".tags.json")), member["sidecar_sha256"]))
+
+
 class GenerationExecutionService:
     def __init__(self, storage_root, jobs):
         self.root = Path(storage_root).absolute()
@@ -708,19 +743,22 @@ class GenerationExecutionService:
 
     def _read(self, job_id):
         path = self._path(job_id) / "receipt.json"
-        _assert_unredirected(path)
-        if path.stat().st_size > 8 * 1024 * 1024:
-            raise ValueError("Generation receipt is too large.")
-        result = strict_json(path.read_bytes())
-        if (result.get("job_id") != job_id or result.get("schema_version") != 1
+        raw, _ = read_stable_training_source(path, max_bytes=8 * 1024 * 1024)
+        result = strict_json(raw)
+        if (not isinstance(result, dict) or result.get("job_id") != job_id or result.get("schema_version") != 1
                 or not re.fullmatch(r"[a-f0-9]{64}", str(result.get("fingerprint", "")))):
             raise ValueError("Unsupported generation receipt")
         prepared = deepcopy(result.get("prepared", {}))
+        if not isinstance(prepared, dict):
+            raise ValueError("Unsupported retained generation request.")
         fingerprint = prepared.pop("fingerprint", None)
         if fingerprint != result["fingerprint"] or digest(prepared) != fingerprint:
             raise ValueError("Retained generation request is corrupt or changed.")
-        for output in result.get("outputs", []):
-            if output.get("path") != str(self._path(job_id) / "result.png"):
+        outputs = result.get("outputs", [])
+        if not isinstance(outputs, list):
+            raise ValueError("Unsupported generation receipt outputs.")
+        for output in outputs:
+            if not isinstance(output, dict) or output.get("path") != str(self._path(job_id) / "result.png"):
                 raise ValueError("Retained output path is outside its exact job.")
         return result
 

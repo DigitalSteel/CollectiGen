@@ -413,6 +413,8 @@ class IngestPage(QWidget):
         self.add_image_files_action=add_menu.addAction("Choose Image Files…")
         self.add_image_files_action.triggered.connect(self.choose_ingest_image_files)
         self.add_image_folder_action=add_menu.addAction("Choose Folder…")
+        self.add_manager_result_action=add_menu.addAction("Review Manager Result…")
+        self.add_manager_result_action.triggered.connect(self.choose_manager_generation_result)
         self.add_image_folder_action.triggered.connect(self.choose_ingest_image_folder)
         add_images.setMenu(add_menu)
         compact_button(add_images)
@@ -990,6 +992,28 @@ class IngestPage(QWidget):
         if selected:
             self._start_ingest_import_preview("files",[Path(value) for value in selected],
                                               ordinary_user_selection=True)
+
+    def choose_manager_generation_result(self):
+        if self._batch_task is not None:
+            return
+        selected, _ = QFileDialog.getOpenFileName(
+            self, "Choose a Manager generation receipt", self._add_images_start_folder(),
+            "Generation receipt (receipt.json)",
+        )
+        if not selected:
+            return
+        from core.generation_execution import GenerationIngestHandoff
+
+        try:
+            result = GenerationIngestHandoff.from_selected_manager_receipt(selected)
+        except (OSError, ValueError, RuntimeError, TypeError, RecursionError):
+            QMessageBox.information(self, "Manager result unavailable",
+                                    "Choose receipt.json from a verified Manager generation job.")
+            return
+        self._start_ingest_import_preview(
+            "files", [result.output], preserve_source=True, verified_versions=(result,),
+            ordinary_user_selection=True,
+        )
 
     def _hold_ingest_import_selection(self,source_kind,paths,preserve_source,reason,*,
                                       location_required=False,verified_versions=(),
