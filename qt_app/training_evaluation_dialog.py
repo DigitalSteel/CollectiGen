@@ -342,6 +342,7 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
             if job.cancel_requested:raise InterruptedError("Saving observation cancelled.")
             current=matched_results(self.session,self.service,should_cancel=lambda:job.cancel_requested)
             if result not in current[selected[0]]:raise ValueError("The reviewed result changed.")
+            if job.cancel_requested:raise InterruptedError("Saving observation cancelled.")
             return save_plan(self.path,updated,expected_digest=expected)
         def saved(digest):
             self.session,self.digest=updated,digest; self.status.setText("Personal observation saved.")
