@@ -317,11 +317,20 @@ def reconcile_experiment(experiment, receipts):
         receipt = matches[0]
         row["job_id"] = receipt["job_id"]
         state = receipt.get("state")
-        row["state"] = ("verified" if state == "verified" else state
-            if state in {"failed", "cancelled"} and (receipt.get("proven_unsubmitted") or receipt.get("server_stopped"))
-            else "outcome_unknown")
+        if state == "verified":
+            row["state"] = state
+        elif _has_safe_retry_outcome(receipt):
+            row["state"] = state
+        else:
+            row["state"] = "outcome_unknown"
         row["error"] = "" if row["state"] == "verified" else "Review the retained job outcome before retrying."
     return result
+
+
+def _has_safe_retry_outcome(receipt):
+    return receipt.get("state") in {"failed", "cancelled"} and (
+        receipt.get("proven_unsubmitted") is True or receipt.get("server_stopped") is True
+    )
 
 
 def retry_failed(experiment, candidate_ids, *, receipts=()):
@@ -340,8 +349,7 @@ def retry_failed(experiment, candidate_ids, *, receipts=()):
             raise ValueError("Retry requires a matching confirmed failed or cancelled receipt.")
         proof = matching[0]
         plan = proof.get("prepared", {}).get("plan", {})
-        if (proof.get("state") not in {"failed", "cancelled"}
-                or not (proof.get("proven_unsubmitted") is True or proof.get("server_stopped") is True)
+        if (not _has_safe_retry_outcome(proof)
                 or plan.get("plan_id") != row["plan"]["plan_id"]
                 or plan.get("digest") != row["plan"]["digest"]):
             raise ValueError("Retry requires a matching confirmed failed or cancelled receipt.")
