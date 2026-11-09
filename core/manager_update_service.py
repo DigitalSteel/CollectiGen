@@ -235,6 +235,7 @@ class ManagerUpdateService:
         """
         def cancelled():
             if should_cancel and should_cancel():
+                self._offer = self._prepared = None
                 raise InterruptedError('Manager version check cancelled safely.')
 
         # Match ordinary rediscovery's invalidation even if observation is
