@@ -11,7 +11,7 @@ import secrets
 from uuid import uuid4
 
 from .external_write_transaction import atomic_verified_bytes
-from .generation_planning import GenerationPlan
+from .generation_planning import GenerationPlan, GenerationPlanStaleError, _plan_writer
 from .generation_transport import strict_json
 from .image_record import _atomic_create_text
 from .training_source_io import _assert_unredirected, read_stable_training_source
@@ -244,6 +244,14 @@ def save_experiment(path, experiment, *, expected_digest=None):
     path = Path(path).absolute()
     _assert_unredirected(path)
     raw = _bytes(validate_experiment(experiment))
+    try:
+        with _plan_writer(path):
+            return _save_experiment_locked(path, raw, expected_digest)
+    except GenerationPlanStaleError as error:
+        raise ValueError("Another experiment save is active. Reopen it before saving.") from error
+
+
+def _save_experiment_locked(path, raw, expected_digest):
     existing, digest = None, ""
     if path.exists():
         try:
