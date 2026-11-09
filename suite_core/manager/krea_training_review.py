@@ -35,6 +35,7 @@ class KreaTrainingReviewDialog(QDialog):
         self._preview_jobs = preview_jobs
         self._registry_path = registry_path
         self._adapter_preview = None
+        self._preparation_setup = None
 
         layout = QVBoxLayout(self)
         heading = QLabel("Review a training package")
@@ -498,7 +499,7 @@ class KreaTrainingReviewDialog(QDialog):
         if (not self.prepare_button.isVisible() or not self.prepare_button.isEnabled()
                 or self._checking_dataset or self._checking_handoff or self._preparing_dataset
                 or self._adapter_preview is not None or self._cancel.is_set()
-                or self._verification is None):
+                or self._verification is None or self._preparation_setup is not None):
             return
         dialog = QDialog(self)
         dialog.setWindowTitle("Prepare SDXL Dataset")
@@ -535,12 +536,16 @@ class KreaTrainingReviewDialog(QDialog):
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
+        self._preparation_setup = dialog
         try:
             if dialog.exec() != QDialog.Accepted or self._cancel.is_set():
                 return
             source, environment, python_base = (field.text().strip() for field in fields)
         finally:
+            self._preparation_setup = None
             dialog.deleteLater()
+            if self._cancel.is_set():
+                self.reject()
         try:
             self._future = self._executor.submit(partial(
                 self._dataset_verifier.prepare, self._verification, source=source,
@@ -711,6 +716,9 @@ class KreaTrainingReviewDialog(QDialog):
 
     def reject(self):
         self._cancel.set()
+        if self._preparation_setup is not None:
+            self._preparation_setup.reject()
+            return
         if self._adapter_preview is not None:
             self._adapter_preview.reject()
             return
@@ -723,7 +731,7 @@ class KreaTrainingReviewDialog(QDialog):
         super().reject()
 
     def closeEvent(self, event):
-        if self._adapter_preview is not None or self._executor.close_held:
+        if self._preparation_setup is not None or self._adapter_preview is not None or self._executor.close_held:
             event.ignore()
             self.reject()
         else:
