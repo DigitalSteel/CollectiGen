@@ -9,7 +9,7 @@ from release_contract import verify_release_manifest, ensure_supported_upgrade
 
 from core.application_update import ApplicationUpdateService, ReleaseAssetSource, MANIFEST_ASSET, SIGNATURE_ASSET
 from suite_core.discovery.github_component_releases import (
-    REPOSITORY, MAX_BYTES, MAX_RELEASES, ReleaseLocator, release_asset_identity,
+    REPOSITORY, MAX_BYTES, MAX_RELEASES, DiscoveryHold, ReleaseLocator, release_asset_identity,
     discover_component_ids, discover_releases, _pairs, _constant, _version,
 )
 from suite_core.discovery.component_release_signature import (
@@ -312,8 +312,11 @@ class ComponentAcquisition:
                        "The reviewed release changed during preparation. No update was staged.")
             release = offer.release
             listing, repository_id = self._listing(should_cancel)
-            selected = discover_releases(listing, component_id=release.component_id, channel=release.channel,
-                current_version=offer.current_version, complete=True).candidate
+            try:
+                selected = discover_releases(listing, component_id=release.component_id, channel=release.channel,
+                    current_version=offer.current_version, complete=True).candidate
+            except DiscoveryHold as exc:
+                raise ExactOfferHold(changed) from exc
             if expected is not None:
                 expected.check_locator(selected)
             if selected != offer.locator or repository_id != offer.repository_id:

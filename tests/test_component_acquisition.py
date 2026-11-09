@@ -463,3 +463,22 @@ def test_scoped_discovery_checks_assets_of_the_selected_release_only(tmp_path):
     feed.rows[1]["assets"] = []
     with pytest.raises(DiscoveryHold, match="release_assets_missing"):
         acquisition.discover(channel="beta", installed_versions={}, component_id=ComponentId(ID))
+
+
+def test_invalidated_selected_assets_require_a_new_review_before_download(tmp_path):
+    feed = FakeFeed()
+    feed.add()
+    acquisition = service(tmp_path, feed)
+    offer, = offers(acquisition)
+    original_assets = feed.rows[0]["assets"]
+    feed.rows[0]["assets"] = []
+
+    with pytest.raises(ExactOfferHold, match="reviewed release changed"):
+        acquisition.acquire(offer)
+    assert all(url != offer.artifact_source.url for url, _, _ in feed.calls)
+
+    feed.rows[0]["assets"] = original_assets
+    with pytest.raises(ValueError, match="current_signed_offer"):
+        acquisition.acquire(offer)
+    refreshed, = offers(acquisition)
+    assert acquisition.acquire(refreshed).artifact.read_bytes() == PAYLOAD
