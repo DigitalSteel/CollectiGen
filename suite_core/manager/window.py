@@ -1542,11 +1542,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if state is None or getattr(self, "_training_history_dialog", None) is not None:
                 return
             from core.training_run_index import ScopedPreparationHistory, ScopedTrainingHistory
+            from core.paths import MODEL_RESOURCES_PATH
             from qt_app.training_history_dialog import TrainingHistoryDialog
             from qt_app.workers import CoordinatedCallTask
 
             history = (ScopedPreparationHistory(state.generation_data_root / "TrainingReview") if preparations
-                       else ScopedTrainingHistory(state.generation_data_root / "training"))
+                       else ScopedTrainingHistory(state.generation_data_root / "training",
+                           model_registry_path=state.generation_data_root / MODEL_RESOURCES_PATH.name))
             dialog = TrainingHistoryDialog(history, state.jobs, self, read_only=True)
             if preparations:
                 dialog.setWindowTitle("Saved SDXL Preparations")

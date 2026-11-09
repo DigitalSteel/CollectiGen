@@ -1794,8 +1794,8 @@
       "size_bytes": 8517
     },
     "core/training_run_index.py": {
-      "sha256": "c7388531382c354a310114b9fa12c3912025cf8217667c17352dca5ddd0a02ae",
-      "size_bytes": 41366
+      "sha256": "7a037310ea6b0d421146c65752148f6621903af3c6ed7ff8dfba0e638c52b31b",
+      "size_bytes": 41559
     },
     "core/training_run_recovery.py": {
       "sha256": "044484d664f73f76709079ab1ab21e65b0cb218483535cca02e765cda0d357eb",
@@ -3370,8 +3370,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "581305bf94f0ce2bd5c01546a479f2490ed1da46fa5b114b070851dfbca0809b",
-      "size_bytes": 200953
+      "sha256": "99725328d4c3008153d6d174082518b31c02be02d49f6baafccb7f780e32351e",
+      "size_bytes": 201112
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

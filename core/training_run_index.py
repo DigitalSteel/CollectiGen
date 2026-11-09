@@ -602,15 +602,17 @@ class TrainingRunIndex:
 class ScopedTrainingHistory:
     """Read-only history for a host whose run state is confined to one root."""
 
-    def __init__(self, root):
+    def __init__(self, root, *, model_registry_path=None):
         self._root = Path(root).absolute()
         self._index = TrainingRunIndex(self._root / "training-runs.json")
+        self._model_registry_path = model_registry_path
 
     def _check_records(self, records):
         for record in records:
-            for value in (record.review_path, record.destination, record.registry_path):
-                if value:
-                    self._check_path(Path(value))
+            for value in (record.review_path, record.destination):
+                self._check_path(Path(value))
+            if record.registry_path and Path(record.registry_path) != self._model_registry_path:
+                self._check_path(Path(record.registry_path))
 
     def _check_path(self, path):
         if (path == self._root or not path.is_relative_to(self._root)
