@@ -11,6 +11,7 @@ import re
 from .annotation import GenerationRecord, GenerationResource, GenerationStage
 from .generation_planning import GenerationPlan
 from .generation_transport import strict_json
+from .image_record import _atomic_create_text
 from .training_source_io import _assert_unredirected, read_stable_training_source
 
 MAX_BYTES = 256 * 1024
@@ -656,12 +657,10 @@ def preview_recipe(recipe, current, *, include_prompts=False):
 def save_recipe(path, recipe):
     _checked, raw = _validate(recipe)
     path = Path(path).absolute(); _assert_unredirected(path)
-    if path.exists():
-        raise ValueError("Choose a new recipe filename to preserve the existing recipe.")
-    with path.open("xb") as stream:
-        stream.write(raw); stream.flush()
-        import os
-        os.fsync(stream.fileno())
+    try:
+        _atomic_create_text(path, raw.decode("utf-8"))
+    except FileExistsError as exc:
+        raise ValueError("Choose a new recipe filename to preserve the existing recipe.") from exc
     observed, _ = read_stable_training_source(path, max_bytes=len(raw))
     if observed != raw:
         raise ValueError("Recipe read-back verification failed.")
