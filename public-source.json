@@ -2210,8 +2210,8 @@
       "size_bytes": 277054
     },
     "qt_app/generation_experiment_dialog.py": {
-      "sha256": "46f3e701e516e533d63f68da40dff131ca5d02946c1d67f46b340b2c139df74b",
-      "size_bytes": 54478
+      "sha256": "18a369dfc55ad051eee09b5e3a6252a9ce1f2dad333423707ea52adff8fcf2af",
+      "size_bytes": 55112
     },
     "qt_app/generation_finishing_dialog.py": {
       "sha256": "2b4dffc08f4a98d580b4e3a2d1c4380c939ff97c1dd68970147ecfec8ae898ac",

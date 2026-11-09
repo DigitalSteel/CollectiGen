@@ -58,7 +58,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         intro = QLabel(
             "Draft → Choose → Finish. Review a bounded group, generate one at a time, then finish only your selected results."
             if not planning_only else
-            "Plan and save alternatives offline. You can reopen a group or open one alternative as a separate image draft."
+            "Plan and save alternatives offline. You can reopen a group or save one alternative as a separate image draft."
         )
         intro.setWordWrap(True); layout.addWidget(intro)
         self.workspaces = QTabWidget()
@@ -171,7 +171,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         self.retry = QPushButton("Prepare Selected Retries"); self.retry.clicked.connect(self.retry_selected)
         self.retry.setToolTip("Return selected failed or cancelled candidates to pending after checking their retained jobs. Review them again before generating.")
         self.recover = QPushButton("Reconcile Retained Jobs"); self.recover.clicked.connect(self.reconcile)
-        self.use = QPushButton("Create Draft from Candidate…")
+        self.use = QPushButton("Save Candidate as New Draft" if planning_only else "Create Draft from Candidate…")
         self.use.setToolTip(
             "Copy this candidate's complete request, including prompt, model and seed, into "
             "a separate Generate draft. The saved comparison and original request stay unchanged."
@@ -829,6 +829,17 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         rows = self.selected()
         if self.busy() or len(rows) != 1: return
         plan = GenerationPlan.from_dict(rows[0]["plan"]).fork()
+        if self.planning_only:
+            from core.generation_planning import save_plan
+            from core.generation_saved_work import new_draft_path
+
+            def save():
+                save_plan(new_draft_path(self.owner.storage_root), plan)
+
+            self.status.setText("Saving the selected alternative as a separate draft…")
+            self._run("Save alternative image draft", save, lambda _:
+                self.status.setText("New draft saved. Close this group and the current draft, then choose Plan an Image to reopen it."))
+            return
         def opened(_draft):
             self.status.setText(
                 "A separate Generate draft opened from this candidate. The saved comparison "
