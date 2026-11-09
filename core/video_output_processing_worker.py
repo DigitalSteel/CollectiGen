@@ -11,11 +11,30 @@ from time import monotonic
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
+def _check_encoder_packages(component, av, pillow):
+    from importlib.machinery import EXTENSION_SUFFIXES
+    from av import _core
+    from PIL import _imaging
+
+    site, binding = component
+    if (av.__version__ != binding["version"] or not av.library_versions
+            or pillow.__version__ != "12.3.0"
+            or any(not Path(module.__file__).resolve(strict=True).is_relative_to(site)
+                   for module in (av, _core, pillow, _imaging))
+            or any(not str(module.__file__).endswith(tuple(EXTENSION_SUFFIXES))
+                   for module in (_core, _imaging))):
+        raise ValueError("Video encoder package origin or version differs from the admitted profile.")
+
+
 def _encode(spec: dict) -> dict:
-    from core.video_decoder_worker import _bound_memory
+    from core.video_decoder_worker import _bound_memory, _component_runtime
     memory_job = _bound_memory(1024 * 1024 * 1024)
+    component = _component_runtime(expected_profile="manager-video-encoder-windows")
     import av
+    import PIL
     from PIL import Image
+    if component is not None:
+        _check_encoder_packages(component, av, PIL)
     from core.video_decoder import (
         _contained_regular, _container, _frame_geometry, _frame_pts,
         _fraction, _hash_descriptor, _unchanged, _video_stream,

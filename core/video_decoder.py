@@ -143,18 +143,21 @@ def _read_exact(stream, count: int) -> bytes:
     return bytes(parts)
 
 
-def _runtime_payload(binding, *, check=None):
+def _runtime_payload(binding, *, check=None, encoder=False):
     # The binding's owner has already imported its service. Do not import that
     # service here: its legacy import activates a process-wide optional site.
     owner = sys.modules.get("core.dependencies")
-    if owner is None or type(binding) is not getattr(owner, "VideoRuntimeBinding", None):
+    binding_type = "VideoEncoderRuntimeBinding" if encoder else "VideoRuntimeBinding"
+    expected_profile = "manager-video-encoder-windows" if encoder else "organizer-video-windows"
+    if owner is None or type(binding) is not getattr(owner, binding_type, None):
         raise VideoDecodeError("An admitted immutable Video runtime binding is required.")
     if check is not None:
         check()
     payload = {key: str(value) if isinstance(value, Path) else value
                for key, value in asdict(binding).items()}
     from .video_decoder_worker import validate_runtime_payload
-    validate_runtime_payload(payload, check=check)
+    validate_runtime_payload(payload, check=check, expected_profile=expected_profile,
+        check_running_interpreter=not getattr(sys, "frozen", False))
     service = owner.DependencyService
     if check is not None:
         check()
@@ -163,11 +166,16 @@ def _runtime_payload(binding, *, check=None):
             or service._profile_sha256(profile) != binding.reviewed_profile_sha256):
         raise VideoDecodeError("The reviewed Video profile changed or is not qualified.")
     packages = profile.get("packages", [])
-    if len(packages) != 1 or packages[0].get("name") != "av" or packages[0].get("version") != binding.version:
+    expected = {"av": binding.version}
+    if encoder:
+        expected["pillow"] = "12.3.0"
+    if len(packages) != len(expected) or {p.get("name"): p.get("version") for p in packages} != expected:
         raise VideoDecodeError("The reviewed Video package closure changed.")
-    distributions = service._distribution_map(binding.component_site).get("av", [])
-    if len(distributions) != 1 or str(distributions[0].version) != binding.version:
-        raise VideoDecodeError("Video installed distribution identity changed.")
+    distributions = service._distribution_map(binding.component_site)
+    for name, version in expected.items():
+        installed = distributions.get(name, [])
+        if len(installed) != 1 or str(installed[0].version) != version:
+            raise VideoDecodeError("Video installed distribution identity changed.")
     # Reuse the admission owner's complete shared-environment read-back, including
     # retained AI profiles. A valid av RECORD alone cannot re-admit this store.
     def dependency_check():
@@ -180,17 +188,21 @@ def _runtime_payload(binding, *, check=None):
 
     try:
         issues = service._optional_environment_issues(binding.destination_root,
-            check_interrupt=dependency_check if check is not None else None)
+            check_interrupt=dependency_check if check is not None else None,
+            python_version=binding.python_version)
     except owner._DependencyVerificationInterrupted as exc:
         raise exc.error
     if issues:
         raise VideoDecodeError("Video component read-back failed: " + "; ".join(issues))
     # Record checks can be long; do not launch after a concurrent pin change.
-    validate_runtime_payload(payload, check=check)
+    validate_runtime_payload(payload, check=check, expected_profile=expected_profile,
+        check_running_interpreter=not getattr(sys, "frozen", False))
     return payload
 
 
 def _launch_worker(runtime_binding=None, *, check=None):
+    if runtime_binding is None and getattr(sys, "frozen", False):
+        raise VideoDecodeError("This installed app needs an admitted Video decoder runtime.")
     script = Path(__file__).with_name("video_decoder_worker.py")
     arguments = [sys.executable, "-I", "-u", str(script)]
     if runtime_binding is not None:

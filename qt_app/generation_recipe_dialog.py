@@ -13,13 +13,19 @@ class GenerationRecipeDialog(FeedbackEnabledDialog):
 
     def __init__(self, recipe, current, *, resource_notes=(), recoverable_resource=None,
                  recoverable_resources=(),
-                 locate_exact=None, parent=None):
+                 locate_exact=None, runtime_allowed=True, parent=None):
         super().__init__(parent)
         self.recipe = recipe; self.current = current; self.selected_plan = None
         self.setWindowTitle("Apply Generation Setup: " + recipe["name"])
         self.resize(850, 450); self.setMaximumHeight(450)
         layout = QVBoxLayout(self)
-        label = QLabel("Review how this setup changes your current request. Applying it creates no job; model and generator readiness are checked again before generation.")
+        self.runtime_allowed = runtime_allowed
+        label = QLabel(
+            "Review how this setup changes your current request. Applying it creates no job; "
+            "model and generator readiness are checked again before generation."
+            if runtime_allowed else
+            "Review how this setup changes your offline image plan. Applying it creates no job."
+        )
         label.setWordWrap(True); layout.addWidget(label)
         has_positive = bool(recipe.get("prompt_parts")) if recipe.get("schema_version") == 3 else "prompts" in recipe
         has_negative = "negative_prompt" in recipe if recipe.get("schema_version") == 3 else "prompts" in recipe
@@ -76,7 +82,8 @@ class GenerationRecipeDialog(FeedbackEnabledDialog):
     def set_resource_review(self, notes, recoverable_resource=None, *,
                             recoverable_resources=(), locate_available=True):
         self.resource_notes.setText("\n".join(notes) or
-            "Your generator and exact model files will be checked on Readiness before generation.")
+            ("Your generator and exact model files will be checked on Readiness before generation."
+             if self.runtime_allowed else "Save or export the reviewed plan. Generator access is unavailable here."))
         previous = self.selected_recoverable_resource()
         resources = tuple(recoverable_resources or ()) or ((recoverable_resource,) if recoverable_resource else ())
         self.missing_resource_choice.clear()

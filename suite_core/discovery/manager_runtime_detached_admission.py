@@ -13,13 +13,37 @@ from .manager_runtime_admission_support import MANAGER, PREFIX, AdmissionPlan, _
 from release_contract import (safe_zip_members, sha256_file,
                               verify_release_manifest, ensure_supported_upgrade)
 from suite_core.discovery.component_release_signature import (
-    verify_component_release, verify_component_artifact, _json,
+    verify_component_release, verify_component_artifact, _json, inventory_json,
 )
 from suite_core.discovery.component_staging import (
-    canonical, guard, require, MAX_ARCHIVE, MAX_UNPACKED, MAX_METADATA_BYTES,
+    canonical, guard, require, MAX_UNPACKED, MAX_METADATA_BYTES,
 )
 from suite_core.discovery.offline_component_producer import produce_inventory
 from hashlib import sha256
+
+MANAGER_MAX_ARCHIVE = 96 * 1024 * 1024
+MANAGER_MAX_PAYLOAD_MEMBERS = 1280
+MANAGER_MAX_PROOF_BYTES = 256 * 1024
+
+
+def read_manager_inventory_proof(spec):
+    """Read only the pinned proof bytes, including after retained-file readback."""
+    size = spec["size"]
+    require(type(size) is int and 0 < size <= MANAGER_MAX_PROOF_BYTES, "manager_inventory_size")
+    path = Path(spec["path"])
+    guard(path)
+    require(path.is_file() and path.stat().st_size == size, "changed_manager_inventory_size")
+    with path.open("rb") as stream:
+        raw = stream.read(size + 1)
+    require(len(raw) == size and sha256(raw).hexdigest() == spec["sha256"],
+            "changed_manager_inventory_pin")
+    return raw
+
+
+def manager_inventory_json(raw):
+    require(type(raw) is bytes and len(raw) <= MANAGER_MAX_PROOF_BYTES, "manager_inventory_size")
+    return inventory_json(raw, max_bytes=1024 * 1024)
+
 
 PROFILE = "manager-windows-full-nupkg-detached-v1"
 PAYLOAD_ENTRY = "CollectiGenManager.exe"
@@ -52,7 +76,7 @@ class DetachedAdmissionPlan(AdmissionPlan):
         """Project only the worker files covered by this admitted proof."""
         require(type(proof_bytes) is bytes and sha256(proof_bytes).hexdigest() == self.inventory_sha256,
                 "detached_inventory_pin")
-        proof = _json(proof_bytes, "detached inventory")
+        proof = manager_inventory_json(proof_bytes)
         require(proof["inventory_profile"] == self.inventory_profile
                 and proof["archive_sha256"] == self.artifact_sha256, "worker_archive_binding")
         prefix = "training-worker/python/"
@@ -73,8 +97,7 @@ class DetachedAdmissionPlan(AdmissionPlan):
         return selected
 
 
-    def provision_training_worker(self, proof_bytes, *, code_root, data_root, should_cancel=None,
-                                  prepare_workspace=False):
+    def provision_training_worker(self, proof_bytes, *, code_root, data_root, should_cancel=None):
         """Bind a previously admitted worker to an explicitly owned installation."""
         rows = self.training_worker_file_rows(proof_bytes)
         if rows is None:
@@ -89,10 +112,6 @@ class DetachedAdmissionPlan(AdmissionPlan):
                 "training_worker_code_and_data_must_be_separate")
         runtime = _path(code / "training-worker" / "python")
         work = _path(data / "Manager" / "TrainingReview")
-        if prepare_workspace:
-            require(work.parent.is_dir(), "training_review_manager_data_required")
-            work.mkdir(exist_ok=True)
-            work = _path(work)
         require(work.is_dir(), "training_review_owned_directory_required")
         from tempfile import mkdtemp
         receipt_root = Path(mkdtemp(prefix="worker-pin-", dir=work))
@@ -128,7 +147,7 @@ def produce_detached_inventory(archive, *, inventory_profile, expected_version,
     archive = Path(archive)
     guard(archive)
     require(archive.name.endswith("-full.nupkg"), "full_nupkg_required")
-    require(archive.stat().st_size <= MAX_ARCHIVE, "archive_size")
+    require(archive.stat().st_size <= MANAGER_MAX_ARCHIVE, "archive_size")
     before = sha256_file(archive, should_cancel=should_cancel)
     before_size = archive.stat().st_size
     wrappers = {"[Content_Types].xml", "_rels/.rels", MANAGER.value + ".nuspec"}
@@ -136,7 +155,7 @@ def produce_detached_inventory(archive, *, inventory_profile, expected_version,
     profile = None
     with zipfile.ZipFile(archive) as z:
         infos = z.infolist()
-        require(0 < len(infos) <= 515, "archive_member_count")
+        require(0 < len(infos) <= MANAGER_MAX_PAYLOAD_MEMBERS + len(wrappers), "archive_member_count")
         normalized = safe_zip_members(i.filename for i in infos)
         folded = {p.as_posix().casefold() for p in normalized}
         require(all(parent.as_posix().casefold() not in folded
@@ -160,12 +179,9 @@ def produce_detached_inventory(archive, *, inventory_profile, expected_version,
                 require(info.file_size <= MAX_METADATA_BYTES, "sq_version_size")
             member = bytearray()
             with z.open(info) as stream:
-                while True:
+                for block in iter(lambda: stream.read(65536), b""):
                     if should_cancel is not None and should_cancel():
                         raise InterruptedError("Manager package proof was cancelled.")
-                    block = stream.read(65536)
-                    if not block:
-                        break
                     member.extend(block)
                     require(len(member) <= info.file_size, "member_bounds")
             require(len(member) == info.file_size, "member_size")
@@ -179,7 +195,7 @@ def produce_detached_inventory(archive, *, inventory_profile, expected_version,
             if relative == "sq.version":
                 require(len(member) <= MAX_METADATA_BYTES, "sq_version_size")
                 metadata[relative] = bytes(member)
-        require(0 < len(files) <= 512, "payload_count")
+        require(0 < len(files) <= MANAGER_MAX_PAYLOAD_MEMBERS, "payload_count")
         names = {row["path"] for row in files}
         require({PAYLOAD_ENTRY, PACKAGE_STUB,
                  "Squirrel.exe", "sq.version"} <= names, "required_generated_payload")
@@ -201,11 +217,46 @@ def produce_detached_inventory(archive, *, inventory_profile, expected_version,
     profile["archive_sha256"] = before
     profile["archive_size_bytes"] = before_size
     result = canonical(profile)
-    require(len(result) <= MAX_METADATA_BYTES, "inventory_size")
+    require(len(result) <= MANAGER_MAX_PROOF_BYTES, "inventory_size")
     return result
 
 
-def admit_detached(archive, *, inventory_profile, detached_inventory_bytes,
+def admit_detached(archive, *, current_version, **evidence):
+    """Admit a signed update only if it upgrades the installed version."""
+    require(type(current_version) is str and current_version, "installed_version_required")
+    return _admit_detached(archive, current_version=current_version, **evidence)
+
+
+def admit_installed_detached(archive, *, installed_executable_sha256, **evidence):
+    """Reverify an installed release for worker binding, without update authority."""
+    plan = _admit_detached(archive, current_version=None, **evidence)
+    rows = manager_inventory_json(evidence["detached_inventory_bytes"])["files"]
+    installed = next(row for row in rows if row["path"] == PAYLOAD_ENTRY)
+    require(installed["sha256"] == installed_executable_sha256, "installed_manager_image_changed")
+    return plan
+
+
+def admit_checkpointed_baseline(archive, *, checkpoint, detached_inventory_bytes,
+                                expected_channel, **signed_evidence):
+    """Match a signed baseline to a child checkpoint already read back by the producer."""
+    frozen = {name: (row['bytes'], row['sha256']) for name, row in checkpoint['child_tree'].items()
+              if row != {'directory': True}}
+    generated = {PACKAGE_STUB, 'Squirrel.exe', 'sq.version'}
+    require(not generated.intersection(checkpoint['child_tree']), 'baseline_generated_payload_collision')
+    require(frozen.get(PAYLOAD_ENTRY) == (checkpoint['child_executable_bytes'],
+            checkpoint['child_executable_sha256']), 'baseline_checkpoint_executable_changed')
+    plan = admit_installed_detached(
+        archive, inventory_profile=PROFILE, detached_inventory_bytes=detached_inventory_bytes,
+        expected_version=checkpoint['software_version'], expected_channel=expected_channel,
+        installed_executable_sha256=checkpoint['child_executable_sha256'], **signed_evidence)
+    inventory = manager_inventory_json(detached_inventory_bytes)
+    payload = {row['path']: (row['size_bytes'], row['sha256']) for row in inventory['files']
+               if row['path'] not in generated}
+    require(payload == frozen, 'baseline_frozen_child_inventory_changed')
+    return plan
+
+
+def _admit_detached(archive, *, inventory_profile, detached_inventory_bytes,
                    manifest_bytes, signature_bytes, trust_bytes,
                    expected_trust_sha256, expected_inventory_sha256,
                    expected_version, expected_channel, current_version,
@@ -221,8 +272,9 @@ def admit_detached(archive, *, inventory_profile, detached_inventory_bytes,
         expected_architecture=expected_architecture)
     release = verify_release_manifest(manifest_bytes, signature_bytes,
         _json(trust_bytes, "trust"), expected_channel=expected_channel)
-    ensure_supported_upgrade(current_version, release)
-    _json(detached_inventory_bytes, "detached inventory")  # strict bounded JSON
+    if current_version is not None:
+        ensure_supported_upgrade(current_version, release)
+    manager_inventory_json(detached_inventory_bytes)  # strict bounded JSON
     require(sha256(detached_inventory_bytes).hexdigest() == expected_inventory_sha256
             == verified.artifact.portable_manifest_sha256, "detached_inventory_pin")
     archive = Path(archive)
@@ -236,7 +288,7 @@ def admit_detached(archive, *, inventory_profile, detached_inventory_bytes,
     require(detached_inventory_bytes == observed, "exact_detached_proof_equality")
     guard(archive)
     verify_component_artifact(archive, verified, should_cancel=should_cancel)
-    rows = _json(observed, "observed inventory")["files"]
+    rows = manager_inventory_json(observed)["files"]
     return DetachedAdmissionPlan(MANAGER.value, expected_version, expected_channel,
         verified.artifact.sha256, verified.manifest_sha256, expected_trust_sha256,
         expected_inventory_sha256, tuple((PREFIX + row["path"], row["path"]) for row in rows))

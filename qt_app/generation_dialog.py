@@ -167,7 +167,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         from core.generation_saved_work import new_draft_path
         self._draft_path = new_draft_path(self.storage_root)
         self._reconnect_picker_open = False
-        self._export_picker_open = False
+        self._planning_file_picker_open = False
         self._draft_saved_digest = "" if source_record or self.source_identity else self.plan.digest
         self._draft_close_pending = False
         self._draft_close_workspace = False
@@ -272,6 +272,9 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.save_button = QPushButton("Save Draft As…")
         self.load_button = QPushButton("Open Draft…")
         self.export_button = QPushButton("Export Request…")
+        self.recover_draft_button = QPushButton("Recover Draft Save…")
+        self.recover_draft_button.clicked.connect(self._choose_recover_draft)
+        buttons.addButton(self.recover_draft_button, QDialogButtonBox.ActionRole)
         for button, callback in ((self.save_button, self._choose_save), (self.load_button, self._choose_load), (self.export_button, self._choose_export)):
             button.clicked.connect(callback); buttons.addButton(button, QDialogButtonBox.ActionRole)
         self.submit_button = QPushButton("Submit Reviewed Request")
@@ -306,7 +309,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             return False
 
     def _autosave_draft(self, *, closing=False):
-        if self._closed or self._shutdown_requested or self._pending or self._execution_active():
+        if self._closed or self._shutdown_requested or self._planning_file_picker_open or self._pending or self._execution_active():
             return
         if not closing and (not self.isVisible() or self._draft_save_error):
             return
@@ -2773,6 +2776,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.save_button.setVisible(expanded or self._draft_save_error
                                     or (has_work and self.save_button.isEnabled()))
         self.load_button.setVisible(expanded)
+        self.recover_draft_button.setVisible(expanded and not self.runtime_allowed)
+        self.recover_draft_button.setEnabled(not self._pending and not self._execution_active())
         self.export_button.setVisible(expanded)
         review_stage = (bool(self.prepared and self.prepared.get(
             "valid", self.prepared.get("request") is not None))
@@ -3525,14 +3530,27 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.adapter = None; self.binding = None; self.prepared = None
         self.status.setText("Checking the selected local connection…")
         def done(probe):
-            if self._checked_connection is not None and not self._require_generation_runtime(preparation=True):
-                return
             self.adapter = adapter
             context = self.plan.target_context
             context.update(adapter_id=probe.get("adapter_id", ""), adapter_version=probe.get("version", ""), fingerprint=probe.get("fingerprint", ""))
             self.plan = self.plan.revise({"target_context": context}, source="probe", consequence="Local adapter identity checked")
             self.connection_detail.setPlainText(_plain_json(probe)); self.status.setText("Local connection checked. Bind an exact local model before preparing."); self._refresh_from_plan()
-        self._run("probe", adapter.probe, done)
+        self._run_checked_connection("probe", adapter.probe, done)
+
+    def _run_checked_connection(self, key, call, done):
+        if self._checked_connection is None:
+            self._run(key, call, done)
+            return
+
+        def run_current():
+            self._check_submission_authority()
+            return call()
+
+        def accept_current(result):
+            if self._require_generation_runtime(preparation=True):
+                done(result)
+
+        self._run(key, run_current, accept_current)
 
     def bind_local_model(self) -> None:
         if not self._require_generation_runtime(preparation=True):
@@ -3544,7 +3562,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.status.setText("Binding the selected local model…")
         adapter = self.adapter
         self.binding = None; self.prepared = None
-        self._run("binding", lambda: adapter.bind_model(name, path, self.registry), self._bound)
+        self._run_checked_connection("binding", lambda: adapter.bind_model(name, path, self.registry), self._bound)
 
     def find_selected_model(self):
         if not self._require_generation_runtime(preparation=True):
@@ -3582,7 +3600,7 @@ class GenerationDialog(FeedbackEnabledDialog):
                 return
             item = selected[index]
             identity = "sha256:" + item.hashes.get("sha256", "").removeprefix("sha256:")
-            self._run("model_discovery", lambda: adapter.discover_registered_model(identity, self.registry, role=item.role),
+            self._run_checked_connection("model_discovery", lambda: adapter.discover_registered_model(identity, self.registry, role=item.role),
                 lambda result: discovered(result, item, index))
         def discovered(result, item, index):
             names = [str(row["name"]) for row in result["candidates"]]
@@ -3598,7 +3616,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             def bound(value):
                 bindings[item.id] = value
                 next_resource(index + 1)
-            self._run("binding", lambda: adapter.bind_model(name, Path(result["path"]), self.registry,
+            self._run_checked_connection("binding", lambda: adapter.bind_model(name, Path(result["path"]), self.registry,
                 expected_resource_id=identity, role=item.role, slot=item.provenance.get("swarm_parameter", "")), bound)
         next_resource(0)
 
@@ -3667,7 +3685,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             self._memory_cost_message = cost["message"]
             self.memory_status.setText(self._memory_observation_text(observation) + "\n" + assessment["message"] + "\n" + cost["message"])
             self._prepared(result)
-        self._run("prepare", prepare, done)
+        self._run_checked_connection("prepare", prepare, done)
 
     @staticmethod
     def _memory_observation_text(observation):
@@ -4190,7 +4208,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         return str(getattr(self._submitted_progress, "state", ""))
 
     def has_active_background_work(self) -> bool:
-        if self._reconnect_picker_open or self._export_picker_open:
+        if self._reconnect_picker_open or self._planning_file_picker_open:
             return True
         if self._prompt_templates_dialog and self._prompt_templates_dialog.has_active_background_work():
             return True
@@ -4246,7 +4264,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._closed = True; self._generation += 1; self._io_timer.stop(); self._progress_timer.stop()
 
     def reject(self) -> None:
-        if self._reconnect_picker_open or self._export_picker_open:
+        if self._reconnect_picker_open or self._planning_file_picker_open:
             return
         if self.has_active_background_work():
             self.hide()
@@ -4259,7 +4277,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         super().reject()
 
     def closeEvent(self, event) -> None:
-        if self._reconnect_picker_open or self._export_picker_open:
+        if self._reconnect_picker_open or self._planning_file_picker_open:
             event.ignore()
             return
         if self.has_active_background_work():
@@ -4331,10 +4349,13 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.check_button.setFocus(Qt.OtherFocusReason)
 
     def _choose_save(self):
+        if self._planning_file_picker_open:
+            return
         if not self._draft_inputs_valid():
             self.status.setText("Complete invalid values or apply the Advanced edits before saving this draft.")
             return
-        path, _ = QFileDialog.getSaveFileName(self, "Save Generation Plan", str(self.storage_root / "generation-plan.json"), "Generation plan (*.json)")
+        path = self._choose_plan_file(QFileDialog.getSaveFileName, "Save Generation Plan",
+                                      str(self.storage_root / "generation-plan.json"), "Generation plan (*.json)")
         if path:
             snapshot = self.plan
             def saved(result):
@@ -4344,9 +4365,24 @@ class GenerationDialog(FeedbackEnabledDialog):
                 self.draft_status.setText("Draft saved to your chosen file · reopen it with Open Draft.")
                 self.status.setText("Draft saved with a read-back check.")
             self._run("save", lambda: self._save_path(path, snapshot), saved)
+    def _choose_plan_file(self, picker, *args, **kwargs):
+        if self._planning_file_picker_open:
+            return ""
+        self._planning_file_picker_open = not self.runtime_allowed
+        try:
+            path, _ = picker(self, *args, **kwargs)
+            return path
+        finally:
+            self._planning_file_picker_open = False
+            self._notify_background_work_finished()
+
     def _choose_load(self):
+        if self._planning_file_picker_open:
+            return
         if not self.confirm_draft_loss(after_saved=self._choose_load): return
-        path, _ = QFileDialog.getOpenFileName(self, "Load Generation Plan", str(self.storage_root), "Generation plan (*.json)")
+        path = self._choose_plan_file(
+            QFileDialog.getOpenFileName, "Load Generation Plan", str(self.storage_root), "Generation plan (*.json)",
+        )
         if path:
             target = Path(path).absolute()
             import_copy = not self.runtime_allowed and target.parent != self._draft_path.parent
@@ -4370,28 +4406,58 @@ class GenerationDialog(FeedbackEnabledDialog):
                     self.status.setText(message)
 
             self._run("load", load, opened)
+    def _choose_recover_draft(self):
+        if self.runtime_allowed or self._pending or self._execution_active():
+            return
+
+        def choose_recovery(parent):
+            path, selected_filter = QFileDialog.getOpenFileName(
+                parent, "Choose the draft with an interrupted save", str(self.storage_root),
+                "Generation plan (*.json)",
+            )
+            if path and QMessageBox.question(
+                parent, "Recover interrupted draft save",
+                "Check the selected draft against its recovery receipt? The open draft stays unchanged.",
+                QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel,
+            ) == QMessageBox.Yes:
+                return path, selected_filter
+            return "", selected_filter
+
+        path = self._choose_plan_file(choose_recovery)
+        if not path:
+            return
+        target = Path(path).absolute()
+        from core.generation_planning import recover_plan
+
+        def recovered(outcome):
+            messages = {
+                "committed": "Recovery verified the saved draft. Use Open Draft to review it.",
+                "unchanged": "Recovery verified the previous state. Open the draft if it exists.",
+                "nothing_pending": "The selected draft has no interrupted save to recover.",
+            }
+            self.status.setText(messages[outcome])
+
+        self._run("recover-draft", lambda: recover_plan(target), recovered)
+
     def _choose_export(self):
-        if self._export_picker_open or self._reconnect_picker_open or self._pending:
+        if self._planning_file_picker_open:
             return
         if not self._draft_inputs_valid():
             self.status.setText("Complete invalid values or apply the Advanced edits before exporting.")
             return
         options = QFileDialog.Option(0) if self.runtime_allowed else QFileDialog.DontConfirmOverwrite
-        self._export_picker_open = not self.runtime_allowed
-        try:
-            path, _ = QFileDialog.getSaveFileName(
-                self, "Export Generation Request", str(self.storage_root / "generation-request.json"),
-                "JSON (*.json)", options=options,
-            )
-        finally:
-            self._export_picker_open = False
+        path = self._choose_plan_file(
+            QFileDialog.getSaveFileName, "Export Generation Request", str(self.storage_root / "generation-request.json"),
+            "JSON (*.json)", options=options,
+        )
         if path:
             snapshot = self.plan
             if not self.runtime_allowed:
                 from core.generation_saved_work import export_draft_copy
 
                 self._run(
-                    "export", lambda: export_draft_copy(path, snapshot),
+                    "export",
+                    lambda: export_draft_copy(path, snapshot),
                     lambda _result: self.status.setText("Portable request exported and verified."),
                 )
                 return

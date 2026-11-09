@@ -23,19 +23,11 @@ from suite_core.installation import ComponentId
 EXACT_OFFER_HOLD = "This release changed or differs from the exact package approved for this test. Installation is held; review the approved release again."
 
 
-class ComponentArchiveTooLarge(StagingHold):
-    """The signed archive exceeds the configured download capacity."""
-
-
-class ComponentCacheFull(StagingHold):
-    """The active download cache cannot hold another verified archive."""
-
-
-class CachedComponentRejected(ReleaseContractError):
-    """Previously verified cache bytes failed revalidation and were retained."""
-
-
 class ExactOfferHold(ValueError):
+    pass
+
+
+class AcquisitionCacheFull(ValueError):
     pass
 
 
@@ -208,7 +200,7 @@ class ComponentAcquisition:
         self._acquisition_lock = Lock()
         self._discovery_lock = Lock()
         self._acquired = {}
-        self._rejected_cache_paths = set()
+        self._rejected_cache = set()
         self.manifest_name, self.signature_name = manifest_name, signature_name
         self._owner = json.dumps(dict(purpose="COMPONENT_ACQUISITION_CACHE", owner=cache_owner), sort_keys=True).encode()
         self._marker = root / ".component-acquisition-owner.json"
@@ -292,6 +284,12 @@ class ComponentAcquisition:
         if (self._expected_offer is not None and component_id is not None
                 and component_id != self._expected_offer.component_id):
             raise ExactOfferHold(EXACT_OFFER_HOLD)
+        # A failed refresh cannot leave a previous review eligible for transfer.
+        if component_id is None:
+            self._offers.clear()
+        else:
+            self._offers = {key: offer for key, offer in self._offers.items()
+                            if offer.release.component_id != component_id}
         listing, repository_id = self._listing(should_cancel)
         offers = []
         # Commit offers only after complete successful signed discovery.
@@ -300,49 +298,39 @@ class ComponentAcquisition:
                       discover_component_ids(listing, complete=True))
         for component in components:
             current = installed_versions.get(component.value)
-            try:
-                selected = discover_releases(listing, component_id=component, channel=channel,
-                                             current_version=current, complete=True).candidate
-                if selected is not None:
-                    assets = {asset.name: asset for asset in selected.assets}
-                    require(self.manifest_name in assets and self.signature_name in assets,
-                            "signed_asset_pair_required")
-                if selected is None:
-                    continue
-                if self._expected_offer is not None: self._expected_offer.check_locator(selected)
-                manifest_url, signature_url = assets[self.manifest_name].url, assets[self.signature_name].url
-                message = self._fetch(manifest_url, should_cancel)
-                signature = self._fetch(signature_url, should_cancel)
-                verified = verify_component_release(message, signature, self.trust,
-                    expected_component=component, expected_version=selected.software_version,
-                    expected_channel=channel, expected_os=self.os, expected_architecture=self.arch)
-                if current is not None:
-                    release = verify_release_manifest(message, signature, json.loads(self.trust), expected_channel=channel)
-                    ensure_supported_upgrade(current, release)
-                if verified.artifact.size_bytes > self.maximum:
-                    raise ComponentArchiveTooLarge("artifact_bound")
-                if verified.artifact.size_bytes > self.cache_maximum:
-                    raise ComponentArchiveTooLarge("artifact_exceeds_cache_capacity")
-                source = assets.get(verified.artifact.name)
-                require(source is not None and source.declared_size == verified.artifact.size_bytes, "signed_asset_binding")
-                offer = ComponentOffer(verified, "install" if current is None else "update",
-                    json.loads(message.decode("utf-8-sig"))["release_notes"], message, signature,
-                    manifest_url, signature_url,
-                    ReleaseAssetSource(source.name, source.url, source.declared_size), self.trust_pin, current,
-                    selected, repository_id)
-                if self._expected_offer is not None: self._expected_offer.check_offer(offer)
-                offers.append(offer)
-            except (DiscoveryHold, StagingHold, ReleaseContractError, ExactOfferHold):
-                if component_id is not None:
-                    self._offers = {key: offer for key, offer in self._offers.items()
-                                    if offer.release.component_id != component_id}
-                raise
+            selected = discover_releases(listing, component_id=component, channel=channel,
+                                         current_version=current, complete=True).candidate
+            if selected is not None:
+                assets = {asset.name: asset for asset in selected.assets}
+                require(self.manifest_name in assets and self.signature_name in assets,
+                        "signed_asset_pair_required")
+            if selected is None:
+                continue
+            if self._expected_offer is not None: self._expected_offer.check_locator(selected)
+            manifest_url, signature_url = assets[self.manifest_name].url, assets[self.signature_name].url
+            message = self._fetch(manifest_url, should_cancel)
+            signature = self._fetch(signature_url, should_cancel)
+            verified = verify_component_release(message, signature, self.trust,
+                expected_component=component, expected_version=selected.software_version,
+                expected_channel=channel, expected_os=self.os, expected_architecture=self.arch)
+            if current is not None:
+                release = verify_release_manifest(message, signature, json.loads(self.trust), expected_channel=channel)
+                ensure_supported_upgrade(current, release)
+            if verified.artifact.size_bytes > self.maximum:
+                raise StagingHold("artifact_bound")
+            if verified.artifact.size_bytes > self.cache_maximum:
+                raise StagingHold("artifact_exceeds_cache_capacity")
+            source = assets.get(verified.artifact.name)
+            require(source is not None and source.declared_size == verified.artifact.size_bytes, "signed_asset_binding")
+            offer = ComponentOffer(verified, "install" if current is None else "update",
+                json.loads(message.decode("utf-8-sig"))["release_notes"], message, signature,
+                manifest_url, signature_url,
+                ReleaseAssetSource(source.name, source.url, source.declared_size), self.trust_pin, current,
+                selected, repository_id)
+            if self._expected_offer is not None: self._expected_offer.check_offer(offer)
+            offers.append(offer)
         self._check(should_cancel)
-        refreshed = {o.release.manifest_sha256: o for o in offers}
-        if component_id is not None:
-            refreshed.update((key, offer) for key, offer in self._offers.items()
-                             if offer.release.component_id != component_id)
-        self._offers = refreshed
+        self._offers.update((offer.release.manifest_sha256, offer) for offer in offers)
         return tuple(offers)
 
     def revalidate_offer(self, offer, *, should_cancel=None, refresh_listing=False):
@@ -412,25 +400,34 @@ class ComponentAcquisition:
         cached = self._acquired.get(verified.manifest_sha256)
         if cached is not None:
             guard(cached)
-            if cached.exists():
-                try:
-                    verify_component_artifact(cached, verified, should_cancel=should_cancel)
-                except ReleaseContractError as exc:
-                    # Preserve the rejected bytes and keep counting them against quota.
-                    self._rejected_cache_paths.add(cached)
-                    del self._acquired[verified.manifest_sha256]
-                    raise CachedComponentRejected(str(exc)) from exc
-                self._check_inflight_offer(offer, should_cancel)
-                return AcquiredComponent(offer, cached)
-        used = 0
-        for path in (*self._acquired.values(), *self._rejected_cache_paths):
-            guard(path)
             try:
-                used += path.stat().st_size
+                cached.stat()
             except FileNotFoundError:
-                continue
+                del self._acquired[verified.manifest_sha256]
+                cached = None
+        if cached is not None:
+            try:
+                verify_component_artifact(cached, verified, should_cancel=should_cancel)
+            except (ReleaseContractError, FileNotFoundError) as error:
+                self._check_inflight_offer(offer, should_cancel)
+                if self._acquired.get(verified.manifest_sha256) == cached:
+                    self._rejected_cache.add(cached)
+                    del self._acquired[verified.manifest_sha256]
+                raise ReleaseContractError(
+                    f"{error} Retry to fetch a fresh copy."
+                ) from error
+            self._check_inflight_offer(offer, should_cancel)
+            return AcquiredComponent(offer, cached)
+        used = 0
+        for cached_path in (*self._acquired.values(), *self._rejected_cache):
+            guard(cached_path)
+            try:
+                used += cached_path.stat().st_size
+            except FileNotFoundError:
+                pass
+        require(verified.artifact.size_bytes <= self.cache_maximum, "cache_bound")
         if used + verified.artifact.size_bytes > self.cache_maximum:
-            raise ComponentCacheFull("cache_bound")
+            raise AcquisitionCacheFull("cache_bound: This download cache has reached its limit. Restart Manager to try again with a fresh cache.")
         attempt = self.root / ("attempt-" + uuid4().hex)
         attempt.mkdir()
         attempt_info = attempt.stat()
@@ -442,14 +439,20 @@ class ComponentAcquisition:
                     "cache_attempt_changed")
 
         names = [verified.artifact.name, verified.artifact.name + ".part", verified.artifact.name + ".part.rejected"]
+        trust = self.trust
+
+        def transfer_cancelled():
+            if should_cancel is not None and should_cancel():
+                return True
+            require(self.trust == trust and self.trust_pin == offer.trust_sha256
+                    and self._offers.get(verified.manifest_sha256) is offer, "changed_inflight_offer")
+            return False
+
         try:
             artifact = self.transport.download_artifact(offer.artifact_source, verified.artifact,
-                cache_directory=attempt, progress=progress, should_cancel=should_cancel)
-            self._check(should_cancel)
+                cache_directory=attempt, progress=progress, should_cancel=transfer_cancelled)
+            self._check_inflight_offer(offer, should_cancel)
             check_attempt()
-            self._trust()
-            require(offer.trust_sha256 == self.trust_pin
-                    and self._offers.get(offer.release.manifest_sha256) is offer, "changed_inflight_offer")
             guard(artifact)
             require(artifact.parent == attempt and artifact.name == verified.artifact.name, "cache_artifact_binding")
             verify_component_artifact(artifact, verified, should_cancel=should_cancel)

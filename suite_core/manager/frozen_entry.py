@@ -79,6 +79,12 @@ def run(argv=None, *, executable=None, channel_factory=None,
                     raise EntryHold('original_update_host_configuration_held')
         elif getattr(session,'update_profile',None) is not None:
             raise EntryHold('explicit_update_service_factory_required')
+        if training_proof_provider is None and getattr(session, 'training_baseline', None) is not None:
+            from suite_core.manager.compiled_update_config import PROFILE
+            from core.manager_update_host import CompiledManagerUpdateProfile
+            if type(PROFILE) is not CompiledManagerUpdateProfile:
+                raise EntryHold('explicit_compiled_training_proof_profile_required')
+            training_proof_provider = PROFILE.training_proof_for_retained_baseline
         if training_proof_provider is not None:
             if not callable(training_proof_provider):
                 raise EntryHold("trusted_training_proof_provider_required")

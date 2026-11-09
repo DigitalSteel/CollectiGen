@@ -121,10 +121,8 @@ def lock(base):
 
 def read_metadata_bytes(path):
     guard(path)
-    with path.open("rb") as stream:
-        data = stream.read(MAX_METADATA_BYTES + 1)
-    require(len(data) <= MAX_METADATA_BYTES, "metadata_size")
-    return data
+    require(path.stat().st_size <= MAX_METADATA_BYTES, "metadata_size")
+    return path.read_bytes()
 
 
 def read_json(path):
@@ -294,8 +292,7 @@ def stage_and_activate(root, archive_path, *, component, version, os_name, archi
 
 def stage_and_activate_admitted(admission, archive_path, *, component, version, os_name,
         architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token,
-        failpoint=lambda phase: None, preflight=lambda root, base, owner: None,
-        payload_policy=None, copy_checkpoint=None):
+        failpoint=lambda phase: None, preflight=lambda root, base, owner: None, payload_policy=None, copy_checkpoint=None):
     require(type(admission) is ComponentStageAdmission, "original_root_admission_required")
     with admission.transaction(component, enroll=True) as (root, base, owner, check):
         preflight(root, base, owner)
@@ -306,8 +303,7 @@ def stage_and_activate_admitted(admission, archive_path, *, component, version, 
         return _stage_and_activate(root, base, owner, archive_path, component=component,
             version=version, os_name=os_name, architecture=architecture,
             manifest_bytes=manifest_bytes, signature_bytes=signature_bytes, trust_bytes=trust_bytes,
-            expected_active_token=expected_active_token, failpoint=handoff, payload_policy=payload_policy,
-            copy_checkpoint=copy_checkpoint)
+            expected_active_token=expected_active_token, failpoint=handoff, payload_policy=payload_policy, copy_checkpoint=copy_checkpoint)
 
 
 def extract_component_archive(archive_path, destination, *, member_extracted=lambda: None,
@@ -367,12 +363,7 @@ def extract_component_archive(archive_path, destination, *, member_extracted=lam
 
 
 def _stage_and_activate(root, base, owner, archive_path, *, component, version, os_name,
-        architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token, failpoint,
-        payload_policy=None, copy_checkpoint=None):
-    def check_verification_cancel():
-        if copy_checkpoint is not None:
-            copy_checkpoint()
-
+        architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token, failpoint, payload_policy=None, copy_checkpoint=None):
     policy = require_payload_policy(payload_policy, component, {"os": os_name, "architecture": architecture})
     with lock(base):
         journal_path = base / "transaction.json"
@@ -380,9 +371,9 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         require(not pending_path.exists(), "recover_pending_transaction_first")
         previous_bytes = None
         if journal_path.exists():
-            previous_bytes = read_metadata_bytes(journal_path)
-            previous = _json(previous_bytes, "component state")
+            previous = read_json(journal_path)
             require(previous.get("phase") in ("healthy", "rolled_back", "abandoned"), "recover_pending_transaction_first")
+            previous_bytes = journal_path.read_bytes()
         platform = {"os": os_name, "architecture": architecture}
         before = active(root, base, component, platform, payload_policy=policy)
         require(active_token(before) == expected_active_token, "stale_active_reference")
@@ -401,7 +392,7 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         archive_path = Path(archive_path)
         guard(archive_path)
         require(archive_path.stat().st_size <= policy.max_archive_bytes, "archive_size")
-        verify_artifact(archive_path, verified.artifact, should_cancel=check_verification_cancel)
+        verify_artifact(archive_path, verified.artifact)
         target = {"component_id": component.value, "version": version,
                   "directory": f"Apps/{component.value}/{version}", "inventory_sha256": verified.artifact.portable_manifest_sha256}
         destination = root / target["directory"]
@@ -415,24 +406,21 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
             "manifest": base64.b64encode(manifest_bytes).decode(), "signature": base64.b64encode(signature_bytes).decode(),
             "prior_journal": None}
         require(len(canonical(journal)) <= MAX_METADATA_BYTES, "journal_size")
-        if copy_checkpoint is not None:
-            copy_checkpoint()
         atomic(pending_path, journal)
         staging.mkdir()
         failpoint("staging_created")
         extract_component_archive(archive_path, staging,
-            member_extracted=lambda: failpoint("member_extracted"), payload_policy=policy,
-            copy_checkpoint=copy_checkpoint)
+            member_extracted=lambda: failpoint("member_extracted"), payload_policy=policy, copy_checkpoint=copy_checkpoint)
         profile = verify_directory(staging, target["inventory_sha256"], component, version, payload_policy=policy)
         require(profile["platform"] == {"os": os_name, "architecture": architecture}, "inventory_platform")
-        verify_artifact(archive_path, verified.artifact, should_cancel=check_verification_cancel)
+        verify_artifact(archive_path, verified.artifact)
         journal["phase"] = "activation_pending"
         atomic(pending_path, journal)
         failpoint("before_version_publish")
         verify_directory(staging, target["inventory_sha256"], component, version, payload_policy=policy)
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_handoff")
         if previous_bytes is not None:
-            require(journal_path.exists() and read_metadata_bytes(journal_path) == previous_bytes, "current_journal_changed")
+            require(journal_path.exists() and journal_path.read_bytes() == previous_bytes, "current_journal_changed")
             history = base / ("transaction-" + uuid4().hex + ".json")
             atomic_bytes(history, previous_bytes)  # copy exact bytes; current record stays reachable
             journal["prior_journal"] = {"name": history.name, "sha256": sha256(previous_bytes).hexdigest()}
@@ -441,16 +429,11 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         require(len(canonical(journal)) <= MAX_METADATA_BYTES, "journal_size")
         atomic(pending_path, journal)
         failpoint("prior_journal_preserved")
-        guard(journal_path)
-        current_bytes = read_metadata_bytes(journal_path) if journal_path.exists() else None
-        require(current_bytes == previous_bytes, "current_journal_changed")
         atomic(journal_path, journal)  # failure preserves prior current record atomically
         failpoint("new_journal_established")
         pending_path.unlink()
         destination.parent.mkdir(parents=True, exist_ok=True)
-        guard(destination)
-        require(not destination.exists(), "immutable_version_already_exists")
-        os.rename(staging, destination)  # same filesystem; Windows refuses an existing destination
+        os.replace(staging, destination)  # same filesystem; absent immutable destination
         failpoint("version_published")
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_commit")
         payload(root, target, component, platform, payload_policy=policy)
@@ -490,15 +473,13 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
         current_record = _json(current_bytes, "component state") if current_bytes is not None else None
         if current_record is not None:
             validate_journal(current_record, component, owner, trust_bytes)
-        pending_bytes = read_metadata_bytes(pending_path) if pending_path.exists() else None
-        if pending_bytes is None:
-            j = current_record if current_record is not None else read_json(current_journal_path)
-        else:
-            j = _json(pending_bytes, "component state")
+        journal_path = pending_path if pending_path.exists() else current_journal_path
+        j = read_json(journal_path) if journal_path == pending_path or current_record is None else current_record
         validate_journal(j, component, owner, trust_bytes)
-        pending_only = pending_bytes is not None and pending_bytes != current_bytes
-        completed_handoff = pending_bytes is not None and not pending_only
-        journal_path = pending_path if pending_only else current_journal_path
+        pending_only = journal_path == pending_path and current_bytes != pending_path.read_bytes()
+        completed_handoff = journal_path == pending_path and not pending_only
+        if journal_path == pending_path and not pending_only:
+            journal_path = current_journal_path
         current_path = base / "active.json"
         current = read_json(current_path) if current_path.exists() else None
         require(current == j["before"] or current == j["target"], "unexpected_active_reference")
@@ -513,9 +494,6 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
                 require(terminal_reference == current, "pending_current_reference_mismatch")
                 prior_journal_bytes(base, current_record, component, owner, trust_bytes)
         prior_bytes = prior_journal_bytes(base, j, component, owner, trust_bytes)
-        if pending_bytes is not None:
-            require(pending_path.exists() and read_metadata_bytes(pending_path) == pending_bytes,
-                    "pending_journal_changed")
         if completed_handoff:
             pending_path.unlink()  # validated exact current bytes prove metadata handoff occurred
         if j["phase"] == "healthy":
@@ -540,7 +518,7 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
                 require(staging.resolve().is_relative_to(root.resolve()) and staging != root, "staging_delete_boundary")
                 shutil.rmtree(staging)  # exact journal-owned staging only
                 if j["before"] is not None:
-                    payload(root, j["before"], component, {"os": j["os"], "architecture": j["architecture"]}, payload_policy=policy)
+                    payload(root, j["before"], component, payload_policy=policy)
             if j["before"] is None:
                 if current_path.exists():
                     current_path.unlink()
@@ -551,14 +529,14 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
         result = active(root, base, component, payload_policy=policy)
         require(result == (j["target"] if j["phase"] == "healthy" else j["before"]), "recovery_readback")
         if pending_only:
-            require((read_metadata_bytes(current_journal_path) if current_journal_path.exists() else None) == current_bytes,
+            require((current_journal_path.read_bytes() if current_journal_path.exists() else None) == current_bytes,
                     "current_journal_changed")
             if current_bytes is None:
                 atomic(current_journal_path, j)  # retain idempotent first-transaction recovery
             os.replace(pending_path, base / ("abandoned-pending-" + uuid4().hex + ".json"))
         elif j["phase"] in ("abandoned", "rolled_back") and prior_bytes is not None:
             history = base / ("recovered-transaction-" + uuid4().hex + ".json")
-            atomic_bytes(history, read_metadata_bytes(current_journal_path))
+            atomic_bytes(history, current_journal_path.read_bytes())
             atomic_bytes(current_journal_path, prior_bytes)  # restore prior API-visible rollback record
         return result
 
@@ -589,9 +567,9 @@ def prior_journal_bytes(base, journal, component, owner, trust_bytes):
     require(type(name) is str and len(name) == 49 and name.startswith("transaction-") and name.endswith(".json")
             and all(c in "0123456789abcdef" for c in name[12:44]), "prior_journal_path")
     path = base / name
-    raw = read_metadata_bytes(path)
+    previous = read_json(path)
+    raw = path.read_bytes()
     require(sha256(raw).hexdigest() == prior["sha256"], "prior_journal_hash")
-    previous = _json(raw, "component state")
     validate_journal(previous, component, owner, trust_bytes)
     reference = previous["target"] if previous["phase"] == "healthy" else previous["before"]
     require(previous["phase"] in ("healthy", "abandoned", "rolled_back") and reference == journal["before"],

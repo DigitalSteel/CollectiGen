@@ -153,7 +153,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
         return ("No installable reader was found on this channel. Check Again later." if self.installed.selected is None else
             "No newer reader was found on this channel.")
 
-    def _start(self, operation, work, *, retry_action="Check Again"):
+    def _start(self, operation, work):
         if self.close_held or self.closing:
             return
         self.cancel = Event()
@@ -166,7 +166,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
             self.future = self.executor.submit(work)
         except Exception as error:
             self.operation = None
-            self.status.setText(f"Could not start. Choose {retry_action} to retry. Your installation is unchanged.")
+            self.status.setText("Could not start. Choose Check Again to retry; your installation is unchanged.")
             self.details.setPlainText(str(error))
         self.render()
 
@@ -184,8 +184,8 @@ class EncyclopediaAcquisitionPanel(QWidget):
     def review_installation(self):
         if self.recovery_only:
             return
-        offer = self.offer
-        if offer is not None:
+        if self.offer is not None:
+            offer = self.offer
             self._start("Reviewing installation", lambda: self.service.review(
                 offer, should_cancel=self.cancel.is_set))
 
@@ -219,7 +219,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
     def retry_connection(self):
         if self.recovery_only and not self.service.can_retry:
             return
-        self._start("Saving installed connection", self.service.retry_connection, retry_action="Retry Save")
+        self._start("Saving installed connection", self.service.retry_connection)
 
     def recover_installation(self):
         if self.recovery_only and not self.service.can_recover:
@@ -227,10 +227,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
         if not self.recovery_confirm.isChecked():
             return
         self.recovery_confirm.setChecked(False)
-        self._start(
-            "Recovering installation", lambda: self.service.recover(confirmed=True),
-            retry_action="the recovery confirmation and then Recover installation",
-        )
+        self._start("Recovering installation", lambda: self.service.recover(confirmed=True))
 
     def reconcile_launch(self):
         if not self.service.install_available or self.closing:
@@ -328,9 +325,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
                     self.connection_changed()
         except Exception as error:
             self.reviewed = None
-            from core.component_acquisition import (
-                CachedComponentRejected, ComponentArchiveTooLarge, ComponentCacheFull, ExactOfferHold,
-            )
+            from core.component_acquisition import AcquisitionCacheFull, ExactOfferHold
             from core.encyclopedia_update_binding import StandaloneReaderCompatibilityHold
             if operation in ("Checking app status", "Refreshing releases"):
                 self.observation_stale = self.installed is not None
@@ -343,32 +338,18 @@ class EncyclopediaAcquisitionPanel(QWidget):
                     f"{self.package_review_name()} installation is held. The published offer does not match "
                     "the release details approved for this Manager build. Your installation is unchanged."
                 )
-            elif isinstance(error, ComponentArchiveTooLarge) and operation == "Refreshing releases":
-                self.offer = None
-                self.status.setText(
-                    "This release exceeds the download size supported by this Manager build."
-                )
-            elif operation == "Refreshing releases":
-                self.status.setText("The release check could not finish. Your installation is unchanged. Choose Check Again to retry.")
             elif isinstance(error, InterruptedError) and operation == "Reviewing installation":
                 self.status.setText("Review cancelled. Your installation is unchanged.")
-            elif isinstance(error, InterruptedError) and operation == 'Installing reviewed package':
+            elif isinstance(error, InterruptedError) and operation == "Installing reviewed package":
                 self.offer = None
                 self.status.setText("Installation stopped. Checking whether setup needs recovery.")
                 if not self.recovery_only:
                     recovery_check = 'Checking cancellation outcome'
-            elif isinstance(error, ComponentCacheFull) and operation == "Installing reviewed package":
+            elif isinstance(error, AcquisitionCacheFull) and operation == "Installing reviewed package":
                 self.offer = None
-                self.status.setText(
-                    "This Manager session has reached its download cache limit. "
-                    "Reopen Manager and check for the release again."
-                )
-            elif isinstance(error, CachedComponentRejected) and operation == "Installing reviewed package":
-                self.offer = None
-                self.status.setText(
-                    "The cached download failed verification and was kept. "
-                    "Choose Check Again to review and download a fresh copy."
-                )
+                self.status.setText("This download cache has reached its limit. Restart Manager to try again with a fresh cache. Your installation is unchanged.")
+            elif operation == "Refreshing releases":
+                self.status.setText("The release check could not finish. Your installation is unchanged. Choose Check Again to retry.")
             elif isinstance(error, StandaloneReaderCompatibilityHold):
                 self.status.setText("Compatibility could not be confirmed. This package was not installed. Choose Check Again for a new review.")
                 self.offer = None
@@ -415,6 +396,9 @@ class EncyclopediaAcquisitionPanel(QWidget):
                     self.status.setText("Installation cancelled. Your installation is unchanged.")
                 self.render()
 
+    def installation_details_status(self, result):
+        return result.reason
+
     def installation_status_reason(self, result):
         """Let the host present installation guidance in its own context."""
         installed = result.installed
@@ -424,9 +408,6 @@ class EncyclopediaAcquisitionPanel(QWidget):
             return "Setup needs attention. Check its status or choose an available recovery action."
         if installed.selected is not None and installed.phase == 'activated':
             return "Open the reader from Applications, then close it normally to finish setup. A portable Manager may need an ordinary restart first."
-        return result.reason
-
-    def installation_details_status(self, result):
         return result.reason
 
     def pending_setup_guidance(self):

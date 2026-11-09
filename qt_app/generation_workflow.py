@@ -48,11 +48,11 @@ def _generation_data_root(host):
     return root
 
 
-def _generation_registry_path(host, data_root, default_registry_path):
-    if getattr(host.state, "generation_data_root", None) is None:
-        return default_registry_path
-    registry_path = getattr(host.state, "generation_registry_path", None)
-    return registry_path if registry_path is not None else data_root / default_registry_path.name
+def _generation_model_registry(host):
+    """Use the same scoped registry for setup review and image planning."""
+    path = (MODEL_RESOURCES_PATH if getattr(host.state, "generation_data_root", None) is None
+            else _generation_data_root(host) / MODEL_RESOURCES_PATH.name)
+    return ModelResourceRegistry(path)
 
 
 def _saved_runtime_connection(setup_window, data_root=None):
@@ -74,7 +74,7 @@ def _saved_runtime_connection(setup_window, data_root=None):
         return "", "Saved generator connection is unavailable. Review it in Setup before checking it."
 
 
-def _connect_setup_return(window, dialog):
+def _connect_setup_return(window, dialog, *, generator_setup_allowed=True):
     """Route one retained dialog through the existing Setup workspace."""
     def open_setup():
         if (getattr(window, "_generation_setup_return", None) is not None
@@ -120,7 +120,8 @@ def _connect_setup_return(window, dialog):
         panel.set_request_return_available(True)
         dialog.hide()
 
-    dialog.setup_requested.connect(open_setup)
+    if generator_setup_allowed:
+        dialog.setup_requested.connect(open_setup)
 
     def open_image_description_setup(review):
         if (getattr(window, "_generation_setup_return", None) is not None
@@ -398,56 +399,6 @@ def choose_generation_draft(parent, *, allow_draft_transfer=False):
                               preloaded_draft=(plan, target, token))
 
 
-def choose_generation_setup(parent):
-    """Choose a saved setup before opening a separate draft for explicit review."""
-    from core.generation_recipes import recipe_storage_digest
-    from .generation_manual_setup_dialog import ManualGenerationSetupDialog
-    from core.generation_saved_work import review_setup_export
-    from .generation_saved_work_dialog import SavedGenerationWorkDialog
-
-    host = _host(parent)
-    state = host.state
-    root = _generation_data_root(host)
-    storage = root / "generation"
-    registry = ModelResourceRegistry(_generation_registry_path(host, root, MODEL_RESOURCES_PATH))
-    browser = SavedGenerationWorkDialog(
-        state.jobs, storage, "recipes", parent=parent, registry=registry,
-        settings=state.settings, selection_only=True,
-    )
-    if browser.exec() != QDialog.Accepted:
-        return
-    if browser.requested_action == "create":
-        composer = ManualGenerationSetupDialog(
-            state.jobs, storage, parent=parent, registry=registry, settings=state.settings,
-        )
-        if composer.exec() != QDialog.Accepted or composer.saved_path is None:
-            return
-        path, digest = composer.saved_path, recipe_storage_digest(composer.recipe)
-    else:
-        path, digest = browser.selected_path, browser.selected_digest
-    if not path or not digest:
-        return
-    try:
-        review_setup_export(storage, path, selected_digest=digest)
-    except (OSError, RuntimeError, ValueError):
-        QMessageBox.information(parent, "Saved setup needs attention",
-            "The selected setup changed or could not be read. Choose Use Saved Setup again.")
-        return
-
-    def review_in_new_draft(target):
-        original = target.plan.digest
-
-        def unapplied(error, _location_saved):
-            if target.plan.digest == original:
-                target.reject()
-            if error:
-                QMessageBox.information(parent, "Saved setup needs attention", str(error))
-
-        target.load_recipe(selected_path=path, selected_digest=digest, on_unapplied=unapplied)
-
-    open_generation_workspace(parent, force_new=True, on_opened=review_in_new_draft)
-
-
 def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", selected_role="", selected_family="", remix=False, force_new=False, on_opened=None, initial_plan=None, source_context=None, initial_task="remix", initial_image_intent=None, repair_context=None, setup_from_image=False, preloaded_draft=None):
     """Bounded selected-image context; source hashing and loading use shared I/O."""
     if repair_context is not None:
@@ -538,7 +489,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
         return {"bytes": raw, "sha256": metadata["sha256"]}
 
     data_root = _generation_data_root(host)
-    model_registry = ModelResourceRegistry(_generation_registry_path(host, data_root, MODEL_RESOURCES_PATH))
+    model_registry = _generation_model_registry(host)
 
     def prepare():
         if initial_plan is not None:
@@ -598,11 +549,10 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             protected_model_roots=protected_model_roots(settings),
             settings=settings,
             ingest_history=getattr(state, "moves", None),
-            setup_available=setup_window is not None,
+            setup_available=setup_window is not None and runtime_allowed,
             initial_endpoint=endpoint, connection_issue=connection_issue,
             prompt_knowledge=getattr(state, "knowledge", None),
             characters=characters, outfits=outfits, runtime_allowed=runtime_allowed,
-            review_verified_results=getattr(state, "generation_review_verified_results", False),
             checked_connection=checked_connection, checked_connection_provider=provider,
             checked_image_submission=getattr(state, "checked_image_submission", False), parent=host)
         dialog.source_records = saved_records
@@ -646,7 +596,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
                 dialog.source_current_provider = dialog._reference_current
             dialog._refresh_from_plan("Created an independent iteration. Review its seed and prepare it before submitting.")
         if setup_window is not None:
-            _connect_setup_return(setup_window, dialog)
+            _connect_setup_return(setup_window, dialog, generator_setup_allowed=runtime_allowed)
         if resource is not None:
             resources = [item.to_dict() for item in dialog.plan.request.resources
                          if item.hashes.get("sha256") != resource.hashes["sha256"]]

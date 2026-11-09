@@ -83,7 +83,8 @@ def _runtime_file_bytes(path, *, maximum=None, check=None):
             yield block
 
 
-def validate_runtime_payload(payload, *, check=None):
+def validate_runtime_payload(payload, *, check=None, check_running_interpreter=True,
+                             expected_profile="organizer-video-windows"):
     """Recheck explicit admitted software pins, without settings or service imports."""
     import hashlib
     from core.training_source_io import _assert_unredirected
@@ -107,8 +108,10 @@ def validate_runtime_payload(payload, *, check=None):
         _assert_unredirected(path)
     if site.name != "python" or site.parent != root or not site.is_dir():
         raise ValueError("Video component site differs from its admitted store.")
-    if (interpreter.resolve(strict=True) != Path(sys.executable).resolve(strict=True)
-            or payload["python_version"] != sys.version.split()[0]):
+    if check_running_interpreter and (
+        interpreter.resolve(strict=True) != Path(sys.executable).resolve(strict=True)
+        or payload["python_version"] != sys.version.split()[0]
+    ):
         raise ValueError("Video interpreter changed before decoder launch.")
     digest = hashlib.sha256()
     for block in _runtime_file_bytes(interpreter, check=check):
@@ -125,7 +128,7 @@ def validate_runtime_payload(payload, *, check=None):
     value = json.loads(raw)
     if (value.get("schema_version") != 2 or value.get("storage_layout") != "durable-optional-python-v1"
             or value.get("python_version") != payload["python_version"]
-            or payload["profile_id"] != "organizer-video-windows" or payload["version"] != "18.1.0"
+            or payload["profile_id"] != expected_profile or payload["version"] != "18.1.0"
             or payload["profile_id"] not in value.get("profile_ids", [])):
         raise ValueError("Video component profile binding differs.")
     profiles = [row for row in value.get("profiles", [])
@@ -135,13 +138,13 @@ def validate_runtime_payload(payload, *, check=None):
     return site
 
 
-def _component_runtime():
+def _component_runtime(*, expected_profile="organizer-video-windows"):
     if not sys.argv[1:]:
         return None
     if len(sys.argv) != 3 or sys.argv[1] != "--runtime-binding" or len(sys.argv[2]) > 16384:
         raise ValueError("Exact admitted decoder arguments required.")
     payload = json.loads(sys.argv[2])
-    site = validate_runtime_payload(payload)
+    site = validate_runtime_payload(payload, expected_profile=expected_profile)
     sys.path.insert(0, str(site))
     return site, payload
 

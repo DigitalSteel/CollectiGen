@@ -149,6 +149,10 @@ class ModelSelectorDialog(FeedbackEnabledDialog):
         elif self.collect_for_import:
             intro.setText("Choose an existing registered model and its exact permanent file for the import plan. "
                 "Verification waits for the combined approval. Add new files through the import's Choose Files action.")
+        elif self.choice_scope_label:
+            intro.setTextFormat(Qt.PlainText)
+            intro.setText(self.choice_scope_label + ". Select the matching registered file. "
+                "Use Model checks the selected file.")
         layout.addWidget(intro)
         self.more_options_button = QPushButton("More Model Options and Details")
         self.more_options_button.setCheckable(True)

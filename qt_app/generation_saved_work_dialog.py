@@ -119,7 +119,7 @@ class SavedGenerationWorkDialog(QDialog):
 
     def __init__(self, jobs, storage_root, kind, parent=None, *, settings=None,
                  settings_path=None, registry=None, protected_model_roots=(),
-                 selection_only=False, allow_draft_transfer=False):
+                 selection_only=False, allow_draft_transfer=False, allow_setup_transfer=False):
         super().__init__(parent)
         if kind not in {"groups", "recipes", "drafts", "prompt_presets"}:
             raise ValueError("Choose saved groups, recipes, drafts or prompt presets.")
@@ -132,6 +132,8 @@ class SavedGenerationWorkDialog(QDialog):
         self.storage_root = Path(storage_root).absolute()
         self.kind = kind
         self.selection_only = bool(selection_only)
+        self._setup_picker_open = False
+        self._allow_setup_transfer = kind == "recipes" and allow_setup_transfer
         self._allow_draft_transfer = kind == "drafts" and allow_draft_transfer
         self.selected_path = None
         self.selected_digest = None
@@ -139,7 +141,6 @@ class SavedGenerationWorkDialog(QDialog):
         self._task = None
         self._cancel_requested = False
         self._closing = False
-        self._transfer_picker_open = False
         self._items = {}
         self._offset = 0
         self._previous_offsets = []
@@ -164,7 +165,7 @@ class SavedGenerationWorkDialog(QDialog):
         )
         explanation.setWordWrap(True); layout.addWidget(explanation)
         self.swarm_setup_button = QPushButton("Create from SwarmUI Preset…")
-        self.swarm_setup_button.setVisible(kind == "recipes" and not self.selection_only)
+        self.swarm_setup_button.setVisible(kind == "recipes" and (not self.selection_only or self._allow_setup_transfer))
         self.swarm_setup_button.clicked.connect(self.import_swarm_setup)
         self.import_details_button = QPushButton("Review Import Details…")
         self.import_details_button.setVisible(False)
@@ -242,8 +243,9 @@ class SavedGenerationWorkDialog(QDialog):
                        self.cancel_button, self.open_button, self.close_button):
             controls.addWidget(button)
         if self.selection_only and not self._allow_draft_transfer:
-            self.import_button.hide()
-            self.export_button.hide()
+            if not self._allow_setup_transfer:
+                self.import_button.hide()
+                self.export_button.hide()
         layout.addLayout(controls)
         self.refresh_button.clicked.connect(self.restart)
         self.import_button.clicked.connect(self.import_file)
@@ -382,8 +384,12 @@ class SavedGenerationWorkDialog(QDialog):
                            "No saved Generation Setups yet. Choose Create Setup to make one, or Close without starting a draft")
             if imported_path:
                 imported = self._items.get(imported_path)
-                if imported and imported["available"]:
-                    message = f"Draft imported and selected. Choose {self.open_button.text()} to open it"
+                if self.kind == "recipes":
+                    message = ("Setup imported and selected. Choose Review in New Image to use it"
+                               if imported and imported["available"] else
+                               "Setup imported. Refresh or browse to select it")
+                elif imported and imported["available"]:
+                    message = "Draft imported and selected. Choose Resume Selected Draft to open it"
                 else:
                     message = "Draft imported. Refresh or browse the folder to select it"
             self.status.setText(message + ".")
@@ -471,17 +477,13 @@ class SavedGenerationWorkDialog(QDialog):
             )
             summary.setWordWrap(True)
             layout.addWidget(summary)
-            chosen_resources = [
-                f"{row['field']}" +
-                (f" from {row['preset_key']}" if row.get("preset_key") else "") +
-                f" → exact {row['role']}" for row in resolved
-            ]
-            if resolved_loras:
-                chosen_resources.append(f"{len(resolved_loras)} matched LoRAs in source order")
-            if chosen_resources:
+            if resolved:
                 chosen = QLabel(
-                    "Chosen at save: " + ", ".join(chosen_resources) +
-                    ". Current model availability is checked separately before use."
+                    "Chosen at save: " + ", ".join(
+                        f"{row['field']}" +
+                        (f" from {row['preset_key']}" if row.get("preset_key") else "") +
+                        f" → exact {row['role']}" for row in resolved
+                    ) + ". Current model availability is checked separately before use."
                 )
                 chosen.setWordWrap(True)
                 chosen.setTextFormat(Qt.PlainText)
@@ -493,12 +495,12 @@ class SavedGenerationWorkDialog(QDialog):
                 "source_dialect": evidence["source_dialect"],
                 "source_sha256": evidence["source_sha256"],
                 "imported_mapping": mapped,
+                "held_or_omitted": evidence["held_fields"],
             }
             if resolved:
                 detail_payload["explicit_exact_resource_choices_at_save"] = resolved
             if resolved_loras:
                 detail_payload["ordered_exact_lora_matches_at_save"] = resolved_loras
-            detail_payload["held_or_omitted"] = evidence["held_fields"]
             if selected:
                 detail_payload["selected_presets_in_order"] = selected
                 detail_payload["conflict_choices"] = evidence["choices"]
@@ -557,22 +559,13 @@ class SavedGenerationWorkDialog(QDialog):
             child.setWindowModality(Qt.WindowModal); child.show()
         self._run("Read retained preset recovery", lambda cancelled: collection.pending_operations(item_id), show)
 
-    def _choose_transfer_path(self, picker, *args, **kwargs):
-        if self._transfer_picker_open or self._closing:
-            return ""
-        self._transfer_picker_open = True
-        try:
-            path, _ = picker(self, *args, **kwargs)
-        finally:
-            self._transfer_picker_open = False
-            if self._closing:
-                QDialog.reject(self)
-                self.background_work_finished.emit()
-        return "" if self._closing else path
-
     def import_file(self):
         if self._task is not None: return
-        path = self._choose_transfer_path(QFileDialog.getOpenFileName, "Import One Saved Item", "", "Saved JSON (*.json)")
+        self._setup_picker_open = self._allow_setup_transfer
+        try:
+            path, _ = QFileDialog.getOpenFileName(self, "Import One Saved Item", "", "Saved JSON (*.json)")
+        finally:
+            self._setup_picker_open = False
         if not path: return
         self._run("Import selected saved item",
             lambda cancelled: import_selected_saved_work(self.storage_root, self.kind, path, cancelled=cancelled),
@@ -592,19 +585,24 @@ class SavedGenerationWorkDialog(QDialog):
         choice = QMessageBox(self)
         choice.setWindowTitle("Generation Setup saved")
         choice.setText(f'"{dialog.name.text()}" is saved for reuse.')
+        destination = "a new image draft" if self._allow_setup_transfer else "this image draft"
         choice.setInformativeText(
-            "Review it against this image draft now, or keep it in Saved Generation Setups. "
+            f"Review it against {destination} now, or keep it in Saved Generation Setups. "
             "Nothing has been generated. The original SwarmUI file was not changed."
         )
-        review = choice.addButton("Review in This Draft", QMessageBox.AcceptRole)
+        review = choice.addButton(
+            "Review in New Image" if self._allow_setup_transfer else "Review in This Draft",
+            QMessageBox.AcceptRole,
+        )
         later = choice.addButton("Keep for Later", QMessageBox.RejectRole)
         choice.setDefaultButton(later)
         choice.exec()
         if choice.clickedButton() is review:
-            from core.generation_recipes import recipe_storage_digest
+            if self._allow_setup_transfer:
+                from core.generation_recipes import recipe_storage_digest
 
+                self.selected_digest = recipe_storage_digest(dialog.recipe)
             self.selected_path = dialog.saved_path
-            self.selected_digest = recipe_storage_digest(dialog.recipe)
             self.requested_action = "open"
             self.accept()
         else:
@@ -612,7 +610,7 @@ class SavedGenerationWorkDialog(QDialog):
 
     def _imported(self, path):
         self.search.clear()
-        if self.kind == "drafts":
+        if self._allow_draft_transfer or self._allow_setup_transfer:
             self._load_page(0, [], "", imported_path=path)
         else:
             self.restart()
@@ -626,13 +624,12 @@ class SavedGenerationWorkDialog(QDialog):
                     self.storage_root, item["path"], selected_digest=item.get("content_digest")),
                 lambda review: self._review_setup_export(item, review))
             return
-        path = self._choose_transfer_path(QFileDialog.getSaveFileName, "Export One Saved Item", Path(item["path"]).name,
-            "Saved JSON (*.json)")
+        path, _ = QFileDialog.getSaveFileName(self, "Export One Saved Item", Path(item["path"]).name,
+            "Saved JSON (*.json)", options=QFileDialog.DontConfirmOverwrite)
         if not path: return
         self._run("Export selected saved item",
             lambda cancelled: export_selected_saved_work(self.storage_root, self.kind,
-                item["path"], path, cancelled=cancelled,
-                selected_digest=item.get("content_digest")),
+                item["path"], path, selected_digest=item.get("content_digest"), cancelled=cancelled),
             lambda _path: self.status.setText(
                 "Selected setup exported and verified; local source and omission details were not included."
                 if self.kind == "recipes" else "Selected item exported and verified."
@@ -645,9 +642,13 @@ class SavedGenerationWorkDialog(QDialog):
             return
         format = dialog.format.currentData()
         include_prompts = dialog.include_prompts.isChecked()
-        path = self._choose_transfer_path(QFileDialog.getSaveFileName, "Export Reviewed Setup to a New File",
-            Path(item["path"]).stem + ("-swarmui.json" if format == "swarmui" else ".json"),
-            "JSON (*.json)")
+        self._setup_picker_open = self._allow_setup_transfer
+        try:
+            path, _ = QFileDialog.getSaveFileName(self, "Export Reviewed Setup to a New File",
+                Path(item["path"]).stem + ("-swarmui.json" if format == "swarmui" else ".json"),
+                "JSON (*.json)", options=QFileDialog.DontConfirmOverwrite)
+        finally:
+            self._setup_picker_open = False
         if not path:
             self.status.setText("Export cancelled. No export file was created.")
             return
@@ -667,18 +668,18 @@ class SavedGenerationWorkDialog(QDialog):
         self.status.setText("Cancellation requested; waiting for the current file read to stop.")
 
     def has_active_background_work(self):
-        return self._task is not None or self._transfer_picker_open
+        return self._task is not None
 
     def request_background_shutdown(self):
         self._closing = True
         if self._task is not None:
             self.cancel_loading()
-        elif not self._transfer_picker_open:
+        else:
             QDialog.reject(self)
         return self.has_active_background_work()
 
     def reject(self):
-        if self._transfer_picker_open:
+        if self._setup_picker_open:
             return
         if self._recovery_dialog is not None: self._recovery_dialog.reject()
         if self._task is not None:
@@ -686,7 +687,7 @@ class SavedGenerationWorkDialog(QDialog):
         QDialog.reject(self)
 
     def closeEvent(self, event):
-        if self._transfer_picker_open:
+        if self._setup_picker_open:
             event.ignore()
             return
         if self._task is not None:

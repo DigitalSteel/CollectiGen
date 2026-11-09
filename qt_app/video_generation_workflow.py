@@ -10,30 +10,26 @@ from core.model_resource_registry import ModelResourceRegistry
 from core.paths import MODEL_RESOURCES_PATH, USER_DATA_DIR
 from core.video_generation_draft import load_video_draft, scoped_video_draft_path
 
-from .generation_workflow import _generation_data_root, _generation_registry_path, _host, _setup_window
+from .generation_workflow import _generation_data_root, _host, _setup_window
 from .status_notifications import FooterMessageBox as QMessageBox
 from .video_generation_dialog import VideoGenerationDialog
 from .workers import CoordinatedCallTask
 from shiboken6 import isValid
 
 
-def choose_video_generation_draft(parent, *, import_copy=False):
+def choose_video_generation_draft(parent):
     """Select and read one explicit saved file before adding a video workspace."""
     host = _host(parent)
     scoped = getattr(host.state, "generation_data_root", None) is not None
     directory = (_generation_data_root(host) if scoped else USER_DATA_DIR) / "video_generation"
-    if import_copy and (not scoped or getattr(host.state, "generation_runtime_allowed", True)):
-        raise ValueError("Import a copy from Manager's offline video workspace.")
-    title = "Import a copy of a video draft" if import_copy else "Open video draft"
-    retry_action = "Import Video Draft Copy" if import_copy else "Open Video Draft"
     path, _ = QFileDialog.getOpenFileName(
-        parent, title, str(directory),
+        parent, "Open video draft", str(directory),
         "Video draft (*.json)",
     )
     if not path:
         return None
     try:
-        target = scoped_video_draft_path(directory, path) if scoped and not import_copy else Path(path).absolute()
+        target = scoped_video_draft_path(directory, path) if scoped else Path(path).absolute()
         request = load_video_draft(target)
         dialog = open_video_generation_workspace(
             parent, initial_request=request, draft_label=Path(path).name,
@@ -42,7 +38,7 @@ def choose_video_generation_draft(parent, *, import_copy=False):
         QMessageBox.information(
             parent, "Video draft needs attention",
             "The selected video draft could not be opened. Existing work was not changed. "
-            f"Choose {retry_action} again after checking the file.\n\n{exc}",
+            f"Choose Open Video Draft again after checking the file.\n\n{exc}",
         )
         return None
     window = _setup_window(_host(parent))
@@ -53,8 +49,6 @@ def choose_video_generation_draft(parent, *, import_copy=False):
         "Video draft needs attention\n"
     ):
         footer.show_message("")
-    if import_copy and dialog is not None:
-        dialog.status.setText("Draft opened as a copy. Choose Save Draft to keep a new copy in Manager.")
     return dialog
 
 
@@ -120,7 +114,8 @@ def open_video_generation_workspace(parent, *, source_path=None, on_opened=None,
 
 def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_opened=None,
                                     frame_reference_provider=None, initial_request=None,
-                                    draft_label=None,runtime_binding=None,decoder_lifetime=None):
+                                    draft_label=None,runtime_binding=None,decoder_lifetime=None,
+                                    encoder_binding=None):
     """Open a fresh retained draft; an explicit still attaches asynchronously."""
     host = _host(parent)
     window = _setup_window(host)
@@ -128,9 +123,11 @@ def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_op
     runtime_options={}
     if runtime_binding is not None:runtime_options["runtime_binding"]=runtime_binding
     if decoder_lifetime is not None:runtime_options["decoder_lifetime"]=decoder_lifetime
+    if encoder_binding is not None and getattr(state, "generation_runtime_allowed", True):
+        runtime_options["encoder_binding"] = encoder_binding
     scoped = getattr(state, "generation_data_root", None) is not None
     data_root = _generation_data_root(host) if scoped else USER_DATA_DIR
-    registry_path = _generation_registry_path(host, data_root, MODEL_RESOURCES_PATH)
+    registry_path = data_root / MODEL_RESOURCES_PATH.name if scoped else MODEL_RESOURCES_PATH
     dialog = VideoGenerationDialog(state.jobs, ModelResourceRegistry(registry_path),
         state.settings, data_root / "video_generation", parent=host,
         scoped_drafts=scoped, runtime_allowed=getattr(state, "generation_runtime_allowed", True),

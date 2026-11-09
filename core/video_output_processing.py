@@ -93,16 +93,36 @@ def _hash_source(path: Path, asset: VideoSourceAsset, cancel, deadline: float) -
         os.close(descriptor)
 
 
-def _launch_worker():
+def _launch_worker(encoder_binding=None, *, check=None):
+    if encoder_binding is None and getattr(sys, "frozen", False):
+        raise VideoOutputProcessingError("Video output processing needs an admitted worker interpreter in this installed app.")
     script = Path(__file__).with_name("video_output_processing_worker.py")
-    return subprocess.Popen([sys.executable, "-I", "-u", str(script)],
+    arguments = [sys.executable, "-I", "-u", str(script)]
+    if encoder_binding is not None:
+        from .video_decoder import _runtime_payload
+        payload = _runtime_payload(encoder_binding, check=check, encoder=True)
+        encoded = json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
+        if len(encoded) > 16384:
+            raise VideoOutputProcessingError("Video encoder runtime binding exceeds its bound.")
+        if check is not None:
+            check()
+        arguments = [payload["interpreter_path"], "-I", "-B", "-u", str(script), "--runtime-binding", encoded]
+    return subprocess.Popen(arguments,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
 
-def _encode_child(spec: dict, *, should_cancel, deadline: float) -> dict:
+def _encode_child(spec: dict, *, should_cancel, deadline: float, encoder_binding=None) -> dict:
+    def check():
+        if should_cancel is not None and should_cancel():
+            raise InterruptedError("Video resize cancelled safely.")
+        _remaining(deadline)
+
     try:
-        child = _launch_worker()
+        child = (_launch_worker() if encoder_binding is None else
+                 _launch_worker(encoder_binding, check=check))
+    except InterruptedError:
+        raise
     except OSError as exc:
         raise VideoOutputProcessingError("The isolated video encoder could not start.") from exc
     records: Queue = Queue(maxsize=2)
@@ -280,6 +300,9 @@ def resize_verified_video(
     allowed_root: str | Path, width: int, height: int,
     should_cancel: Callable[[], bool] | None = None,
     timeout_seconds: float = 120,
+    runtime_binding=None,
+    decoder_lifetime=None,
+    encoder_binding=None,
 ) -> VideoResizeResult:
     """Fit without cropping, black-pad and publish one separate verified derivative.
 
@@ -313,7 +336,8 @@ def resize_verified_video(
         raise InterruptedError("Video resize cancelled safely.")
     _hash_source(source, source_asset, should_cancel, deadline)
     observed = verify_video_output(source, source_request, allowed_root=source.parent,
-        should_cancel=should_cancel, max_seconds=_remaining(deadline))
+        should_cancel=should_cancel, max_seconds=_remaining(deadline),
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     if (observed.asset.sha256 != source_asset.sha256
             or observed.asset.byte_length != source_asset.byte_length
             or observed.asset.stream_id != source_asset.stream_id
@@ -335,7 +359,8 @@ def resize_verified_video(
                     raise VideoOutputProcessingError("The retained resize stage changed identity.")
             verified = verify_video_output(candidate, output_request, allowed_root=boundary,
                 should_cancel=should_cancel, max_seconds=_remaining(deadline),
-                max_bytes=output_limit)
+                max_bytes=output_limit, runtime_binding=runtime_binding,
+                decoder_lifetime=decoder_lifetime)
             _matches_receipt(verified, payload)
             result = _lineage_result(target, receipt, source_asset, verified, recipe)
             _hash_source(source, source_asset, should_cancel, deadline)
@@ -378,7 +403,7 @@ def resize_verified_video(
             "stage_id": stage_id, "source_max_bytes": MAX_VIDEO_BYTES,
             "output_max_bytes": output_limit,
             "timeout_seconds": _remaining(deadline)},
-            should_cancel=should_cancel, deadline=deadline)
+            should_cancel=should_cancel, deadline=deadline, encoder_binding=encoder_binding)
         if result.get("source_sha256") != source_asset.sha256:
             raise VideoOutputProcessingError("The encoder did not retain the exact source identity.")
         if (result.get("fitted_width") != recipe["fitted_width"]
@@ -388,7 +413,8 @@ def resize_verified_video(
             raise VideoOutputProcessingError("The isolated output stage changed identity.")
         verified = verify_video_output(stage, output_request, allowed_root=boundary,
             should_cancel=should_cancel, max_seconds=_remaining(deadline),
-            max_bytes=output_limit)
+            max_bytes=output_limit, runtime_binding=runtime_binding,
+            decoder_lifetime=decoder_lifetime)
         outcome = _lineage_result(target, receipt, source_asset, verified, recipe)
         _hash_source(source, source_asset, should_cancel, deadline)
         if should_cancel is not None and should_cancel():

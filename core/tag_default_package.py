@@ -109,7 +109,7 @@ def prepare_tag_default_package(acquired, destination, should_cancel=None, *,
         guard(destination)
         guard(artifact)
     check()
-    verify_artifact(artifact, verified.artifact)
+    verify_artifact(artifact, verified.artifact, should_cancel=should_cancel)
     check()
     destination.mkdir()
     extraction = destination / "Apps"
@@ -126,7 +126,7 @@ def prepare_tag_default_package(acquired, destination, should_cancel=None, *,
             TAG_DATABASE_COMPONENT, component.software_version)
         require(profile["platform"] == {"os": verified.os, "architecture": verified.architecture},
             "tag_inventory_platform_mismatch")
-        verify_artifact(artifact, verified.artifact)
+        verify_artifact(artifact, verified.artifact, should_cancel=should_cancel)
     validate()
     check()
     pack = source / "TagDatabase.zip"

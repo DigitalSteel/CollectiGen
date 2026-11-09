@@ -997,9 +997,7 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
                   self._applied_keys, tuple(sorted(self._applied_choices.items())),
                   tuple(sorted((row["field"], row.get("preset_key", ""), row["source_value"],
                                 row["resource_id"], row["sha256"])
-                               for row in self._resolved_resources(self.recipe))),
-                  tuple((row["name"], row["resource_id"], row["sha256"])
-                        for row in self._lora_matches))
+                               for row in self._resolved_resources(self.recipe))))
         if marker != self._operation_source_marker:
             self._operation_recipe = None
             self._operation_source_marker = marker

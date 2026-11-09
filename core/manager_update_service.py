@@ -64,6 +64,7 @@ class ManagerUpdateHostBinding:
     child_cache_root: Path
     apply_review: object = None
     repair_review: object = None
+    training_baseline: dict | None = None
 
     def profile(self, admitted):
         require(type(self.service) is ManagerUpdateService, 'explicit_manager_update_service_required')

@@ -296,10 +296,90 @@ class PreflightReply:
 
 
 class ContainedRuntimeQualificationService:
-    def __init__(self):
+    _worker_python = None
+    _worker_inventory = None
+
+    def __init__(self, *, worker_python: ProcessInput | None = None,
+                 worker_inventory: ProcessInventory | None = None):
+        if worker_python is not None and (
+            type(worker_python) is not ProcessInput
+            or not Path(worker_python.path).is_absolute()
+            or Path(worker_python.path).name.casefold() != "python.exe"
+        ):
+            raise TrainingProcessError("An exact owner-reviewed Python executable pin is required.")
+        if worker_inventory is not None:
+            if type(worker_inventory) is not ProcessInventory or worker_python is None:
+                raise TrainingProcessError("A reviewed Python software inventory and executable pin are required together.")
+            root = Path(worker_inventory.root)
+            manifest = Path(worker_inventory.manifest_path)
+            if (not root.is_absolute() or not manifest.is_absolute()
+                or ".." in root.parts or ".." in manifest.parts or ".." in Path(worker_python.path).parts
+                or not Path(worker_python.path).is_relative_to(root) or manifest.is_relative_to(root)):
+                raise TrainingProcessError("The reviewed Python executable and inventory paths disagree.")
+        self._worker_python = worker_python
+        self._worker_inventory = worker_inventory
         # Retain this service so an unobserved helper can be recovered through
         # the same held coordinator slot; never hide it in a temporary owner.
         self.process = TrainingProcessService()
+
+    @classmethod
+    def from_reviewed_worker_inventory(cls, inventory: ProcessInventory, python_relative: str,
+                                       *, should_cancel=None):
+        """Bind the executable named by an already reviewed worker installation."""
+        if type(inventory) is not ProcessInventory or type(python_relative) is not str:
+            raise TrainingProcessError("An exact reviewed worker inventory and Python path are required.")
+        root = Path(inventory.root)
+        manifest = Path(inventory.manifest_path)
+        relative = Path(python_relative)
+        if (not root.is_absolute() or not manifest.is_absolute()
+            or ".." in root.parts or ".." in manifest.parts or manifest.is_relative_to(root)
+            or relative.anchor or ".." in relative.parts or relative.as_posix() != python_relative
+            or relative.name.casefold() != "python.exe"):
+            raise TrainingProcessError("An exact relative Python path in the reviewed worker inventory is required.")
+        manifest_pin = ProcessInput.capture(manifest, should_cancel)
+        if manifest_pin.sha256 != inventory.manifest_sha256:
+            raise TrainingProcessError("The reviewed Training Python inventory changed.")
+        approved = SoftwareInventoryService.load(root, manifest)
+        if (approved.fingerprint != inventory.manifest_sha256
+            or len(approved.files) != inventory.file_count or approved.byte_count != inventory.byte_count):
+            raise TrainingProcessError("The reviewed Training Python inventory identity differs.")
+        expected = next(((state, digest) for path, state, digest in approved.files
+                         if path == python_relative), None)
+        if expected is None:
+            raise TrainingProcessError("The reviewed worker inventory does not contain this Python executable.")
+        pin = ProcessInput.capture(root / relative, should_cancel)
+        if (pin.state, pin.sha256) != expected or ProcessInput.capture(manifest, should_cancel) != manifest_pin:
+            raise TrainingProcessError("The reviewed Training Python interpreter or inventory changed.")
+        cls._check_embedded_worker_startup(root, relative, approved.files, should_cancel)
+        return cls(worker_python=pin, worker_inventory=inventory)
+
+    @staticmethod
+    def _check_embedded_worker_startup(root, python_relative, rows, should_cancel):
+        folder = python_relative.parent
+        startup = [(Path(name), state, digest) for name, state, digest in rows
+                   if Path(name).parent == folder
+                   and re.fullmatch(r"python(?:3[0-9]+)?\._pth", Path(name).name.casefold())]
+        if not startup:
+            return  # The owner may instead qualify a normal Windows Python environment.
+        if len(startup) != 1:
+            raise TrainingProcessError("Ambiguous embedded Training Python startup files.")
+        path, state, digest = startup[0]
+        absolute = root / path
+        startup_pin = ProcessInput.capture(absolute, should_cancel)
+        if (startup_pin.state, startup_pin.sha256) != (state, digest):
+            raise TrainingProcessError("The reviewed embedded Python startup file changed.")
+        try:
+            startup_bytes = _read(absolute, limit=4096)
+            text = startup_bytes.decode("ascii")
+        except (OSError, ValueError) as exc:
+            raise TrainingProcessError("The embedded Training Python startup file is invalid.") from exc
+        if _sha(startup_bytes) != digest:
+            raise TrainingProcessError("The reviewed embedded Python startup file changed.")
+        entries = [line.strip() for line in text.splitlines()
+                   if line.strip() and not line.lstrip().startswith("#")]
+        if (len(entries) != 2 or re.fullmatch(r"python3[0-9]+\.zip", entries[0]) is None
+            or entries[1] != "." or (folder / entries[0]).as_posix() not in {row[0] for row in rows}):
+            raise TrainingProcessError("Embedded Training Python requires only its inventoried standard library and local directory.")
 
     def preflight(self, source, environment, root, jobs, *, profile='sd-scripts-requirements',
                   prepare=False, python_base=None, should_cancel=None, progress=None, timeout_seconds=PREFLIGHT_SECONDS,
@@ -392,6 +472,36 @@ class ContainedRuntimeQualificationService:
     def _run(self, request, root, jobs, *, worker, extra_code=(), reply_type=PreflightReply,
              should_cancel=None, progress=None, timeout_seconds=PREFLIGHT_SECONDS):
         """Shared contained transport; callers validate their exact read scope."""
+        reviewed_python = self._worker_python
+        reviewed_inventory = self._worker_inventory
+        program = sys.executable
+        if reviewed_python is None:
+            if getattr(sys, "frozen", False):
+                raise TrainingProcessError("Training preflight needs an admitted worker interpreter in this installed app.")
+        else:
+            selected_roots = [request.get(name) for name in ("source", "environment", "python_base")]
+            if request.get("operation") == "dataset_admission":
+                selected_roots.append(request.get("selection", {}).get("root"))
+            if request.get("selected_dataset"):
+                selection = runtime.dataset_preparation.read_selection(request["selected_dataset"]["memory"])
+                selected_roots.append(selection["root"])
+            python = Path(os.path.abspath(reviewed_python.path))
+            if any(python.is_relative_to(Path(os.path.abspath(root))) for root in selected_roots if root):
+                raise TrainingProcessError("Training preflight Python must be outside the selected software and package roots.")
+            if reviewed_inventory is not None:
+                inventory_root = Path(reviewed_inventory.root)
+                inventory_manifest = Path(reviewed_inventory.manifest_path)
+                for selected_root in (Path(os.path.abspath(value)) for value in selected_roots if value):
+                    if (inventory_root.is_relative_to(selected_root) or selected_root.is_relative_to(inventory_root)
+                        or inventory_manifest.is_relative_to(selected_root)):
+                        raise TrainingProcessError("Keep the reviewed Python inventory outside selected software and package roots.")
+                if ProcessInput.capture(inventory_manifest, should_cancel).sha256 != reviewed_inventory.manifest_sha256:
+                    raise TrainingProcessError("The reviewed Training Python inventory changed.")
+            elif getattr(sys, "frozen", False):
+                raise TrainingProcessError("Training preflight needs a reviewed Python software inventory in this installed app.")
+            if ProcessInput.capture(reviewed_python.path, should_cancel) != reviewed_python:
+                raise TrainingProcessError("The reviewed Training Python interpreter changed.")
+            program = reviewed_python.path
         verification_inputs = ()
         if request.get('selected_dataset') is not None or request.get('operation') == 'dataset_admission':
             from .training_dataset_binding import write_verification_bundle
@@ -419,10 +529,16 @@ class ContainedRuntimeQualificationService:
                 extra_code = (*extra_code, *PACKAGE_CODE)
             code_inputs = tuple(dict.fromkeys((*code, *extra_code)))
             helper = self.process.prepare(root, 'preflight-' + request['nonce'],
-                (sys.executable, '-I', '-S', '-B', str(worker), reply.name, str(len(reply.raw)), _sha(reply.raw)),
+                (program, '-I', '-S', '-B', str(worker), reply.name, str(len(reply.raw)), _sha(reply.raw)),
                 inputs=(worker, runtime.CATALOG, runtime.PROBE, runtime.CONTRACT,
                     runtime.ROOT / 'tools/training_verification_worker.py', runtime.DATASET_PACKAGE_CATALOG, *code_inputs, *verification_inputs),
+                inventories=() if reviewed_inventory is None else (
+                    (reviewed_inventory.root, reviewed_inventory.manifest_path),),
                 preview_fingerprint=_sha(reply.raw), timeout_seconds=timeout_seconds, should_cancel=should_cancel)
+            if reviewed_inventory is not None and helper.inventories != (reviewed_inventory,):
+                raise TrainingProcessError("The reviewed Training Python inventory changed during preparation.")
+            if reviewed_python is not None and reviewed_python not in helper.inputs:
+                raise TrainingProcessError("The reviewed Training Python interpreter changed during preparation.")
             result = self.process.execute(helper, helper.fingerprint, jobs,
                 running_observer=reply, should_cancel=should_cancel)
             if result.status != 'exited_unverified' or result.exit_code != 0 or not result.tree_stopped or reply.receipt is None:

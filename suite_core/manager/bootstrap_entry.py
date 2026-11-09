@@ -50,6 +50,44 @@ def check_update_profile(profile, admitted):
         'update_host_profile_digest_changed')
     return profile
 
+def check_training_baseline_offer(release, profile, entry):
+    """Validate compact retained-file pins before any child file access."""
+    from ntpath import isreserved
+    from pathlib import PurePosixPath
+
+    require(type(release) is dict
+            and set(release) == {'version', 'channel', 'platform', 'files'}
+            and profile is not None
+            and release['version'] == profile['current_version']
+            and release['channel'] == profile['channel']
+            and release['platform'] == {'os': 'windows', 'architecture': 'x86_64'},
+            'training_baseline_release_identity')
+    files = release['files']
+    require(type(files) is dict and set(files) == {
+        'archive', 'manifest', 'signature', 'trust', 'proof', 'inventory', 'executable'},
+        'training_baseline_exact_files_required')
+    paths = set()
+    for row in files.values():
+        require(type(row) is dict and set(row) == {'path', 'size', 'sha256'}
+                and type(row['path']) is str and 0 < len(row['path']) <= 512
+                and not any(char in row['path'] for char in ('\\', ':', '\0'))
+                and type(row['size']) is int and row['size'] > 0
+                and type(row['sha256']) is str and re.fullmatch('[0-9a-f]{64}', row['sha256']),
+                'training_baseline_file_pin_required')
+        path = PurePosixPath(row['path'])
+        require(len(path.parts) >= 2 and path.parts[0] == 'Recovery'
+                and path.as_posix() == row['path'] and '..' not in path.parts
+                and not any(isreserved(part) for part in path.parts)
+                and row['path'].casefold() not in paths,
+                'training_baseline_recovery_path_required')
+        paths.add(row['path'].casefold())
+    require(files['trust']['sha256'] == profile['trust_sha256']
+            and files['executable']['sha256'] == entry.executable_sha256
+            and files['proof']['sha256'] == files['inventory']['sha256'],
+            'training_baseline_session_pins_changed')
+    return json.loads(_wire_bytes(release))
+
+
 class EntryHold(ValueError):
     pass
 
@@ -387,7 +425,7 @@ class NormalEntrySession:
                     raise
         require(frame['kind'] == 'offer' and frame['sequence'] == 1 and
                 {'binding','scope'}.issubset(frame['payload'])
-                and set(frame['payload']).issubset({'binding','scope','update_profile','reader_selection','organizer_selection'}),
+                and set(frame['payload']).issubset({'binding','scope','update_profile','reader_selection','organizer_selection','training_baseline'}),
                 'initial_normal_offer_required')
         document = frame['payload']['binding']
         binding = _binding_document(document)
@@ -401,6 +439,9 @@ class NormalEntrySession:
         session._peer()
         session.update_profile=(check_update_profile(frame['payload']['update_profile'],admitted)
             if 'update_profile' in frame['payload'] else None)
+        session.training_baseline = (check_training_baseline_offer(
+            frame['payload']['training_baseline'], session.update_profile, binding.entry)
+            if 'training_baseline' in frame['payload'] else None)
         session.reader_selection = None
         if 'reader_selection' in frame['payload']:
             from core.encyclopedia_connection import root_reader_selection
@@ -1388,6 +1429,10 @@ class NormalOwnerRoute:
             self.manager_update_profile_sha256=self.manager_update_profile['profile_sha256']
             self.manager_update_handler=manager_update_host.handle
             offer['update_profile']=self.manager_update_profile
+            if manager_update_host.training_baseline is not None:
+                offer['training_baseline'] = check_training_baseline_offer(
+                    manager_update_host.training_baseline, self.manager_update_profile,
+                    _binding_document(document).entry)
         self.wire.send('offer', offer)
 
     def _live_peer(self):

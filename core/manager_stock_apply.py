@@ -128,12 +128,9 @@ def readback(path, size=None, expected=None, *, should_cancel=None):
     require(size is None or before.st_size == size, "changed_payload_size")
     h = sha256()
     with path.open("rb") as source:
-        while True:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
             if should_cancel is not None and should_cancel():
-                raise InterruptedError("Manager package readback was cancelled.")
-            block = source.read(1024 * 1024)
-            if not block:
-                break
+                raise InterruptedError("Manager payload readback cancelled.")
             h.update(block)
     after = path.stat()
     require((before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) ==

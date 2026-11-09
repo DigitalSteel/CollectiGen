@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -109,6 +110,11 @@ class VideoInstallPlan:
 @dataclass(frozen=True)
 class VideoRuntimeBinding(VideoInstallPlan):
     version: str
+
+
+@dataclass(frozen=True)
+class VideoEncoderRuntimeBinding(VideoRuntimeBinding):
+    """Exact Manager encoder software admitted by the dependency owner."""
 
 
 @dataclass(frozen=True)
@@ -329,7 +335,8 @@ def _activate_optional_component_site() -> None:
         sys.path.insert(0, site_path)
 
 
-_activate_optional_component_site()
+if not getattr(sys, "frozen", False):
+    _activate_optional_component_site()
 
 
 def _ascii_path(path: Path) -> bool:
@@ -629,6 +636,8 @@ class DependencyService:
 
     def preview_video_install(self,*,check_interrupt=None) -> VideoInstallPlan:
         """Bind a review to the exact current destination without installing anything."""
+        if getattr(sys, "frozen", False):
+            raise RuntimeError("Video setup needs an explicitly admitted Python interpreter in this installed app.")
         if check_interrupt is not None: check_interrupt()
         profile_id=self.optional_profile_id("video")
         profile=self._optional_profile_contract(validate_runtime=False).get("profiles",{}).get(profile_id)
@@ -641,23 +650,59 @@ class DependencyService:
             raise RuntimeError("The finite Video profile has an unsupported package closure.")
         self._optional_acquisition_groups(packages)
         root=OPTIONAL_COMPONENT_ROOT
-        site=root/"python"
-        inventory=root/"installed-components.json"
-        self._safe_component_directory(root)
-        self._safe_component_directory(site)
-        if inventory.exists() or inventory.is_symlink():
-            self._safe_component_file(inventory,root)
-            issues=self._optional_environment_issues(root,check_interrupt=check_interrupt)
-            if issues:
-                raise RuntimeError("The recorded optional environment is inconsistent: "+"; ".join(issues))
-        elif root.exists() and any(root.iterdir()):
-            raise RuntimeError("Optional component payload has no verified inventory; recovery is required.")
+        pin = self._video_store_inventory_pin(root, check_interrupt=check_interrupt)
         interpreter=Path(sys.executable).resolve(strict=True)
         return VideoInstallPlan(
-            profile_id,self._profile_sha256(profile),site.resolve(),root.resolve(),
-            self._sha256_file(inventory,check_interrupt=check_interrupt) if inventory.exists() else "",
-            interpreter,self._sha256_file(interpreter,check_interrupt=check_interrupt),sys.version.split()[0],
+            profile_id,self._profile_sha256(profile),(root/"python").resolve(),root.resolve(),
+            pin,interpreter,self._sha256_file(interpreter,check_interrupt=check_interrupt),sys.version.split()[0],
         )
+
+    @classmethod
+    def review_manager_video_store(cls, manager_data_root: Path, *, python_version: str,
+                                   check_interrupt=None, include_encoder: bool = False) -> tuple[Path, str]:
+        """Read the Manager profile's exact Video store without setup or recovery."""
+        root = Path(manager_data_root)
+        if not root.is_absolute() or ".." in root.parts:
+            raise ValueError("An absolute Manager data root is required.")
+        if not isinstance(python_version, str) or re.fullmatch(r"3\.\d+\.\d+", python_version) is None:
+            raise ValueError("An exact reviewed worker Python version is required.")
+        store = root / "optional-components"
+        profiles = (cls.VIDEO_PROFILE_ID,)
+        if include_encoder:
+            profiles += ("manager-video-encoder-windows",)
+            cls._profile_union(profiles)
+        pin = cls._video_store_inventory_pin(store, check_interrupt=check_interrupt,
+                                             python_version=python_version, expected_profiles=profiles)
+        return store, pin
+
+    @classmethod
+    def _video_store_inventory_pin(cls, root, *, check_interrupt=None, python_version=None, expected_profiles=()):
+        if check_interrupt is not None:
+            check_interrupt()
+        site = root / "python"
+        inventory = root / "installed-components.json"
+        cls._safe_component_directory(root)
+        cls._safe_component_directory(site)
+        if inventory.exists() or inventory.is_symlink():
+            cls._safe_component_file(inventory, root)
+            pin = cls._sha256_file(inventory, check_interrupt=check_interrupt)
+            if expected_profiles:
+                payload = cls._read_optional_inventory(root)
+                if (payload.get("storage_layout") != "durable-optional-python-v1"
+                    or not isinstance(payload.get("profile_ids"), list)
+                    or any(not isinstance(item, str) for item in payload["profile_ids"])
+                    or sorted(payload["profile_ids"]) != sorted(expected_profiles)):
+                    raise RuntimeError("The Manager Video store must contain exactly the reviewed Video profiles.")
+            issues = cls._optional_environment_issues(root, check_interrupt=check_interrupt,
+                                                      python_version=python_version)
+            if issues:
+                raise RuntimeError("The recorded optional environment is inconsistent: " + "; ".join(issues))
+            if cls._sha256_file(inventory, check_interrupt=check_interrupt) != pin:
+                raise RuntimeError("The Video store inventory changed during review.")
+            return pin
+        if expected_profiles or (root.exists() and any(root.iterdir())):
+            raise RuntimeError("Optional component payload has no verified inventory; recovery is required.")
+        return ""
 
     def setup_video(self,*,progress=None,expected_plan: VideoInstallPlan | None=None) -> str:
         return self.install_profile("video",progress=progress,expected_plan=expected_plan)
@@ -678,6 +723,8 @@ class DependencyService:
 
     def _admit_video_runtime(self,*,check_interrupt=None) -> VideoRuntimeBinding:
         """Fresh durable admission and isolated native load; never load DLLs in the UI."""
+        if getattr(sys, "frozen", False):
+            raise RuntimeError("Video setup needs an explicitly admitted Python interpreter in this installed app.")
         if check_interrupt is not None: check_interrupt()
         try:
             self.optional_profile("video")  # Proposed/unqualified profiles always refuse.
@@ -724,6 +771,22 @@ print(json.dumps({"version":av.__version__}))
         except (OSError,ValueError,subprocess.SubprocessError) as exc:
             raise RuntimeError("The isolated Video native load failed.") from exc
         return VideoRuntimeBinding(**vars(plan),version="18.1.0")
+
+    @classmethod
+    def admit_manager_video_encoder(cls, decoder_binding, *, check_interrupt=None) -> VideoEncoderRuntimeBinding:
+        """Derive an encoder binding from the exact admitted Manager worker environment."""
+        from .video_decoder import _runtime_payload
+
+        _runtime_payload(decoder_binding, check=check_interrupt)
+        profile_id = "manager-video-encoder-windows"
+        profile = cls._optional_profile_contract(validate_runtime=False).get("profiles", {}).get(profile_id)
+        if not isinstance(profile, dict) or profile.get("support") != "supported":
+            raise RuntimeError("The Manager Video encoder profile is not qualified.")
+        values = dict(vars(decoder_binding), profile_id=profile_id,
+                      reviewed_profile_sha256=cls._profile_sha256(profile))
+        binding = VideoEncoderRuntimeBinding(**values)
+        _runtime_payload(binding, check=check_interrupt, encoder=True)
+        return binding
 
     def video_admission(self) -> VideoAdmission:
         try:
@@ -1019,7 +1082,8 @@ print(json.dumps({"version":av.__version__}))
         return ()
 
     @classmethod
-    def _distribution_record_valid(cls,distribution: metadata.Distribution,*,check_interrupt=None) -> bool:
+    def _distribution_record_valid(cls,distribution: metadata.Distribution,*,check_interrupt=None,
+                                   allow_runtime_scripts=True) -> bool:
         if check_interrupt is not None: check_interrupt()
         try:
             root=cls._safe_component_directory(Path(distribution.locate_file("")))
@@ -1058,7 +1122,7 @@ print(json.dumps({"version":av.__version__}))
                     runtime_root=Path(sys.executable).resolve().parent
                     if runtime_root.name.casefold() in {"scripts","bin"}:
                         runtime_root=runtime_root.parent
-                    if (not root.is_relative_to(runtime_root)
+                    if (not allow_runtime_scripts or not root.is_relative_to(runtime_root)
                         or root.is_relative_to(OPTIONAL_COMPONENT_ROOT)):
                         return False
                     file_root=runtime_root
@@ -1105,7 +1169,7 @@ print(json.dumps({"version":av.__version__}))
         return payload if isinstance(payload,dict) else {}
 
     @classmethod
-    def _optional_environment_issues(cls,root: Path,*,check_interrupt=None) -> tuple[str,...]:
+    def _optional_environment_issues(cls,root: Path,*,check_interrupt=None,python_version=None) -> tuple[str,...]:
         if check_interrupt is not None: check_interrupt()
         issues=[]
         try:
@@ -1117,10 +1181,11 @@ print(json.dumps({"version":av.__version__}))
         payload=cls._read_optional_inventory(root)
         if payload.get("schema_version")!=2:
             issues.append("The installed-component inventory schema is missing or unsupported.")
-        if payload.get("python_version")!=sys.version.split()[0]:
+        expected_python = sys.version.split()[0] if python_version is None else python_version
+        if payload.get("python_version") != expected_python:
             issues.append(
-                "The optional-component Python version does not match this runtime "
-                f"({payload.get('python_version') or 'missing'} != {sys.version.split()[0]})."
+                "The optional-component Python version does not match the reviewed runtime "
+                f"({payload.get('python_version') or 'missing'} != {expected_python})."
             )
         if not isinstance(payload.get("profile_ids"),list):
             issues.append("The installed-component inventory has no profile list.")
@@ -1157,7 +1222,8 @@ print(json.dumps({"version":av.__version__}))
                 candidates=installed.get(key[0],[])
                 if not any(
                     str(value.version)==version
-                    and cls._distribution_record_valid(value,check_interrupt=check_interrupt)
+                    and cls._distribution_record_valid(value,check_interrupt=check_interrupt,
+                                                       allow_runtime_scripts=False)
                     for value in candidates
                 ):
                     issues.append(f"{name} {version}: installed-file RECORD verification failed.")

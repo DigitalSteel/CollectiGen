@@ -570,7 +570,9 @@ class TagDatabaseController:
             result = future.result()
         except Exception as error:
             self.error = str(error)
-            self.reason = "Operation held or interrupted. Review the reason and exact native recovery evidence."
+            self.reason = ("Operation held. Review the source, catalog folder and creation choice, then review the connection again."
+                if operation.kind in {"connection_review", "connection_confirm", "connection_open"} else
+                "Operation held or interrupted. Review the reason, then refresh observations before requesting a fresh review.")
             return True
         if isinstance(result, _Completion):
             rows = list(self.choices); rows[self.index] = result.choice; self.choices = tuple(rows)
@@ -578,7 +580,9 @@ class TagDatabaseController:
                 self.result = result.result
                 self.error = result.error
                 self.reason = ("Native changes saved; host observation held. Refresh observations; do not apply again." if result.result is not None else
-                    "Operation held or interrupted. Refresh observations or recover the exact selected import.")
+                    "Operation held or interrupted. Refresh observations or recover the approved selected import."
+                    if result.choice.observation_status == "recovery_pending" and result.choice.recovery_receipts else
+                    "Operation held or interrupted. Refresh observations, then request a fresh review.")
                 return True
             result = result.result
         if result is None:
@@ -593,9 +597,18 @@ class TagDatabaseController:
             self.choices = (result.choice,)
             self.index = 0
             self.result = result
-            self.reason = "Catalog connected. Preview approved content or recover the selected interrupted import."
+            self.reason = "Catalog connected."
+            if not self.closed and not self.faulted:
+                if (self.apply_authorized and result.choice.observation_status == "recovery_pending"
+                        and result.choice.recovery_receipts and (result.choice.native_adapter is None
+                        or len(result.choice.recovery_receipts) == 1)):
+                    self.reason += " Choose an approved receipt, then Recover selected import."
+                elif result.choice.observation_status not in {"supplied", "current"}:
+                    self.reason += " Refresh host observations before reviewing content."
+                else:
+                    self.reason += " Choose Preview approved content to review available changes."
             if operation.cancelled.is_set():
-                self.reason += " Cancellation arrived after admission; the saved connection is retained."
+                self.reason += " The connection check had already started; the saved connection is retained."
         elif operation.kind == "preview":
             if operation.cancelled.is_set() or self.closed or self.choice.transactions.session.binding != self._binding:
                 self.reason = "Cancelled or stale preview discarded. Request a fresh review."

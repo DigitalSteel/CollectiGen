@@ -274,8 +274,8 @@
       "size_bytes": 4938
     },
     "core/component_acquisition.py": {
-      "sha256": "79108b590015f72556c9a5ec2758b242d5e628b0b48bfe845040ae8148229fef",
-      "size_bytes": 25722
+      "sha256": "3d336f414b9b8d4095cdb8428c53bb3ed7f89d4320152b8275f6a8569f560d48",
+      "size_bytes": 25299
     },
     "core/component_release_identity.py": {
       "sha256": "20d4730db277ed2629391dcf64ee84ee4707151112f60608e4f24490e8b05b96",
@@ -386,8 +386,8 @@
       "size_bytes": 7536
     },
     "core/dependencies.py": {
-      "sha256": "77a88acf3ebbd7fdc3ebc8c95079c58b4e7c611dc9757c6f0dd11b0670a0482a",
-      "size_bytes": 141931
+      "sha256": "c92a047a1026de990b167718d81c70ca0865ab34fdf0f5bd1ff4aed19c9734e6",
+      "size_bytes": 145948
     },
     "core/derived_refresh.py": {
       "sha256": "759874a2ebd75a62001a50c1d6a27e1ceb13be7e7829a930e9a70344f00a0530",
@@ -862,16 +862,16 @@
       "size_bytes": 31133
     },
     "core/manager_self_update_recovery.py": {
-      "sha256": "5d7d8dceb15dba5d8d0d14d3ca8f855e257f5d4bf5556ac9791ab1d0af2c8a4a",
-      "size_bytes": 25533
+      "sha256": "40188225c6961b6469f7cee7770f8de819bf564ca13a94a9b8bf7c039ab3ae2c",
+      "size_bytes": 25673
     },
     "core/manager_server_inventory.py": {
       "sha256": "70396390714db2f234b209a6b273bd4d1b0ad1933b3b022d0672e3f19b519cd1",
       "size_bytes": 3343
     },
     "core/manager_stock_apply.py": {
-      "sha256": "81c2fb3e682792d09629c1079b07b00e1b619fd0175307ce2617ac51d1c3e52b",
-      "size_bytes": 13487
+      "sha256": "8fb7249b16e448d9ba0b19cb011f38d60d76042a6cde934775e98e0045d885ea",
+      "size_bytes": 13198
     },
     "core/manager_stock_hook_admission.py": {
       "sha256": "0de230eda571d18b1beb6db70880656adac32c5c0d15a9f1e517b76f43fb5ea0",
@@ -882,20 +882,20 @@
       "size_bytes": 23033
     },
     "core/manager_stock_hook_provider.py": {
-      "sha256": "7cb761a8cd34ca9a5b74615db8acd86ca93b6ab774f5b8e17c83e0c96edb92f5",
-      "size_bytes": 39671
+      "sha256": "f7275b571d0335b3e8b55f74f7176662ed9a4e1442eca71e8c80bf8bb4d52846",
+      "size_bytes": 39889
     },
     "core/manager_successor_admission.py": {
-      "sha256": "084f7f3d0df2d32bffa29031777c19a686e3c3fa4513a6d77b18fe05c9e3f45e",
-      "size_bytes": 14349
+      "sha256": "17ddb86f741e0e4ab23d485e247d73c5387ef5f267ea157d5ec13f32517e84d8",
+      "size_bytes": 15742
     },
     "core/manager_update_host.py": {
-      "sha256": "14b1fe674c833180472fae63587ac08efe1e80e39e1da030070ae411179804bd",
-      "size_bytes": 25540
+      "sha256": "e69077a3bb63ad42a11435c8226970d36258e1102c86d9e63074e02df12b4355",
+      "size_bytes": 29131
     },
     "core/manager_update_service.py": {
-      "sha256": "bddf037a0ab6e92b3c0fb20feba3bee4ff081906c9c71950311b590ce7082565",
-      "size_bytes": 22632
+      "sha256": "e6a3e8839f0737ca703c4b1c4810e2c3347abe2c145a1ccecdda79e9a4b2c3e6",
+      "size_bytes": 22674
     },
     "core/media_inventory.py": {
       "sha256": "5117d1bcec46ca4f0b2e9d0caee3648a8f2384cfdff95f4a21c2344624cbcf41",
@@ -1446,8 +1446,8 @@
       "size_bytes": 7893
     },
     "core/tag_default_package.py": {
-      "sha256": "062750e52f88520daec6e77c098c3ef24ab1b94c18d550c0baff3972a9eb2233",
-      "size_bytes": 8050
+      "sha256": "8663238742675f30c4856e8dc93c9684b78e7d671b20ff5fb9c8be1e9f2e88eb",
+      "size_bytes": 8108
     },
     "core/tag_identity_merge.py": {
       "sha256": "90f8782894f54f4f14e891811fc4df36784971ba37d6bddf5c139a5d31f82395",
@@ -1622,16 +1622,16 @@
       "size_bytes": 23930
     },
     "core/training_dataset_binding.py": {
-      "sha256": "bc67e835a2befd2686656e2ba35592f94cdda3c88c66d13e232e6ea5dd81b7f4",
-      "size_bytes": 17915
+      "sha256": "9d30043374b54c26b2cef17f35bd1ac8738d2bede0d867f0673bd96e22dd0e0b",
+      "size_bytes": 18875
     },
     "core/training_dataset_package_contract.py": {
       "sha256": "1aff0241f5094fb302a3b201faf932429c29d4901e56cdbd1635f139325ed8ae",
       "size_bytes": 15534
     },
     "core/training_dataset_preparation.py": {
-      "sha256": "75181cc40a5effc6b180573ad02fad696ec4f51dcb1667b37dbe8e55f1110601",
-      "size_bytes": 17367
+      "sha256": "6008fbdabe3210b4a1ec1d2cb6cf981b17035050f14d7538b7c1176275c7c818",
+      "size_bytes": 17390
     },
     "core/training_duplicate_evidence.py": {
       "sha256": "274a1711e1e0592286425861136ba1798297b4555ecf93615a238d8e5a6d0c43",
@@ -1734,8 +1734,8 @@
       "size_bytes": 52691
     },
     "core/training_preflight.py": {
-      "sha256": "8e6fc75913f6b59d2131f26ff9f53e20dbf09c67946f017bcf157b46a2cee919",
-      "size_bytes": 38261
+      "sha256": "4b2d17f0f9bafb876e287aca462584b9abba2f9de902ce02e95431382f77b6b5",
+      "size_bytes": 46590
     },
     "core/training_presets.py": {
       "sha256": "13cff5453801fb271fda008a87daab13b6e4275dfa72768db2b79c3128c49d8f",
@@ -1886,12 +1886,12 @@
       "size_bytes": 12079
     },
     "core/video_decoder.py": {
-      "sha256": "88738f6270335db6bb7f46362ef5df3b8d5ea0d6ac38ddc9b6aeee32d30e70c7",
-      "size_bytes": 29957
+      "sha256": "7242a9195863efa9d194b19519a3228f28abccd4633bdffcf1ff279cb173086b",
+      "size_bytes": 30719
     },
     "core/video_decoder_worker.py": {
-      "sha256": "8b88dd2df1f57da448e168f17274758871454e5b0ea993383c3fdef02a807a2a",
-      "size_bytes": 9833
+      "sha256": "a0cc23b29ba40648d3d000a0795de0da0ed32ebfe336707e86908dc965e955f4",
+      "size_bytes": 10051
     },
     "core/video_dependency_pack.py": {
       "sha256": "4dab9e9b46bd39edbd11920942e7f5557541deeded1442da0404499dff1b9886",
@@ -1914,8 +1914,8 @@
       "size_bytes": 7926
     },
     "core/video_generation_execution.py": {
-      "sha256": "9f5ceacbdc3dbae469b2d25ab176aad83309268fde16363bf85cd4ce2f430b99",
-      "size_bytes": 37146
+      "sha256": "06fe6910f38490b9d866661a16edb4fa876dfe8cc6459378e3762beaf725528e",
+      "size_bytes": 37637
     },
     "core/video_generation_graph.py": {
       "sha256": "c1f68f8a41aebe20c043ab9b5aaeef4749c24cfad4aa21757d685b81ebe7a858",
@@ -1930,12 +1930,12 @@
       "size_bytes": 1388
     },
     "core/video_output_processing.py": {
-      "sha256": "df667659ab261a66cfb04eb058009e8282d8e8f5a2931e5071ff928c2a9b6ebc",
-      "size_bytes": 21260
+      "sha256": "1d5127ca568b5bcf60499a88996b9f019b4c9086f25560dd347ac8a6553b8c0a",
+      "size_bytes": 22740
     },
     "core/video_output_processing_worker.py": {
-      "sha256": "58197e0039b4e9ae52d89edc990f1af7b934e5af8bd818b94281974532904947",
-      "size_bytes": 6624
+      "sha256": "da2e7c671f6506dbfa0ae0ea451f05e0c75f87523236b63b72a875aca5855e1e",
+      "size_bytes": 7526
     },
     "core/video_runtime_preferences.py": {
       "sha256": "cd39a7a72bc124e54dea23d9c1048509ee01c0c5368df004ff2a985ae81d2319",
@@ -2194,8 +2194,8 @@
       "size_bytes": 79634
     },
     "qt_app/generation_dialog.py": {
-      "sha256": "049a4467c775b2c9188e0cdc63f75fc36a56ac66e13a4a5a0f1a7bbdfadb53c7",
-      "size_bytes": 273907
+      "sha256": "68e6228463dc62ad197466658717f5f5fcd44d3e2609b64c3fb7d53de4aac849",
+      "size_bytes": 276725
     },
     "qt_app/generation_experiment_dialog.py": {
       "sha256": "434ab3c881e24a2cc738b813aa51a97aa5ecb09b2d10322615de027ffa2e19d1",
@@ -2226,16 +2226,16 @@
       "size_bytes": 44616
     },
     "qt_app/generation_recipe_dialog.py": {
-      "sha256": "91ffd2426caa15c067194b434061b9bb1d89a67912ce3aa9cf07b9ec0f702c40",
-      "size_bytes": 12177
+      "sha256": "f1ca1fd59b3ff6f26b83736a9b7b42e73f67311343e625068193d38fd6fa795c",
+      "size_bytes": 12534
     },
     "qt_app/generation_regions_dialog.py": {
       "sha256": "fcca7f91a417b379a43bdf7224767315c885c7b73613cb37805d34765c9e64ba",
       "size_bytes": 11633
     },
     "qt_app/generation_saved_work_dialog.py": {
-      "sha256": "e74809e85bda925623439c620091b723560b87c44904e86aeb7fd8a59197944b",
-      "size_bytes": 37157
+      "sha256": "6ee664898a7b496d6e2e93491872432af053ea43a0b3a148ea03203be8784442",
+      "size_bytes": 37483
     },
     "qt_app/generation_setup_save.py": {
       "sha256": "88e4ae0cc0db47eb0bd4cd0f62ba16608b702e46f3dd95b5f3f2324b6dc1b511",
@@ -2246,8 +2246,8 @@
       "size_bytes": 4593
     },
     "qt_app/generation_workflow.py": {
-      "sha256": "bb776000d48985a9b493a64b1821e60c91431e3bb7fdd4c8b58b1a866f8ddf1f",
-      "size_bytes": 44489
+      "sha256": "4559e2344036a68084c8301a82d501858f73fbf123e3f5ff02023e69e5c0a5e1",
+      "size_bytes": 42289
     },
     "qt_app/guided_review_dialog.py": {
       "sha256": "1c24d12a6c63b31a698ca98e17e8d6c9816c4f333e48e9e0ab767c0522ce6b62",
@@ -2406,8 +2406,8 @@
       "size_bytes": 15696
     },
     "qt_app/model_selector_dialog.py": {
-      "sha256": "b51b28aa6010bcfc247e51390a6dddf4e3f988472ea29f0ef204222b7a8c6002",
-      "size_bytes": 71627
+      "sha256": "e6fed056e10c566809afd70f3b4c6865389ed2ffa6686a80df3c07097cbfef94",
+      "size_bytes": 71860
     },
     "qt_app/model_storage_policy_editor.py": {
       "sha256": "29e0056c011807f017caf3c95cdcaa81aeee24e7844cf80031ecc711b71dcf68",
@@ -2566,8 +2566,8 @@
       "size_bytes": 44983
     },
     "qt_app/swarm_setup_file_dialog.py": {
-      "sha256": "278c31747e7071ed445237af618c729436a3159f87cb4e1d9da311d0e657d6e0",
-      "size_bytes": 53973
+      "sha256": "c7d26645136f6e6f3cb2f7cd224b8a0766376ec17d536fd97ac0b28049331eb8",
+      "size_bytes": 53844
     },
     "qt_app/system_knowledge_maintenance_widget.py": {
       "sha256": "6610f64438d234f0b53eb58a86332def5a2d2c94c751bb9131b6229a2ffc3de2",
@@ -2742,12 +2742,12 @@
       "size_bytes": 23806
     },
     "qt_app/video_generation_dialog.py": {
-      "sha256": "cd1bd387d25159830242adccd27f950d3737a6c3717250898410bd9842f518ab",
-      "size_bytes": 141558
+      "sha256": "87ef0862e67fb1f4fd2e1dda99016f0ae7c4e94592d47f5c6548b83ae6154459",
+      "size_bytes": 141727
     },
     "qt_app/video_generation_workflow.py": {
-      "sha256": "b8a2eaf96826e3d1e8274c50a9f40686c1f30bb0864b01996fc78b18a7067734",
-      "size_bytes": 13483
+      "sha256": "e0986583fac9a0029607f632e5588e72ba6c2738e4cd2c69ca4c4b4cd4e3d241",
+      "size_bytes": 13153
     },
     "qt_app/video_ingest_dialog.py": {
       "sha256": "0ab21a0c718e1d3bc4e81beb1a4d593a9a1210aabd91329a47a0863f31af4fd5",
@@ -2858,8 +2858,8 @@
       "size_bytes": 9413
     },
     "suite_core/discovery/component_staging.py": {
-      "sha256": "efa7e160d8e00ecdd977525c1bb60e71a2904a7b217bdd7555c7618e5d90c39e",
-      "size_bytes": 32829
+      "sha256": "ce0c520c7eba32a17e02bf89f6c4d73d693c9205837b61d4e18b95f49110179c",
+      "size_bytes": 31204
     },
     "suite_core/discovery/github_component_releases.py": {
       "sha256": "2605b16d30fc07db8306312133a4f4b1ac0ac99a3cf4524d23328ed7934d4ce4",
@@ -2874,8 +2874,8 @@
       "size_bytes": 2988
     },
     "suite_core/discovery/manager_runtime_detached_admission.py": {
-      "sha256": "17a103200e2ec33957ab6774cd99f200ac6af5c6170872a1d4c25deefd89398f",
-      "size_bytes": 12678
+      "sha256": "1349ef628a7eda68e242c455bee4dc273e3c13ba33efe037294cdeeae482526d",
+      "size_bytes": 15292
     },
     "suite_core/discovery/offline_component_producer.py": {
       "sha256": "ae8399f38fa12af7f5329056ec1291bcd7a49dcf7368e6359ae16f02c4c72ef8",
@@ -2934,8 +2934,8 @@
       "size_bytes": 38158
     },
     "suite_core/encyclopedia/catalog_ui.py": {
-      "sha256": "894ab55c2e25509cd785adda1da03a775fcaaf515ce729304d9cb9499de3cf7f",
-      "size_bytes": 79444
+      "sha256": "cf7f53a3189cb666c9e98e6499795be799b54e2b63c36904abc46983bd5296a8",
+      "size_bytes": 79683
     },
     "suite_core/encyclopedia/control_entry.py": {
       "sha256": "5c05175606f6797964067db6a4d1829fa76c3fb9fee68c908076f7e44d69fe22",
@@ -2946,8 +2946,8 @@
       "size_bytes": 22536
     },
     "suite_core/encyclopedia/default_acquisition_controller.py": {
-      "sha256": "f17e5f66777fef79a6f97786504079066699601526078e6e4cb85634c51aaefe",
-      "size_bytes": 5849
+      "sha256": "050e3f7e47eecd8ca9438034c6368ebc742ef27de44cd05c89af69e5c305cead",
+      "size_bytes": 6043
     },
     "suite_core/encyclopedia/demo.py": {
       "sha256": "9051128f32dd0ff3dd155a85e3cd659fc90e9f91934fa4296e681781b32cac4d",
@@ -3110,8 +3110,8 @@
       "size_bytes": 5605
     },
     "suite_core/manager/bootstrap_entry.py": {
-      "sha256": "d9e216082c42d490124fa316f2400b6a88694200eacc8911818fd984095fa42b",
-      "size_bytes": 102980
+      "sha256": "2356912d476d420df584224bdb75128c99bef70622553c1bccd5ac8534614af0",
+      "size_bytes": 103913
     },
     "suite_core/manager/candidate_inventory.py": {
       "sha256": "2274b30218af9ccacdb3a030f241fa67e41170610269b77541a91238aa07cdd1",
@@ -3174,20 +3174,20 @@
       "size_bytes": 5245
     },
     "suite_core/manager/encyclopedia_acquisition_ui.py": {
-      "sha256": "626ecb98dc6117dbc01616d60e5a42fe022fee32bf823cfe51defb90e8f68153",
-      "size_bytes": 30793
+      "sha256": "8076ab2bfce5078e60a83c4d8ac96c2e7b88f3915c3837fbd08fd074fdca0579",
+      "size_bytes": 29387
     },
     "suite_core/manager/encyclopedia_connection_ui.py": {
       "sha256": "60675d41a1efffa13f835aa32606bf8dfd54f87eb33dde0be4d56aa2f0946ef4",
       "size_bytes": 9718
     },
     "suite_core/manager/entry_binding.py": {
-      "sha256": "e0263377300ee6ae3091dd57b5a7b4a9360bab5b2af82e958183fe422d3d3a4b",
-      "size_bytes": 12766
+      "sha256": "8ca9370d2e857f04d75d06e1d728530819ab51bb44759c49cef6de4a50fc5b4a",
+      "size_bytes": 12823
     },
     "suite_core/manager/frozen_entry.py": {
-      "sha256": "45378a465e85cc418e4d96bed17439dabd4024cc7553c3256c7718239f945dfd",
-      "size_bytes": 6124
+      "sha256": "c447401010acdb969d8e188ecf71c29cf4d451db8b4605fee43192ad5541e3d4",
+      "size_bytes": 6508
     },
     "suite_core/manager/host_contracts.py": {
       "sha256": "8dfce6cceafb65fe4d4bcd87205fe12610e00629b41a3b4c0b35baf19024879f",
@@ -3266,8 +3266,8 @@
       "size_bytes": 9623
     },
     "suite_core/manager/organizer_acquisition_ui.py": {
-      "sha256": "3403c9d8b45e55809b3218bf276683135d3bfaa3bcae9f6ffe8f18a0083fb5ff",
-      "size_bytes": 13182
+      "sha256": "0fad45988f3997fae5180e40adadf44c589abd17fb2f564c8623b5bbfbfd5b46",
+      "size_bytes": 12716
     },
     "suite_core/manager/organizer_cached_binding.py": {
       "sha256": "4d243f983caab8726edffddc45f664e531baea3fee78f54f7432233266088cab",
@@ -3330,8 +3330,8 @@
       "size_bytes": 15678
     },
     "suite_core/manager/tag_database_controller.py": {
-      "sha256": "b48f22136629495d44289408fd8b3758d90992024a79a3eaec9c03892ea1185e",
-      "size_bytes": 33848
+      "sha256": "1dd8f533b6df573cb4240be254f395e7fafcdb14b91a181f7bbf6115b8d99087",
+      "size_bytes": 35618
     },
     "suite_core/manager/tag_database_ui.py": {
       "sha256": "60711f2c59084c664a91053cf9225bb7f3524d298fe561d401110634fb0bfcf8",
@@ -3346,16 +3346,16 @@
       "size_bytes": 9149
     },
     "suite_core/manager/update_review_ui.py": {
-      "sha256": "00299f05fc50685dce8722822605c6ebe46feba39869bc019bf40eaecad6d800",
-      "size_bytes": 14006
+      "sha256": "23e9a3c2b1424548e9cb87869ea9d4c918efa0d3c5b4e033561d8d0b9ddb49e8",
+      "size_bytes": 14391
     },
     "suite_core/manager/version.py": {
       "sha256": "063a0dc0886974f059838d598a7523a44f7aadd3b12c5927b554eb0aa90c0f7f",
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "4534fa4fc6df6464ff9d3900822b57b31c66ee6ad45d13b9ac968905babe248e",
-      "size_bytes": 192813
+      "sha256": "2d94f8dc9ecdababf0fff574a985b8048dc26869fff4aa426dadf9f8a4836f20",
+      "size_bytes": 189312
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3898,8 +3898,8 @@
       "size_bytes": 2620
     },
     "tools/optional-ai-profiles.json": {
-      "sha256": "4181e1c9bda9e0bbce7006a62442643a88a7c05c45d82c4015aa6e785ab5d393",
-      "size_bytes": 25624
+      "sha256": "2233d6d0a956af3fba49aa8cb22a9477cfd9baa576df8a4a441908475a267c2f",
+      "size_bytes": 26657
     },
     "tools/organizer_freeze_inputs.py": {
       "sha256": "f7c7a166a15f5f01e6885bcd9bf6e6db635fc6f14402994f8f8d074b9f2969c8",

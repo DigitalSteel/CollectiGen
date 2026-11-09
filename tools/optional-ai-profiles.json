@@ -27,6 +27,33 @@
     ]
   },
   "profiles": {
+    "manager-video-encoder-windows": {
+      "support": "proposed",
+      "display_name": "Suite Manager video resize",
+      "roots": [
+        "av==18.1.0",
+        "pillow==12.3.0"
+      ],
+      "packages": [
+        {
+          "name": "av",
+          "version": "18.1.0",
+          "filename": "av-18.1.0-cp311-abi3-win_amd64.whl",
+          "sha256": "ea1480b7a8d5405cb5f382b344731bf125fd2c1c6fae3964f6c48595628387ff",
+          "source_index": "https://pypi.org/simple",
+          "source_url": "https://pypi.org/project/av/18.1.0/"
+        },
+        {
+          "name": "pillow",
+          "version": "12.3.0",
+          "filename": "pillow-12.3.0-cp313-cp313-win_amd64.whl",
+          "sha256": "1cca606cd25738df4ed873d5ad46bbdb3d83b5cbca291f6b4ff13a4df6b0bbe8",
+          "source_index": "https://pypi.org/simple",
+          "source_url": "https://pypi.org/project/pillow/12.3.0/"
+        }
+      ],
+      "qualification": "Proposal only. Exact bound encoder, output verification and recovery acceptance pending."
+    },
     "organizer-video-windows": {
       "support": "proposed",
       "display_name": "Video playback and verification",

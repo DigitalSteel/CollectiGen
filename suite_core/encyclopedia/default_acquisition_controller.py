@@ -2,6 +2,7 @@
 from concurrent.futures import Future
 from threading import Event, get_ident
 
+from core.component_acquisition import AcquisitionCacheFull
 from core.tag_default_acquisition import TagDefaultAcquisition, TagDefaultBaseline
 
 
@@ -24,6 +25,7 @@ class DefaultAcquisitionController:
         self.baseline_generation = baseline_generation
         self.discovery = self.result = None
         self.error = ""
+        self.cache_full = False
         self._future = None
         self._cancel = Event()
         self._closing = self._uncertain = False
@@ -55,6 +57,7 @@ class DefaultAcquisitionController:
             raise RuntimeError("Native baseline generation changed; refresh before download")
         self.discovery = self.result = None
         self.error = ""
+        self.cache_full = False
         self._cancel = cancel = Event()
         self._generation = generation
         def work():
@@ -117,6 +120,7 @@ class DefaultAcquisitionController:
                 self.result = result
         except Exception as error:
             self.error = str(error)
+            self.cache_full = isinstance(error, AcquisitionCacheFull)
 
     def cancel(self):
         self._check_owner()

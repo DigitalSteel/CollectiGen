@@ -168,7 +168,11 @@ class ManagerUpdateReviewPanel(QGroupBox):
                     self.message = 'Package staged and signature, inventory and bytes verified. Manager has not been replaced.'
             except BaseException as error:
                 self.offer = self.prepared = None; self.review.clear()
-                self.message = 'Update review failed: ' + str(error)[:240] + '\nCheck again to obtain fresh evidence.'
+                if self.operation == 'discover' and isinstance(error, ValueError) and error.args == ('signed_asset_pair_required',):
+                    self.message = ('The listed Manager release is missing signed update metadata. '
+                        'No update can be staged from this release. Check again after the publisher adds the metadata.')
+                else:
+                    self.message = 'Update review failed: ' + str(error)[:240] + '\nCheck again to obtain fresh evidence.'
         self.timer.stop(); self.render()
 
     def permit_close(self):

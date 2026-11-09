@@ -281,10 +281,13 @@ class WindowsStockHookProvider:
         from pathlib import Path
         from suite_core.discovery.component_release_signature import verify_component_release, verify_component_artifact, _json
         from suite_core.discovery.component_staging import MAX_METADATA_BYTES
+        from suite_core.discovery.manager_runtime_detached_admission import manager_inventory_json, read_manager_inventory_proof
         from suite_core.discovery.manager_runtime_detached_admission import MANAGER, PROFILE, produce_detached_inventory
         self.recovery.retained_context(journal)
         prior = journal['binding']['prior'];files = prior['files']
         def read(name):
+            if name == 'proof':
+                return read_manager_inventory_proof(files[name])
             if files[name]['size'] > MAX_METADATA_BYTES:raise LaunchHold('prior_metadata_bounds')
             return Path(files[name]['path']).read_bytes()
         manifest,signature,trust,proof = (read(name) for name in ('manifest','signature','trust','proof'))
@@ -300,7 +303,7 @@ class WindowsStockHookProvider:
                 expected_version=prior['version'],expected_channel=prior['channel'])
                 or sha256(proof).hexdigest() != verified.artifact.portable_manifest_sha256):
             raise LaunchHold('original_signed_prior_inventory_required')
-        rows={row['path']:row for row in _json(proof,'signed prior inventory')['files']}
+        rows={row['path']:row for row in manager_inventory_json(proof)['files']}
         if (rows['CollectiGenManager.exe']['sha256']!=files['executable']['sha256']
                 or rows['CollectiGenManager.exe']['sha256']!=self.request.current_executable_sha256
                 or files['inventory']['sha256']!=sha256(proof).hexdigest()):

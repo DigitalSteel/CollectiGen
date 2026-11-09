@@ -164,8 +164,9 @@ def _bind_training_worker(admitted, signed_worker, *, prepare_workspace=False):
 
     from .bootstrap_entry import EntryHold
     from release_contract import sha256_file
-    from suite_core.discovery.component_release_signature import _json
-    from suite_core.discovery.manager_runtime_detached_admission import DetachedAdmissionPlan, PAYLOAD_ENTRY
+    from suite_core.discovery.manager_runtime_detached_admission import (
+        DetachedAdmissionPlan, PAYLOAD_ENTRY, manager_inventory_json,
+    )
     from suite_core.installation import _path
 
     if (type(signed_worker) is not tuple or len(signed_worker) != 2
@@ -177,14 +178,19 @@ def _bind_training_worker(admitted, signed_worker, *, prepare_workspace=False):
         raise EntryHold("training_worker_inventory_pin_changed")
     code = admitted.layout.code_root / "Apps" / "Manager" / "current"
     executable = _path(code / PAYLOAD_ENTRY)
-    rows = _json(proof, "detached inventory")["files"]
+    rows = manager_inventory_json(proof)["files"]
     manager = next((row for row in rows if row["path"] == PAYLOAD_ENTRY), None)
     if manager is None or not executable.is_file() or sha256_file(executable) != manager["sha256"]:
         raise EntryHold("training_worker_manager_identity_changed")
-    return plan.provision_training_worker(
-        proof, code_root=code, data_root=admitted.layout.data_root,
-        prepare_workspace=prepare_workspace,
-    )
+    data = _path(admitted.layout.data_root)
+    if prepare_workspace and plan.training_worker_file_rows(proof) is not None:
+        manager_data = _path(data / "Manager")
+        if not manager_data.is_dir():
+            raise EntryHold("training_review_manager_data_required")
+        workspace = _path(manager_data / "TrainingReview")
+        workspace.mkdir(exist_ok=True)
+        _path(workspace)
+    return plan.provision_training_worker(proof, code_root=code, data_root=data)
 
 
 def launch_manager(*, normal_entry_session=None, argv=None, executable=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None, signed_training_worker=None):

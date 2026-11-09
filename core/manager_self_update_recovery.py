@@ -254,12 +254,17 @@ class ManagerRecovery:
         require(release["channel"] in ("stable", "beta"), "release_channel")
         require(release["platform"] == {"os": "windows", "architecture": "x86_64"}, "platform_unqualified")
         require(set(release["files"]) == {"archive", "manifest", "signature", "trust", "proof", "inventory", "executable"}, "release_pins")
-        for spec in release["files"].values():
+        from suite_core.discovery.manager_runtime_detached_admission import read_manager_inventory_proof
+
+        for kind, spec in release["files"].items():
             require(set(spec) == {"path", "size", "sha256"}, "retained_file_pin")
             pin(spec["sha256"])
             p = safe_path(spec["path"])
             require(within(p, self.paths["recovery"]) and not within(p, self.home), "retained_payload_outside_transaction")
-            require(observe(p) == {"exists": True, "size": spec["size"], "sha256": spec["sha256"]}, "retained_payload_missing_or_changed")
+            if kind in ("proof", "inventory"):
+                read_manager_inventory_proof(spec)
+            else:
+                require(observe(p) == {"exists": True, "size": spec["size"], "sha256": spec["sha256"]}, "retained_payload_missing_or_changed")
 
     def retained_context(self, j):
         self.release(j["binding"]["prior"])
@@ -342,11 +347,11 @@ class ManagerRecovery:
         with self.owned():
             j = self.load()
             require(j["phase"] == "prepared", "apply_phase")
+            self.gate("prepare_admission", j)
+            self.gate("exclusive_owner", j)
             self.retained_context(j)
             self.current_code(j["binding"]["prior"])
             self.check_data(j, "before")
-            self.gate("prepare_admission", j)
-            self.gate("exclusive_owner", j)
             return self.save(j, "launch_ready", "normal_apply_authorized")
 
     def starting(self, owner):
@@ -357,6 +362,7 @@ class ManagerRecovery:
             j["startup_owner"] = owner
             self.current_code(j["binding"]["target"])
             self.gate("target_starting", j)
+            self.current_code(j["binding"]["target"])
             self.check_data(j, "expected_b")
             return self.save(j, "awaiting_health", "target_starting", owner=owner)
 
@@ -372,7 +378,10 @@ class ManagerRecovery:
             j = self.load()
             require(j["phase"] == "awaiting_health", "health_phase")
             self.current_code(j["binding"]["target"])
+            self.check_data(j, "expected_b")
             evidence = self.gate("target_healthy", j)
+            self.current_code(j["binding"]["target"])
+            self.check_data(j, "expected_b")
             return self.save(j, "healthy", "target_healthy", evidence=evidence)
 
     def repair(self, *, explicitly_requested, executor):
@@ -437,9 +446,11 @@ class ManagerRecovery:
                     self.save(j, "restoring_data", "data_restored_or_preserved", path=n)
                 self.save(j, "data_restored", "manager_data_readback_verified")
             self.check_data(j, "before")
-            self.release(j["binding"]["prior"])
             self.gate("exclusive_owner", j)
             self.gate("recovery_admission", j)
+            self.release(j["binding"]["prior"])
+            self.current_code(j["binding"]["target"])
+            self.check_data(j, "before")
             request = {"transaction": self.id, "binding_sha256": digest(j["binding"]),
                        "deployment": self.binding, "prior": j["binding"]["prior"],
                        "observed_current_version": j["binding"]["target"]["version"],
@@ -462,6 +473,8 @@ class ManagerRecovery:
             self.current_code(j["binding"]["prior"])
             self.check_data(j, "before")
             evidence = self.gate("prior_reopened_healthy_and_closed", j)
+            self.current_code(j["binding"]["prior"])
+            self.check_data(j, "before")
             return self.save(j, "recovery_verified", "manual_recovery_verified", evidence=evidence)
 
 

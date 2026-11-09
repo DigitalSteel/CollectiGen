@@ -10,6 +10,7 @@ from pathlib import Path
 from core.manager_launch_owner import DeploymentOwner, LaunchHold
 from core.manager_self_update_recovery import ManagerRecovery, digest, observe
 from suite_core.discovery.component_staging import guard, require, MAX_METADATA_BYTES
+from suite_core.discovery.manager_runtime_detached_admission import manager_inventory_json, read_manager_inventory_proof
 from suite_core.discovery.component_release_signature import (
     verify_component_release, verify_component_artifact, _json,
 )
@@ -56,14 +57,30 @@ class OrdinarySuccessorBinding:
     def version(self):return self.contract['manager_version']
 
     def revalidate(self):
+        self._revalidated_release()
+        return self
+
+    def training_reference(self):
+        """Project a freshly authenticated terminal release into the child offer."""
+        release = self._revalidated_release()
+        require(release is not None, 'ordinary_successor_retained_release_required')
+        files = {}
+        for name, spec in release['files'].items():
+            path = Path(spec['path'])
+            require(path.is_relative_to(self.root / 'Recovery'),
+                    'ordinary_successor_training_recovery_path_required')
+            files[name] = dict(spec, path=path.relative_to(self.root).as_posix())
+        return dict(release, files=files)
+
+    def _revalidated_release(self):
         guard(self.root/'MANAGER_PACKAGE.json')
         require(sha256((self.root/'MANAGER_PACKAGE.json').read_bytes()).hexdigest()==self.initial_contract_sha256,
             'ordinary_initial_compiled_contract_changed')
-        fresh=ordinary_successor_contract(self.root,self.initial_contract,
+        fresh,release=_ordinary_successor_evidence(self.root,self.initial_contract,
             initial_contract_sha256=self.initial_contract_sha256,expected_trust_sha256=self.trust_sha256,
             settings_path=self.settings_path)
         require(fresh==self.contract,'ordinary_signed_successor_binding_changed')
-        return self
+        return release
 
 
 def admit_successor_selection(owner, recovery, request, *, release_side, argv):
@@ -85,6 +102,8 @@ def admit_successor_selection(owner, recovery, request, *, release_side, argv):
     release = journal['binding'][release_side]
     files = release['files']
     def read(name):
+        if name == 'proof':
+            return read_manager_inventory_proof(files[name])
         spec = files[name]
         require(spec['size'] <= MAX_METADATA_BYTES, 'successor_metadata_bounds')
         return Path(spec['path']).read_bytes()
@@ -113,7 +132,7 @@ def admit_successor_selection(owner, recovery, request, *, release_side, argv):
         'successor_signed_inventory_changed')
     if release_side == 'target':
         require(sha256(proof).hexdigest() == request.inventory_sha256,'original_target_inventory_changed')
-    rows = _json(proof, 'successor inventory')['files']
+    rows = manager_inventory_json(proof)['files']
     current = owner.root / 'Apps/Manager/current'
     installed = []
     for row in rows:
@@ -181,9 +200,17 @@ def ordinary_successor_contract(root, initial, *, initial_contract_sha256, expec
     Called after the immutable initial compiled contract is verified, before any
     new owner or child. Missing locator preserves the initial fixed launch path.
     """
+    contract, _ = _ordinary_successor_evidence(root, initial,
+        initial_contract_sha256=initial_contract_sha256,
+        expected_trust_sha256=expected_trust_sha256, settings_path=settings_path)
+    return contract
+
+
+def _ordinary_successor_evidence(root, initial, *, initial_contract_sha256,
+                                 expected_trust_sha256, settings_path):
     root = Path(root)
     locator = root/'_bootstrap/manager-successor.json';guard(locator)
-    if not locator.exists():return initial
+    if not locator.exists():return initial, None
     require(type(expected_trust_sha256) is str and len(expected_trust_sha256)==64,
         'compiled_successor_release_trust_pin_required')
     require(locator.stat().st_size <= 16384,'ordinary_successor_locator_bounds')
@@ -219,6 +246,8 @@ def ordinary_successor_contract(root, initial, *, initial_contract_sha256, expec
         and digest(checked['binding'])==value['binding_sha256'],'ordinary_successor_terminal_required')
     files=release['files']
     def read(name):
+        if name == 'proof':
+            return read_manager_inventory_proof(files[name])
         require(files[name]['size']<=MAX_METADATA_BYTES,'ordinary_successor_metadata_bounds')
         return Path(files[name]['path']).read_bytes()
     manifest,signature,trust,proof = (read(name) for name in ('manifest','signature','trust','proof'))
@@ -233,7 +262,7 @@ def ordinary_successor_contract(root, initial, *, initial_contract_sha256, expec
         and value['version']==release['version'] and value['artifact_sha256']==verified.artifact.sha256
         and value['inventory_sha256']==verified.artifact.portable_manifest_sha256,
         'ordinary_successor_signed_artifact_changed')
-    rows=_json(proof,'ordinary successor inventory')['files'];by_name={}
+    rows=manager_inventory_json(proof)['files'];by_name={}
     for row in rows:
         path=root/'Apps/Manager/current'/row['path'];guard(path)
         require(observe(path)==dict(exists=True,size=row['size_bytes'],sha256=row['sha256']),
@@ -241,4 +270,4 @@ def ordinary_successor_contract(root, initial, *, initial_contract_sha256, expec
         by_name[row['path']]=row['sha256']
     require(files['executable']['sha256']==by_name[PAYLOAD_ENTRY]
         and files['inventory']['sha256']==sha256(proof).hexdigest(),'ordinary_successor_retained_code_inventory_changed')
-    return dict(initial,manager_version=release['version'],manager_sha256=by_name[PAYLOAD_ENTRY])
+    return dict(initial,manager_version=release['version'],manager_sha256=by_name[PAYLOAD_ENTRY]), release

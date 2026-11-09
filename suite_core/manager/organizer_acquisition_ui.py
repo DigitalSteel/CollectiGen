@@ -43,8 +43,6 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
 
     def observation_text(self):
         selected=None if self.installed is None else self.installed.selected
-        if selected is not None and self.installed.connection_pending:
-            return 'Installed Organizer: '+selected.version+' — finish saving its connection before opening.'
         return ('Organizer installation has not been checked.' if self.installed is None else
                 'No Organizer installed.' if selected is None else
                 'Installed Organizer: '+selected.version+(' — open and close it normally to finish setup.' if self.installed.phase=='activated' else ''))
@@ -61,8 +59,6 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
                 'No newer Organizer was found.')
 
     def pending_setup_guidance(self):
-        if self.installed is not None and self.installed.connection_pending:
-            return 'The Organizer files are retained. Finish saving the connection before opening the app.'
         return ('Choose Open Organizer, then close its window normally to finish setup.' if self.service.launch_available else
                 'Organizer is installed. Restart Manager to make this saved app available to open.')
 
@@ -94,18 +90,14 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         # evidence remain verbatim in their separate disclosure controls.
         return text.replace('Tag Encyclopedia','Media Organizer').replace('Reader','Organizer').replace('reader','Organizer')
 
-    def _open_ready(self):
-        installed = self.installed
-        return (installed is not None and installed.selected is not None
-                and not installed.pending and not installed.connection_pending
-                and not self.publication_pending and not self.close_held and not self.closing)
-
     def render(self):
         super().render()
         self.status.setText(self._organizer_text(self.status.text()))
         self.refresh.setText('Check Again' if self.check_attempted or self.installed is not None else 'Find Organizer')
         if self.open_action is None:return
-        ready = self._open_ready()
+        selected=None if self.installed is None else self.installed.selected
+        ready=(selected is not None and not self.close_held and not self.closing
+               and not self.publication_pending and not self.installed.pending)
         self.open_action.setVisible(ready)
         can_open = ready and not self.observation_stale and self.service.launch_available
         self.open_action.setEnabled(can_open)
@@ -171,7 +163,7 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         return box.exec()==QMessageBox.Yes
 
     def open_organizer(self):
-        if not self._open_ready() or self.observation_stale or not self.service.launch_available:return
+        if self.close_held or self.closing or self.observation_stale or not self.service.launch_available:return
         # Native creation belongs to the original owner. It must retain the Job,
         # birth witness and drain independently of this display operation.
         snapshot=self.installed

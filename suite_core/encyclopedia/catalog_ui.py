@@ -1017,7 +1017,9 @@ class EncyclopediaCatalogHost(QObject):
                 self.window.status.setText('Tag data package downloaded. Review downloaded content before connecting or importing.')
             error = self.default_acquisition.error
             if error and error != self._content_error:
-                if 'select_enrolled_native_catalog' in error:
+                if self.default_acquisition.cache_full:
+                    self.window.status.setText('This download cache has reached its limit. Restart the application to try again with a fresh cache. No Tag content was imported.')
+                elif 'select_enrolled_native_catalog' in error:
                     self.window.status.setText('Open an enrolled Tag Database without installed defaults, then refresh content releases. No import was performed.')
                 elif 'existing_default_content' in error or 'recovery_pending' in error:
                     self.window.status.setText('This catalog already has defaults or needs recovery. Existing-content updates are unavailable; review local sources or recovery.')

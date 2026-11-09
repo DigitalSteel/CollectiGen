@@ -41,10 +41,14 @@ class VideoExecutionService:
     """The adapter owns exact runtime/resources; the verifier owns full decoding."""
 
     def __init__(self, storage_root, jobs, *, verify_output, poll_interval=1.0, timeout=1800,
-                 registry=None, protected_roots=()):
+                 registry=None, protected_roots=(), runtime_binding=None, decoder_lifetime=None,
+                 encoder_binding=None):
         self.root = Path(storage_root).absolute()
         self.jobs = jobs
         self.verify_output = verify_output
+        self.runtime_binding = runtime_binding
+        self.decoder_lifetime = decoder_lifetime
+        self.encoder_binding = encoder_binding
         self.poll_interval = poll_interval
         self.timeout = timeout
         self._usage_admissions, self._usage_proofs = {}, {}
@@ -495,7 +499,8 @@ class VideoExecutionService:
             resized = resize_verified_video(path, asset, request,
                 self._directory(receipt["job_id"]) / "result.mp4", allowed_root=self.root,
                 width=output_goal["final_width"], height=output_goal["final_height"],
-                should_cancel=should_cancel)
+                should_cancel=should_cancel, runtime_binding=self.runtime_binding,
+                decoder_lifetime=self.decoder_lifetime, encoder_binding=self.encoder_binding)
             native_output = {"path": str(path), "sha256": sha, "byte_length": len(raw),
                 "source_asset": asset.to_dict(), "recipe": resized.recipe,
                 "timeline": resized.lineage.to_dict()}
@@ -576,7 +581,8 @@ class VideoExecutionService:
             original_asset = VideoSourceAsset.from_dict(native["source_asset"])
             mapping = DerivedClipMapping.from_dict(native["timeline"])
             checked = resize_verified_video(expected_native, original_asset, request, Path(output["path"]),
-                allowed_root=self.root, width=goal["final_width"], height=goal["final_height"])
+                allowed_root=self.root, width=goal["final_width"], height=goal["final_height"],
+                runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime, encoder_binding=self.encoder_binding)
             if (checked.source_sha256 != native["sha256"] or checked.output_sha256 != output["sha256"]
                     or checked.recipe != native["recipe"] or checked.lineage.to_dict() != mapping.to_dict()
                     or checked.verification.asset.to_dict() != output["source_asset"]):

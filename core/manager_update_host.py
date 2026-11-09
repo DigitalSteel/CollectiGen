@@ -18,6 +18,7 @@ from core.manager_launch_owner import LaunchHold, _native_witness
 from core.manager_stock_hook_provider import WindowsStockHookProvider
 from core.manager_stock_apply import readback
 from suite_core.discovery.component_staging import guard, require, MAX_METADATA_BYTES
+from suite_core.discovery.manager_runtime_detached_admission import manager_inventory_json, read_manager_inventory_proof, MANAGER_MAX_ARCHIVE
 from suite_core.discovery.component_release_signature import verify_component_release, verify_component_artifact, _json
 from suite_core.discovery.manager_runtime_detached_admission import MANAGER, PROFILE, produce_detached_inventory
 
@@ -150,6 +151,7 @@ class CompiledManagerUpdateProfile:
     initial_prior: dict
     updater_sha256: str
     native_review: object
+    enable_training_baseline: bool = False
 
     def check(self):
         require(type(self.trust_bytes) is bytes and len(self.trust_bytes)<=MAX_METADATA_BYTES
@@ -157,6 +159,7 @@ class CompiledManagerUpdateProfile:
             and self.channel in {'stable','beta'} and type(self.transport_id) is str
             and 0<len(self.transport_id)<=128 and callable(self.opener) and callable(self.native_review),
             'explicit_compiled_update_profile_required')
+        require(type(self.enable_training_baseline) is bool, 'explicit_training_baseline_flag_required')
         require(type(self.updater_sha256) is str and len(self.updater_sha256)==64,
             'reviewed_stock_updater_pin_required')
         return self
@@ -167,7 +170,8 @@ class CompiledManagerUpdateProfile:
             and cache!=admitted.layout.data_root/'Manager/UpdateCache','compiled_service_cache_scope_required')
         guard(cache);cache.mkdir(parents=True,exist_ok=False)
         acquisition=ComponentAcquisition(cache_root=cache,cache_owner=uuid4().hex,opener=self.opener if opener is None else opener,
-            host_version=version,trust_bytes=self.trust_bytes,trust_sha256=self.trust_sha256)
+            host_version=version,trust_bytes=self.trust_bytes,trust_sha256=self.trust_sha256,
+            max_artifact_bytes=MANAGER_MAX_ARCHIVE)
         return ManagerUpdateService(acquisition,current_version=version,channel=self.channel,
             installed_selection=installed_selection)
 
@@ -184,7 +188,18 @@ class CompiledManagerUpdateProfile:
             require(transport_id=='sealed-local-qualification','explicit_test_build_transport_required')
             transport_id=opener.transport_id;opener=opener.bind(owner.root,transport_id)
         service=self.service(admitted,version,root_cache,installed_selection=launcher.current_successor_selection,opener=opener)
-        host=ManagerUpdateHostBinding(service,transport_id,child_cache,apply_review=launcher.review_update_for_close)
+        baseline = None
+        if self.enable_training_baseline:
+            successor = launcher.current_successor_selection
+            if successor is not None:
+                from core.manager_successor_admission import OrdinarySuccessorBinding
+                require(type(successor) is OrdinarySuccessorBinding,
+                        'ordinary_successor_training_binding_required')
+                baseline = successor.training_reference()
+            elif self.initial_prior is not None and self.initial_prior['version'] == version:
+                baseline = self.initial_prior
+        host=ManagerUpdateHostBinding(service,transport_id,child_cache,
+            apply_review=launcher.review_update_for_close, training_baseline=baseline)
         launcher.compiled_update_profile=self
         launcher.compiled_update_host=host
         launcher.compiled_update_admitted=admitted
@@ -207,6 +222,49 @@ class CompiledManagerUpdateProfile:
             and cache.name.startswith('child-'),'compiled_child_cache_scope_required')
         return self.service(admitted,VERSION,cache,opener=opener)
 
+    def training_proof_for_retained_baseline(self, *, session, admitted):
+        """Verify an explicitly retained baseline for this original entry."""
+        from suite_core.manager.bootstrap_entry import NormalEntrySession, check_training_baseline_offer
+        from suite_core.discovery.manager_runtime_detached_admission import admit_installed_detached
+
+        self.check()
+        require(type(session) is NormalEntrySession and session.state == 'offered'
+                and session.admitted is admitted, 'original_training_proof_session_required')
+        session._peer()
+        profile = session.update_profile
+        require(profile is not None and profile['trust_sha256'] == self.trust_sha256
+                and profile['channel'] == self.channel, 'training_proof_session_trust_changed')
+        reference = getattr(session, 'training_baseline', None)
+        if reference is None:
+            return None
+        reference = check_training_baseline_offer(reference, profile, session.binding.entry)
+        release = self._release(admitted.layout.code_root, reference)
+        files = release['files']
+        proof = read_manager_inventory_proof(files['proof'])
+        def metadata(name):
+            spec = files[name]
+            require(type(spec['size']) is int and 0 < spec['size'] <= MAX_METADATA_BYTES,
+                    'training_proof_metadata_bounds')
+            with Path(spec['path']).open('rb') as stream:
+                value = stream.read(spec['size'] + 1)
+            require(len(value) == spec['size'] and sha256(value).hexdigest() == spec['sha256'],
+                    'training_proof_metadata_changed')
+            return value
+        archive = Path(files['archive']['path'])
+        plan = admit_installed_detached(
+            archive, inventory_profile=PROFILE,
+            detached_inventory_bytes=proof, manifest_bytes=metadata('manifest'),
+            signature_bytes=metadata('signature'), trust_bytes=metadata('trust'),
+            expected_trust_sha256=self.trust_sha256, expected_inventory_sha256=files['inventory']['sha256'],
+            expected_version=profile['current_version'], expected_channel=self.channel,
+            installed_executable_sha256=session.binding.entry.executable_sha256,
+        )
+        require(plan.artifact_sha256 == files['archive']['sha256']
+                and manager_inventory_json(proof)['archive_size_bytes'] == files['archive']['size'],
+                'training_proof_archive_reference_changed')
+        session._peer()
+        return plan, proof
+
     def _release(self, root, source):
         release=json.loads(json.dumps(source))
         require(set(release)=={'version','channel','platform','files'} and release['channel']==self.channel,
@@ -225,6 +283,8 @@ class CompiledManagerUpdateProfile:
     def _verify_release(self, release):
         files=release['files']
         def raw(name):
+            if name == 'proof':
+                return read_manager_inventory_proof(files[name])
             require(files[name]['size']<=MAX_METADATA_BYTES,'compiled_release_metadata_bounds')
             readback(files[name]['path'],files[name]['size'],files[name]['sha256'])
             return Path(files[name]['path']).read_bytes()
@@ -236,7 +296,7 @@ class CompiledManagerUpdateProfile:
         require(proof==produce_detached_inventory(archive,inventory_profile=PROFILE,
             expected_version=release['version'],expected_channel=self.channel)
             and sha256(proof).hexdigest()==verified.artifact.portable_manifest_sha256,'compiled_prior_signed_inventory_changed')
-        rows={row['path']:row for row in _json(proof,'compiled prior inventory')['files']}
+        rows={row['path']:row for row in manager_inventory_json(proof)['files']}
         require(files['executable']['sha256']==rows['CollectiGenManager.exe']['sha256']
             and files['executable']['size']==rows['CollectiGenManager.exe']['size_bytes']
             and files['inventory']['sha256']==sha256(proof).hexdigest(),'compiled_prior_retained_code_inventory_changed')
@@ -280,8 +340,8 @@ class CompiledManagerUpdateProfile:
         self._verify_release(prior_release)
         require(prior_release['version']==host.service.current_version,'compiled_current_prior_version_changed')
         current=owner.root/'Apps/Manager/current';updater=owner.root/'Apps/Manager/Update.exe'
-        prior_proof=Path(prior_release['files']['proof']['path']).read_bytes()
-        for row in _json(prior_proof,'compiled installed prior')['files']:
+        prior_proof=read_manager_inventory_proof(prior_release['files']['proof'])
+        for row in manager_inventory_json(prior_proof)['files']:
             path=current/row['path'];guard(path)
             require(observe(path)==dict(exists=True,size=row['size_bytes'],sha256=row['sha256']),
                 'compiled_installed_prior_payload_changed')
