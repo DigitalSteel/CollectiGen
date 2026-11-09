@@ -132,6 +132,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.swarm_preset_service = swarm_preset_service
         self.runtime_allowed = runtime_allowed
         self._alternatives_allowed = runtime_allowed or offline_alternatives
+        self._save_verified_result_draft = offline_alternatives and review_verified_results and not runtime_allowed
         self._checked_connection = checked_connection
         self._checked_connection_provider = checked_connection_provider
         self._checked_image_submission = bool(checked_image_submission and checked_connection
@@ -1903,8 +1904,11 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.result_action = QComboBox()
         for label, action in (("Repeat with same seed", "same_seed"), ("Try a new seed", "new_seed"),
                               ("Remix this result", "remix"), ("Generatively upscale this result", "upscale")):
+            if self._save_verified_result_draft and action not in {"same_seed", "new_seed"}:
+                continue
             self.result_action.addItem(label, action)
-        self.result_action_button = QPushButton("Create Draft from Verified Result")
+        self.result_action_button = QPushButton(
+            "Save New Draft from Result" if self._save_verified_result_draft else "Create Draft from Verified Result")
         self.result_action_button.clicked.connect(self.create_result_draft)
         iteration_row.addWidget(self.result_action)
         iteration_row.addWidget(self.result_action_button)
@@ -1919,9 +1923,11 @@ class GenerationDialog(FeedbackEnabledDialog):
                 if self._offline_job_recovery else
                 "Refresh recent jobs, then open and preview a verified result."
             )
-            for widget in (self.ingest_button, self.finish_result_button, self.result_action,
-                           self.result_action_button, self.outcome_toggle, self.results_experiment_button):
+            for widget in (self.ingest_button, self.finish_result_button,
+                           self.outcome_toggle, self.results_experiment_button):
                 widget.hide()
+            self.result_action.setVisible(self._save_verified_result_draft)
+            self.result_action_button.setVisible(self._save_verified_result_draft)
         layout.addStretch(1)
         return page
 
@@ -3185,7 +3191,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._run("copy_receipt_path", verify, copy_path)
 
     def create_result_draft(self):
-        if self._review_verified_results:
+        if self._review_verified_results and not self._save_verified_result_draft:
             return
         if (not self.receipt or self.receipt.get("state") != "verified" or self._pending
                 or self._execution_active() or self._selected_job_needs_open()):
@@ -3193,6 +3199,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         from core.generation_execution import GenerationExecutionService
         receipt = deepcopy(self.receipt)
         action = str(self.result_action.currentData())
+        if self._save_verified_result_draft and action not in {"same_seed", "new_seed"}:
+            return
         def prepare():
             paths = GenerationExecutionService(self.storage_root, self.jobs).verified_output_paths(receipt)
             plan = None
@@ -3210,6 +3218,17 @@ class GenerationDialog(FeedbackEnabledDialog):
                 if plan.source_identity and plan.source_identity != self.source_identity:
                     raise ValueError("Reopen this request from its original source before repeating it; its source is not attached here.")
             return {"action": action, "paths": paths, "plan": plan}
+        if self._save_verified_result_draft:
+            from core.generation_saved_work import new_draft_path
+
+            def save_iteration():
+                plan = prepare()["plan"]
+                save_plan(new_draft_path(self.storage_root), plan)
+
+            self.status.setText("Checking the verified result and saving a separate draft…")
+            self._run("result_draft", save_iteration, lambda _:
+                self.status.setText("New draft saved. Close this draft, then choose Plan an Image to reopen it."))
+            return
         self._run("result_draft", prepare, self.result_action_requested.emit)
 
     def _tab_changed(self, index: int) -> None:
