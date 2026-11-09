@@ -668,6 +668,10 @@ class ScopedTrainingHistory:
             from .training_run_recovery import MAX_REVIEW_BYTES
 
             limit = MAX_REVIEW_BYTES
+        elif record.kind == "execution":
+            from .training_execution import MAX_REVIEW_BYTES
+
+            limit = MAX_REVIEW_BYTES
         raw = _read_optional(receipt, limit=limit)
         if raw is None or hashlib.sha256(raw).hexdigest() != record.review_sha256:
             raise TrainingRunIndexError("The selected training receipt changed or is unavailable.")
