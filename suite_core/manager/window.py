@@ -610,6 +610,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.saved_preparation_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.saved_preparation_button.clicked.connect(lambda: self.open_training_history(preparations=True))
             training_layout.addWidget(self.saved_preparation_button, 0, Qt.AlignLeft)
+            self.training_merge_button = compact_action(QPushButton("Inspect Merge Inputs…"))
+            self.training_merge_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.training_merge_button.clicked.connect(self.open_training_merge)
+            training_layout.addWidget(self.training_merge_button, 0, Qt.AlignLeft)
             training_panel.setVisible(not view.synthetic)
             applications_layout.insertWidget(applications_layout.indexOf(self.categories_toggle), training_panel)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
@@ -1649,6 +1653,25 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     self._close_after_krea_review = False
                     QTimer.singleShot(0, self.close)
 
+        def open_training_merge(self):
+            if self.view.synthetic or normal_entry_session is None or self.close_policy.pending:
+                return
+            if getattr(self, "_training_merge_dialog", None) is not None:
+                return
+            from core.background_jobs import BackgroundJobManager
+            from qt_app.training_merge_dialog import TrainingMergeDialog
+            jobs = BackgroundJobManager()
+            try:
+                dialog = TrainingMergeDialog(jobs, self)
+                self._training_merge_dialog = dialog
+                dialog.exec()
+            finally:
+                dialog = getattr(self, "_training_merge_dialog", None)
+                self._training_merge_dialog = None
+                if dialog is not None:
+                    dialog.deleteLater()
+                jobs.shutdown(wait=True)
+
         def open_repository_inspection(self):
             if self.view.synthetic or self.close_policy.pending or self._model_workspace_factory is None: return
             from qt_app.model_workspace_dialog import ModelWorkspaceDialog
@@ -2198,7 +2221,16 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.statusBar().showMessage(self.close_policy.decision.reason)
             self.render_library()
 
+        def _hold_close_for_merge(self, event):
+            if getattr(self, "_training_merge_dialog", None) is None:
+                return False
+            self.statusBar().showMessage("Close the Merge inspection before closing Manager.")
+            event.ignore()
+            return True
+
         def closeEvent(self, event):
+            if self._hold_close_for_merge(event):
+                return
             if getattr(self, "_training_history_dialog", None) is not None:
                 self.statusBar().showMessage("Close the Training History review before closing Manager.")
                 event.ignore()

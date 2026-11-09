@@ -22,6 +22,9 @@ class WindowJobProgress(QObject):
         self.stop=QPushButton("Cancel Safely",owner)
         self.stop.clicked.connect(self.cancel)
         self._external_cancel=None
+        self._external_cancel_tooltip="Stop this operation at its next safe boundary."
+        self._external_tooltip_restore=None
+        self._drain_guard=None
         self._started=0.0
         self._title=""
         self._unit="items"
@@ -32,16 +35,24 @@ class WindowJobProgress(QObject):
         self.timer.setInterval(200)
         self.timer.timeout.connect(self.refresh)
 
-    def attach(self,task,*,title,unit,cancel_button=None):
+    def attach(self,task,*,title,unit,cancel_button=None,drain_guard=None,cancel_tooltip=None):
+        if drain_guard is not None and not callable(drain_guard):
+            raise TypeError("drain_guard must be a nonblocking physical-drain predicate")
         if self.task is not None and self.task is not task:
             previous=self.task.manager.get(self.task.job_id) if self.task.job_id else None
-            if previous is None or previous.state in {"queued","running","paused"}:
+            if previous is None or previous.state in {"queued","running","paused"} or self._awaiting_drain():
                 raise RuntimeError("The window already has an active operation progress owner.")
+        self._restore_external_tooltip()
         self.task=task
+        self._drain_guard=drain_guard
         self._title=str(title or task.name)
         self._unit=str(unit or "items")
         self._started=time.monotonic()
         self._external_cancel=cancel_button
+        self._external_cancel_tooltip=("Stop this operation at its next safe boundary."
+            if cancel_tooltip is None else str(cancel_tooltip))
+        if cancel_tooltip is not None and cancel_button is not None:
+            self._external_tooltip_restore=(cancel_button,cancel_button.toolTip())
         task.signals.complete.connect(lambda *_args:self.finish(task))
         task.signals.failed.connect(lambda *_args:self.finish(task))
         task.signals.cancelled.connect(lambda:self.finish(task))
@@ -49,19 +60,23 @@ class WindowJobProgress(QObject):
         self.timer.start()
         return self
 
+    def _awaiting_drain(self):
+        return self._drain_guard is not None and not self._drain_guard()
+
     def refresh(self):
         task=self.task
         if task is None:return
         job=task.manager.get(task.job_id) if task.job_id else None
-        if job is not None and job.state in {"complete","cancelled","failed"}:
+        finishing=job is not None and job.state in {"complete","cancelled","failed"}
+        if finishing and not self._awaiting_drain():
             self.finish(task);return
         elapsed=max(0,int(time.monotonic()-self._started))
         elapsed_text=f"{elapsed//60}m {elapsed%60:02d}s" if elapsed>=60 else f"{elapsed}s"
-        current,total=(job.current,job.total) if job is not None else (0,0)
-        detail=str(job.message or self._title) if job is not None else self._title
+        current,total=(job.current,job.total) if job is not None and not finishing else (0,0)
+        detail="Finishing background cleanup" if finishing else str(job.message or self._title) if job is not None else self._title
         waiting=job is not None and job.state=="queued"
-        stopping=job is not None and job.cancel_requested
-        prefix="Waiting for background capacity" if waiting else "Stopping at a safe boundary" if stopping else self._title
+        stopping=finishing or job is not None and job.cancel_requested
+        prefix=self._title if finishing else "Waiting for background capacity" if waiting else "Stopping at a safe boundary" if stopping else self._title
         text=prefix if detail==prefix else prefix+" · "+detail
         if any(marker in detail for marker in ("WD inference ETA:","JoyCaption inference ETA:","Task ETA:")):
             from core.inference_timing import compact_inference_progress
@@ -82,7 +97,13 @@ class WindowJobProgress(QObject):
         self.stop.setVisible(self._external_cancel is None)
         self.stop.setEnabled(not stopping)
         if self._external_cancel is not None:
-            self._external_cancel.setToolTip("Stop this operation at its next safe boundary.")
+            self._external_cancel.setToolTip(self._external_cancel_tooltip)
+
+    def _restore_external_tooltip(self):
+        if self._external_tooltip_restore is not None:
+            button,tooltip=self._external_tooltip_restore
+            button.setToolTip(tooltip)
+            self._external_tooltip_restore=None
 
     def cancel(self):
         task=self.task
@@ -93,20 +114,31 @@ class WindowJobProgress(QObject):
 
     def finish(self,task):
         if self.task is not task:return
+        if self._awaiting_drain():
+            self.timer.start()
+            self.refresh()
+            return
+        self._restore_external_tooltip()
         self.task=None
+        self._drain_guard=None
         self.timer.stop()
         self.activity.set_active(False)
         for widget in (self.phase,self.bar,self.activity,self.stop):widget.hide()
 
 
-def bind_job_progress(owner,task,*,title,unit="items",cancel_button=None):
+def bind_job_progress(owner,task,*,title,unit="items",cancel_button=None,drain_guard=None,cancel_tooltip=None):
     """Bind before starting a task; reuse the owner's one visible footer row.
 
     Optional ``cancel_button`` is already wired by its owning workflow; otherwise
     the shared row supplies cancellation without detaching completion delivery.
+    An optional nonblocking drain_guard retains cleanup feedback after a terminal
+    result until the original execution scope physically drains. Callers still
+    own safe Close/result delivery; this binding does not close the window.
+    Optional cancel_tooltip describes a differently wired retained action and is
+    restored to the original control hint after physical drain. Defaults do not change.
     Callers continue to own safe closing, errors, results and subsequent steps.
     """
     binding=getattr(owner,"_window_job_progress",None)
     if binding is None:
         binding=owner._window_job_progress=WindowJobProgress(owner)
-    return binding.attach(task,title=title,unit=unit,cancel_button=cancel_button)
+    return binding.attach(task,title=title,unit=unit,cancel_button=cancel_button,drain_guard=drain_guard,cancel_tooltip=cancel_tooltip)

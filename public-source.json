@@ -1693,6 +1693,14 @@
       "sha256": "0cf5c76f15e7935fe6a88c33de656d53e8a3fe388049bd90a5d74163837a53dd",
       "size_bytes": 20118
     },
+    "core/training_merge_inspection.py": {
+      "sha256": "baa8a213269cf9dc745f26fa8a54ad5e7e93472ab752e09125ba240f5973bfe9",
+      "size_bytes": 8627
+    },
+    "core/training_merge_policy.py": {
+      "sha256": "1d88712df9f3315a6e5c3031321220c2113f6c58c5bdaa1034f037f595662486",
+      "size_bytes": 218
+    },
     "core/training_metrics.py": {
       "sha256": "df6417f1e4227709d361f8fa01e117958282e3c4bfee7c696bda7d694b5055eb",
       "size_bytes": 14865
@@ -2153,6 +2161,10 @@
       "sha256": "f7f55d3a749a972279389d6fd7408ef004e52c9d247b8584bc4a6d4dc5721da4",
       "size_bytes": 7452
     },
+    "qt_app/dialog_lifetime.py": {
+      "sha256": "55b492ec950ecbac94dca3fc81e893aaddb0258379a76806ec490bb8ba5e6a86",
+      "size_bytes": 7654
+    },
     "qt_app/downstream_review_dialog.py": {
       "sha256": "2e8095a375a43beb006ad3580f40f2d502b0e83030c083d2003bc777d2d6a40a",
       "size_bytes": 6117
@@ -2318,8 +2330,8 @@
       "size_bytes": 1179
     },
     "qt_app/job_progress.py": {
-      "sha256": "9edd307676f8650c496fe562e5a5e6d45d22df806b99249be53c99618855a56b",
-      "size_bytes": 5595
+      "sha256": "bd7873a2493596c65804d25cf019cc89cc40ac8d779633b0719564d498c3e887",
+      "size_bytes": 7569
     },
     "qt_app/joy_quality_dialog.py": {
       "sha256": "16666364994bb3bb7512f887536b931f7fd7c185b90a983cd35908e652ec153a",
@@ -2680,6 +2692,10 @@
     "qt_app/training_history_dialog.py": {
       "sha256": "26b34ad5554b1b7fdcc8acd0b4aaf06adcc8c8aecd0f7d6ac7ece788626dbc93",
       "size_bytes": 39953
+    },
+    "qt_app/training_merge_dialog.py": {
+      "sha256": "0083502987539c9d92bce2d7cc02c2f6ceda6634fbaf5b34105f01f46112ff62",
+      "size_bytes": 14757
     },
     "qt_app/training_metrics_widget.py": {
       "sha256": "9fe51256d3ee85961965c65d930a6c00444523ec047a0f17c0f5e34e954b773a",
@@ -3058,8 +3074,8 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "7ecdfef11e473485a66910af2427f3b2eea56f01adcc8027f09dec704830fb01",
-      "size_bytes": 34638
+      "sha256": "c5949941486837ea6e532f17c56cf3d641c156c97788377fe4954b6ad19325f1",
+      "size_bytes": 34788
     },
     "suite_core/manager/README.md": {
       "sha256": "c1e2868bced18b4b10646f0e55c707bbaafb036459cf22324149cdbb739c681f",
@@ -3354,8 +3370,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "fffc028b3bba5a5ff0c0353eada72c3fd2a5f3d027ff9c9e53dd6abe4ac27a91",
-      "size_bytes": 196467
+      "sha256": "66a076b20d121b8969f8e9f86220fe99ca2a5d7b2770dda7dbb00e2d6b0ebfe0",
+      "size_bytes": 200638
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
