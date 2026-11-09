@@ -1102,7 +1102,7 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
 
     feedback_workflow="Training dataset draft resume"
 
-    def __init__(self,drafts,parent=None) -> None:
+    def __init__(self,drafts,parent=None,*,export_draft=None) -> None:
         super().__init__(parent)
         self.drafts=tuple(drafts)
         self.setWindowTitle("Resume Training Dataset Draft")
@@ -1128,6 +1128,11 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
         self.open_button.setText("Rebuild Draft from Current Sources")
         self.open_button.setProperty("primary",True)
         buttons.accepted.connect(self.accept); buttons.rejected.connect(self.reject)
+        if export_draft is not None:
+            self.export_button = buttons.addButton("Export for Manager…", QDialogButtonBox.ActionRole)
+            self.export_button.setToolTip("Save this draft's plan, source identities and caption details as JSON. No images are copied.")
+            self.export_button.setEnabled(bool(self.drafts))
+            self.export_button.clicked.connect(lambda: export_draft(self, self.selected_draft()))
         layout.addWidget(buttons)
         self.choice.currentIndexChanged.connect(self._update_detail)
         self._update_detail()

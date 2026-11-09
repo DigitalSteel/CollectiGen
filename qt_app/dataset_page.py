@@ -4789,7 +4789,9 @@ class DatasetPage(QWidget):
                         or "Save a completed candidate preview before resuming a draft.")
                 QMessageBox.information(self,"No training draft available",detail)
                 return
-            picker=TrainingPlanDraftPickerDialog(drafts,self)
+            picker=TrainingPlanDraftPickerDialog(
+                drafts,self,export_draft=getattr(self,"export_training_draft",None),
+            )
             if picker.exec()!=QDialog.Accepted:
                 return
             draft=picker.selected_draft()

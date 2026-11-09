@@ -3,6 +3,62 @@ from dataclasses import replace
 from .hosted_encyclopedia_overlay import compose_startup_runtime, CompositionBoundaryError
 
 
+def _export_training_draft(page, dialog, selected):
+    """Export one exact draft from the Organizer Dataset picker."""
+    import json
+    from pathlib import Path
+
+    from PySide6.QtWidgets import QFileDialog, QMessageBox
+    from core.image_record import _atomic_create_text
+    from core.library_profiles import LibraryRole
+    from core.training_workspace import TrainingWorkspace, TrainingWorkspaceError
+
+    if selected is None:
+        return
+    destination, _ = QFileDialog.getSaveFileName(
+        dialog, "Export Dataset draft for Manager", "dataset-draft.json", "Dataset draft (*.json)",
+        options=QFileDialog.DontConfirmOverwrite,
+    )
+    if not destination:
+        return
+    target = Path(destination)
+    if not target.suffix:
+        target = target.with_suffix(".json")
+    workspace = TrainingWorkspace(
+        concept_store_path=page.training_plan_drafts.path.parent / "concept_groups.json",
+        draft_store_path=page.training_plan_drafts.path,
+    )
+    try:
+        draft = workspace.resolve_draft(selected.draft_id, selected.fingerprint)
+        registry = page.settings.library_registry()
+        for source in draft.plan_manifest["selection_scope"]["frozen_selection"]:
+            profile = registry.get(source.get("library_id", ""))
+            if profile is None or not profile.root or profile.recognized_role in {None, LibraryRole.LOCAL_ONLY}:
+                raise TrainingWorkspaceError("Export requires known sources outside Local Only storage.")
+            effective = registry.profile_for_path(Path(profile.root) / source["relative_image_path"])
+            if effective is None or effective.recognized_role in {None, LibraryRole.LOCAL_ONLY}:
+                raise TrainingWorkspaceError("Export requires known sources outside Local Only storage.")
+        payload = json.dumps(draft.to_dict(), ensure_ascii=False, allow_nan=False) + "\n"
+        if len(payload.encode("utf-8")) > 16 * 1024 * 1024:
+            raise TrainingWorkspaceError("The Dataset draft exceeds Manager's 16 MiB transfer limit.")
+        _atomic_create_text(target, payload)
+        if target.read_bytes() != payload.encode("utf-8"):
+            raise TrainingWorkspaceError("The exported draft did not match on read-back.")
+    except FileExistsError:
+        QMessageBox.warning(dialog, "Choose a new filename", "A file already exists there. The existing file was kept.")
+    except (OSError, ValueError, TrainingWorkspaceError):
+        QMessageBox.warning(
+            dialog, "Dataset draft could not be exported",
+            "Reopen the draft list and choose an unused writable filename. "
+            "Drafts with unknown or Local Only sources cannot be exported.",
+        )
+    else:
+        QMessageBox.information(
+            dialog, "Dataset draft exported",
+            "Open Suite Manager → Applications → Review a Dataset Draft and select the exported file.",
+        )
+
+
 def _native_library_label(item, *, compact):
     # Explicit native UI use only; never called by fake tests or module import.
     from PySide6.QtCore import Qt
@@ -117,6 +173,10 @@ def with_workflow_corrections(reviewed_window_type, *, label_library_item=_nativ
                 install_prompt_action(self)
                 resume = getattr(getattr(self, "dataset_page", None), "training_resume_button", None)
                 if resume is not None:
+                    page = self.dataset_page
+                    page.export_training_draft = lambda dialog, selected: _export_training_draft(
+                        page, dialog, selected,
+                    )
                     resume.setText("Saved Dataset Drafts.")
                     resume.setToolTip(
                         "Review and resume saved Dataset plans. Training execution is unavailable in Media Organizer.")
