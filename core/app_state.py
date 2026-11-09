@@ -176,7 +176,7 @@ def _configure_category_base_authority(
     categories.configure_category_base_authority(workspace.effective)
 
 
-def _bind_default_identity_authority(knowledge, *, expected_revision=None):
+def _bind_default_identity_authority(knowledge, *, expected_revision=None, defaults_root=None):
     """Explicit host read of the exact admitted native Tags/tracking pair."""
     from .default_tag_identity import (
         DefaultTagIdentityHold, _payload, admit_default_tag_identity, pair_revision,
@@ -191,6 +191,13 @@ def _bind_default_identity_authority(knowledge, *, expected_revision=None):
         raise DefaultTagIdentityHold("Default identity host must use its exact admitted Tags participant")
     knowledge.invalidate_default_identity_context()
     binding.assert_clear()
+    if defaults_root is None:
+        defaults_root = DEFAULTS_DIR
+        relationships_path = RELATIONSHIPS_PATH
+    else:
+        if not defaults_root.is_absolute() or ".." in defaults_root.parts:
+            raise DefaultTagIdentityHold("Supply the exact absolute default identity root")
+        relationships_path = binding.root / "relationships.json"
     tags_path=binding.knowledge_path
     tracking_path=binding.root/"default_knowledge_state.json"
     tags_raw=_read(tags_path,MAX_PARTICIPANT_BYTES)
@@ -201,12 +208,12 @@ def _bind_default_identity_authority(knowledge, *, expected_revision=None):
         raise DefaultTagIdentityHold("Native Tags/tracking pair changed during dependent index refresh")
     state=_payload(tracking_raw)
     tracked=state.get("records",{}).get("tags",{})
-    defaults=load_effective_tag_defaults(DEFAULTS_DIR)
+    defaults=load_effective_tag_defaults(defaults_root)
     required={row["id"] for row in defaults.tags}
     required.update(defaults.merged_tag_ids)
     required.update(defaults.merged_tag_ids.values())
     required.update(target for target in knowledge.merged_tag_ids.values() if target in tracked)
-    for path in (DEFAULTS_DIR/"relationships.json",RELATIONSHIPS_PATH):
+    for path in (defaults_root/"relationships.json", relationships_path):
         for row in RelationshipStore(path).relationships.values():
             required.update(endpoint.id for endpoint in row.endpoints
                 if endpoint.kind=="tag" and endpoint.id in tracked)

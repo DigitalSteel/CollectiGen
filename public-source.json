@@ -82,8 +82,8 @@
       "size_bytes": 7261
     },
     "core/app_state.py": {
-      "sha256": "8f6d188cbb65a4463524305fe9764d871e169ca251de2ab4e56de9f6b97ae9d2",
-      "size_bytes": 44124
+      "sha256": "5a63b6af6167b6aa01de663606e8f04238a5c666976ca972f70f98672b04eead",
+      "size_bytes": 44504
     },
     "core/application_categories.py": {
       "sha256": "7cc8359297243588c036910f6d63d69ecbc24ca2645c6264a23ae199d5b7ce67",
