@@ -635,7 +635,11 @@ class ScopedTrainingHistory:
             raise TrainingRunIndexError("The saved execution journal changed or does not confirm a stopped process.")
         if self.snapshot()[1] != revision:
             raise TrainingRunIndexError("Training history changed while opening the review.")
-        return rows[-1]["state"]
+        terminal = rows[-1]
+        exit_code = terminal["details"].get("exit_code")
+        if exit_code is not None and (type(exit_code) is not int or not -(2**31) <= exit_code < 2**32):
+            raise TrainingRunIndexError("The saved execution journal has an invalid exit code.")
+        return terminal["state"], exit_code
 
     def review_validation(self, record, revision):
         """Read a completed saved validation measurement from the host's run store."""
