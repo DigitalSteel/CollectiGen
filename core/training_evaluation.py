@@ -15,7 +15,7 @@ import re
 from uuid import uuid4
 
 from .annotation import GenerationRecord, GenerationResource
-from .generation_planning import GenerationPlan
+from .generation_planning import GenerationPlan, GenerationPlanValidationError
 
 KEY = "training_evaluation"
 CELL_KEY = "training_evaluation_cell"
@@ -284,10 +284,16 @@ def matched_results(session, service, *, should_cancel=None):
                 or not isinstance(key, str) or key not in cells):
             continue
         cell = cells[key]
-        actual = GenerationPlan.from_dict(raw)
-        comparable = comparison_identity(actual) == cell.comparison_sha256
         row = {"job_id": receipt["job_id"], "state": receipt["state"],
-               "comparable": comparable, "path": "", "sha256": ""}
+               "comparable": False, "path": "", "sha256": ""}
+        try:
+            actual = GenerationPlan.from_dict(raw)
+        except GenerationPlanValidationError:
+            row["state"] = "Check in Generate History"
+            matches[cell.key].append(row)
+            continue
+        comparable = comparison_identity(actual) == cell.comparison_sha256
+        row["comparable"] = comparable
         if comparable and receipt["state"] == "verified":
             try:
                 paths = (service.verified_output_paths(receipt, should_cancel=should_cancel)

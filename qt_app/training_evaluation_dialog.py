@@ -252,7 +252,9 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         for cell in self.cells:
             rows=self.results.get(cell.key,[])
             ready=[r for r in rows if r['path']]
-            state=("Verified" if ready else "Settings changed" if any(not r['comparable'] for r in rows)
+            state=("Verified" if ready else "Check in Generate History"
+                   if any(r['state']=="Check in Generate History" for r in rows)
+                   else "Settings changed" if any(not r['comparable'] for r in rows)
                    else rows[-1]['state'] if rows else "Not generated")
             item=QTreeWidgetItem([cell.label,f"{cell.prompt[:80]} / {cell.seed}",state])
             item.setToolTip(1,cell.prompt); item.setData(0,Qt.UserRole,cell.key); self.items.addTopLevelItem(item)
