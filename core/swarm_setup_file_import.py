@@ -44,6 +44,19 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
     """
     from .generation_recipes import _validate, render_prompt_parts
     recipe = _validate(deepcopy(recipe))[0]
+    title = recipe["name"]
+    # SwarmUI's StrictFilenameClean rewrites these title characters and segments.
+    forbidden = (
+        '<>:"\\|?*~&@;#$^%.'
+        '\u180e\u200b\u200c\u200d\u200e\u200f\u202a\u202b\u202c\u202d\u202e'
+        '\u2060\u2061\u2062\u2063\u2064\u2066\u2067\u2068\u2069\u206a\u206b\u206c\u206e\u206f'
+        '\ufeff\ufff9\ufffa\ufffb'
+    )
+    if (any(char in forbidden for char in title)
+            or any(not part or part != part.strip() or part.lower() in {"con", "prn", "aux", "nul"}
+                   or re.fullmatch(r"(?:com|lpt)[0-9]", part.lower())
+                   for part in title.split("/"))):
+        raise ValueError("SwarmUI would change this setup title. Rename the setup or export CollectiGen JSON.")
     if recipe["schema_version"] == 2 and recipe.get("resources") == []:
         raise ValueError("This setup clears model resources. Export it as CollectiGen JSON to preserve that choice.")
     if (recipe.get("resources") or recipe.get("stages") or recipe.get("source_binding")
@@ -83,7 +96,7 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
         raise ValueError("SwarmUI export needs both width and height, or neither. Export CollectiGen JSON instead.")
     if not params:
         raise ValueError("This setup has no qualified text or settings to export to SwarmUI.")
-    return {recipe["name"]: {"title": recipe["name"], "description": "",
+    return {title: {"title": title, "description": "",
                               "preview_image": "", "param_map": params}}
 
 

@@ -6,14 +6,14 @@ import json
 import hashlib
 import re
 import stat
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from copy import deepcopy
 from pathlib import Path
 from uuid import uuid4
 
 from .generation_experiments import MAX_BYTES as GROUP_MAX_BYTES, load_experiment, validate_experiment
 from .generation_recipes import MAX_BYTES as RECIPE_MAX_BYTES, _validate as _validate_recipe, load_recipe, recipe_storage_digest, save_recipe
-from .generation_planning import MAX_PLAN_BYTES, export_plan, load_plan, load_plan_with_digest
+from .generation_planning import MAX_PLAN_BYTES, _plan_writer, export_plan, load_plan, load_plan_with_digest
 from .training_source_io import _assert_unredirected
 from .image_record import _atomic_create_text
 from .external_write_transaction import atomic_verified_bytes
@@ -319,32 +319,33 @@ def save_named_recipe(storage_root, recipe, *, operation_id=None, import_evidenc
             raise ValueError("Selected import details exceed their local save limit.")
     else:
         receipt = None
-    already_saved = target.exists()
-    if already_saved:
-        # A completion signal can be lost after publication. Retrying the same
-        # reviewed operation must identify that exact saved setup, not make a copy.
-        if operation_id is None or load_recipe(target) != recipe:
-            raise ValueError("This setup save target already contains different data.")
-    evidence_path = _recipe_import_evidence_path(storage_root, target)
-    has_evidence = evidence_path.exists()
-    if (receipt is None and has_evidence) or (already_saved and receipt is not None and not has_evidence):
-        raise ValueError("This setup save operation has different local import details.")
-    if receipt is not None:
-        evidence_path.parent.mkdir(parents=True, exist_ok=True)
-        _assert_unredirected(evidence_path.parent)
-        if has_evidence:
-            if strict_json(_preset_bytes(evidence_path, maximum=MAX_IMPORT_EVIDENCE_BYTES,
-                                         label="Setup import evidence")) != receipt:
-                raise ValueError("This setup save operation has different local import details.")
-        else:
-            _atomic_create_text(evidence_path, encoded)
-            if _preset_bytes(evidence_path, maximum=MAX_IMPORT_EVIDENCE_BYTES,
-                             label="Setup import evidence") != encoded.encode("utf-8"):
-                raise OSError("Setup import details failed read-back verification.")
-    if not already_saved:
-        save_recipe(target, recipe)
-    if receipt is not None and read_recipe_import_evidence(storage_root, target) != receipt:
-        raise OSError("Saved setup import details failed exact read-back verification.")
+    with _plan_writer(target) if operation_id is not None else nullcontext():
+        already_saved = target.exists()
+        if already_saved:
+            # A completion signal can be lost after publication. Retrying the same
+            # reviewed operation must identify that exact saved setup, not make a copy.
+            if operation_id is None or load_recipe(target) != recipe:
+                raise ValueError("This setup save target already contains different data.")
+        evidence_path = _recipe_import_evidence_path(storage_root, target)
+        has_evidence = evidence_path.exists()
+        if (receipt is None and has_evidence) or (already_saved and receipt is not None and not has_evidence):
+            raise ValueError("This setup save operation has different local import details.")
+        if receipt is not None:
+            evidence_path.parent.mkdir(parents=True, exist_ok=True)
+            _assert_unredirected(evidence_path.parent)
+            if has_evidence:
+                if strict_json(_preset_bytes(evidence_path, maximum=MAX_IMPORT_EVIDENCE_BYTES,
+                                             label="Setup import evidence")) != receipt:
+                    raise ValueError("This setup save operation has different local import details.")
+            else:
+                _atomic_create_text(evidence_path, encoded)
+                if _preset_bytes(evidence_path, maximum=MAX_IMPORT_EVIDENCE_BYTES,
+                                 label="Setup import evidence") != encoded.encode("utf-8"):
+                    raise OSError("Setup import details failed read-back verification.")
+        if not already_saved:
+            save_recipe(target, recipe)
+        if receipt is not None and read_recipe_import_evidence(storage_root, target) != receipt:
+            raise OSError("Saved setup import details failed exact read-back verification.")
     return target
 
 
@@ -450,6 +451,8 @@ def export_reviewed_setup(storage_root, item_path, destination, review, *,
         raise InterruptedError("Setup export cancelled; nothing was saved.")
     if review_setup_export(storage_root, item_path) != review:
         raise ValueError("The saved setup changed. Review Export Selected again before exporting.")
+    if callable(cancelled) and cancelled():
+        raise InterruptedError("Setup export cancelled; nothing was saved.")
     try:
         _atomic_create_text(destination, encoded)
     except FileExistsError as exc:
