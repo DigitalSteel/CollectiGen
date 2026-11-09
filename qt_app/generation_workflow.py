@@ -270,7 +270,7 @@ def _registered_resource_with_label(registry, resource_id, *, selected_role="", 
     declarations = deepcopy(record.get("declarations", []))
     if selected_role:
         declarations = [item for item in declarations if item.get("role") == selected_role
-            and (not selected_family or item.get("family") == selected_family)]
+            and (not selected_family or item.get("family", "").casefold() == selected_family.casefold())]
     roles = {str(item.get("role", "")).strip() for item in declarations if item.get("role")}
     if len(roles) != 1:
         raise ValueError("The selected registered model does not have one unambiguous resource role.")
