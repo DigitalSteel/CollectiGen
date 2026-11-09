@@ -180,6 +180,7 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
     def stop_owned_organizer(self):
         owner=self.service.native_owner
         if owner is None or not owner.close_held or self.future is not None:return
+        native, child, identity = owner.native, owner.child, owner.identity
         box=QMessageBox(self);box.setWindowTitle('Stop retained Organizer')
         box.setIcon(QMessageBox.Warning);box.setText('Stop the Organizer process retained by this Manager?')
         box.setInformativeText('Unsaved Organizer changes may be lost. This will not count as a normal Close or finish app setup. Manager will wait for verified cleanup.')
@@ -190,6 +191,11 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         finally:
             box.deleteLater()
         if confirmed:
+            if (self.service.native_owner is not owner or owner.native is not native
+                    or owner.child is not child or owner.identity != identity
+                    or not owner.close_held or self.future is not None or self.closing):
+                self.status.setText('Organizer startup state changed. Review the current recovery action before confirming Stop again.')
+                return
             try:owner.stop_failed_start();self.poll()
             except Exception as error:
                 self.status.setText('Organizer cleanup is still held. Keep Manager open and review Details.')
