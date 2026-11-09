@@ -181,11 +181,11 @@ def verify_component_release(manifest_bytes, signature_bytes, trust_bytes, *,
         expected_os, expected_architecture, verified.artifacts[0], verified.key_id, verified.manifest_sha256)
 
 
-def verify_component_artifact(path, release):
+def verify_component_artifact(path, release, *, should_cancel=None):
     """Read/hash chosen artifact via existing verifier; no extraction or writes.
 
     A caller-constructed DTO is not signature evidence; call this only with the
     verifier result. Durable pinning/revalidation remains an activation gate.
     """
     _require(type(release) is VerifiedComponentRelease, "verified component result required")
-    verify_artifact(path, release.artifact)
+    verify_artifact(path, release.artifact, should_cancel=should_cancel)

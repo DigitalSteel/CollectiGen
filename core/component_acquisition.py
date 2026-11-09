@@ -387,7 +387,7 @@ class ComponentAcquisition:
             guard(cached)
             if cached.exists():
                 try:
-                    verify_component_artifact(cached, verified)
+                    verify_component_artifact(cached, verified, should_cancel=should_cancel)
                 except ReleaseContractError as exc:
                     # Preserve the rejected bytes and keep counting them against quota.
                     self._rejected_cache_paths.add(cached)
@@ -416,7 +416,7 @@ class ComponentAcquisition:
                     and self._offers.get(offer.release.manifest_sha256) is offer, "changed_inflight_offer")
             guard(artifact)
             require(artifact.parent == attempt and artifact.name == verified.artifact.name, "cache_artifact_binding")
-            verify_component_artifact(artifact, verified)
+            verify_component_artifact(artifact, verified, should_cancel=should_cancel)
             self._check_inflight_offer(offer, should_cancel)
             self._acquired[verified.manifest_sha256] = artifact
             return AcquiredComponent(offer, artifact)

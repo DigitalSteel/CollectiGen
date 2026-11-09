@@ -371,6 +371,31 @@ def test_overlapping_acquisition_refuses_before_contacting_feed(tmp_path):
     assert acquisition.acquire(offer).artifact == completed.artifact
 
 
+def test_stop_during_cached_component_verification_keeps_verified_retry(tmp_path, monkeypatch):
+    from core import component_acquisition
+
+    feed = FakeFeed()
+    feed.add()
+    acquisition = service(tmp_path, feed, max_cache_bytes=len(PAYLOAD))
+    offer, = offers(acquisition)
+    cached = acquisition.acquire(offer).artifact
+    verify = component_acquisition.verify_component_artifact
+    stopped = False
+
+    def stop_while_verifying(path, release, *, should_cancel):
+        nonlocal stopped
+        assert path == cached
+        stopped = True
+        return verify(path, release, should_cancel=should_cancel)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(component_acquisition, "verify_component_artifact", stop_while_verifying)
+        with pytest.raises(InterruptedError, match="verification was cancelled"):
+            acquisition.acquire(offer, should_cancel=lambda: stopped)
+    assert cached.read_bytes() == PAYLOAD
+    assert acquisition.acquire(offer).artifact == cached
+
+
 def test_cache_quota_and_exact_reuse(tmp_path):
     f=FakeFeed();f.add();s=service(tmp_path,f,max_cache_bytes=len(PAYLOAD));o,=offers(s)
     first=s.acquire(o);before=len(f.calls)
