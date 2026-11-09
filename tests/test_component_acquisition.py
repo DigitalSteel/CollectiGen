@@ -351,6 +351,26 @@ def test_partial_read_failure_and_previous_cache_preserved(tmp_path):
     assert len(list(s.root.iterdir()))==2  # marker and prior successful attempt only
 
 
+def test_overlapping_acquisition_refuses_before_contacting_feed(tmp_path):
+    feed = FakeFeed()
+    feed.add()
+    acquisition = service(tmp_path, feed, max_cache_bytes=len(PAYLOAD))
+    offer, = offers(acquisition)
+    callbacks = []
+
+    def progress(*_args):
+        before = len(feed.calls)
+        with pytest.raises(ValueError, match="already in progress"):
+            acquisition.acquire(offer)
+        assert len(feed.calls) == before
+        callbacks.append(True)
+
+    completed = acquisition.acquire(offer, progress=progress)
+    assert callbacks
+    assert completed.artifact.read_bytes() == PAYLOAD
+    assert acquisition.acquire(offer).artifact == completed.artifact
+
+
 def test_cache_quota_and_exact_reuse(tmp_path):
     f=FakeFeed();f.add();s=service(tmp_path,f,max_cache_bytes=len(PAYLOAD));o,=offers(s)
     first=s.acquire(o);before=len(f.calls)

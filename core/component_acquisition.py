@@ -4,6 +4,7 @@ from hashlib import sha256
 import json
 import re
 from pathlib import Path
+from threading import Lock
 from uuid import uuid4
 from release_contract import ReleaseContractError, verify_release_manifest, ensure_supported_upgrade
 
@@ -202,6 +203,7 @@ class ComponentAcquisition:
         self.trust, self.trust_pin = trust_bytes, trust_sha256
         self.maximum = max_artifact_bytes
         self.cache_maximum = max_cache_bytes
+        self._acquisition_lock = Lock()
         self._acquired = {}
         self._rejected_cache_paths = set()
         self.manifest_name, self.signature_name = manifest_name, signature_name
@@ -364,6 +366,14 @@ class ComponentAcquisition:
                 and self._offers.get(offer.release.manifest_sha256) is offer, "changed_inflight_offer")
 
     def acquire(self, offer, *, progress=None, should_cancel=None):
+        if not self._acquisition_lock.acquire(blocking=False):
+            raise ValueError("A component download is already in progress. Retry after it finishes.")
+        try:
+            return self._acquire(offer, progress=progress, should_cancel=should_cancel)
+        finally:
+            self._acquisition_lock.release()
+
+    def _acquire(self, offer, *, progress, should_cancel):
         self._trust()
         self._check(should_cancel)
         require(type(offer) is ComponentOffer and self._offers.get(offer.release.manifest_sha256) is offer,
