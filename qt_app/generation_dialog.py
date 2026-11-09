@@ -1904,12 +1904,16 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.result_action = QComboBox()
         for label, action in (("Repeat with same seed", "same_seed"), ("Try a new seed", "new_seed"),
                               ("Remix this result", "remix"), ("Generatively upscale this result", "upscale")):
-            if self._save_verified_result_draft and action not in {"same_seed", "new_seed"}:
+            if self._save_verified_result_draft and action == "upscale":
                 continue
             self.result_action.addItem(label, action)
         self.result_action_button = QPushButton(
             "Save New Draft from Result" if self._save_verified_result_draft else "Create Draft from Verified Result")
         self.result_action_button.clicked.connect(self.create_result_draft)
+        if self._save_verified_result_draft:
+            self.result_action.currentIndexChanged.connect(lambda: self.result_action_button.setText(
+                "Select Verified Image for Remix" if self.result_action.currentData() == "remix"
+                else "Save New Draft from Result"))
         iteration_row.addWidget(self.result_action)
         iteration_row.addWidget(self.result_action_button)
         iteration_row.addStretch(1)
@@ -3199,7 +3203,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         from core.generation_execution import GenerationExecutionService
         receipt = deepcopy(self.receipt)
         action = str(self.result_action.currentData())
-        if self._save_verified_result_draft and action not in {"same_seed", "new_seed"}:
+        if self._save_verified_result_draft and action not in {"same_seed", "new_seed", "remix"}:
             return
         def prepare():
             paths = GenerationExecutionService(self.storage_root, self.jobs).verified_output_paths(receipt)
@@ -3219,6 +3223,18 @@ class GenerationDialog(FeedbackEnabledDialog):
                     raise ValueError("Reopen this request from its original source before repeating it; its source is not attached here.")
             return {"action": action, "paths": paths, "plan": plan}
         if self._save_verified_result_draft:
+            if action == "remix":
+                def prepare_remix():
+                    service = GenerationExecutionService(self.storage_root, self.jobs)
+                    paths = service.verified_output_paths(receipt)
+                    output = receipt["outputs"][0]
+                    return {"action": "remix", "paths": paths, "plan": None,
+                            "verified_source_evidence": {"image_sha256": output["sha256"],
+                                                         "knowledge_sha256": output["sidecar_sha256"]},
+                            "verified_source": lambda: service.verified_output_paths(receipt)}
+
+                self._run("result_draft", prepare_remix, self.result_action_requested.emit)
+                return
             from core.generation_saved_work import new_draft_path
 
             def save_iteration():

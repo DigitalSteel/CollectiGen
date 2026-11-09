@@ -592,6 +592,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             generation_history = compact_action(QPushButton("Review Generation Jobs…"))
             generation_history.clicked.connect(self.review_generation_jobs)
             generation_layout.addWidget(generation_history, 0, Qt.AlignLeft)
+            self._verified_result_remix = None
+            self.verified_result_remix_button = compact_action(QPushButton("Plan Remix from Verified Result…"))
+            self.verified_result_remix_button.hide()
+            self.verified_result_remix_button.clicked.connect(self.open_verified_result_remix)
+            generation_layout.addWidget(self.verified_result_remix_button, 0, Qt.AlignLeft)
             generation_panel.setVisible(not view.synthetic and normal_entry_session is not None)
             applications_layout.insertWidget(applications_layout.indexOf(self.categories_toggle), generation_panel)
             training_panel = QWidget()
@@ -1354,6 +1359,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     checked_image_connection=self.checked_image_connection,
                     checked_image_submission=True,
                     offline_generation_alternatives=True,
+                    retain_verified_result_remix=self.retain_verified_result_remix,
                     review_verified_generation_results=True,
                 )
             return self.state
@@ -1392,6 +1398,34 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     dialog.load_history(on_open=True, keep_current_tab=True)
 
             open_generation_workspace(self, on_opened=review)
+
+        def retain_verified_result_remix(self, paths, verifier, evidence):
+            if self.generation_state() is None or len(paths) != 1:
+                return
+            self._verified_result_remix = (tuple(paths), verifier, evidence)
+            self.verified_result_remix_button.show()
+
+        def open_verified_result_remix(self):
+            state = self.generation_state()
+            pending = self._verified_result_remix
+            if state is None or pending is None or self._image_draft_picker_open:
+                return
+            from qt_app.generation_workflow import open_generation_workspace
+
+            current = getattr(self, "_generation_dialog", None)
+            if current is not None and not current._closed:
+                open_generation_workspace(self)
+                current.status.setText("Close this draft, then choose Plan Remix from Verified Result again.")
+                return
+            paths, verifier, evidence = pending
+
+            def opened(_dialog):
+                self._verified_result_remix = None
+                self.verified_result_remix_button.hide()
+
+            open_generation_workspace(self, paths=paths, remix=True, force_new=True,
+                source_context={"verified_source": verifier, "verified_source_evidence": evidence}, on_opened=opened,
+                source_result_allowed=lambda: self.generation_state() is state and self._verified_result_remix is pending)
 
         def open_remix_plan(self):
             if self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None:

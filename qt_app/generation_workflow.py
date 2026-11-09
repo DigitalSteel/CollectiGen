@@ -484,8 +484,12 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             admitted = {Path(path).resolve() for path in verifier()}
             if not selected or any(path.resolve() not in admitted for path in selected):
                 raise ValueError("The selected finishing image is no longer a verified generation result.")
-        return _source_identity(selected,
+        identity = _source_identity(selected,
             frame_reference_provider=(source_context or {}).get("frame_reference_provider"))
+        expected = (source_context or {}).get("verified_source_evidence")
+        if expected is not None and identity["collection"] != [expected]:
+            raise ValueError("The verified image or its sidecar changed. Review the result again.")
+        return identity
 
     def source_image():
         if initial_plan is not None:
@@ -709,6 +713,13 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             (dialog.ingest_button if ready else dialog.ingest_folder_button).setFocus()
         dialog.ingest_folder_requested.connect(choose_ingest_folder)
         def result_action(value):
+            retain_remix = getattr(state, "retain_verified_result_remix", None)
+            if value["action"] == "remix" and not runtime_allowed and callable(retain_remix):
+                retain_remix(value["paths"], value["verified_source"], value["verified_source_evidence"])
+                dialog.status.setText(
+                    "Verified image selected. Close this draft, then choose Plan Remix from Verified Result in Applications."
+                )
+                return
             if value["plan"] is not None:
                 context = {"current_provider": dialog.source_current_provider,
                            "image_provider": dialog.source_image_provider, "image_bytes": dialog.source_image_bytes,
