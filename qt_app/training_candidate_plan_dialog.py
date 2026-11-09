@@ -1109,6 +1109,9 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
         self.resize(680,330)
         layout=QVBoxLayout(self)
         intro=QLabel(
+            "Rebuild to check the current sources, or export one saved draft for Manager. "
+            "The export includes plan, source identity and caption details. It copies no images."
+            if export_draft is not None else
             "Choose a saved source-neutral draft. CollectiGen will resolve only its "
             "recorded library identities and re-inspect the current source bytes."
         )
