@@ -14,6 +14,8 @@ from uuid import uuid4
 
 COMPONENT = "collectigen.suite-manager"
 MAX_DATA_BYTES = 16 * 1024 * 1024
+MAX_JOURNAL_BYTES = 1024 * 1024
+MAX_OWNER_RECORD_BYTES = 65536
 
 
 class RecoveryHold(ValueError):
@@ -31,6 +33,13 @@ def encoded(value):
 
 def digest(value):
     return sha256(encoded(value)).hexdigest()
+
+
+def _bounded_metadata(path, limit, reason):
+    with safe_path(path).open("rb") as stream:
+        raw = stream.read(limit + 1)
+    require(len(raw) <= limit, reason)
+    return raw
 
 
 def pin(value):
@@ -74,7 +83,8 @@ def atomic(path, raw):
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
-        require(path.read_bytes() == raw, "atomic_readback_failed")
+        require(_bounded_metadata(path, len(raw), "atomic_readback_failed") == raw,
+                "atomic_readback_failed")
         # Directory fsync is available on POSIX; Windows qualification must prove
         # its replace/write durability on the actual filesystem and power faults.
         if os.name != "nt":
@@ -166,8 +176,7 @@ class ManagerRecovery:
         return result
 
     def load(self):
-        require(safe_path(self.journal_path).stat().st_size <= 1024 * 1024, "journal_bound")
-        j = json.loads(safe_path(self.journal_path).read_bytes())
+        j = json.loads(_bounded_metadata(self.journal_path, MAX_JOURNAL_BYTES, "journal_bound"))
         require(j.get("schema") == 1 and j.get("transaction") == self.id
                 and j["binding"]["deployment"] == self.binding, "foreign_or_stale_transaction")
         # Adapter validates this binding against the retained original approval,
@@ -187,9 +196,11 @@ class ManagerRecovery:
     def save(self, j, phase, event, **detail):
         j["phase"] = phase
         j["events"].append({"sequence": len(j["events"]), "event": event, **detail})
-        require(len(encoded(j)) <= 1024 * 1024, "journal_bound")
-        atomic(self.journal_path, encoded(j))
-        require(json.loads(self.journal_path.read_bytes()) == j, "journal_readback")
+        raw = encoded(j)
+        require(len(raw) <= MAX_JOURNAL_BYTES, "journal_bound")
+        atomic(self.journal_path, raw)
+        require(_bounded_metadata(self.journal_path, MAX_JOURNAL_BYTES, "journal_bound") == raw,
+                "journal_readback")
         return j
 
     def _owner_record_path(self, ref):
@@ -202,7 +213,7 @@ class ManagerRecovery:
 
     def commit(self, ref, raw):
         """Existing owner's immutable record backend inside this transaction."""
-        require(type(raw) is bytes and len(raw)<=65536 and sha256(raw).hexdigest()==ref['sha256'],
+        require(type(raw) is bytes and len(raw)<=MAX_OWNER_RECORD_BYTES and sha256(raw).hexdigest()==ref['sha256'],
             'immutable_owner_record_bytes')
         path=self._owner_record_path(ref)
         path.parent.mkdir(parents=True,exist_ok=True)
@@ -210,13 +221,15 @@ class ManagerRecovery:
             with path.open('xb') as stream:
                 stream.write(raw);stream.flush();os.fsync(stream.fileno())
         except FileExistsError:
-            require(path.read_bytes()==raw,'immutable_owner_record_collision')
-        require(path.read_bytes()==raw,'immutable_owner_record_readback')
+            require(_bounded_metadata(path, len(raw), 'immutable_owner_record_collision') == raw,
+                    'immutable_owner_record_collision')
+            return
+        require(_bounded_metadata(path, len(raw), 'immutable_owner_record_readback') == raw,
+                'immutable_owner_record_readback')
 
     def read(self, ref):
         path=self._owner_record_path(ref)
-        require(path.stat().st_size<=65536,'immutable_owner_record_bounds')
-        raw=path.read_bytes()
+        raw = _bounded_metadata(path, MAX_OWNER_RECORD_BYTES, 'immutable_owner_record_bounds')
         require(sha256(raw).hexdigest()==ref['sha256'],'immutable_owner_record_changed')
         return raw
 
