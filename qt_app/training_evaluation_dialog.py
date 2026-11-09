@@ -263,7 +263,19 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
     def _result(self,key):
         ready=[r for r in self.results.get(key,[]) if r['path']]
         review=self.session.target_context[KEY]['reviews'].get(key,{}) if self.session else {}
-        return next((r for r in ready if r['job_id']==review.get('job_id')),ready[-1] if ready else None)
+        return next((r for r in ready if r['job_id']==review.get('job_id')
+                     and r['sha256']==review.get('output_sha256')),ready[-1] if ready else None)
+
+    def _selected_observation(self, selected):
+        if len(selected) != 1 or self.session is None:
+            return {}
+        key = selected[0]
+        result = self._result(key)
+        review = self.session.target_context[KEY]['reviews'].get(key, {})
+        if (result and result['job_id'] == review.get('job_id')
+                and result['sha256'] == review.get('output_sha256')):
+            return review
+        return {}
 
     def _selected(self):
         if self._restoring_selection:return
@@ -276,7 +288,7 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         for view in self.previews:view.hide()
         for title in self.preview_titles:title.setText('Select a verified result')
         selected=self._selection()
-        review=self.session.target_context[KEY]['reviews'].get(selected[0],{}) if len(selected)==1 and self.session else {}
+        review=self._selected_observation(selected)
         self.favorite.setChecked(review.get('favorite',False)); self.notes.setText(review.get('notes',''))
         self._observation_baseline=(self.favorite.isChecked(),self.notes.text())
         self._update()
