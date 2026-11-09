@@ -1532,6 +1532,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             def verify(record, revision):
                 nonlocal task
                 if task is not None:
+                    dialog.set_retained_index_status(
+                        "A saved review is still being checked. Wait for it to finish, then try again.")
                     return
                 validation = record.kind == "validation" and record.phase == "completed"
                 review = history.review_validation if validation else history.review_preparation
@@ -1547,7 +1549,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         if dialog._selected() == record and dialog._revision == revision:
                             dialog.set_retained_index_status(message)
                         else:
-                            dialog.set_retained_index_status("")
+                            message = ("The previous check finished. You can now review the selected run."
+                                       if dialog._selected() is not None else "")
+                            dialog.set_retained_index_status(message)
 
                 def complete(result):
                     if validation:
