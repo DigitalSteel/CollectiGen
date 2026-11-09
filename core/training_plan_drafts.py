@@ -836,8 +836,14 @@ class TrainingPlanDraft:
             paths.append(path); identities[path]=identity
         return TrainingDraftResolution(tuple(paths),identities,tuple(unresolved))
 
-    def recheck_source_files(self, registry, *, should_cancel=None) -> tuple[int, int, int, int]:
-        """Return checked images, changed images, changed knowledge and unavailable knowledge."""
+    def recheck_source_files(
+        self, registry, *, should_cancel=None, on_verified_annotation=None,
+    ) -> tuple[int, int, int, int]:
+        """Check saved sources and optionally consume each verified annotation in memory.
+
+        A consumer must treat its results as provisional until the counts confirm
+        the entire selection passed. A later source can still fail or cancel.
+        """
         from .annotation import ImageAnnotation
         from .image_record import annotation_knowledge_fingerprint
         from .library_profiles import LibraryPrivacyPolicy
@@ -853,7 +859,9 @@ class TrainingPlanDraft:
                 state = candidate.get("source_state")
                 evidence = state.get("file") if isinstance(state, dict) else None
                 if isinstance(evidence, dict) and re.fullmatch(r"[a-f0-9]{64}", str(evidence.get("sha256", ""))):
-                    expected[identity] = evidence["sha256"], candidate.get("knowledge_fingerprint")
+                    expected[identity] = (
+                        evidence["sha256"], candidate.get("knowledge_fingerprint"), candidate["stable_id"],
+                    )
 
         selected = []
         for source in frozen:
@@ -877,14 +885,15 @@ class TrainingPlanDraft:
         changed = 0
         knowledge_changed = 0
         knowledge_unavailable = 0
-        for path, digest, expected_knowledge in selected:
+        for path, digest, expected_knowledge, stable_id in selected:
             if should_cancel is not None and should_cancel():
                 raise TrainingPlanDraftError("Source recheck cancelled.")
             try:
                 _, observed = read_stable_training_source(path, max_bytes=64 * 1024 * 1024)
             except (OSError, RuntimeError, ValueError) as exc:
                 raise TrainingPlanDraftError("A saved source is missing, unstable, redirected or exceeds 64 MiB.") from exc
-            changed += observed["sha256"] != digest
+            image_matches = observed["sha256"] == digest
+            changed += not image_matches
             if not isinstance(expected_knowledge, str) or not re.fullmatch(r"[a-f0-9]{64}", expected_knowledge):
                 knowledge_unavailable += 1
                 continue
@@ -893,11 +902,17 @@ class TrainingPlanDraft:
                 payload = json.loads(raw.decode("utf-8"))
                 if not isinstance(payload, dict):
                     raise ValueError("Invalid Image Knowledge sidecar.")
-                current = annotation_knowledge_fingerprint(ImageAnnotation.from_dict(payload, path.name))
+                annotation = ImageAnnotation.from_dict(payload, path.name)
+                current = annotation_knowledge_fingerprint(annotation)
             except (OSError, RuntimeError, ValueError, TypeError):
                 knowledge_unavailable += 1
             else:
-                knowledge_changed += current != expected_knowledge
+                knowledge_matches = current == expected_knowledge
+                knowledge_changed += not knowledge_matches
+                if on_verified_annotation is not None and image_matches and knowledge_matches:
+                    if should_cancel is not None and should_cancel():
+                        raise TrainingPlanDraftError("Source recheck cancelled.")
+                    on_verified_annotation(stable_id, annotation)
         return len(selected), changed, knowledge_changed, knowledge_unavailable
 
     def to_dict(self) -> dict[str,object]:
