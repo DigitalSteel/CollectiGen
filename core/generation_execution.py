@@ -752,6 +752,9 @@ class GenerationExecutionService:
         if target.exists():
             previous, _ = read_stable_training_source(target, max_bytes=_MAX_RECEIPT_BYTES)
             atomic_verified_bytes(target.with_suffix(".previous.json"), previous)
+            current, _ = read_stable_training_source(target, max_bytes=_MAX_RECEIPT_BYTES)
+            if current != previous:
+                raise ValueError("The retained generation receipt changed before saving.")
         write_verified_json(target, receipt, label="Generation job receipt")
 
     def history(self, *, should_cancel=None):
