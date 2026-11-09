@@ -84,14 +84,29 @@ def _directory(path):
     return _state(Path(path), directory=True)[:2]
 
 
-def _read(path: Path, limit=MAX_RECORD):
+def _read(path: Path, limit=MAX_RECORD, *, should_cancel=None):
     before = _state(path)
     if before[2] > limit:
         raise TrainingProcessError("Process recovery evidence exceeds its size bound.")
     with path.open("rb") as handle:
         if descriptor_identity(handle.fileno()) != before:
             raise TrainingProcessError("Process evidence changed before reading.")
-        raw = handle.read(limit + 1)
+        if should_cancel is None:
+            raw = handle.read(limit + 1)
+        else:
+            blocks = []
+            remaining = limit + 1
+            while remaining:
+                if should_cancel():
+                    raise InterruptedError("Evidence read cancelled.")
+                block = handle.read(min(1024 * 1024, remaining))
+                if not block:
+                    break
+                remaining -= len(block)
+                blocks.append(block)
+            if should_cancel():
+                raise InterruptedError("Evidence read cancelled.")
+            raw = b"".join(blocks)
         after = descriptor_identity(handle.fileno())
     if after != before or _state(path) != before or len(raw) != before[2]:
         raise TrainingProcessError("Process evidence changed while reading.")

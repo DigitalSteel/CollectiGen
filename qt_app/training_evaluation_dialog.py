@@ -297,20 +297,25 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
             current=matched_results(self.session,self.service,should_cancel=lambda:job.cancel_requested)
             for key,row in zip(selected,rows):
                 if row not in current[key]:raise ValueError("The selected result changed; refresh before previewing.")
-                raw=_read(Path(row['path']),limit=64*1024**2)
+                raw=_read(Path(row['path']),limit=64*1024**2,
+                          should_cancel=lambda:job.cancel_requested)
                 if hashlib.sha256(raw).hexdigest()!=row['sha256']:raise ValueError("The evaluation image changed.")
                 from PIL import Image
                 if len(raw)>64*1024**2:raise ValueError("The evaluation preview exceeds its size limit.")
                 with Image.open(io.BytesIO(raw)) as probe:
                     if probe.width*probe.height>32_000_000:
                         raise ValueError("The evaluation preview exceeds its pixel limit.")
+                if job.cancel_requested:raise InterruptedError("Evaluation preview cancelled.")
                 images.append((raw,row['path']))
             return images
         def show(images):
             if serial!=self._serial:return
-            for title,view,key,(raw,path) in zip(self.preview_titles,self.previews,selected,images):
+            decoded=[]
+            for raw,path in images:
                 image=QImage.fromData(raw)
                 if image.isNull():raise ValueError("A verified evaluation image cannot be decoded.")
+                decoded.append((image,path))
+            for title,view,key,(image,path) in zip(self.preview_titles,self.previews,selected,decoded):
                 cell=next(cell for cell in self.cells if cell.key==key)
                 title.setText(f'{cell.label} · Seed {cell.seed}');title.setToolTip(cell.prompt)
                 view.set_image(QPixmap.fromImage(image),path); view.show()
