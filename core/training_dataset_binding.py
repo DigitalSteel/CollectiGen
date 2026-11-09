@@ -267,6 +267,14 @@ class ContainedDatasetPreparationService(ContainedRuntimeQualificationService):
         return report, destination
 
 
+class TrainingDatasetAdmissionHold(TrainingProcessError):
+    """The selected package does not fit the reviewed preparation profile."""
+
+    def __init__(self, holds):
+        super().__init__("dataset_admission_held")
+        self.holds = tuple(sorted(holds))
+
+
 class TrainingPreparationRetentionError(TrainingProcessError):
     """The prepared workspace exists, but its history pointer could not be saved."""
 
@@ -339,6 +347,9 @@ class ReviewedDatasetVerifier:
         root, selection = self._selected_package(package)
         if any(root.is_relative_to(path) for path in paths):
             raise TrainingProcessError("Use a separate owned directory for Training preparation.")
+        summary = selected.assess_manifest(package.manifest)
+        if summary["holds"]:
+            raise TrainingDatasetAdmissionHold(summary["holds"])
         worker = ContainedRuntimeQualificationService.from_reviewed_worker_inventory(
             self.inventory, self.python_relative, should_cancel=should_cancel,
         )
@@ -347,7 +358,7 @@ class ReviewedDatasetVerifier:
         try:
             result = worker.preflight(paths[0], paths[1], work, jobs, prepare=True,
                 python_base=paths[2], selected_dataset={"memory": memory.descriptor,
-                    "binding": selected.binding(selection), "summary": selected.assess_manifest(package.manifest)},
+                    "binding": selected.binding(selection), "summary": summary},
                 should_cancel=should_cancel, progress=progress)
             if result[1] is not None:
                 from .training_process import TrainingRunJournal

@@ -1626,8 +1626,8 @@
       "size_bytes": 23930
     },
     "core/training_dataset_binding.py": {
-      "sha256": "061db5453fd96e04c46b3f69d63c7d7984d3ff12cd8f035f1eb7eba51dcd3102",
-      "size_bytes": 21790
+      "sha256": "bdd33bb1c97cd78589bb7326dd54ff8a96a28cb1883b80fb989277e30c02f7ba",
+      "size_bytes": 22173
     },
     "core/training_dataset_package_contract.py": {
       "sha256": "1aff0241f5094fb302a3b201faf932429c29d4901e56cdbd1635f139325ed8ae",
@@ -3222,8 +3222,8 @@
       "size_bytes": 3128
     },
     "suite_core/manager/krea_training_review.py": {
-      "sha256": "099dc60d28b380015fe389d9dfc2e20fe178eaaaf83dedd651e04be62cf7c02c",
-      "size_bytes": 39320
+      "sha256": "b12b5273d8dfb7e4fd24d173bc021b5d8e0394ca072c32d62aa71db1ea6e76d8",
+      "size_bytes": 39856
     },
     "suite_core/manager/launcher_main.py": {
       "sha256": "33adf7ee200a23dd52062074697fc2a5a62c5ef611572c38308dada16d9b13e5",

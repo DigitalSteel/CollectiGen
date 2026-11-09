@@ -181,10 +181,14 @@ class KreaTrainingReviewDialog(QDialog):
             self._preparing_dataset = False
             for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
                 action.setEnabled(True)
-            from core.training_dataset_binding import TrainingPreparationRetentionError
+            from core.training_dataset_binding import TrainingDatasetAdmissionHold, TrainingPreparationRetentionError
 
             try:
                 inspection, plan, request, receipt = self._future.result()
+            except TrainingDatasetAdmissionHold as exc:
+                self.status.setText("This package is outside the reviewed SDXL preparation profile. Manual handoff is still available.")
+                self.sections[0].appendPlainText("\n" + self._dataset_hold_details(exc.holds))
+                self.tabs.setCurrentIndex(0)
             except TrainingPreparationRetentionError as exc:
                 self._show_prepared_workspace(exc.workspace, str(exc))
                 if exc.retry is not None:
@@ -651,23 +655,30 @@ class KreaTrainingReviewDialog(QDialog):
                 )
                 return
             elif reason == "policy_held" and isinstance(holds, dict):
-                labels = {
-                    "dataset_recipe_unmeasured": "The selected recipe is outside the verified SDXL dataset profile.",
-                    "dataset_scope_exceeded": "The dataset has too many training items for this check.",
-                    "dataset_work_budget_exceeded": "The dataset exceeds this check's image-processing limit.",
-                    "image_effects_unmeasured": "The check could not verify the requested image effects.",
-                    "pixel_preservation_unmeasured": "The check could not verify that image pixels are preserved.",
-                    "pixel_geometry_unmeasured": "The check could not verify the image dimensions or crop.",
-                }
-                reasons = [labels[code] for code in labels if code in holds]
-                if any(code not in labels for code in holds):
-                    reasons.append("The package includes an image or setting outside this verifier's supported profile.")
-                detail = "\n".join([*reasons, "Review the Dataset and Settings tabs before preparing another package."])
+                detail = self._dataset_hold_details(holds)
             else:
                 detail = "Return to Applications and select a verified SDXL LoRA package."
             self.sections[0].appendPlainText(f"\n{detail}")
         self.sections[0].appendPlainText(f"\nDataset inspection receipt: {digest}")
         self.tabs.setCurrentIndex(0)
+
+    @staticmethod
+    def _dataset_hold_details(holds):
+        from core.training_package_effects import HOLD_LABELS
+
+        labels = {
+            "dataset_recipe_unmeasured": "The selected recipe is outside the verified SDXL dataset profile.",
+            "dataset_scope_exceeded": "The dataset has too many training items for this check.",
+            "dataset_work_budget_exceeded": "The dataset exceeds this check's image-processing limit.",
+            "image_effects_unmeasured": "The check could not verify the requested image effects.",
+            "pixel_preservation_unmeasured": "The check could not verify that image pixels are preserved.",
+            "pixel_geometry_unmeasured": "The check could not verify the image dimensions or crop.",
+        }
+        reasons = [labels.get(code, HOLD_LABELS.get(code)) for code in sorted(holds)]
+        if any(reason is None for reason in reasons):
+            reasons = [reason for reason in reasons if reason is not None]
+            reasons.append("The package includes an image or setting outside this verifier's supported profile.")
+        return "\n".join([*reasons, "Review the Dataset and Settings tabs before preparing another package."])
 
     @staticmethod
     def _manual_captions(manifest):
