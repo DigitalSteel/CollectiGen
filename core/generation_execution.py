@@ -1393,6 +1393,13 @@ class GenerationExecutionService:
             raise ValueError("A verified result is required.")
         output = receipt["outputs"][0]
         path = self._path(receipt["job_id"]) / "result.png"
+        targets = [(path, "sha256"), (path.with_suffix(".tags.json"), "sidecar_sha256")]
+        if "raw_generator_sha256" in output:
+            targets.append((path.with_name("raw-result.png"), "raw_generator_sha256"))
+        before = {}
+        for target, _ in targets:
+            _assert_unredirected(target)
+            before[target] = _identity(target.stat(follow_symlinks=False))
         consumed = 0
         def checked_digest(target):
             nonlocal consumed
@@ -1416,18 +1423,18 @@ class GenerationExecutionService:
                     digest.update(block)
             consumed += limit - remaining
             return digest.hexdigest()
-        for target, key in ((path, "sha256"), (path.with_suffix(".tags.json"), "sidecar_sha256")):
+        for target, key in targets:
             _assert_unredirected(target)
             if target.stat().st_size > 96 * 1024 * 1024:
                 raise ValueError("Retained output exceeds verification limits.")
             if checked_digest(target) != output[key]:
-                raise ValueError("A verified output changed; review before reuse.")
-        if "raw_generator_sha256" in output:
-            raw_target = self._path(receipt["job_id"]) / "raw-result.png"
-            _assert_unredirected(raw_target)
-            if (raw_target.stat().st_size > 96 * 1024 * 1024
-                    or checked_digest(raw_target) != output["raw_generator_sha256"]):
-                raise ValueError("The retained raw generator output changed; review before reuse.")
+                message = ("The retained raw generator output changed; review before reuse."
+                           if key == "raw_generator_sha256" else "A verified output changed; review before reuse.")
+                raise ValueError(message)
+        for target, _ in targets:
+            _assert_unredirected(target)
+            if _identity(target.stat(follow_symlinks=False)) != before[target]:
+                raise ValueError("A verified output changed during verification; review before reuse.")
         if should_cancel and should_cancel():
             raise InterruptedError("Evaluation result check cancelled.")
         return consumed
