@@ -159,6 +159,20 @@ def test_scoped_discovery_still_rejects_selected_invalid_offer(tmp_path, fault):
         service(tmp_path, f).discover(channel='beta', installed_versions={}, component_id=ComponentId(ID))
 
 
+def test_revalidation_refuses_offer_reviewed_under_different_trust(tmp_path):
+    feed = FakeFeed()
+    feed.add()
+    acquisition = service(tmp_path, feed)
+    offer, = offers(acquisition)
+    acquisition.trust += b"\n"
+    acquisition.trust_pin = sha256(acquisition.trust).hexdigest()
+    feed.calls.clear()
+    for refresh in (False, True):
+        with pytest.raises(ValueError, match="changed_trust_evidence"):
+            acquisition.revalidate_offer(offer, refresh_listing=refresh)
+    assert not feed.calls
+
+
 def test_scoped_discovery_requires_typed_component_before_feed_access(tmp_path):
     f = FakeFeed(); f.add()
     with pytest.raises(ValueError, match='explicit_component_scope'):
@@ -794,7 +808,7 @@ def test_manager_stages_only_packages_that_pass_stock_admission(tmp_path, hold):
     import zipfile
     from core.manager_update_service import ManagerUpdateService, reviewed_stage_identity
     from suite_core.discovery.manager_runtime_detached_admission import (
-        MANAGER, PACKAGE_STUB, PAYLOAD_ENTRY, PROFILE, produce_detached_inventory,
+        MANAGER, MANAGER_MAX_PAYLOAD_MEMBERS, PACKAGE_STUB, PAYLOAD_ENTRY, PROFILE, produce_detached_inventory,
     )
     from suite_core.discovery.manager_runtime_admission_support import NS, PREFIX
 
@@ -812,7 +826,7 @@ def test_manager_stages_only_packages_that_pass_stock_admission(tmp_path, hold):
             archive.writestr(PREFIX + name, b"INERT NOT EXECUTABLE")
 
         if hold == "archive_member_count":
-            for index in range(509):
+            for index in range(MANAGER_MAX_PAYLOAD_MEMBERS + 1 - 4):
                 archive.writestr(PREFIX + f"inert-{index}.bin", b"INERT")
 
     proof = None
