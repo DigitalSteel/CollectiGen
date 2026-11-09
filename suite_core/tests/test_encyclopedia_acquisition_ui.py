@@ -359,7 +359,8 @@ def test_new_offer_cannot_update_until_original_launch_and_close_settle(tmp_path
             panel.timer.stop();panel.close()
 
 
-def test_rejected_cached_download_explains_fresh_review(tmp_path, monkeypatch):
+@pytest.mark.parametrize("full_cache", [False, True])
+def test_rejected_cached_download_explains_fresh_review(tmp_path, monkeypatch, full_cache):
     application = app()
     fixture = Fixture(tmp_path, monkeypatch)
     fixture.add()
@@ -372,6 +373,8 @@ def test_rejected_cached_download_explains_fresh_review(tmp_path, monkeypatch):
             click(panel.refresh)
             wait(panel)
             cached = fixture.acquisition.acquire(panel.offer).artifact
+            if full_cache:
+                fixture.acquisition.cache_maximum = cached.stat().st_size
             altered = b"X" * cached.stat().st_size
             cached.write_bytes(altered)
             install_with_confirmation(panel)
@@ -383,7 +386,13 @@ def test_rejected_cached_download_explains_fresh_review(tmp_path, monkeypatch):
             click(panel.refresh)
             wait(panel)
             install_with_confirmation(panel)
-            assert fixture.store.selected(fixture.store.observe()) is not None
+            if full_cache:
+                assert "download cache limit" in panel.status.text()
+                assert panel.offer is None
+                assert not (fixture.root / "Apps").exists()
+                assert cached.read_bytes() == altered
+            else:
+                assert fixture.store.selected(fixture.store.observe()) is not None
         finally:
             panel.timer.stop()
             panel.close()

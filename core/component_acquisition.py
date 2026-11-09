@@ -15,11 +15,15 @@ from suite_core.discovery.github_component_releases import (
 from suite_core.discovery.component_release_signature import (
     verify_component_release, verify_component_artifact, MAX_METADATA_BYTES, VerifiedComponentRelease,
 )
-from suite_core.discovery.component_staging import guard, require
+from suite_core.discovery.component_staging import StagingHold, guard, require
 from suite_core.installation import ComponentId
 
 
 EXACT_OFFER_HOLD = "This release changed or differs from the exact package approved for this test. Installation is held; review the approved release again."
+
+
+class ComponentCacheFull(StagingHold):
+    """The active download cache cannot hold another verified archive."""
 
 
 class CachedComponentRejected(ReleaseContractError):
@@ -381,7 +385,8 @@ class ComponentAcquisition:
                 used += path.stat().st_size
             except FileNotFoundError:
                 continue
-        require(used + verified.artifact.size_bytes <= self.cache_maximum, "cache_bound")
+        if used + verified.artifact.size_bytes > self.cache_maximum:
+            raise ComponentCacheFull("cache_bound")
         attempt = self.root / ("attempt-" + uuid4().hex)
         attempt.mkdir()
         names = [verified.artifact.name, verified.artifact.name + ".part", verified.artifact.name + ".part.rejected"]

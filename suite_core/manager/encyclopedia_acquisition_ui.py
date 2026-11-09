@@ -325,7 +325,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
                     self.connection_changed()
         except Exception as error:
             self.reviewed = None
-            from core.component_acquisition import CachedComponentRejected, ExactOfferHold
+            from core.component_acquisition import CachedComponentRejected, ComponentCacheFull, ExactOfferHold
             from core.encyclopedia_update_binding import StandaloneReaderCompatibilityHold
             if operation in ("Checking app status", "Refreshing releases"):
                 self.observation_stale = self.installed is not None
@@ -347,6 +347,12 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 self.status.setText("Installation stopped. Checking whether setup needs recovery.")
                 if not self.recovery_only:
                     recovery_check = 'Checking cancellation outcome'
+            elif isinstance(error, ComponentCacheFull) and operation == "Installing reviewed package":
+                self.offer = None
+                self.status.setText(
+                    "This Manager session has reached its download cache limit. "
+                    "Reopen Manager and check for the release again."
+                )
             elif isinstance(error, CachedComponentRejected) and operation == "Installing reviewed package":
                 self.offer = None
                 self.status.setText(
