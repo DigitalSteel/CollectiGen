@@ -314,11 +314,17 @@ class CompiledManagerUpdateProfile:
     @staticmethod
     def _retain(path, raw):
         guard(path);path.parent.mkdir(parents=True,exist_ok=True)
-        if path.exists():
-            require(path.read_bytes()==raw,'retained_release_collision')
-        else:
+        exists = path.exists()
+        if not exists:
             with path.open('xb') as stream:stream.write(raw);stream.flush();os.fsync(stream.fileno())
-        require(path.read_bytes()==raw,'retained_release_readback')
+        reason = 'retained_release_collision' if exists else 'retained_release_readback'
+        require(path.is_file() and path.stat().st_size == len(raw), reason)
+        expected = memoryview(raw)
+        with path.open('rb') as stream:
+            for offset in range(0, len(raw), 1024 * 1024):
+                block = expected[offset:offset + 1024 * 1024]
+                require(stream.read(len(block)) == block, reason)
+            require(stream.read(1) == b'', reason)
         return dict(path=str(path),size=len(raw),sha256=sha256(raw).hexdigest())
 
     def continue_after_close(self, launcher):
