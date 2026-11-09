@@ -1738,8 +1738,8 @@
       "size_bytes": 7812
     },
     "core/training_plan_drafts.py": {
-      "sha256": "555c7872ae1f765b68362ed36e5aecddbe2465ca42a00083e4433f75635d34b5",
-      "size_bytes": 56803
+      "sha256": "b8753fd3e8a0ff584623f16d6a01fd1d80f920f97a9b6307a96eb88ced46c785",
+      "size_bytes": 57922
     },
     "core/training_preflight.py": {
       "sha256": "bbe16e424ff3da169fc63bcb0181573c4f28c410b8912302be500e0880025a8f",
@@ -3370,8 +3370,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "39ee3ae90d88c32f21a2413e51422997b86a33a10dc2b2e0d544c0de4ff8796c",
-      "size_bytes": 210999
+      "sha256": "4db1011913b8151485d77e9cd14e77b868f879abe2dc314aaeb31b47076dfbbc",
+      "size_bytes": 211109
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

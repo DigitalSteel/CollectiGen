@@ -1648,7 +1648,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 status.setText("Checking saved source images…")
                 task = CoordinatedCallTask(state.jobs, "Check Training draft images", check, resource="io")
                 task.signals.complete.connect(lambda counts: finish(
-                    f"Checked {counts[0]:,} image(s). {counts[1]:,} changed. Captions and Image Knowledge were not checked."
+                    f"Checked {counts[0]:,} image(s). {counts[1]:,} changed. "
+                    f"Saved Image Knowledge: {counts[2]:,} changed, {counts[3]:,} unavailable. "
+                    "Current captions were not projected."
                 ))
                 task.signals.failed.connect(finish)
                 task.signals.cancelled.connect(lambda: finish("Source check cancelled."))

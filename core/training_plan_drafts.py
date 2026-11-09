@@ -836,8 +836,10 @@ class TrainingPlanDraft:
             paths.append(path); identities[path]=identity
         return TrainingDraftResolution(tuple(paths),identities,tuple(unresolved))
 
-    def recheck_source_files(self, registry, *, should_cancel=None) -> tuple[int, int]:
-        """Compare the exact saved image bytes under an admitted library registry."""
+    def recheck_source_files(self, registry, *, should_cancel=None) -> tuple[int, int, int, int]:
+        """Return checked images, changed images, changed knowledge and unavailable knowledge."""
+        from .annotation import ImageAnnotation
+        from .image_record import annotation_knowledge_fingerprint
         from .library_profiles import LibraryPrivacyPolicy
         from .training_source_io import read_stable_training_source
 
@@ -851,7 +853,7 @@ class TrainingPlanDraft:
                 state = candidate.get("source_state")
                 evidence = state.get("file") if isinstance(state, dict) else None
                 if isinstance(evidence, dict) and re.fullmatch(r"[a-f0-9]{64}", str(evidence.get("sha256", ""))):
-                    expected[identity] = evidence["sha256"]
+                    expected[identity] = evidence["sha256"], candidate.get("knowledge_fingerprint")
 
         selected = []
         for source in frozen:
@@ -867,13 +869,15 @@ class TrainingPlanDraft:
             effective = registry.profile_for_path(path)
             if effective is None or effective.stable_id != profile.stable_id:
                 raise TrainingPlanDraftError("The saved image is outside its registered library.")
-            digest = expected.get((profile.stable_id, relative))
-            if digest is None:
+            evidence = expected.get((profile.stable_id, relative))
+            if evidence is None:
                 raise TrainingPlanDraftError("The draft lacks source-file evidence for part of the saved selection.")
-            selected.append((path, digest))
+            selected.append((path, *evidence))
 
         changed = 0
-        for path, digest in selected:
+        knowledge_changed = 0
+        knowledge_unavailable = 0
+        for path, digest, expected_knowledge in selected:
             if should_cancel is not None and should_cancel():
                 raise TrainingPlanDraftError("Source recheck cancelled.")
             try:
@@ -881,7 +885,20 @@ class TrainingPlanDraft:
             except (OSError, RuntimeError, ValueError) as exc:
                 raise TrainingPlanDraftError("A saved source is missing, unstable, redirected or exceeds 64 MiB.") from exc
             changed += observed["sha256"] != digest
-        return len(selected), changed
+            if not isinstance(expected_knowledge, str) or not re.fullmatch(r"[a-f0-9]{64}", expected_knowledge):
+                knowledge_unavailable += 1
+                continue
+            try:
+                raw, _ = read_stable_training_source(path.with_suffix(".tags.json"), max_bytes=8 * 1024 * 1024)
+                payload = json.loads(raw.decode("utf-8"))
+                if not isinstance(payload, dict):
+                    raise ValueError("Invalid Image Knowledge sidecar.")
+                current = annotation_knowledge_fingerprint(ImageAnnotation.from_dict(payload, path.name))
+            except (OSError, RuntimeError, ValueError, TypeError):
+                knowledge_unavailable += 1
+            else:
+                knowledge_changed += current != expected_knowledge
+        return len(selected), changed, knowledge_changed, knowledge_unavailable
 
     def to_dict(self) -> dict[str,object]:
         payload={
