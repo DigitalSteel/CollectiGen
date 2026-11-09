@@ -322,7 +322,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 self.publication_pending = not result.connection_saved
                 self.status.setText(self.installation_status_reason(result))
                 self.show_installed_details()
-                self.details.appendPlainText('\nStatus: ' + result.reason)
+                self.details.appendPlainText('\nStatus: ' + self.installation_details_status(result))
                 self.offer = self.reviewed = None
                 if result.connection_saved and self.connection_changed is not None:
                     self.connection_changed()
@@ -424,6 +424,9 @@ class EncyclopediaAcquisitionPanel(QWidget):
             return "Setup needs attention. Check its status or choose an available recovery action."
         if installed.selected is not None and installed.phase == 'activated':
             return "Open the reader from Applications, then close it normally to finish setup. A portable Manager may need an ordinary restart first."
+        return result.reason
+
+    def installation_details_status(self, result):
         return result.reason
 
     def pending_setup_guidance(self):

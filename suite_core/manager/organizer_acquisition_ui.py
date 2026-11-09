@@ -77,6 +77,12 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         if result.installed.selected is not None and result.installed.phase=='activated':return self.pending_setup_guidance()
         return self._organizer_text(result.reason)
 
+    def installation_details_status(self, result):
+        status = self.installation_status_reason(result)
+        if not result.connection_saved and result.reason:
+            return f"{status}\nDiagnostic: {result.reason}"
+        return status
+
     def show_installed_details(self):
         selected=self.installed.selected
         self.details.setPlainText('No managed Organizer is active. User data was preserved.' if selected is None else
