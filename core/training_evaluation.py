@@ -289,10 +289,17 @@ def matched_results(session, service, *, should_cancel=None):
         row = {"job_id": receipt["job_id"], "state": receipt["state"],
                "comparable": comparable, "path": "", "sha256": ""}
         if comparable and receipt["state"] == "verified":
-            paths = (service.verified_output_paths(receipt, should_cancel=should_cancel)
-                     if should_cancel else service.verified_output_paths(receipt))
-            if len(paths) != 1: raise ValueError("Evaluation expects one verified image per cell.")
-            row.update(path=str(paths[0]), sha256=receipt["outputs"][0]["sha256"])
+            try:
+                paths = (service.verified_output_paths(receipt, should_cancel=should_cancel)
+                         if should_cancel else service.verified_output_paths(receipt))
+                if len(paths) != 1:
+                    raise ValueError("Evaluation expects one verified image per cell.")
+            except InterruptedError:
+                raise
+            except (OSError, ValueError):
+                row["state"] = "Check in Generate History"
+            else:
+                row.update(path=str(paths[0]), sha256=receipt["outputs"][0]["sha256"])
         matches[cell.key].append(row)
     if should_cancel and should_cancel():
         raise InterruptedError("Evaluation result check cancelled.")
