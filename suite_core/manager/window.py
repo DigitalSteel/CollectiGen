@@ -566,6 +566,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             connection_review.clicked.connect(self.review_generator_connection)
             applications_layout.addWidget(connection_review, 0, Qt.AlignLeft)
             self._video_draft_picker_open = False
+            self.saved_setup_button = compact_action(QPushButton("Use Saved Setup…"))
+            self.saved_setup_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.saved_setup_button.clicked.connect(self.open_saved_setup)
+            applications_layout.addWidget(self.saved_setup_button, 0, Qt.AlignLeft)
             self.remix_plan_button = compact_action(QPushButton("Plan a Remix…"))
             self.remix_plan_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.remix_plan_button.clicked.connect(self.open_remix_plan)
@@ -1318,6 +1322,23 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         _IMAGE_PICKER_CLOSE_NOTICE = "Close held. Finish or close the image chooser, then close Manager again."
 
+        def open_saved_setup(self):
+            if (self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None
+                    or self._offline_generation_state() is None):
+                return
+            from qt_app.generation_workflow import choose_generation_setup, open_generation_workspace
+
+            current = getattr(self, "_generation_dialog", None)
+            if current is not None and not current._closed:
+                open_generation_workspace(self)
+                current.status.setText("Save or close this draft before using a setup in a new image draft.")
+                return
+            self._image_draft_picker_open = True
+            try:
+                choose_generation_setup(self)
+            finally:
+                self._image_draft_picker_open = False
+
         def open_generate_plan(self):
             if (self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None
                     or self._offline_generation_state() is None):

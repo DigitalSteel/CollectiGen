@@ -398,6 +398,56 @@ def choose_generation_draft(parent, *, allow_draft_transfer=False):
                               preloaded_draft=(plan, target, token))
 
 
+def choose_generation_setup(parent):
+    """Choose a saved setup before opening a separate draft for explicit review."""
+    from core.generation_recipes import recipe_storage_digest
+    from .generation_manual_setup_dialog import ManualGenerationSetupDialog
+    from core.generation_saved_work import review_setup_export
+    from .generation_saved_work_dialog import SavedGenerationWorkDialog
+
+    host = _host(parent)
+    state = host.state
+    root = _generation_data_root(host)
+    storage = root / "generation"
+    registry = ModelResourceRegistry(_generation_registry_path(host, root, MODEL_RESOURCES_PATH))
+    browser = SavedGenerationWorkDialog(
+        state.jobs, storage, "recipes", parent=parent, registry=registry,
+        settings=state.settings, selection_only=True,
+    )
+    if browser.exec() != QDialog.Accepted:
+        return
+    if browser.requested_action == "create":
+        composer = ManualGenerationSetupDialog(
+            state.jobs, storage, parent=parent, registry=registry, settings=state.settings,
+        )
+        if composer.exec() != QDialog.Accepted or composer.saved_path is None:
+            return
+        path, digest = composer.saved_path, recipe_storage_digest(composer.recipe)
+    else:
+        path, digest = browser.selected_path, browser.selected_digest
+    if not path or not digest:
+        return
+    try:
+        review_setup_export(storage, path, selected_digest=digest)
+    except (OSError, RuntimeError, ValueError):
+        QMessageBox.information(parent, "Saved setup needs attention",
+            "The selected setup changed or could not be read. Choose Use Saved Setup again.")
+        return
+
+    def review_in_new_draft(target):
+        original = target.plan.digest
+
+        def unapplied(error, _location_saved):
+            if target.plan.digest == original:
+                target.reject()
+            if error:
+                QMessageBox.information(parent, "Saved setup needs attention", str(error))
+
+        target.load_recipe(selected_path=path, selected_digest=digest, on_unapplied=unapplied)
+
+    open_generation_workspace(parent, force_new=True, on_opened=review_in_new_draft)
+
+
 def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", selected_role="", selected_family="", remix=False, force_new=False, on_opened=None, initial_plan=None, source_context=None, initial_task="remix", initial_image_intent=None, repair_context=None, setup_from_image=False, preloaded_draft=None):
     """Bounded selected-image context; source hashing and loading use shared I/O."""
     if repair_context is not None:
