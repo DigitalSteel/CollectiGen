@@ -292,7 +292,7 @@ class ApplicationUpdateService:
         if downloads_root is None and copied < artifact.size_bytes:
             raise UpdateServiceError("The download ended before its signed size was reached. Retry to resume it.")
         try:
-            verify_artifact(part, artifact)
+            verify_artifact(part, artifact, should_cancel=should_cancel)
         except ReleaseContractError as exc:
             rejected = part.with_suffix(part.suffix + ".rejected")
             rejected.unlink(missing_ok=True)

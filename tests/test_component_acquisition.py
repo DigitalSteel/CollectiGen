@@ -434,6 +434,35 @@ def test_metadata_response_bound_before_parse(tmp_path):
     assert list(s.root.iterdir())==[s._marker]
 
 
+def test_self_update_can_stop_during_verification_and_retry_without_downloading(tmp_path):
+    payload = b"a" * (1024 * 1024) + b"b"
+    name = "inert.zip"
+    artifact = ReleaseArtifact(name, "portable", sha256(payload).hexdigest(), len(payload), "")
+    source = ReleaseAssetSource(name, "https://example.invalid/inert.zip", len(payload))
+
+    def unexpected_download(*_args, **_kwargs):
+        pytest.fail("Complete retained bytes must be verified without another request")
+
+    service = ApplicationUpdateService(tmp_path, "1.0.0", opener=unexpected_download)
+    cache = service.state_root / "downloads"
+    cache.mkdir(parents=True)
+    part = cache / (name + ".part")
+    part.write_bytes(payload)
+    checks = 0
+
+    def stop_after_first_hash_block():
+        nonlocal checks
+        checks += 1
+        return checks == 4
+
+    with pytest.raises(InterruptedError, match="verification was cancelled"):
+        service._download(source, artifact, should_cancel=stop_after_first_hash_block)
+    assert part.read_bytes() == payload
+    assert not (cache / name).exists()
+    assert service._download(source, artifact).read_bytes() == payload
+    assert not part.exists()
+
+
 @pytest.mark.parametrize("retry", ["range", "ignored", "missing_header", "wrong_hash"])
 def test_self_update_short_download_retries_with_signed_integrity(tmp_path, retry):
     name = "inert.zip"
