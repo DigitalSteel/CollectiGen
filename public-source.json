@@ -1734,8 +1734,8 @@
       "size_bytes": 52691
     },
     "core/training_preflight.py": {
-      "sha256": "54306523b509135f819af42f7c6f30216b4ca564f3dc186132f607469b4063bd",
-      "size_bytes": 46721
+      "sha256": "3325114dba4cb0f5c72be6a2dee96dd30fd47e95467efbc16dffd3bcdcd4dbc4",
+      "size_bytes": 47588
     },
     "core/training_presets.py": {
       "sha256": "13cff5453801fb271fda008a87daab13b6e4275dfa72768db2b79c3128c49d8f",
@@ -3958,8 +3958,8 @@
       "size_bytes": 4346
     },
     "tools/training_preflight_worker.py": {
-      "sha256": "0a281a694d0da17ca1a15009586b98bbef439676bff7f3e41527a45a98079500",
-      "size_bytes": 14949
+      "sha256": "cf969df96c00adcf41dab9d20be33762cffa0f0990bd682aa0c8589e8e4fe101",
+      "size_bytes": 20107
     },
     "tools/training_runtime_probe.py": {
       "sha256": "ac4b82610ed3afe39b9c216a620c0dcebe1a358c88d912b06fcb11cb5cc2e585",

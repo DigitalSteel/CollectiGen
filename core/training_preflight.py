@@ -509,7 +509,7 @@ class ContainedRuntimeQualificationService:
             digest = write_verification_bundle(bundle)
             request = {**request, 'verification_bundle': {'path': str(bundle), 'sha256': digest}}
             verification_inputs = (bundle, runtime.ROOT / 'version.py')
-        reply = reply_type(request, progress)
+        reply = None
         try:
             # Bootstrap trust is the local project runtime/code, not the selected
             # trainer interpreter. No selected-source read occurs in this plan.
@@ -530,6 +530,16 @@ class ContainedRuntimeQualificationService:
             if worker == WORKER:
                 extra_code = (*extra_code, Path(__file__).with_name('training_source_loader.py'))
             code_inputs = tuple(dict.fromkeys((*code, *extra_code)))
+            bindings = ()
+            if worker == WORKER:
+                from .training_source_loader import VERIFIER_MODULES
+                core = Path(__file__).parent
+                paths = dict.fromkeys((*code_inputs, *(core / (name + '.py') for name in VERIFIER_MODULES)))
+                bindings = tuple(ProcessInput.capture(path, should_cancel) for path in paths
+                                 if path.parent == core and path.suffix == '.py')
+                request = {**request, 'owned_sources': {
+                    Path(item.path).stem: {'sha256': item.sha256, 'size': item.state[2]} for item in bindings}}
+            reply = reply_type(request, progress)
             helper = self.process.prepare(root, 'preflight-' + request['nonce'],
                 (program, '-I', '-S', '-B', str(worker), reply.name, str(len(reply.raw)), _sha(reply.raw)),
                 inputs=(worker, runtime.CATALOG, runtime.PROBE, runtime.CONTRACT,
@@ -537,6 +547,8 @@ class ContainedRuntimeQualificationService:
                 inventories=() if reviewed_inventory is None else (
                     (reviewed_inventory.root, reviewed_inventory.manifest_path),),
                 preview_fingerprint=_sha(reply.raw), timeout_seconds=timeout_seconds, should_cancel=should_cancel)
+            if any(item not in helper.inputs for item in bindings):
+                raise TrainingProcessError("A Training preflight source changed while preparing the worker.")
             if reviewed_inventory is not None and helper.inventories != (reviewed_inventory,):
                 raise TrainingProcessError("The reviewed Training Python inventory changed during preparation.")
             if reviewed_python is not None and reviewed_python not in helper.inputs:
@@ -553,7 +565,8 @@ class ContainedRuntimeQualificationService:
                 raise TrainingProcessError('Selected software inspection or preparation could not finish.')
             return (*reply.decoded, reply.receipt)
         finally:
-            reply.close()
+            if reply is not None:
+                reply.close()
 
     def qualify(self, source, environment, root, jobs, *, profile='sd-scripts-requirements',
                 probe_parser=False, python_base=None, should_cancel=None, progress=None, synthetic_tokenizers=False,

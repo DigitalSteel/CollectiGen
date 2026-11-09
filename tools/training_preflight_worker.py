@@ -3,36 +3,109 @@ from __future__ import annotations
 
 from dataclasses import asdict
 import hashlib
-import importlib
+import importlib.util
+import io
 import json
 import mmap
 from pathlib import Path
 import re
 import sys
 from types import ModuleType
+import zipfile
 
-package = ModuleType('_collectigen_preflight')
-package.__path__ = [str(Path(__file__).resolve().parents[1] / 'core')]
-sys.modules[package.__name__] = package
-# Reuse the verifier bootstrap: never execute eager core/__init__.py or load
-# application state, site packages, startup customizations or private records.
-runtime = importlib.import_module(package.__name__ + '.training_runtime_qualification')
-process = importlib.import_module(package.__name__ + '.training_process')
-preflight = importlib.import_module(package.__name__ + '.training_preflight')
-source_loader = importlib.import_module(package.__name__ + '.training_source_loader')
-_bytes, _read = process._bytes, process._read
-MAX_REQUEST, MAX_RESPONSE, MAX_PROGRESS = preflight.MAX_REQUEST, preflight.MAX_RESPONSE, preflight.MAX_PROGRESS
+# These limits define the shared mapping before any project imports.
+MAX_REQUEST, MAX_RESPONSE, MAX_PROGRESS = 256 * 1024, 512 * 1024, 1024
 
 
 def main():
+    if len(sys.argv) != 4:
+        return 2
     name, length, digest = sys.argv[1:]
-    if not re.fullmatch(r'Local\\CollectiGen\.Preflight\.[0-9a-f]{32}', name) or not length.isdecimal() or not 0 < int(length) <= MAX_REQUEST or not re.fullmatch(r'[0-9a-f]{64}', digest):
+    if not re.fullmatch(r'Local\\CollectiGen\.Preflight\.[0-9a-f]{32}', name) or not length.isascii() or not length.isdecimal() or len(length) > 6 or not 0 < int(length) <= MAX_REQUEST or not re.fullmatch(r'[0-9a-f]{64}', digest):
         return 2
     with mmap.mmap(-1, int(length) + 4 + MAX_RESPONSE + 4 + MAX_PROGRESS, tagname=name, access=mmap.ACCESS_WRITE) as mapping:
         raw = mapping[:int(length)]
         if hashlib.sha256(raw).hexdigest() != digest:
             return 2
-        request = runtime._json(raw)
+        request = json.loads(raw)
+        if (type(request) is not dict or type(request.get('schema_version')) is not int
+                or request['schema_version'] != 1 or request.get('nonce') != name.rsplit('.', 1)[1]
+                or request.get('operation') not in ('inspect', 'prepare')):
+            return 2
+
+        if json.dumps(request, sort_keys=True, ensure_ascii=False, allow_nan=False,
+                      separators=(',', ':')).encode('utf-8') != raw:
+            return 2
+        owned = request.pop('owned_sources', None)
+        if type(owned) is not dict:
+            return 2
+        core = Path(__file__).resolve().parents[1] / 'core'
+        loader_path = core / 'training_source_loader.py'
+        with loader_path.open('rb') as handle:
+            loader_bytes = handle.read(256 * 1024 + 1)
+        loader_hash = hashlib.sha256(loader_bytes).hexdigest()
+        if (len(loader_bytes) > 256 * 1024
+                or loader_hash not in ('b6c91ee1eaac1ea1a70800723e126452f5545efc8b6789ccc2f2a6a3f7bcc1c4',
+                                       '15ebc6afbf81d5c11f8859d1f8358588f59d80e463c590e4d95373e26724fb0e')
+                or owned.get('training_source_loader') != {'sha256': loader_hash, 'size': len(loader_bytes)}):
+            return 2
+        source_loader = ModuleType('_collectigen_preflight_bootstrap')
+        source_loader.__file__ = str(loader_path)
+        sys.modules[source_loader.__name__] = source_loader
+        exec(compile(loader_bytes, str(loader_path), 'exec', dont_inherit=True), source_loader.__dict__)
+        files = {name: source_loader.SourceFile(core / (name + '.py'), row['sha256'], row['size'])
+                 for name, row in owned.items()}
+        class BundleLoader(source_loader._SourceOnlyLoader):
+            def __init__(self, fullname, binding, owner, payload):
+                super().__init__(fullname, binding, owner=owner)
+                self.payload = payload
+
+            def exec_module(self, module):
+                owner = self.owner
+                owner._loaded[self.name] = module
+                try:
+                    owner._current()
+                    module.__cached__ = None
+                    exec(compile(self.payload, str(self.binding.path), 'exec', dont_inherit=True), module.__dict__)
+                    if not source_loader._matches(module, self):
+                        raise source_loader.SourceLoaderError('owned_source_module_changed')
+                    owner._current()
+                except BaseException:
+                    owner._loaded.pop(self.name, None)
+                    raise
+
+        class PreflightPackage(source_loader.OwnedSourcePackage):
+            archive = None
+
+            def find_spec(self, fullname, path=None, target=None):
+                prefix = self.name + '.'
+                if self.archive is not None and fullname.startswith(prefix):
+                    name = fullname.removeprefix(prefix)
+                    if name not in self.files and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', name):
+                        self._current()
+                        if path != [str(core)] or target is not None:
+                            raise source_loader.SourceLoaderError('owned_source_import_location_changed')
+                        try:
+                            member = self.archive.getinfo('_collectigen_package_code/' + name + '.py')
+                        except KeyError:
+                            pass
+                        else:
+                            if member.file_size > source_loader.MAX_SOURCE_BYTES:
+                                raise source_loader.SourceLoaderError('owned_source_changed')
+                            payload = self.archive.read(member)
+                            binding = source_loader.SourceFile(core / (name + '.py'),
+                                hashlib.sha256(payload).hexdigest(), len(payload))
+                            loader = BundleLoader(fullname, binding, self, payload)
+                            return importlib.util.spec_from_file_location(fullname, str(binding.path), loader=loader)
+                return super().find_spec(fullname, path, target)
+
+        package = PreflightPackage('_collectigen_preflight', core, files)
+        runtime = package.import_module('training_runtime_qualification')
+        process = package.import_module('training_process')
+        preflight = package.import_module('training_preflight')
+        _bytes, _read = process._bytes, process._read
+        if (MAX_REQUEST, MAX_RESPONSE, MAX_PROGRESS) != (preflight.MAX_REQUEST, preflight.MAX_RESPONSE, preflight.MAX_PROGRESS):
+            return 2
         fields = {'schema_version', 'nonce', 'operation', 'source', 'environment', 'python_base', 'profile', 'catalog', 'catalog_sha256'}
         if type(request) is dict and 'synthetic_tokenizers' in request:
             if request['synthetic_tokenizers'] is not True or request.get('operation') != 'prepare' or not request.get('python_base'):
@@ -100,7 +173,7 @@ def main():
             if request['conditioning'] is not True or request.get('model_pairing') is None:
                 return 2
             fields.add('conditioning')
-        if type(request) is not dict or set(request) != fields or _bytes(request) != raw or type(request['schema_version']) is not int or request['schema_version'] != 1 or request['nonce'] != name.rsplit('.', 1)[1] or request['operation'] not in {'inspect', 'prepare'} or request['profile'] not in runtime.PROFILES:
+        if type(request) is not dict or set(request) != fields or type(request['schema_version']) is not int or request['schema_version'] != 1 or request['nonce'] != name.rsplit('.', 1)[1] or request['operation'] not in {'inspect', 'prepare'} or request['profile'] not in runtime.PROFILES:
             return 2
         for field in ('source', 'environment', 'catalog', 'python_base'):
             value = request[field]
@@ -126,10 +199,27 @@ def main():
                     return 2
                 bundle = request['verification_bundle']
                 expected_path = Path.cwd().parents[1] / ('verification-code-' + request['nonce'] + '.zip')
-                if type(bundle) is not dict or set(bundle) != {'path', 'sha256'} or bundle['path'] != str(expected_path) or runtime._sha(expected_path.read_bytes()) != bundle['sha256']:
+                if type(bundle) is not dict or set(bundle) != {'path', 'sha256'} or bundle['path'] != str(expected_path):
                     return 2
-                package.__path__ = [str(expected_path) + '/_collectigen_package_code']
-                sys.path.insert(0, str(expected_path))
+                with expected_path.open('rb') as handle:
+                    archive_bytes = handle.read(33 * 1024 * 1024 + 1)
+                if len(archive_bytes) > 33 * 1024 * 1024 or runtime._sha(archive_bytes) != bundle['sha256']:
+                    return 2
+                package.archive = zipfile.ZipFile(io.BytesIO(archive_bytes))
+                members = package.archive.infolist()
+                if (len({member.filename for member in members}) != len(members)
+                        or any(not member.filename.endswith('.py') or member.compress_type != zipfile.ZIP_STORED
+                               for member in members)):
+                    return 2
+                version_member = package.archive.getinfo('version.py')
+                if version_member.file_size > source_loader.MAX_SOURCE_BYTES or 'version' in sys.modules:
+                    return 2
+                version_path = core.parent / 'version.py'
+                version_module = ModuleType('version')
+                version_module.__file__ = str(version_path)
+                sys.modules['version'] = version_module
+                exec(compile(package.archive.read(version_member), str(version_path), 'exec',
+                             dont_inherit=True), version_module.__dict__)
                 project_root = Path(__file__).resolve().parents[1]
                 project_site = Path(sys.executable).parents[1] / 'Lib/site-packages'
                 sys.path[:0] = [str(project_site), str(project_root / 'tools')]
@@ -142,7 +232,7 @@ def main():
                         # Permit only the running base interpreter's standard-library archive.
                         read_files=((Path(sys._base_executable).resolve().parent / f'python{sys.version_info.major}{sys.version_info.minor}.zip').resolve(),
                             project_root / 'version.py', expected_path, runtime.CONTRACT, runtime.NATIVE_PROTOCOL,
-                            *(project_root / 'core' / (name + '.py') for name in source_loader.VERIFIER_MODULES),
+                            *(binding.path for binding in files.values()),
                             *runtime.DATASET_PACKAGE_CODE, *runtime.MODEL_PAIRING_CODE, project_root / 'core/training_dataset_preparation.py',
                             project_root / 'core/training_configuration.py'))
             runtime.CATALOG = Path(request['catalog'])
