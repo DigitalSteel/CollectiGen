@@ -2806,9 +2806,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 item.setText("" if compact else item.toolTip())
 
         def refresh_section_commands(self, *_):
-            self.krea_training_review_button.setVisible(
-                not view.synthetic and getattr(normal_entry_session, "state", None) == "ready"
-            )
+            training_ready = not view.synthetic and getattr(normal_entry_session, "state", None) == "ready"
+            self.krea_training_review_button.setVisible(training_ready)
+            self.training_merge_button.setVisible(training_ready)
 
             section = next((name for name, row in self.page_rows.items() if row == self.navigation.currentRow()), "Dashboard")
             databases_hint = "Use Databases to connect a catalog, review content and recover interrupted work."
