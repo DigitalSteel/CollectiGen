@@ -537,6 +537,7 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             shared_settings_close_choice=shared_settings_close_choice,
             model_workspace_factory=model_workspace_factory, tag_content_host=entry_owner.tag_content_host,
             dataset_verifier=dataset_verifier,
+            training_draft_settings_path=None if args.demo else app_settings_path,
             krea_registry_path=(Path(app_settings_path).parent / "model_resources.json"
                                 if not args.demo and app_settings_path is not None else None))
         entry_owner.window = window

@@ -836,6 +836,53 @@ class TrainingPlanDraft:
             paths.append(path); identities[path]=identity
         return TrainingDraftResolution(tuple(paths),identities,tuple(unresolved))
 
+    def recheck_source_files(self, registry, *, should_cancel=None) -> tuple[int, int]:
+        """Compare the exact saved image bytes under an admitted library registry."""
+        from .library_profiles import LibraryPrivacyPolicy
+        from .training_source_io import read_stable_training_source
+
+        frozen = self.plan_manifest["selection_scope"]["frozen_selection"]
+        candidates = self.plan_manifest["candidates"]
+        expected = {}
+        for candidate in candidates:
+            source = candidate["source"]
+            if source.get("kind") == "library_image":
+                identity = (source["library_id"], source["relative_image_path"])
+                state = candidate.get("source_state")
+                evidence = state.get("file") if isinstance(state, dict) else None
+                if isinstance(evidence, dict) and re.fullmatch(r"[a-f0-9]{64}", str(evidence.get("sha256", ""))):
+                    expected[identity] = evidence["sha256"]
+
+        selected = []
+        for source in frozen:
+            profile = registry.get(source.get("library_id", ""))
+            if (source["kind"] != "library_image" or profile is None or not profile.root
+                    or not LibraryPrivacyPolicy.permits_derived_network_content(profile)):
+                raise TrainingPlanDraftError("Every saved image needs a registered library outside Local Only storage.")
+            root = Path(profile.root)
+            if not root.is_absolute():
+                raise TrainingPlanDraftError("The registered library must have an absolute root.")
+            relative = source["relative_image_path"]
+            path = root / relative
+            effective = registry.profile_for_path(path)
+            if effective is None or effective.stable_id != profile.stable_id:
+                raise TrainingPlanDraftError("The saved image is outside its registered library.")
+            digest = expected.get((profile.stable_id, relative))
+            if digest is None:
+                raise TrainingPlanDraftError("The draft lacks source-file evidence for part of the saved selection.")
+            selected.append((path, digest))
+
+        changed = 0
+        for path, digest in selected:
+            if should_cancel is not None and should_cancel():
+                raise TrainingPlanDraftError("Source recheck cancelled.")
+            try:
+                _, observed = read_stable_training_source(path, max_bytes=64 * 1024 * 1024)
+            except (OSError, RuntimeError, ValueError) as exc:
+                raise TrainingPlanDraftError("A saved source is missing, unstable, redirected or exceeds 64 MiB.") from exc
+            changed += observed["sha256"] != digest
+        return len(selected), changed
+
     def to_dict(self) -> dict[str,object]:
         payload={
             "draft_id":self.draft_id,

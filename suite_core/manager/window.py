@@ -145,7 +145,7 @@ def view_for_candidate(observation):
             dict(observation.release_dates).get(observation.software_version), "Unsigned developer candidate", observation.notes),))
 
 
-def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None, dataset_verifier=None):
+def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None, dataset_verifier=None, training_draft_settings_path=None):
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtGui import QIcon
     if organizer_connection_host is not None:
@@ -1562,14 +1562,72 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     QMessageBox.warning(self, "Dataset draft unavailable", str(exc))
                     return
                 dialog = TrainingPlanDraftPickerDialog((draft,), self, saved_details_only=True)
+                cancel_recheck = self.bind_training_draft_recheck(dialog, draft, state)
                 try:
                     dialog.exec()
                 finally:
+                    cancel_recheck()
                     dialog.deleteLater()
             finally:
                 self._training_draft_review_open = False
                 if self.statusBar().currentMessage() == self._TRAINING_DRAFT_CLOSE_NOTICE:
                     self.statusBar().clearMessage()
+
+        def bind_training_draft_recheck(self, dialog, draft, state):
+            from PySide6.QtWidgets import QDialogButtonBox
+            from core.settings import AppSettings
+            from core.training_source_io import read_stable_training_source
+            from qt_app.workers import CoordinatedCallTask
+
+            status = QLabel()
+            status.setWordWrap(True)
+            status.setTextFormat(Qt.PlainText)
+            dialog.layout().insertWidget(3, status)
+            button = dialog.findChild(QDialogButtonBox).addButton(
+                "Check Source Images", QDialogButtonBox.ActionRole,
+            )
+            button.setEnabled(training_draft_settings_path is not None)
+            status.setText("Checks only the exact images from configured libraries."
+                           if button.isEnabled() else "Source checks require a configured Manager profile.")
+            task = None
+
+            def check(job):
+                try:
+                    raw, _ = read_stable_training_source(training_draft_settings_path, max_bytes=16 * 1024 * 1024)
+                    registry = AppSettings._from_bytes(raw).library_registry()
+                except (OSError, RuntimeError, ValueError) as exc:
+                    raise ValueError("Manager library settings could not be read.") from exc
+                return draft.recheck_source_files(registry, should_cancel=lambda: job.cancel_requested)
+
+            def finish(message):
+                nonlocal task
+                task = None
+                status.setText(message)
+                button.setEnabled(self.generation_state() is state)
+
+            def start():
+                nonlocal task
+                if task is not None or self.generation_state() is not state:
+                    return
+                button.setEnabled(False)
+                status.setText("Checking saved source images…")
+                task = CoordinatedCallTask(state.jobs, "Check Training draft images", check, resource="io")
+                task.signals.complete.connect(lambda counts: finish(
+                    f"Checked {counts[0]:,} image(s). {counts[1]:,} changed. Captions and Image Knowledge were not checked."
+                ))
+                task.signals.failed.connect(finish)
+                task.signals.cancelled.connect(lambda: finish("Source check cancelled."))
+                try:
+                    task.start()
+                except (RuntimeError, ValueError):
+                    finish("Source check could not start. Try again.")
+
+            def cancel():
+                if task is not None:
+                    task.cancel()
+
+            button.clicked.connect(start)
+            return cancel
 
         def open_training_history(self, *, preparations=False):
             state = self.generation_state()
