@@ -2,8 +2,6 @@
 
 CollectiGen is a developing suite for collecting, identifying and organizing media, preserving metadata and provenance, and preparing training data. Its longer-term direction includes connected training and image-generation workflows, with ordinary work primarily performed locally.
 
-The project is in alpha. Individual Windows components are available below; a complete installable suite is not yet published.
-
 ## Downloads
 
 Choose the component you need. These are separate Windows x64 alpha downloads;
@@ -14,7 +12,7 @@ its matching source, checksums, notes and qualification limits.
 | --- | --- | --- |
 | **Suite Manager** | [a.0.5.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.5.1-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.5.1-alpha.1/SuiteManager-0.5.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.5.1-alpha.1/SuiteManager-0.5.1-alpha.1-windows-x64.zip.sha256). Download and run Suite Manager on Windows. This release can find and verify the signed Tag Encyclopedia Reader a.0.3.1 and install it after you confirm. Reader is the only component this version can install. |
 | **Media Organizer** | [a.0.4.23](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.4.23-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.4.23-alpha.1/MediaOrganizer-a.0.4.23-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.4.23-alpha.1/MediaOrganizer-a.0.4.23-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars. |
-| **Tag Encyclopedia Reader** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). Managed Reader payload for the Manager route below; this is not the older standalone launcher. |
+| **Tag Encyclopedia Reader** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). Component package installed and launched through Suite Manager. |
 | **Optional Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Experimental catalog data for a new, empty test catalog; no application or model is included. |
 
 Source/source-notices ZIPs are for development and licensing, not runnable apps.
@@ -48,14 +46,10 @@ Setup saves selected locations/preferences without starting a scan. Evaluate
 with copied images and retain backups. See its [versioned notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.4.23-alpha.1)
 and included README for the changes and supported scope.
 
-The older [standalone Tag Encyclopedia a.0.2.2](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.2.2-alpha.1)
-remains a separate legacy distribution. Follow its matching package/Reader notes;
-it is not required for the current Manager/Reader route above.
-
 ### Optional catalog data
 
 No Tag Database, snapshot, image library or model is bundled into these app
-downloads. The optional Tag Database package is now publicly available, but
+downloads. The optional Tag Database is a separate download, and
 shared-consumer integration is experimental. Use a new empty test catalog;
 existing-catalog updates/merges remain unqualified. Downloading or verifying a
 data package does not apply it or authorize changing your normal catalog.
