@@ -1367,7 +1367,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             def review(dialog):
                 dialog.tabs.setCurrentIndex(3)
                 if dialog.history_button.isEnabled():
-                    dialog.load_history(on_open=True)
+                    dialog.load_history(on_open=True, keep_current_tab=True)
 
             open_generation_workspace(self, on_opened=review)
 

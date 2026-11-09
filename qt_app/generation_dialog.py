@@ -4120,7 +4120,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.set_ingest_identity({"path": path})
             self.status.setText("Selected a result to check. Record Outcome Review verifies its Ingest transfer, lineage and bytes.")
 
-    def load_history(self, *, on_open: bool = False) -> None:
+    def load_history(self, *, on_open: bool = False, keep_current_tab: bool = False) -> None:
         from core.generation_execution import GenerationExecutionService
         service = GenerationExecutionService(self.storage_root, self.jobs)
         def done(receipts):
@@ -4149,7 +4149,7 @@ class GenerationDialog(FeedbackEnabledDialog):
                 self._history_context = True
                 self.status.setText("Select a verified result to open." if self._review_verified_results and not self._offline_job_recovery else
                                     "Retained generation jobs loaded. Select one to recover its current receipt.")
-                if on_open:
+                if on_open and (not keep_current_tab or self.tabs.currentIndex() == 3):
                     self.tabs.setCurrentIndex(3)
                     scroll = self.tabs.currentWidget()
                     if isinstance(scroll, QScrollArea):
