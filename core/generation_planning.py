@@ -1350,12 +1350,13 @@ def assess_readiness(
         _issue(issues, "adapter_capability_invalid", "capabilities.resource_versions", "The adapter resource-version capability is invalid.", recovery="Probe the adapter again.")
     for index, resource in enumerate(request.resources):
         path = f"request.resources[{index}]"
+        protected = resource.provenance.get("protected")
+        if protected:
+            _issue(issues, "protected_resource", path, f"Resource {resource.name!r} is protected from execution.", recovery="Use an explicitly permitted resource or keep the neutral export.")
         digest = _resource_hash(resource)
         if not digest:
             _issue(issues, "resource_hash_missing", path, f"{resource.role} resource {resource.name!r} lacks a full SHA-256 identity.", recovery="Resolve or register the exact resource bytes.")
             continue
-        if resource.provenance.get("protected"):
-            _issue(issues, "protected_resource", path, f"Resource {resource.name!r} is protected from execution.", recovery="Use an explicitly permitted resource or keep the neutral export.")
         role = resource.role.casefold()
         if cap is not None and (supported_roles is None or role not in supported_roles):
             _issue(issues, "resource_role_unsupported", path, f"The live adapter does not declare support for {resource.role} resources.", recovery="Choose a compatible adapter or replace the resource.")
@@ -1369,6 +1370,8 @@ def assess_readiness(
             declared_version = versions.get(resource.id, versions.get(resource_id, versions.get(resource.name)))
             if declared_version != resource.version_id:
                 _issue(issues, "resource_version_mismatch", path, f"Resource {resource.name!r} version {resource.version_id!r} was not verified by the adapter.", recovery="Resolve the exact recorded version or revise the request.")
+        if protected:
+            continue
         if registry is None:
             _issue(issues, "resource_registry_missing", path, f"Resource {resource.name!r} was not checked against the local registry.", recovery="Resolve the full hash through the bounded model resource registry.")
             continue
