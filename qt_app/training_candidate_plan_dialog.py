@@ -1102,9 +1102,10 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
 
     feedback_workflow="Training dataset draft resume"
 
-    def __init__(self,drafts,parent=None) -> None:
+    def __init__(self,drafts,parent=None,*,saved_details_only=False) -> None:
         super().__init__(parent)
         self.drafts=tuple(drafts)
+        self.saved_details_only = saved_details_only
         self.setWindowTitle("Resume Training Dataset Draft")
         self.resize(680,330)
         layout=QVBoxLayout(self)
@@ -1113,6 +1114,9 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
             "recorded library identities and re-inspect the current source bytes."
         )
         intro.setWordWrap(True); intro.setObjectName("sectionTitle")
+        if saved_details_only:
+            self.setWindowTitle("Review Dataset Draft")
+            intro.setText("Review the saved plan before preparing Training. Source images and current readiness still need to be checked.")
         layout.addWidget(intro)
         self.choice=QComboBox(); self.choice.setAccessibleName("Saved training draft")
         for draft in self.drafts:
@@ -1121,11 +1125,16 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
             )
         layout.addWidget(self.choice)
         self.detail=QLabel(); self.detail.setWordWrap(True)
+        if saved_details_only:
+            self.detail.setTextFormat(Qt.PlainText)
         self.detail.setObjectName("mutedLabel"); layout.addWidget(self.detail)
         layout.addStretch(1)
         buttons=QDialogButtonBox(QDialogButtonBox.Open|QDialogButtonBox.Cancel)
         self.open_button=buttons.button(QDialogButtonBox.Open)
         self.open_button.setText("Rebuild Draft from Current Sources")
+        if saved_details_only:
+            self.open_button.setText("Done")
+            buttons.button(QDialogButtonBox.Cancel).hide()
         self.open_button.setProperty("primary",True)
         buttons.accepted.connect(self.accept); buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
@@ -1145,6 +1154,15 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
             self.detail.setText("No saved draft is available.")
             return
         profile=draft.profile
+        if self.saved_details_only:
+            goal = draft.goal
+            target = " ".join(filter(None, (goal.target_model_family, goal.target_model_version)))
+            self.detail.setText(
+                f"Goal: {goal.text}\nTarget: {target or 'Not recorded'}\n"
+                f"Profile: {profile.name} v{profile.version}\n"
+                f"Saved selection: {draft.candidate_count:,} image(s)"
+            )
+            return
         self.detail.setText(
             f"Goal: {draft.goal.text}\nProfile: {profile.name} v{profile.version} • "
             f"Updated {draft.updated_at}. Any changed source or knowledge evidence "

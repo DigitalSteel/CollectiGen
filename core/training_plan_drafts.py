@@ -849,6 +849,22 @@ class TrainingPlanDraft:
         return {**payload,"draft_fingerprint":_stable_hash(payload)}
 
     @classmethod
+    def read_transfer(cls, path: Path) -> "TrainingPlanDraft":
+        """Read one user-selected canonical draft without resolving its source paths."""
+        limit = 16 * 1024 * 1024
+        try:
+            if not path.is_file():
+                raise TrainingPlanDraftError("Choose a regular Dataset draft file.")
+            with path.open("rb") as stream:
+                raw = stream.read(limit + 1)
+            if len(raw) > limit:
+                raise TrainingPlanDraftError("The Dataset draft exceeds the 16 MiB transfer limit.")
+            value = json.loads(raw)
+        except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+            raise TrainingPlanDraftError("The selected Dataset draft could not be read.") from exc
+        return cls.from_dict(value)
+
+    @classmethod
     def from_dict(cls,value: Any) -> "TrainingPlanDraft":
         if not isinstance(value,dict):
             raise TrainingPlanDraftError("A saved draft is not an object.")

@@ -1738,8 +1738,8 @@
       "size_bytes": 7812
     },
     "core/training_plan_drafts.py": {
-      "sha256": "4d1dd625aaa0ee94d21fb89222dea0e64fb3715dc926d8e7a11058b6ba9c2515",
-      "size_bytes": 52691
+      "sha256": "7213a9955beece982a47700f7f5dede9b3830d604724071f048811cb6624e6e2",
+      "size_bytes": 53512
     },
     "core/training_preflight.py": {
       "sha256": "bbe16e424ff3da169fc63bcb0181573c4f28c410b8912302be500e0880025a8f",
@@ -2654,8 +2654,8 @@
       "size_bytes": 56357
     },
     "qt_app/training_candidate_plan_dialog.py": {
-      "sha256": "59c70a8320c33148d0894dbbb45a37baa3a13892a808a5947458a34fa1ad9638",
-      "size_bytes": 131990
+      "sha256": "bd4ee90d909795f9cd97586bc677ca53c0cc3cc5ecda116ea36396720300a805",
+      "size_bytes": 132956
     },
     "qt_app/training_candidate_review.py": {
       "sha256": "d57655a0dc41b01067cdfac09f6b4fc068183e870602b637fe51185207737893",
@@ -3370,8 +3370,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "29749708c778971be112e1b2323443af86933380c83898a6184393c6e901d667",
-      "size_bytes": 204004
+      "sha256": "7dd3e210f056f0a6e0bb23fdeb89e6fd5105aac122935073bbcff453f9eb093c",
+      "size_bytes": 206152
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

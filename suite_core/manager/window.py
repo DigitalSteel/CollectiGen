@@ -608,6 +608,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.training_history_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.training_history_button.clicked.connect(self.open_training_history)
             training_layout.addWidget(self.training_history_button, 0, Qt.AlignLeft)
+            self.training_draft_button = compact_action(QPushButton("Review a Dataset Draft…"))
+            self.training_draft_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.training_draft_button.clicked.connect(self.open_training_draft)
+            training_layout.addWidget(self.training_draft_button, 0, Qt.AlignLeft)
             self.saved_preparation_button = compact_action(QPushButton("Review Saved SDXL Preparations…"))
             self.saved_preparation_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.saved_preparation_button.clicked.connect(lambda: self.open_training_history(preparations=True))
@@ -1537,6 +1541,36 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         _TRAINING_PICKER_CLOSE_NOTICE = "Close held. Finish or close the training package chooser, then close Manager again."
 
+        def open_training_draft(self):
+            state = self.generation_state()
+            if state is None or getattr(self, "_training_draft_review_open", False):
+                return
+            from pathlib import Path
+            from PySide6.QtWidgets import QFileDialog, QMessageBox
+            from core.training_plan_drafts import TrainingPlanDraft, TrainingPlanDraftError
+            from qt_app.training_candidate_plan_dialog import TrainingPlanDraftPickerDialog
+
+            self._training_draft_review_open = True
+            try:
+                path, _ = QFileDialog.getOpenFileName(
+                    self, "Choose a Dataset draft", "", "Dataset draft (*.json)")
+                if not path or self.generation_state() is not state:
+                    return
+                try:
+                    draft = TrainingPlanDraft.read_transfer(Path(path))
+                except TrainingPlanDraftError as exc:
+                    QMessageBox.warning(self, "Dataset draft unavailable", str(exc))
+                    return
+                dialog = TrainingPlanDraftPickerDialog((draft,), self, saved_details_only=True)
+                try:
+                    dialog.exec()
+                finally:
+                    dialog.deleteLater()
+            finally:
+                self._training_draft_review_open = False
+                if self.statusBar().currentMessage() == self._TRAINING_DRAFT_CLOSE_NOTICE:
+                    self.statusBar().clearMessage()
+
         def open_training_history(self, *, preparations=False):
             state = self.generation_state()
             if state is None or getattr(self, "_training_history_dialog", None) is not None:
@@ -2331,8 +2365,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             event.ignore()
             return True
 
+        _TRAINING_DRAFT_CLOSE_NOTICE = "Close the Dataset draft review before closing Manager."
+
         def closeEvent(self, event):
             if self._hold_close_for_merge(event):
+                return
+            if getattr(self, "_training_draft_review_open", False):
+                self.statusBar().showMessage(self._TRAINING_DRAFT_CLOSE_NOTICE)
+                event.ignore()
                 return
             if getattr(self, "_training_history_dialog", None) is not None:
                 self.statusBar().showMessage("Close the Training History review before closing Manager.")
