@@ -589,9 +589,9 @@ def prior_journal_bytes(base, journal, component, owner, trust_bytes):
     require(type(name) is str and len(name) == 49 and name.startswith("transaction-") and name.endswith(".json")
             and all(c in "0123456789abcdef" for c in name[12:44]), "prior_journal_path")
     path = base / name
-    previous = read_json(path)
-    raw = path.read_bytes()
+    raw = read_metadata_bytes(path)
     require(sha256(raw).hexdigest() == prior["sha256"], "prior_journal_hash")
+    previous = _json(raw, "component state")
     validate_journal(previous, component, owner, trust_bytes)
     reference = previous["target"] if previous["phase"] == "healthy" else previous["before"]
     require(previous["phase"] in ("healthy", "abandoned", "rolled_back") and reference == journal["before"],
