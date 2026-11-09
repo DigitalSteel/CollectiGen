@@ -560,6 +560,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             prompt_knowledge=getattr(state, "knowledge", None),
             characters=characters, outfits=outfits, runtime_allowed=runtime_allowed,
             checked_connection=checked_connection, checked_connection_provider=provider,
+            review_verified_results=getattr(state, "review_verified_generation_results", False),
             checked_image_submission=getattr(state, "checked_image_submission", False), parent=host)
         dialog.source_records = saved_records
         if preloaded_draft is not None:
