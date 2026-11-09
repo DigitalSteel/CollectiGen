@@ -371,7 +371,10 @@ def test_public_metadata_seam_bound(tmp_path,limit):
     assert not f.calls
 
 
-def test_partial_read_failure_and_previous_cache_preserved(tmp_path):
+@pytest.mark.parametrize("incomplete_http_body", [False, True])
+def test_partial_read_failure_and_previous_cache_preserved(tmp_path, incomplete_http_body):
+    from http.client import IncompleteRead
+
     f=FakeFeed();base,name=f.add();s=service(tmp_path,f);o,=offers(s)
     first=s.acquire(o)
     f.add('collectigen.second-reader',payload=b'A'*(1024*1024+20))
@@ -381,16 +384,22 @@ def test_partial_read_failure_and_previous_cache_preserved(tmp_path):
         read_count=0
         def read(self,size=-1):
             self.read_count+=1
-            if self.read_count==2:raise OSError('interrupted after partial block')
+            if self.read_count == 2:
+                if incomplete_http_body:
+                    raise IncompleteRead(b"partial", 20)
+                raise OSError("interrupted after partial block")
             return super().read(size)
     def opener(request,timeout):
         if request.full_url==second.artifact_source.url:
             return Fault(b'A'*(1024*1024+20))
         return original(request,timeout)
     s.transport.opener=opener
-    with pytest.raises(UpdateServiceError):s.acquire(second)
+    with pytest.raises(UpdateServiceError, match="download was interrupted"):
+        s.acquire(second)
     assert first.artifact.read_bytes()==PAYLOAD
     assert len(list(s.root.iterdir()))==2  # marker and prior successful attempt only
+    s.transport.opener = original
+    assert s.acquire(second).artifact.read_bytes() == b'A'*(1024*1024+20)
 
 
 def test_overlapping_acquisition_refuses_before_contacting_feed(tmp_path):

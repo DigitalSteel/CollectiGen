@@ -9,6 +9,7 @@ import urllib.request
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from http.client import IncompleteRead
 from pathlib import Path
 from typing import Any, Callable
 from uuid import uuid4
@@ -283,7 +284,7 @@ class ApplicationUpdateService:
                                 progress(copied, artifact.size_bytes, artifact.name)
             except InterruptedError:
                 raise
-            except (OSError, urllib.error.URLError) as exc:
+            except (OSError, urllib.error.URLError, IncompleteRead) as exc:
                 if should_cancel and should_cancel():
                     raise InterruptedError("The update download was cancelled safely.") from exc
                 raise UpdateServiceError(f"The update download was interrupted and can be resumed: {exc}") from exc
