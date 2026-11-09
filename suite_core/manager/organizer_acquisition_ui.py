@@ -45,7 +45,7 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         selected=None if self.installed is None else self.installed.selected
         return ('Organizer installation has not been checked.' if self.installed is None else
                 'No Organizer installed.' if selected is None else
-                'Installed Organizer: '+selected.version+(' — open and close it normally to finish setup.' if self.installed.phase=='activated' else ''))
+                'Installed Organizer: '+selected.version)
 
     def available_version_label(self):return 'Available Organizer: '
 
