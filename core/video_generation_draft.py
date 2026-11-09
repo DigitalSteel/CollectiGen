@@ -131,7 +131,10 @@ def save_video_draft(path: str | Path, request: VideoGenerationRequest | VideoAu
 
 
 def load_video_draft(path: str | Path) -> VideoGenerationRequest | VideoAuthoringDraft:
-    raw, _ = read_stable_training_source(path, max_bytes=MAX_JSON_BYTES)
+    source = Path(path).absolute()
+    if ":" in source.name:
+        raise ValueError("Choose a regular video draft file.")
+    raw, _ = read_stable_training_source(source, max_bytes=MAX_JSON_BYTES)
     return _parse_video_draft(raw)
 
 
