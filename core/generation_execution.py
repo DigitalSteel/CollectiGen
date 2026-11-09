@@ -317,6 +317,9 @@ class SwarmLocalAdapter:
         if not caps or binding.get("capability_fingerprint") != caps["fingerprint"]:
             raise ValueError("Connection changed; check and bind the exact model again.")
         request = plan.request
+        if plan.source_identity.get("protected") or (
+                isinstance(source_current, dict) and source_current.get("protected")):
+            raise ValueError("Generation readiness is blocked: use an explicitly permitted source image.")
         if any(resource.provenance.get("protected") for resource in request.resources):
             raise ValueError("Generation readiness is blocked: use explicitly permitted model resources.")
         resolution = registry.resolve(binding["resource_id"], role="checkpoint")
