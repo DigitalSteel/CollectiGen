@@ -57,12 +57,12 @@ class OrdinarySuccessorBinding:
     def version(self):return self.contract['manager_version']
 
     def revalidate(self):
-        self._revalidated_release()
+        self.authenticated_release()
         return self
 
     def training_reference(self):
         """Project a freshly authenticated terminal release into the child offer."""
-        release = self._revalidated_release()
+        release = self.authenticated_release()
         require(release is not None, 'ordinary_successor_retained_release_required')
         files = {}
         for name, spec in release['files'].items():
@@ -72,7 +72,8 @@ class OrdinarySuccessorBinding:
             files[name] = dict(spec, path=path.relative_to(self.root).as_posix())
         return dict(release, files=files)
 
-    def _revalidated_release(self):
+    def authenticated_release(self):
+        """Return the release from the same evidence that revalidates this binding."""
         guard(self.root/'MANAGER_PACKAGE.json')
         require(sha256((self.root/'MANAGER_PACKAGE.json').read_bytes()).hexdigest()==self.initial_contract_sha256,
             'ordinary_initial_compiled_contract_changed')

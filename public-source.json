@@ -886,12 +886,12 @@
       "size_bytes": 39889
     },
     "core/manager_successor_admission.py": {
-      "sha256": "17ddb86f741e0e4ab23d485e247d73c5387ef5f267ea157d5ec13f32517e84d8",
-      "size_bytes": 15742
+      "sha256": "1a8b3a9dd61927f66cd38b18876c036a5c46312e2614f7f054e0b10c6472514b",
+      "size_bytes": 15832
     },
     "core/manager_update_host.py": {
-      "sha256": "037f5465acb0518a73bcd6128c51f7047db12d4284584f6c5d9b9d72fea97f68",
-      "size_bytes": 29833
+      "sha256": "eb3821d39190db72fce827eada1c003a8358b0fbd24ee0ccac170c995c31e185",
+      "size_bytes": 29636
     },
     "core/manager_update_service.py": {
       "sha256": "23c06e464af1a962d6bbe6efbeb16730f6f8e4277b906424a72602db510d7277",

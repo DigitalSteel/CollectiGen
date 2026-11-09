@@ -345,13 +345,12 @@ class CompiledManagerUpdateProfile:
         transport=owner.native_transport
         transport.assert_accounted_live_scope()
         require(transport.job_active_count()==0,'compiled_update_original_scope_not_empty')
-        prior=(launcher.current_successor_selection.revalidate() if launcher.current_successor_selection is not None else None)
+        prior = launcher.current_successor_selection
         if prior is None:
             prior_release=self._release(owner.root,self.initial_prior)
         else:
-            locator=json.loads((owner.root/'_bootstrap/manager-successor.json').read_bytes())
-            journal=json.loads((owner.root/'Recovery'/locator['transaction']/'transaction.json').read_bytes())
-            prior_release=journal['binding'][locator['release_side']]
+            prior_release = prior.authenticated_release()
+            require(prior_release is not None, 'ordinary_successor_retained_release_required')
         self._verify_release(prior_release)
         require(prior_release['version']==host.service.current_version,'compiled_current_prior_version_changed')
         current=owner.root/'Apps/Manager/current';updater=owner.root/'Apps/Manager/Update.exe'
