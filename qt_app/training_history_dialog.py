@@ -501,10 +501,15 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
             title = "No Runs on This Page" if page.total else "No Training History"
             self.empty_state.title_label.setText(title)
             self.empty_state.setAccessibleName(title)
-            self.empty_state.setText(
-                "The saved list changed. Choose Previous or Refresh to load available runs." if page.total else
-                "Build training data from Dataset or Training Collections, then prepare a local run. "
-                "Saved runs and setup checks will appear here.")
+            if page.total:
+                guidance = "The saved list changed. Choose Previous or Refresh to load available runs."
+            elif self._read_only:
+                guidance = ("No saved runs are available in this workspace. Return to Applications "
+                            "to review a training package or compare samples.")
+            else:
+                guidance = ("Build training data from Dataset or Training Collections, then prepare a local run. "
+                            "Saved runs and setup checks will appear here.")
+            self.empty_state.setText(guidance)
         self.empty_state.setVisible(not page.records)
         self.runs.setVisible(bool(page.records))
         self.status.setText(
