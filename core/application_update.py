@@ -240,6 +240,7 @@ class ApplicationUpdateService:
         # signed size/hash verification below before they can be promoted.
         if should_cancel and should_cancel():
             raise InterruptedError("The update download was cancelled safely.")
+        copied = offset
         if offset != artifact.size_bytes:
             headers = {"User-Agent": f"CollectiGen/{self.current_version}"}
             if offset:
@@ -288,6 +289,8 @@ class ApplicationUpdateService:
                 raise UpdateServiceError(f"The update download was interrupted and can be resumed: {exc}") from exc
         if should_cancel and should_cancel():
             raise InterruptedError("The update download was cancelled safely.")
+        if downloads_root is None and copied < artifact.size_bytes:
+            raise UpdateServiceError("The download ended before its signed size was reached. Retry to resume it.")
         try:
             verify_artifact(part, artifact)
         except ReleaseContractError as exc:
