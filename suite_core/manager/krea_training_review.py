@@ -448,7 +448,7 @@ class KreaTrainingReviewDialog(QDialog):
             holds = summary.get("holds") if isinstance(summary, dict) else None
             if reason == "package_unavailable_or_changed":
                 self._invalidate_package_review(
-                    "The selected package changed or could not be read. Return to Applications and choose a current package."
+                    "The selected package changed or could not be read. Export a fresh package from Training if needed, then return to Applications and select its folder."
                 )
                 return
             elif reason == "policy_held" and isinstance(holds, dict):
