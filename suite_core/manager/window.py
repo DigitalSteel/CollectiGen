@@ -1652,7 +1652,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     from core.training_candidate_selection import admit_dataset_caption_root, prepare_dataset_caption_review
 
                     root = admit_dataset_caption_root(selected_root, registry)
-                    review = prepare_dataset_caption_review(root)
+                    review = prepare_dataset_caption_review(root, cancel=lambda: job.cancel_requested)
                     caption_status = review(
                         draft.plan_manifest, read_sources, cancel=lambda: job.cancel_requested,
                     )

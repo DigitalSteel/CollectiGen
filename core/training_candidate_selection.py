@@ -34,6 +34,7 @@ CancelCallback = Callable[[], bool]
 
 def capture_caption_authority(
     files: Mapping[Path, int], *, optional: frozenset[Path] = frozenset(),
+    checkpoint: Callable[[], None] | None = None,
 ) -> Callable[[], bool]:
     """Capture bounded fingerprints of the caller's already-admitted files."""
     limits = dict(files)
@@ -45,6 +46,8 @@ def capture_caption_authority(
     def snapshot():
         evidence = {}
         for path, max_bytes in limits.items():
+            if checkpoint is not None:
+                checkpoint()
             try:
                 _, state = read_stable_training_source(path, max_bytes=max_bytes)
             except FileNotFoundError:
@@ -59,13 +62,17 @@ def capture_caption_authority(
     def is_current() -> bool:
         try:
             return snapshot() == expected
+        except InterruptedError:
+            raise
         except (OSError, RuntimeError, ValueError):
             return False
 
     return is_current
 
 
-def capture_dataset_caption_authority(data_root: Path) -> Callable[[], bool]:
+def capture_dataset_caption_authority(
+    data_root: Path, *, checkpoint: Callable[[], None] | None = None,
+) -> Callable[[], bool]:
     """Capture the canonical defaults and user layers under an admitted data root."""
     from .knowledge_write_admission import MAX_PARTICIPANT_BYTES
 
@@ -86,7 +93,7 @@ def capture_dataset_caption_authority(data_root: Path) -> Callable[[], bool]:
     ))
     return capture_caption_authority(
         dict.fromkeys((*required, *sorted(optional)), MAX_PARTICIPANT_BYTES),
-        optional=optional,
+        optional=optional, checkpoint=checkpoint,
     )
 
 
@@ -109,7 +116,7 @@ def admit_dataset_caption_root(data_root: Path, registry):
     return _path(data_root)
 
 
-def prepare_dataset_caption_review(data_root: Path):
+def prepare_dataset_caption_review(data_root: Path, *, cancel: CancelCallback | None = None):
     """Prepare caption comparison for a caller-admitted read-only Dataset root."""
     from functools import partial
 
@@ -127,9 +134,15 @@ def prepare_dataset_caption_review(data_root: Path):
     from .tag_template_projection import active_tag_template_projection_service
 
     defaults, user = data_root / "defaults", data_root / "user"
+    def checkpoint():
+        if cancel is not None and cancel():
+            raise InterruptedError("Caption check cancelled.")
+
+    checkpoint()
     admission = RulePairAdmission(user)
     admission.assert_clear()
-    current = capture_dataset_caption_authority(data_root)
+    current = capture_dataset_caption_authority(data_root, checkpoint=checkpoint)
+    checkpoint()
 
     def context_is_current():
         try:
@@ -143,6 +156,7 @@ def prepare_dataset_caption_review(data_root: Path):
     categories = CategoryRegistry(defaults / "categories.json", user / "categories.json")
     default_relationships = defaults / "relationships.json"
     user_relationships = user / "relationships.json"
+    checkpoint()
     revision = bind_saved_default_identity(tags, defaults_root=defaults, relationships_path=user_relationships)
     workspace = RelationshipWorkspaceService(default_relationships, user_relationships, tags=tags)
     categories.configure_category_base_authority(workspace.effective)
@@ -150,16 +164,19 @@ def prepare_dataset_caption_review(data_root: Path):
     bind_saved_default_identity(
         tags, defaults_root=defaults, relationships_path=user_relationships, expected_revision=revision,
     )
+    checkpoint()
     TagAliasRelationshipService(tags, default_path=default_relationships, user_path=user_relationships, workspace=workspace)
     TagSemanticRelationshipService(tags, default_path=default_relationships, user_path=user_relationships, workspace=workspace)
     relationships = RelationshipEvaluator(_with_compatible_legacy_specificity(
         KnowledgeRelationshipRegistry(workspace.effective, tags=tags), tags,
     ))
+    checkpoint()
     conflicts = ConflictRuleEngine.load(defaults / "conflicts.json", relationship_evaluator=relationships)
     engine = automation_engine_for_caption_review(tags, defaults_path=defaults / "automation_rules.json", conflicts=conflicts)
     templates = active_tag_template_projection_service(
         tags, require_projection=True, authority_roots=(defaults, user),
     )
+    checkpoint()
     service = TrainingCandidateSelectionService(tags, PreparedCharacterDatabase(user), categories)
     if not context_is_current():
         raise ValueError("Dataset caption authority changed while it was being loaded.")

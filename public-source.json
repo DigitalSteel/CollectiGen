@@ -1578,8 +1578,8 @@
       "size_bytes": 22646
     },
     "core/training_candidate_selection.py": {
-      "sha256": "9b1d0437815669383fb078194c77b3f1b761c7f1ff54bfc9993294709c747376",
-      "size_bytes": 70021
+      "sha256": "ae00a88f09ace262616ca350bcb7b41b8ce42107241498987e2a871caac44913",
+      "size_bytes": 70565
     },
     "core/training_caption_review.py": {
       "sha256": "0c285fdff68f5f7160380645ba8326f33302dc3208948cc24dea422f1a2bf91c",
@@ -3370,8 +3370,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "f7730a7d93738b4495cb9166c473f29a8d16eebd71e4450bbffb58cd0af5615b",
-      "size_bytes": 214231
+      "sha256": "6dff7a604e2744605521d6a959b188ee29132c3738afa7f5404a766e789c90fd",
+      "size_bytes": 214268
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
