@@ -25,9 +25,10 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
     feedback_workflow = "Generation alternatives"
     _terminal_signal = Signal(object)
 
-    def __init__(self, owner):
+    def __init__(self, owner, *, planning_only=False):
         super().__init__(owner)
         self.owner = owner
+        self.planning_only = planning_only
         self.experiment = None
         self.path = None
         self.digest = None
@@ -54,7 +55,11 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         self.setWindowTitle("Generate Alternatives and Compare")
         self.resize(1200, 850)
         layout = QVBoxLayout(self)
-        intro = QLabel("Draft → Choose → Finish. Review a bounded group, generate one at a time, then finish only your selected results.")
+        intro = QLabel(
+            "Draft → Choose → Finish. Review a bounded group, generate one at a time, then finish only your selected results."
+            if not planning_only else
+            "Plan and save alternatives offline. You can reopen a group or open one alternative as a separate image draft."
+        )
         intro.setWordWrap(True); layout.addWidget(intro)
         self.workspaces = QTabWidget()
         create_page = QWidget(); create_layout = QVBoxLayout(create_page)
@@ -459,6 +464,8 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             QTimer.singleShot(0, self._start_thumbnail)
 
     def _start_thumbnail(self):
+        if self.planning_only:
+            return
         if self._thumb_task is not None or self._thumb_cancelled or self.owner._shutdown_requested:
             return
         rows = self.selected()
@@ -513,6 +520,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
 
     def refresh_actions(self):
         self.refresh_lora_choices()
+        runtime = not self.planning_only
         idle = not self.busy()
         selection_idle = self._task is None and not self._running and self._job is None
         rows = self.experiment["candidates"] if self.experiment else []
@@ -525,22 +533,22 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         self.status.setVisible(self.workspaces.currentIndex() == 1 or not has_group
             or bool(self._form_error) or self._operation_error or self.busy())
         show_reorder = len(selected) == 1 and selected[0]["state"] == "pending"
-        show_retry = bool(selected) and all(r["state"] in {"failed", "cancelled"} for r in selected)
-        show_recover = any(r["state"] != "pending" for r in rows)
+        show_retry = runtime and bool(selected) and all(r["state"] in {"failed", "cancelled"} for r in selected)
+        show_recover = runtime and any(r["state"] != "pending" for r in rows)
         show_use = len(selected) == 1
         self.candidate_area.setVisible(has_group)
         self.details.setVisible(has_group and bool(self.details.toPlainText()))
-        self.result_panel.setVisible(any(r["state"] == "verified" for r in rows))
+        self.result_panel.setVisible(runtime and any(r["state"] == "verified" for r in rows))
         self.payload_details.setVisible(has_group)
-        self.review.setVisible(has_group)
+        self.review.setVisible(runtime and has_group)
         self.up.setVisible(show_reorder); self.down.setVisible(show_reorder)
         self.retry.setVisible(show_retry); self.recover.setVisible(show_recover)
         self.use.setVisible(show_use)
         self.candidate_actions.setVisible(show_reorder or show_retry or show_recover or show_use)
         self.empty_stage_spacer.setVisible(not has_group)
-        self.safety_review.setVisible(bool(pending))
-        self.ack.setVisible(bool(pending) and bool(self.prepared))
-        self.start.setVisible(bool(pending) and bool(self.prepared)
+        self.safety_review.setVisible(runtime and bool(pending))
+        self.ack.setVisible(runtime and bool(pending) and bool(self.prepared))
+        self.start.setVisible(runtime and bool(pending) and bool(self.prepared)
             and self.workspaces.currentIndex() == 1)
         self.pause.setVisible(self._running)
         self.cancel.setVisible(self._job is not None or self._task is not None or self._thumb_task is not None)
@@ -550,10 +558,10 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         self.build.setEnabled(idle and self._grid_valid and (not lora_needed or self.lora.count() > 0))
         self.load.setEnabled(idle)
         self.payload_details.setEnabled(idle and bool(rows))
-        self.review.setEnabled(idle and bool(pending) and self.safety_review.isChecked() and self.owner.adapter is not None and bool(self.owner.binding))
+        self.review.setEnabled(runtime and idle and bool(pending) and self.safety_review.isChecked() and self.owner.adapter is not None and bool(self.owner.binding))
         self.review.setToolTip("Check your generator and selected model on Readiness first.")
         needs_readiness = bool(pending) and (self.owner.adapter is None or not self.owner.binding)
-        self.readiness_handoff.setVisible(bool(pending))
+        self.readiness_handoff.setVisible(runtime and bool(pending))
         self.readiness_button.setVisible(needs_readiness)
         self.readiness_button.setEnabled(idle)
         if self.owner.adapter is None:
@@ -564,12 +572,12 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             self.readiness_notice.setText("Review the content safety of every candidate, then check the pending candidates separately.")
         else:
             self.readiness_notice.setText("Generator and model readiness do not approve this group. Check every pending candidate before generating.")
-        self.start.setEnabled(idle and bool(pending) and self.ack.isChecked()
+        self.start.setEnabled(runtime and idle and bool(pending) and self.ack.isChecked()
             and all(r["id"] in self.prepared for r in pending) and self.review_identity == self._identity())
         for button in (self.up, self.down): button.setEnabled(idle and len(selected) == 1 and selected[0]["state"] == "pending")
-        self.retry.setEnabled(idle and bool(selected) and all(r["state"] in {"failed", "cancelled"} for r in selected))
-        self.recover.setEnabled(idle and bool(rows)); self.compare.setEnabled(idle and verified and len(selected) <= 4)
-        self.finish.setEnabled(idle and verified); self.ingest.setEnabled(idle and verified)
+        self.retry.setEnabled(idle and show_retry)
+        self.recover.setEnabled(idle and show_recover); self.compare.setEnabled(runtime and idle and verified and len(selected) <= 4)
+        self.finish.setEnabled(runtime and idle and verified); self.ingest.setEnabled(runtime and idle and verified)
         self.use.setEnabled(idle and len(selected) == 1)
         self.pause.setEnabled(self._running); self.cancel.setEnabled(
             self._job is not None or self._task is not None or self._thumb_task is not None)
@@ -600,6 +608,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             self._run("Save candidate order", self._persist, self._saved)
 
     def prepare_group(self):
+        if self.planning_only: return
         if self.busy() or not self.experiment or not self.owner.adapter or not self.owner.binding or not self.safety_review.isChecked(): return
         self.prepared = {}; self.ack.setChecked(False)
         self._cancel_requested = False
@@ -666,6 +675,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         close = QPushButton("Close"); close.clicked.connect(dialog.accept); layout.addWidget(close); dialog.exec()
 
     def start_group(self):
+        if self.planning_only: return
         if not self.start.isEnabled() or self.busy(): return
         self._running = True; self._pause = False; self._cancel_requested = False; self._advance()
 
@@ -743,6 +753,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         if self._job is None and self._task is None: self._running = False
 
     def retry_selected(self):
+        if self.planning_only: return
         if self.busy(): return
         rows = deepcopy(self.selected())
         if not rows: return
@@ -765,6 +776,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         self._run("Verify retry authority", check, done)
 
     def reconcile(self):
+        if self.planning_only: return
         if self.busy() or not self.experiment: return
         value = deepcopy(self.experiment)
         def work():
@@ -789,6 +801,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         return result
 
     def compare_selected(self):
+        if self.planning_only: return
         rows = deepcopy(self.selected())
         if self.busy() or not 1 <= len(rows) <= 4 or any(r["state"] != "verified" for r in rows): return
         if self.experiment.get("grid"):
@@ -828,6 +841,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         })
 
     def finish_selected(self):
+        if self.planning_only: return
         rows = deepcopy(self.selected())
         if self.busy() or not rows or any(r["state"] != "verified" for r in rows): return
         def done(values):
@@ -862,6 +876,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         self._run("Verify selected finishing sources", lambda: self._verified(rows), done)
 
     def ingest_selected(self):
+        if self.planning_only: return
         rows = deepcopy(self.selected())
         if self.busy() or not rows or any(r["state"] != "verified" for r in rows): return
         self._run("Verify selected Ingest results", lambda: self._verified(rows),

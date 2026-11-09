@@ -1353,6 +1353,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     generation_runtime_allowed=False, video_decoder_lifetime=VideoDecoderLifetime(),
                     checked_image_connection=self.checked_image_connection,
                     checked_image_submission=True,
+                    offline_generation_alternatives=True,
                     review_verified_generation_results=True,
                 )
             return self.state

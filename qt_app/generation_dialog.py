@@ -112,6 +112,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         checked_connection=None,
         checked_connection_provider=None,
         checked_image_submission=False,
+        offline_alternatives=False,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -130,6 +131,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.prompt_knowledge = prompt_knowledge
         self.swarm_preset_service = swarm_preset_service
         self.runtime_allowed = runtime_allowed
+        self._alternatives_allowed = runtime_allowed or offline_alternatives
         self._checked_connection = checked_connection
         self._checked_connection_provider = checked_connection_provider
         self._checked_image_submission = bool(checked_image_submission and checked_connection
@@ -2762,7 +2764,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             input_issue=input_issue)
         self._update_draft_action_presentation()
         self.source_panel.setEnabled(idle)
-        self.experiment_button.setEnabled(self.runtime_allowed and not self._pending and (idle or bool(self._experiment_dialog)))
+        self.experiment_button.setEnabled(self._alternatives_allowed and not self._pending and (idle or bool(self._experiment_dialog)))
         self.results_experiment_button.setEnabled(self.experiment_button.isEnabled())
         self.save_recipe_button.setEnabled(idle and not input_issue)
         self.save_recipe_button.setToolTip(input_issue)
@@ -2791,18 +2793,20 @@ class GenerationDialog(FeedbackEnabledDialog):
         )
 
     def open_experiment(self):
-        if not self._require_generation_runtime():
+        if not self._alternatives_allowed:
             return
         if self._pending or self._shutdown_requested: return
         if self._experiment_dialog is None:
             if self._execution_active(): return
             from .generation_experiment_dialog import GenerationExperimentDialog
-            self._experiment_dialog = GenerationExperimentDialog(self)
+            self._experiment_dialog = GenerationExperimentDialog(self, planning_only=not self.runtime_allowed)
         self._experiment_dialog.refresh_actions()
         self.alternatives_return_button.hide()
         self._experiment_dialog.show(); self._experiment_dialog.raise_()
 
     def review_alternatives_readiness(self):
+        if not self.runtime_allowed:
+            return
         group = self._experiment_dialog
         if group is None or group.busy() or not group.experiment:
             return
