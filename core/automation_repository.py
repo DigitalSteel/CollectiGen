@@ -426,7 +426,6 @@ def _active_automation_evaluation(knowledge=None):
 def _active_automation_engine_admitted(knowledge, admission,*,with_signature=False):
     """Load or reuse an evaluator while its explicitly bound pair is clear."""
     global _ACTIVE_ENGINE_CACHE
-    from .automation_rules import AutomationEngine
     from .paths import DEFAULTS_DIR
     paths,key=_active_automation_engine_inputs(knowledge,admission)
     if (_ACTIVE_ENGINE_CACHE and _ACTIVE_ENGINE_CACHE[0]==key
@@ -434,7 +433,37 @@ def _active_automation_engine_admitted(knowledge, admission,*,with_signature=Fal
             and _ACTIVE_ENGINE_CACHE[1].rule_pair_admission is admission):
         engine=_ACTIVE_ENGINE_CACHE[1]
         return (engine,key) if with_signature else engine
-    combined=AutomationRuleRepository(*paths, rule_pair_admission=admission).combined()
+    repository=AutomationRuleRepository(*paths, rule_pair_admission=admission)
+    from .conflict_rules import ConflictRuleEngine
+    engine=_build_automation_engine(
+        repository, knowledge, ConflictRuleEngine.load(DEFAULTS_DIR/"conflicts.json", tags=knowledge),
+    )
+    _ACTIVE_ENGINE_CACHE=(key,engine)
+    return (engine,key) if with_signature else engine
+
+
+def automation_engine_for_caption_review(knowledge, *, defaults_path: Path, conflicts):
+    """Build from caller-admitted rules and conflicts without process fallback."""
+    admission = getattr(knowledge, "rule_pair_admission", None)
+    if admission is None or conflicts is None:
+        raise ValueError("Supply admitted Tag rules and conflicts for caption review.")
+    if not defaults_path.is_absolute() or ".." in defaults_path.parts:
+        raise ValueError("Supply the exact absolute default rules path.")
+    admission.assert_clear()
+    repository = AutomationRuleRepository(
+        defaults_path, admission.rules_path, rule_pair_admission=admission,
+    )
+    if any(store._source_error for store in (repository.defaults, repository.user)):
+        raise ValueError("The admitted caption rules could not be read.")
+    engine = _build_automation_engine(repository, knowledge, conflicts)
+    admission.assert_clear()
+    return engine
+
+
+def _build_automation_engine(repository, knowledge, conflicts):
+    from .automation_rules import AutomationEngine
+
+    combined=repository.combined()
     if knowledge is not None:
         for rule in knowledge.merge_rules.values():
             if not rule.enabled: continue
@@ -444,10 +473,6 @@ def _active_automation_engine_admitted(knowledge, admission,*,with_signature=Fal
                 "requires_review":bool(rule.require_review),"rule_id":rule.id,
                 **({"intent":str(rule.extras.get("intent"))} if rule.extras.get("intent") else {}),
             })
-    from .conflict_rules import ConflictRuleEngine
-    engine=AutomationEngine(
-        combined,knowledge,
-        ConflictRuleEngine.load(DEFAULTS_DIR/"conflicts.json",tags=knowledge),
-        rule_pair_admission=admission,
-    ); _ACTIVE_ENGINE_CACHE=(key,engine)
-    return (engine,key) if with_signature else engine
+    return AutomationEngine(
+        combined, knowledge, conflicts, rule_pair_admission=repository.rule_pair_admission,
+    )

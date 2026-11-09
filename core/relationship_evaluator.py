@@ -281,16 +281,24 @@ def prime_active_relationship_evaluator(tags,relationships) -> RelationshipEvalu
     return evaluator
 
 
-def active_relationship_evaluator(tags=None) -> RelationshipEvaluator:
+def active_relationship_evaluator(
+    tags=None, *, authority_paths: tuple[Path, Path] | None = None,
+) -> RelationshipEvaluator:
     """Load the effective default/user relationship layers with a cheap file cache."""
     global _ACTIVE_EVALUATOR_CACHE
-    from .paths import DEFAULTS_DIR, RELATIONSHIPS_PATH
     from .relationship_store import load_effective_relationship_registry
 
-    paths = (DEFAULTS_DIR / "relationships.json", RELATIONSHIPS_PATH)
-    signature = _active_evaluator_signature(tags)
-    if _ACTIVE_EVALUATOR_CACHE is not None and _ACTIVE_EVALUATOR_CACHE[0] == signature:
-        return _ACTIVE_EVALUATOR_CACHE[1]
+    if authority_paths is None:
+        from .paths import DEFAULTS_DIR, RELATIONSHIPS_PATH
+
+        paths = (DEFAULTS_DIR / "relationships.json", RELATIONSHIPS_PATH)
+        signature = _active_evaluator_signature(tags)
+        if _ACTIVE_EVALUATOR_CACHE is not None and _ACTIVE_EVALUATOR_CACHE[0] == signature:
+            return _ACTIVE_EVALUATOR_CACHE[1]
+    else:
+        paths = authority_paths
+        if any(not path.is_absolute() or ".." in path.parts for path in paths):
+            raise ValueError("Supply exact absolute relationship authority paths.")
     registry = load_effective_relationship_registry(
             default_path=paths[0],
             user_path=paths[1],
@@ -298,5 +306,6 @@ def active_relationship_evaluator(tags=None) -> RelationshipEvaluator:
         )
     registry=_with_compatible_legacy_specificity(registry,tags)
     evaluator = RelationshipEvaluator(registry)
-    _ACTIVE_EVALUATOR_CACHE = (signature, evaluator)
+    if authority_paths is None:
+        _ACTIVE_EVALUATOR_CACHE = (signature, evaluator)
     return evaluator

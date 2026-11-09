@@ -413,12 +413,17 @@ class ImageWorkflowStateService:
         candidates.extend(getattr(self,"_rating_compatible_contexts",{}).get(current,()))
         return tuple(dict.fromkeys(value for value in candidates if value!=current))
 
-    def context_fingerprint(self,*,cache_version: int|None=None,legacy_category_sensitivity: bool=False,checkpoint=None) -> str:
+    def context_fingerprint(
+        self, *, cache_version: int | None = None,
+        legacy_category_sensitivity: bool = False, checkpoint=None, automation_engine=None,
+    ) -> str:
         """Identify every shared input that can change a readiness projection."""
         from .image_authority_initialization import (
             ImageAuthorityInitializationService,
         )
 
+        if automation_engine is not None and automation_engine.knowledge is not self.knowledge:
+            raise ValueError("Use the rules engine bound to this exact Tag Knowledge.")
         knowledge_digest=_knowledge_workflow_digest(self.knowledge,checkpoint)
         if checkpoint is not None:checkpoint()
         categories={
@@ -455,6 +460,7 @@ class ImageWorkflowStateService:
         if checkpoint is not None:checkpoint()
         rules=ImageAuthorityInitializationService(
             knowledge=self.knowledge,gather_source_evidence=False,
+            automation_engine=automation_engine,
         ).current_rules_fingerprint()
         if checkpoint is not None:checkpoint()
         payload={
@@ -478,7 +484,7 @@ class ImageWorkflowStateService:
                 self._semantic_proof=None
                 self._semantic_proof_context=fingerprint
         if legacy_category_sensitivity and (cache_version is None or cache_version==ImageWorkflowState.CACHE_VERSION):
-            modern=self.context_fingerprint(cache_version=cache_version)
+            modern=self.context_fingerprint(cache_version=cache_version, automation_engine=automation_engine)
             history=getattr(self,"_rating_compatible_contexts",{})
             history.setdefault(modern,set()).add(fingerprint)
             self._rating_compatible_contexts={modern:history[modern]}

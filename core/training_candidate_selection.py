@@ -6,10 +6,11 @@ import re
 from dataclasses import dataclass, replace
 from io import BytesIO
 from pathlib import Path
-from typing import Callable, Iterable, Mapping
+from typing import Callable, Iterable, Literal, Mapping
 
 from PIL import Image
 
+from .annotation import ImageAnnotation
 from .character_database import CharacterDatabase
 from .export_profile import ExportProfile
 from .federated_dataset import LibraryImageIdentity
@@ -30,6 +31,64 @@ from .video_generation import DerivedFrameReference, FRAME_SCHEMA_ID, SCHEMA_VER
 
 ProgressCallback = Callable[[int, int, str], None]
 CancelCallback = Callable[[], bool]
+
+def capture_caption_authority(
+    files: Mapping[Path, int], *, optional: frozenset[Path] = frozenset(),
+) -> Callable[[], bool]:
+    """Capture bounded fingerprints of the caller's already-admitted files."""
+    limits = dict(files)
+    if not limits or not optional.issubset(limits) or any(
+        not path.is_absolute() or ".." in path.parts for path in limits
+    ):
+        raise ValueError("Supply the exact absolute files for caption authority.")
+
+    def snapshot():
+        evidence = {}
+        for path, max_bytes in limits.items():
+            try:
+                _, state = read_stable_training_source(path, max_bytes=max_bytes)
+            except FileNotFoundError:
+                if path not in optional:
+                    raise
+                state = None
+            evidence[path] = state
+        return evidence
+
+    expected = snapshot()
+
+    def is_current() -> bool:
+        try:
+            return snapshot() == expected
+        except (OSError, RuntimeError, ValueError):
+            return False
+
+    return is_current
+
+
+def capture_dataset_caption_authority(data_root: Path) -> Callable[[], bool]:
+    """Capture the canonical defaults and user layers under an admitted data root."""
+    from .knowledge_write_admission import MAX_PARTICIPANT_BYTES
+
+    defaults = data_root / "defaults"
+    user = data_root / "user"
+    required = (
+        *(defaults / name for name in (
+            "automation_rules.json", "categories.json", "community_tags.json",
+            "concepts.json", "conflicts.json", "foundation_tags.json",
+            "modifiers.json", "promoted_tags.json", "relationships.json", "tag_aliases.json",
+        )),
+        user / "default_knowledge_state.json",
+        user / "tags.json",
+    )
+    optional = frozenset(user / name for name in (
+        "automation_rules.json", "categories.json", "characters.json", "outfits.json",
+        "relationships.json", "series.json",
+    ))
+    return capture_caption_authority(
+        dict.fromkeys((*required, *sorted(optional)), MAX_PARTICIPANT_BYTES),
+        optional=optional,
+    )
+
 
 PERMISSION_FIELD_LABELS = (
     ("creator", "Creator"),
@@ -495,13 +554,73 @@ class TrainingCandidateSelectionService:
             characters, knowledge, categories=categories
         )
 
-    def assessment_context_fingerprint(self) -> str:
+    def assessment_context_fingerprint(self, *, automation_engine=None) -> str:
         """Identify shared assessment inputs without exposing them in manifests."""
         from .image_workflow_state import ImageWorkflowStateService
 
         return ImageWorkflowStateService(
             self.knowledge,self.characters,categories=self.categories,
-        ).context_fingerprint()
+        ).context_fingerprint(automation_engine=automation_engine)
+
+    def review_saved_captions(
+        self,
+        manifest: Mapping[str, object],
+        read_verified_annotations: Callable[[Callable[[str, ImageAnnotation], None]], None],
+        *,
+        automation_engine,
+        relationship_evaluator,
+        template_service,
+        context_is_current: Callable[[], bool],
+        cancel: CancelCallback | None = None,
+    ) -> Literal["matches", "captions_changed", "context_changed", "unavailable", "cancelled"]:
+        """Compare a validated draft while its source check emits verified annotations.
+
+        The host checks the admitted files against the snapshot used to load
+        the supplied evaluators, before projection and before accepting a result.
+        """
+        if cancel is not None and cancel():
+            return "cancelled"
+        saved_context = manifest.get("assessment_context_fingerprint")
+        if not saved_context or automation_engine is None:
+            return "unavailable"
+        if not context_is_current():
+            return "context_changed"
+        if self.assessment_context_fingerprint(automation_engine=automation_engine) != saved_context:
+            return "context_changed"
+        candidates = {item["stable_id"]: item for item in manifest["candidates"]}
+        if not candidates:
+            return "unavailable"
+        profile = ExportProfile.from_dict(manifest["profile"])
+        changed = False
+        unavailable = False
+
+        def compare(stable_id: str, annotation: ImageAnnotation) -> None:
+            nonlocal changed, unavailable
+            if cancel is not None and cancel():
+                return
+            item = candidates.pop(stable_id, None)
+            if item is None or not item.get("caption_sha256") or (
+                annotation_knowledge_fingerprint(annotation) != item.get("knowledge_fingerprint")
+            ):
+                unavailable = True
+                return
+            projection = profile.project(
+                annotation, self.characters, self.knowledge, relationship_evaluator,
+                automation_engine=automation_engine, template_service=template_service,
+            )
+            digest = hashlib.sha256(projection.render(profile.separator).encode("utf-8")).hexdigest()
+            changed |= digest != item["caption_sha256"]
+
+        read_verified_annotations(compare)
+        if cancel is not None and cancel():
+            return "cancelled"
+        if not context_is_current() or (
+            self.assessment_context_fingerprint(automation_engine=automation_engine) != saved_context
+        ):
+            return "context_changed"
+        if unavailable or candidates:
+            return "unavailable"
+        return "captions_changed" if changed else "matches"
 
     @staticmethod
     def _identity_lookup(

@@ -5,6 +5,7 @@ from dataclasses import dataclass,replace
 from datetime import datetime,timezone
 from hashlib import sha256
 import json
+from pathlib import Path
 from typing import Any,Iterable,Mapping
 
 from .knowledge_relationships import MODIFIER_VALUE,SPECIFICITY
@@ -332,22 +333,35 @@ class TagTemplateProjectionService:
 
 def active_tag_template_projection_service(
     knowledge: Any,*,require_projection: bool=False,
+    authority_roots: tuple[Path, Path] | None = None,
 ):
-    """Build the current typed projection index from canonical repositories."""
+    """Build the typed index from the current profile or caller-admitted roots."""
 
     from .automation_repository import AutomationRuleRepository
     from .category_registry import CategoryRegistry
     from .knowledge_engine import FoundationKnowledge
     from .modifier_composition import modifier_composition_resolutions
-    from .paths import (
-        CATEGORIES_PATH,DEFAULTS_DIR,RELATIONSHIPS_PATH,USER_DATA_DIR,
-    )
     from .relationship_store import RelationshipStore
 
+    if authority_roots is None:
+        from .paths import CATEGORIES_PATH, DEFAULTS_DIR, RELATIONSHIPS_PATH, USER_DATA_DIR
+
+        defaults, user = DEFAULTS_DIR, USER_DATA_DIR
+        categories_path, relationships_path = CATEGORIES_PATH, RELATIONSHIPS_PATH
+    else:
+        defaults, user = authority_roots
+        if any(not root.is_absolute() or ".." in root.parts for root in authority_roots):
+            raise ValueError("Supply exact absolute template authority roots.")
+        categories_path, relationships_path = user / "categories.json", user / "relationships.json"
+
     repository=AutomationRuleRepository(
-        DEFAULTS_DIR/"automation_rules.json",
-        USER_DATA_DIR/"automation_rules.json",
+        defaults/"automation_rules.json",
+        user/"automation_rules.json",
     )
+    if authority_roots is not None and any(
+        store._source_error for store in (repository.defaults, repository.user)
+    ):
+        raise ValueError("The admitted template rules could not be read.")
     templates=tuple(
         record for _origin,record in TagTemplateStoreService(repository).records_with_origin()
     )
@@ -356,14 +370,14 @@ def active_tag_template_projection_service(
             item for item in templates if bool(item.projection_rule.get("enabled",False))
         )
     if not templates:return None
-    categories=CategoryRegistry(DEFAULTS_DIR/"categories.json",CATEGORIES_PATH)
-    default_relationships=RelationshipStore(DEFAULTS_DIR/"relationships.json")
-    user_relationships=RelationshipStore(RELATIONSHIPS_PATH)
+    categories=CategoryRegistry(defaults/"categories.json",categories_path)
+    default_relationships=RelationshipStore(defaults/"relationships.json")
+    user_relationships=RelationshipStore(relationships_path)
     relationships=dict(default_relationships.relationships)
     relationships.update(user_relationships.relationships)
     categories.configure_category_base_authority(relationships.values())
     foundation=FoundationKnowledge(
-        DEFAULTS_DIR/"modifiers.json",DEFAULTS_DIR/"concepts.json",
+        defaults/"modifiers.json",defaults/"concepts.json",
     )
     compositions=modifier_composition_resolutions(
         relationships.values(),tags=knowledge,categories=categories,

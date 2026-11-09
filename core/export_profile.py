@@ -288,8 +288,18 @@ class ExportProfile:
         character_db: CharacterDatabase | None = None,
         knowledge: TagDatabase | None = None,
         relationship_evaluator=None,
+        *,
+        automation_engine=None,
+        template_service=None,
     ) -> CaptionProjection:
         """Return typed projection segments before the lossy TXT join."""
+        if automation_engine is not None:
+            if automation_engine.knowledge is not knowledge:
+                raise ValueError("Use the rules engine bound to this exact Tag Knowledge.")
+            if knowledge is not None and self.hierarchy_policy != HIERARCHY_AS_CONFIRMED and relationship_evaluator is None:
+                raise ValueError("Supply the admitted Tag relationships for this caption profile.")
+        elif template_service is not None:
+            raise ValueError("Supply the admitted rules engine with the template service.")
         candidates: list[TagOrderCandidate] = []
         decisions: list[ProjectionDecision] = []
         prose: list[str] = []
@@ -626,15 +636,16 @@ class ExportProfile:
             from .tag_template_projection import (
                 TagTemplateProjectionFact,active_tag_template_projection_service,
             )
-            try:
-                template_service=active_tag_template_projection_service(
-                    knowledge,require_projection=True,
-                )
-            except (OSError,RuntimeError,ValueError):
-                # Malformed optional template authority must not make an
-                # otherwise valid training export unusable. Automation exposes
-                # the held storage record for repair; projection stays off.
-                template_service=None
+            if automation_engine is None:
+                try:
+                    template_service=active_tag_template_projection_service(
+                        knowledge,require_projection=True,
+                    )
+                except (OSError,RuntimeError,ValueError):
+                    # Malformed optional template authority must not make an
+                    # otherwise valid training export unusable. Automation exposes
+                    # the held storage record for repair; projection stays off.
+                    template_service=None
             if template_service is not None:
                 protected_keys={
                     normalize_tag(value) for value in (
@@ -802,8 +813,11 @@ class ExportProfile:
         output = list(ordered.values)
 
         if self.apply_automation_rules:
-            from .automation_repository import active_automation_engine
-            output, steps = active_automation_engine(knowledge).project_tags_with_steps(
+            if automation_engine is None:
+                from .automation_repository import active_automation_engine
+
+                automation_engine = active_automation_engine(knowledge)
+            output, steps = automation_engine.project_tags_with_steps(
                 output, automatic_only=True
             )
             decisions = self._apply_rule_steps(decisions, steps)
