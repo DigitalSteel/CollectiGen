@@ -26,6 +26,8 @@ class KreaTrainingReviewDialog(QDialog):
         self._checking_dataset = False
         self._preparing_dataset = False
         self._prepared_folder = None
+        self._retry_history_save = None
+        self._saving_preparation = False
         self._dataset_overview = None
         self._checking_handoff = False
         self._handoff_fingerprint = None
@@ -85,6 +87,10 @@ class KreaTrainingReviewDialog(QDialog):
         self.prepared_folder_button.hide()
         self.prepared_folder_button.clicked.connect(self._open_prepared_folder)
         actions.addWidget(self.prepared_folder_button)
+        self.retry_history_button = QPushButton("Retry Saving to History")
+        self.retry_history_button.hide()
+        self.retry_history_button.clicked.connect(self._retry_preparation_history)
+        actions.addWidget(self.retry_history_button)
         actions.addStretch()
         self.return_button = QPushButton("Cancel Check and Return")
         self.return_button.setMinimumWidth(self.return_button.fontMetrics().horizontalAdvance('Return to Applications') + 32)
@@ -156,6 +162,20 @@ class KreaTrainingReviewDialog(QDialog):
         if self._checking_handoff:
             self._finish_package_handoff()
             return
+        if self._saving_preparation:
+            self._saving_preparation = False
+            for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
+                action.setEnabled(True)
+            try:
+                self._future.result()
+            except Exception:
+                self.retry_history_button.setEnabled(True)
+                self.status.setText("The prepared workspace is available. Saving to History still failed.")
+            else:
+                self._retry_history_save = None
+                self.retry_history_button.hide()
+                self.status.setText("SDXL preparation saved to History. Training has not started.")
+            return
         if self._preparing_dataset:
             self._preparing_dataset = False
             for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
@@ -166,6 +186,10 @@ class KreaTrainingReviewDialog(QDialog):
                 inspection, plan, request, receipt = self._future.result()
             except TrainingPreparationRetentionError as exc:
                 self._show_prepared_workspace(exc.workspace, str(exc))
+                if exc.retry is not None:
+                    self._retry_history_save = exc.retry
+                    self.retry_history_button.setEnabled(True)
+                    self.retry_history_button.show()
             except Exception:
                 self.status.setText("Preparation did not finish. Check the selected folders, then choose Prepare SDXL Dataset to retry.")
             else:
@@ -341,6 +365,21 @@ class KreaTrainingReviewDialog(QDialog):
             self.prepared_folder_button.show()
         self.status.setText(status)
 
+    def _retry_preparation_history(self):
+        if self._retry_history_save is None or self._executor.close_held or self._cancel.is_set():
+            return
+        try:
+            self._future = self._executor.submit(self._retry_history_save)
+        except (RuntimeError, ValueError):
+            self.status.setText("History save could not start. Choose Retry Saving to History to try again.")
+            return
+        self._saving_preparation = True
+        for action in (self.retry_history_button, self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
+            action.setEnabled(False)
+        self.return_button.setText("Wait for Save and Return")
+        self.status.setText("Saving the completed preparation to History…")
+        self._timer.start(50)
+
     def _open_prepared_folder(self):
         if self._prepared_folder is None or self._executor.close_held or self._cancel.is_set():
             return
@@ -513,6 +552,8 @@ class KreaTrainingReviewDialog(QDialog):
             return
         self._prepared_folder = None
         self.prepared_folder_button.hide()
+        self._retry_history_save = None
+        self.retry_history_button.hide()
         self._preparing_dataset = True
         for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
             action.setEnabled(False)

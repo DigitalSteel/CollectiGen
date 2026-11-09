@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from functools import partial
 import io
 import os
 from pathlib import Path
@@ -269,9 +270,10 @@ class ContainedDatasetPreparationService(ContainedRuntimeQualificationService):
 class TrainingPreparationRetentionError(TrainingProcessError):
     """The prepared workspace exists, but its history pointer could not be saved."""
 
-    def __init__(self, workspace):
+    def __init__(self, workspace, retry=None):
         super().__init__("The dataset was prepared, but its receipt could not be saved to history.")
         self.workspace = workspace
+        self.retry = retry
 
 
 class ReviewedDatasetVerifier:
@@ -356,12 +358,14 @@ class ReviewedDatasetVerifier:
                 if type(nonce) is not str or re.fullmatch(r"[0-9a-f]{32}", nonce) is None:
                     raise TrainingProcessError("The completed preparation receipt has an invalid identity.")
                 directory = work / ("preflight-" + nonce)
+                retain = None
                 try:
                     _, tip = TrainingRunJournal(directory).read()
-                    ScopedPreparationHistory(root).retain(
+                    retain = partial(ScopedPreparationHistory(root).retain,
                         directory, receipt_sha256=_sha(_bytes(receipt)), journal_tip=tip)
+                    retain()
                 except (OSError, ValueError, RuntimeError) as exc:
-                    raise TrainingPreparationRetentionError(result[1].root) from exc
+                    raise TrainingPreparationRetentionError(result[1].root, retry=retain) from exc
             return result
         finally:
             memory.close()
