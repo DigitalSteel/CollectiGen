@@ -389,14 +389,14 @@ class KreaTrainingReviewDialog(QDialog):
         try:
             result = self._future.result()
         except Exception:
-            self.status.setText("Dataset verification did not finish. The package review is still available.")
+            self.status.setText("Dataset verification did not finish. The package review is still available. Choose Verify SDXL Dataset to retry.")
             self.dataset_button.setEnabled(True)
             return
         status = result.get("status") if isinstance(result, dict) else None
         digest = result.get("preflight_receipt_sha256") if isinstance(result, dict) else None
         if (status not in ("admitted", "held") or not isinstance(digest, str)
                 or len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest)):
-            self.status.setText("Dataset verification returned no usable receipt.")
+            self.status.setText("Dataset verification returned no usable receipt. Choose Verify SDXL Dataset to retry.")
             self.dataset_button.setEnabled(True)
             return
         binding = result.get("binding")
