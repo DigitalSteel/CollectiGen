@@ -256,10 +256,16 @@ def review_cell(session, key, *, job_id, output_sha256, favorite=False, notes=""
 
 def matched_results(session, service, *, should_cancel=None):
     """Resolve canonical verified generation receipts; never adopt loose files."""
+    if should_cancel and should_cancel():
+        raise InterruptedError("Evaluation result check cancelled.")
     cells = {c.key: c for c in evaluation_cells(session)}
     spec = session.target_context[KEY]
     matches = {key: [] for key in cells}
-    for receipt in service.history():
+    try:
+        history = service.history(should_cancel=should_cancel) if should_cancel else service.history()
+    except InterruptedError as exc:
+        raise InterruptedError("Evaluation result check cancelled.") from exc
+    for receipt in history:
         if should_cancel and should_cancel(): raise InterruptedError("Evaluation result check cancelled.")
         raw = receipt.get("prepared", {}).get("plan")
         if not isinstance(raw, dict): continue
@@ -278,8 +284,11 @@ def matched_results(session, service, *, should_cancel=None):
         row = {"job_id": receipt["job_id"], "state": receipt["state"],
                "comparable": comparable, "path": "", "sha256": ""}
         if comparable and receipt["state"] == "verified":
-            paths = service.verified_output_paths(receipt)
+            paths = (service.verified_output_paths(receipt, should_cancel=should_cancel)
+                     if should_cancel else service.verified_output_paths(receipt))
             if len(paths) != 1: raise ValueError("Evaluation expects one verified image per cell.")
             row.update(path=str(paths[0]), sha256=receipt["outputs"][0]["sha256"])
         matches[cell.key].append(row)
+    if should_cancel and should_cancel():
+        raise InterruptedError("Evaluation result check cancelled.")
     return matches

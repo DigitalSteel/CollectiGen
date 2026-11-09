@@ -5,6 +5,7 @@ import base64
 from copy import copy, deepcopy
 from datetime import datetime, timezone
 import hashlib
+from itertools import islice
 import io
 import json
 import math
@@ -723,19 +724,23 @@ class GenerationExecutionService:
         _assert_unredirected(path)
         return path
 
-    def _read(self, job_id):
+    def _read(self, job_id, *, max_bytes=_MAX_RECEIPT_BYTES):
         path = self._path(job_id) / "receipt.json"
-        raw, _ = read_stable_training_source(path, max_bytes=_MAX_RECEIPT_BYTES)
+        raw, _ = read_stable_training_source(path, max_bytes=min(max_bytes, _MAX_RECEIPT_BYTES))
         result = strict_json(raw)
-        if (result.get("job_id") != job_id or result.get("schema_version") != 1
+        if (not isinstance(result, dict) or result.get("job_id") != job_id or result.get("schema_version") != 1
                 or not re.fullmatch(r"[a-f0-9]{64}", str(result.get("fingerprint", "")))):
             raise ValueError("Unsupported generation receipt")
-        prepared = deepcopy(result.get("prepared", {}))
+        prepared = result.get("prepared")
+        outputs = result.get("outputs", [])
+        if not isinstance(prepared, dict) or not isinstance(outputs, list):
+            raise ValueError("Unsupported generation receipt")
+        prepared = dict(prepared)
         fingerprint = prepared.pop("fingerprint", None)
         if fingerprint != result["fingerprint"] or digest(prepared) != fingerprint:
             raise ValueError("Retained generation request is corrupt or changed.")
-        for output in result.get("outputs", []):
-            if output.get("path") != str(self._path(job_id) / "result.png"):
+        for output in outputs:
+            if not isinstance(output, dict) or output.get("path") != str(path.with_name("result.png")):
                 raise ValueError("Retained output path is outside its exact job.")
         return result
 
@@ -749,15 +754,40 @@ class GenerationExecutionService:
             atomic_verified_bytes(target.with_suffix(".previous.json"), previous)
         write_verified_json(target, receipt, label="Generation job receipt")
 
-    def history(self):
+    def history(self, *, should_cancel=None):
+        def check_cancel():
+            if should_cancel and should_cancel():
+                raise InterruptedError("Generation history check cancelled.")
+
+        check_cancel()
         _assert_unredirected(self.root)
         if not self.root.exists(): return []
-        paths = sorted(self.root.glob("gen-*/receipt.json"), key=lambda p: p.parent.name)
-        if len(paths) > 1000:
+        maximum = 1000
+        paths = []
+        for path in islice(self.root.glob("gen-*/receipt.json"), maximum + 1):
+            check_cancel()
+            paths.append(path)
+        if len(paths) > maximum:
             raise ValueError("Generation history exceeds this bounded view; archive reviewed jobs first.")
-        if sum(path.stat().st_size for path in paths) > 32 * 1024 * 1024:
-            raise ValueError("Generation history exceeds its bounded memory view; review a specific saved job.")
-        return [self._read(path.parent.name) for path in paths]
+        total_bytes = 0
+        sizes = {}
+        for path in paths:
+            check_cancel()
+            _assert_unredirected(path.parent)
+            _assert_unredirected(path)
+            size = path.stat(follow_symlinks=False).st_size
+            if size == 0:
+                raise ValueError("Unsupported generation receipt")
+            sizes[path] = size
+            total_bytes += size
+            if total_bytes > 32 * 1024 * 1024:
+                raise ValueError("Generation history exceeds its bounded memory view; review a specific saved job.")
+        receipts = []
+        for path in sorted(paths, key=lambda p: p.parent.name):
+            check_cancel()
+            receipts.append(self._read(path.parent.name, max_bytes=sizes[path]))
+        check_cancel()
+        return receipts
 
     def submit(self, adapter, prepared, *, confirmed=False, listener=None, check_authority=None):
         if not confirmed:
@@ -1340,13 +1370,13 @@ class GenerationExecutionService:
                     self._write(receipt)
             return receipt
 
-    def verified_output_paths(self, expected_receipt):
+    def verified_output_paths(self, expected_receipt, *, should_cancel=None):
         """Recheck the exact displayed receipt and files before an Ingest handoff."""
         with _LOCK:
             receipt = self._read(expected_receipt.get("job_id", ""))
             if receipt != expected_receipt:
                 raise ValueError("The retained result changed; recover and review it before sending to Ingest.")
-            self._check_outputs(receipt)
+            self._check_outputs(receipt, should_cancel=should_cancel)
             return [output["path"] for output in receipt["outputs"]]
 
     def review_verified_result(self, job_id, expected_receipt_digest):
@@ -1358,7 +1388,7 @@ class GenerationExecutionService:
             self._check_outputs(receipt)
             return receipt
 
-    def _check_outputs(self, receipt, *, max_verification_bytes=None):
+    def _check_outputs(self, receipt, *, max_verification_bytes=None, should_cancel=None):
         if receipt.get("state") != "verified" or len(receipt.get("outputs", [])) != 1:
             raise ValueError("A verified result is required.")
         output = receipt["outputs"][0]
@@ -1371,12 +1401,21 @@ class GenerationExecutionService:
                 limit = min(limit, max_verification_bytes - consumed)
             if limit < 0 or target.stat().st_size > limit:
                 raise ValueError("Output verification exceeds its remaining byte budget.")
+            digest = hashlib.sha256()
+            remaining = limit
             with target.open("rb") as handle:
-                raw = handle.read(limit + 1)
-            if len(raw) > limit:
-                raise ValueError("Output grew beyond its verification byte budget.")
-            consumed += len(raw)
-            return hashlib.sha256(raw).hexdigest()
+                while True:
+                    if should_cancel and should_cancel():
+                        raise InterruptedError("Evaluation result check cancelled.")
+                    block = handle.read(min(1024 * 1024, remaining + 1))
+                    if not block:
+                        break
+                    remaining -= len(block)
+                    if remaining < 0:
+                        raise ValueError("Output grew beyond its verification byte budget.")
+                    digest.update(block)
+            consumed += limit - remaining
+            return digest.hexdigest()
         for target, key in ((path, "sha256"), (path.with_suffix(".tags.json"), "sidecar_sha256")):
             _assert_unredirected(target)
             if target.stat().st_size > 96 * 1024 * 1024:
@@ -1389,6 +1428,8 @@ class GenerationExecutionService:
             if (raw_target.stat().st_size > 96 * 1024 * 1024
                     or checked_digest(raw_target) != output["raw_generator_sha256"]):
                 raise ValueError("The retained raw generator output changed; review before reuse.")
+        if should_cancel and should_cancel():
+            raise InterruptedError("Evaluation result check cancelled.")
         return consumed
 
     def record_outcome(self, job_id, outcome, reasons, *, ingest_identity, ingest_history=None):
