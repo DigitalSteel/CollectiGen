@@ -3370,8 +3370,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "b588f4b83d2fd8e6691fb87b63a0fc6248516adbee0dda67375e8f78261434f5",
-      "size_bytes": 198802
+      "sha256": "cad2cbafe21d6f0fdf138e2a5bd5af20b92d844f0efc9df46768574f0b3bc4f7",
+      "size_bytes": 199291
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

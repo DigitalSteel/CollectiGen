@@ -1556,6 +1556,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
             def verify(record, revision):
                 nonlocal task
+                if self.generation_state() is not state:
+                    dialog.set_retained_index_status(
+                        "Manager session is no longer ready. Close this review and reopen it when ready.")
+                    return
                 if task is not None:
                     dialog.set_retained_index_status(
                         "A saved review is still being checked. Wait for it to finish, then try again.")
@@ -1571,7 +1575,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     nonlocal task
                     task = None
                     if self._training_history_dialog is dialog:
-                        if dialog._selected() == record and dialog._revision == revision:
+                        if self.generation_state() is not state:
+                            dialog.set_retained_index_status(
+                                "Manager session is no longer ready. Close this review and reopen it when ready.")
+                        elif dialog._selected() == record and dialog._revision == revision:
                             dialog.set_retained_index_status(message)
                         else:
                             message = ("The previous check finished. You can now review the selected run."
