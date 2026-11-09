@@ -2862,8 +2862,8 @@
       "size_bytes": 31903
     },
     "suite_core/discovery/github_component_releases.py": {
-      "sha256": "b18b23ba7b4b96df22e1659801694c28742f32ac79651c72416fe354f0263c08",
-      "size_bytes": 9575
+      "sha256": "2605b16d30fc07db8306312133a4f4b1ac0ac99a3cf4524d23328ed7934d4ce4",
+      "size_bytes": 9552
     },
     "suite_core/discovery/manager_bootstrap.py": {
       "sha256": "b53e8b5b0e9672863787331297b7718022cb969e0641a48021cb02d662b68c0a",
@@ -3646,8 +3646,8 @@
       "size_bytes": 3827
     },
     "tests/test_component_acquisition.py": {
-      "sha256": "86f5f5b2e81b3a4f34d2999535a20dc1cd11d15fa3e65c7023082ea4a6661e99",
-      "size_bytes": 20955
+      "sha256": "12c0f40895a65d3274fca32a62b319f6cc879019f172bfa20aa77735c965c6dc",
+      "size_bytes": 21559
     },
     "tests/test_component_release_identity.py": {
       "sha256": "3d7667461d5360b3c56d7cb97fe704a7c4482e3f9dd220b18d7398c4a207c997",

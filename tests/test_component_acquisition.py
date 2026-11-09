@@ -449,3 +449,17 @@ def test_self_update_short_download_retries_with_signed_integrity(tmp_path, retr
         assert not partial.exists()
 
     assert calls == [None, f"bytes={offset}-"]
+
+
+def test_scoped_discovery_checks_assets_of_the_selected_release_only(tmp_path):
+    feed = FakeFeed()
+    feed.add(version="0.1.0-alpha.7")
+    feed.add(version=VERSION)
+    feed.rows[0]["assets"] = []
+    acquisition = service(tmp_path, feed)
+    offer, = acquisition.discover(channel="beta", installed_versions={}, component_id=ComponentId(ID))
+    assert offer.release.software_version == VERSION
+
+    feed.rows[1]["assets"] = []
+    with pytest.raises(DiscoveryHold, match="release_assets_missing"):
+        acquisition.discover(channel="beta", installed_versions={}, component_id=ComponentId(ID))

@@ -184,33 +184,7 @@ def discover_releases(raw, *, component_id, channel, current_version, complete):
             continue
         if current is not None and parsed.compare(current) <= 0:
             continue
-        assets = row.get("assets")
-        _require(type(assets) is list and len(assets) <= MAX_ASSETS, "asset_count")
-        release_id = row.get("id")
-        _require(release_id is None or type(release_id) is int and 0 < release_id < 2**63, "release_id")
-        locators = []
-        names = set()
-        asset_ids = set()
-        for asset in assets:
-            _require(type(asset) is dict, "asset_row")
-            name = asset.get("name")
-            _require(type(name) is str and 0 < len(name) <= 255
-                     and name not in (".", "..") and not any(c in name for c in "/\\%")
-                     and all(32 <= ord(c) < 127 for c in name), "asset_basename")
-            _require(name not in names, "duplicate_asset")
-            names.add(name)
-            url = asset.get("browser_download_url")
-            _require(release_asset_identity(url) == (tag, name), "asset_origin_binding")
-            size = asset.get("size")
-            _require(type(size) is int and 0 < size <= 2**40, "asset_size")
-            asset_id = asset.get("id")
-            _require(asset_id is None or type(asset_id) is int and 0 < asset_id < 2**63, "asset_id")
-            _require(asset_id is None or asset_id not in asset_ids, "duplicate_asset_id")
-            if asset_id is not None: asset_ids.add(asset_id)
-            locators.append(AssetLocator(name, url, size, asset_id))
-        _require(bool(locators), "release_assets_missing")
-        candidates.append((parsed, ReleaseLocator(component_id, version, channel, tag,
-                          tuple(sorted(locators, key=lambda a: a.name)), release_id)))
+        candidates.append((parsed, version, tag, row))
     if not candidates:
         state = "waiting_for_stable_catch_up" if channel == "stable" and current is not None and current.prerelease else "no_newer_release"
         return DiscoveryResult(state, None)
@@ -218,4 +192,32 @@ def discover_releases(raw, *, component_id, channel, current_version, complete):
     for candidate in candidates[1:]:
         if candidate[0].compare(selected[0]) > 0:
             selected = candidate
-    return DiscoveryResult("verification_required", selected[1])
+    _, version, tag, row = selected
+    assets = row.get("assets")
+    _require(type(assets) is list and len(assets) <= MAX_ASSETS, "asset_count")
+    release_id = row.get("id")
+    _require(release_id is None or type(release_id) is int and 0 < release_id < 2**63, "release_id")
+    locators = []
+    names = set()
+    asset_ids = set()
+    for asset in assets:
+        _require(type(asset) is dict, "asset_row")
+        name = asset.get("name")
+        _require(type(name) is str and 0 < len(name) <= 255
+                 and name not in (".", "..") and not any(c in name for c in "/\\%")
+                 and all(32 <= ord(c) < 127 for c in name), "asset_basename")
+        _require(name not in names, "duplicate_asset")
+        names.add(name)
+        url = asset.get("browser_download_url")
+        _require(release_asset_identity(url) == (tag, name), "asset_origin_binding")
+        size = asset.get("size")
+        _require(type(size) is int and 0 < size <= 2**40, "asset_size")
+        asset_id = asset.get("id")
+        _require(asset_id is None or type(asset_id) is int and 0 < asset_id < 2**63, "asset_id")
+        _require(asset_id is None or asset_id not in asset_ids, "duplicate_asset_id")
+        if asset_id is not None: asset_ids.add(asset_id)
+        locators.append(AssetLocator(name, url, size, asset_id))
+    _require(bool(locators), "release_assets_missing")
+    locator = ReleaseLocator(component_id, version, channel, tag,
+                             tuple(sorted(locators, key=lambda asset: asset.name)), release_id)
+    return DiscoveryResult("verification_required", locator)
