@@ -236,8 +236,8 @@ def evaluation_cells(session):
         raise ValueError("A saved review refers to an unknown evaluation cell.")
     for review in spec["reviews"].values():
         if (not isinstance(review, dict) or set(review) != {"job_id", "output_sha256", "favorite", "notes"}
-                or not re.fullmatch(r"gen-[0-9a-f]{32}", str(review["job_id"]))
-                or not re.fullmatch(r"[0-9a-f]{64}", str(review["output_sha256"]))
+                or not isinstance(review["job_id"], str) or not re.fullmatch(r"gen-[0-9a-f]{32}", review["job_id"])
+                or not isinstance(review["output_sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", review["output_sha256"])
                 or type(review["favorite"]) is not bool or type(review["notes"]) is not str
                 or len(review["notes"]) > 4000):
             raise ValueError("A saved evaluation observation is invalid.")
