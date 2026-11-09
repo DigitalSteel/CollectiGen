@@ -51,6 +51,8 @@ def prepare_missing_batch(session, service, storage_root, *, batch=0, should_can
         expected = {cell.key: cell for cell in selected}
         seen = set()
         for candidate in group['candidates']:
+            if should_cancel and should_cancel():
+                raise InterruptedError("Comparison queue preparation cancelled.")
             plan = GenerationPlan.from_dict(candidate['plan'])
             binding = plan.target_context.get(CELL_KEY)
             key = binding.get('cell') if isinstance(binding, dict) else None
@@ -60,6 +62,8 @@ def prepare_missing_batch(session, service, storage_root, *, batch=0, should_can
                     or comparison_identity(plan) != expected[key].comparison_sha256):
                 raise ValueError("The retained comparison queue does not match this evaluation. It was preserved.")
             seen.add(key)
+        if should_cancel and should_cancel():
+            raise InterruptedError("Comparison queue preparation cancelled.")
         return group, path, digest
     results = matched_results(session, service, should_cancel=should_cancel)
     # A prior ordinary submission, including an uncertain or failed one, needs
@@ -145,7 +149,7 @@ def create_evaluation(template, *, prompts, seeds, loras=(), strengths=(1.0,), r
                   "strength": float(s)} for r in resources for s in strengths]
     if len(prompts) * len(seeds) * len(variants) > MAX_CELLS:
         raise ValueError("This comparison exceeds 64 images. Reduce prompts, seeds or variants.")
-    if run_id and not re.fullmatch(r"[0-9a-f]{32}", run_id):
+    if not isinstance(run_id, str) or (run_id and not re.fullmatch(r"[0-9a-f]{32}", run_id)):
         raise ValueError("The source training run identity is invalid.")
     spec = {"schema_version": 1, "id": uuid4().hex, "run_id": run_id,
             "prompts": list(prompts), "seeds": list(seeds), "variants": variants,
@@ -182,7 +186,8 @@ def evaluation_cells(session):
     spec = session.target_context.get(KEY)
     if not isinstance(spec, dict) or spec.get("schema_version") != 1:
         raise ValueError("This saved generation plan is not a supported training evaluation.")
-    if not re.fullmatch(r"[0-9a-f]{32}", str(spec.get("id", ""))):
+    identifier = spec.get("id")
+    if not isinstance(identifier, str) or not re.fullmatch(r"[0-9a-f]{32}", identifier):
         raise ValueError("The evaluation identity is invalid.")
     # Revalidate saved values through the creation contract, including bounds.
     variants = spec.get("variants")
