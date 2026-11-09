@@ -216,6 +216,8 @@ def _validate(recipe):
 def make_recipe(name, plan, *, include_prompts=False, include_model=True,
                 include_sampling=True, include_finishing=True, include_source_stages=True):
     """Capture only deliberately selected reusable fields from a neutral plan."""
+    if type(include_prompts) is not bool:
+        raise ValueError("Choose explicitly whether to include prompt text.")
     if not isinstance(plan, GenerationPlan):
         raise ValueError("Choose a valid generation plan.")
     request = plan.request
@@ -526,6 +528,8 @@ def make_image_inspired_recipe(name, record, *, selected_text=(),
 
 
 def preview_recipe(recipe, current, *, include_prompts=False):
+    if type(include_prompts) is not bool:
+        raise ValueError("Choose explicitly whether to include prompt text.")
     recipe, raw = _validate(recipe)
     if not isinstance(current, GenerationPlan):
         raise ValueError("Choose a current generation plan.")
