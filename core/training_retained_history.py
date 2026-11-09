@@ -64,7 +64,7 @@ def upsert_retained_review(index, kind, payload):
             else effective.status if effective else "prepared")
         tip = effective.journal_tip if effective else ""
     else:
-        from .training_validation import TrainingValidationOutcome
+        from .training_validation import TrainingValidationOutcome, read_retained_report
         if outcome is not None and (type(outcome) is not TrainingValidationOutcome
                 or outcome.process is None or outcome.process.destination != plan.destination):
             raise TrainingRunIndexError("The validation process outcome is invalid.")
@@ -76,7 +76,10 @@ def upsert_retained_review(index, kind, payload):
             from .training_process import _bytes
             if type(outcome.report) is not dict:
                 raise TrainingRunIndexError("A completed validation needs its verified measurement report.")
-            report_sha256 = sha256(_bytes(outcome.report)).hexdigest()
+            retained_report = _bytes(read_retained_report(prepared, tip))
+            if retained_report != _bytes(outcome.report):
+                raise TrainingRunIndexError("The retained validation report identity changed before indexing.")
+            report_sha256 = sha256(retained_report).hexdigest()
     record = TrainingRunRecord(plan.run_id, kind, str(Path(path).absolute()), digest,
         plan.fingerprint, str(plan.destination), phase=phase, latest_journal_tip=tip,
         validation_report_sha256=report_sha256)
