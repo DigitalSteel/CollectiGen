@@ -605,6 +605,14 @@ class ScopedTrainingHistory:
 
     def review_preparation(self, record, revision):
         """Return the checked preparation deadline without opening linked files."""
+        if record.kind == "execution":
+            from .training_run_recovery import restore_indexed_review
+
+            records, current = self.snapshot()
+            if current != revision or record not in records:
+                raise TrainingRunIndexError("Training history changed. Refresh and select the review again.")
+            self._check_read_path(Path(record.review_path))
+            return restore_indexed_review(self, record.run_id, revision).plan.timeout_seconds
         plan, _ = self._preparation(record, revision)
         return plan.timeout_seconds
 
