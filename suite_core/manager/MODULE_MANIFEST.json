@@ -812,7 +812,10 @@
     "tools/training_runtime_probe.py",
     "tools/training_runtime_sources.json",
     "tools/training_verification_worker.py",
-    "version.py"
+    "version.py",
+    "qt_app/learning_library_dialog.py",
+    "core/learning_library.py",
+    "resources/learning/bundled_topics.json"
   ],
   "support_files": [
     "suite_core/manager/README.md",

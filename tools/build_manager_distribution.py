@@ -129,7 +129,8 @@ def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw):
     require(required_entries <= expected, 'canonical_manager_entries_required')
     require(all(n.startswith(('core/', 'suite_core/', 'qt_app/', 'licenses/', 'tools/'))
                 or n in {'LICENSE', 'LICENSES.md', 'THIRD_PARTY_NOTICES.md', 'version.py',
-                         'runtime_contract.py', 'release_contract.py'} for n in expected), 'nonpublic_source_scope')
+                         'runtime_contract.py', 'release_contract.py',
+                         'resources/learning/bundled_topics.json'} for n in expected), 'nonpublic_source_scope')
     require(digest(inventory_raw) == receipt.get('public_inventory_sha256'), 'public_inventory_changed')
     inventory = decode(inventory_raw)
     require(inventory.get('schema_version') == 1 and inventory.get('manifest_excludes_self') is True
@@ -151,7 +152,7 @@ def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw):
             'existing_manager_version_required')
     module = decode(sources.get('suite_core/manager/MODULE_MANIFEST.json', b'{}'))
     require(module.get('software_version') == version, 'manager_version_changed')
-    require({name for name in expected if name.endswith('.py') or name.startswith('tools/')}
+    require({name for name in expected if name.endswith('.py') or name.startswith(('tools/', 'resources/'))}
             <= set(module.get('runtime_files', [])),
             'undeclared_runtime_source')
     for name, row in generated.items():
