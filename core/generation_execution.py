@@ -1396,6 +1396,15 @@ class GenerationExecutionService:
             self._check_outputs(receipt)
             return receipt
 
+    def review_verified_candidate_result(self, job_id, expected_plan_digest):
+        """Verify a saved candidate's receipt and output without recovering the job."""
+        with _LOCK:
+            receipt = self._read(job_id)
+            if receipt.get("prepared", {}).get("plan", {}).get("digest") != expected_plan_digest:
+                raise ValueError("The saved candidate does not match its generation receipt.")
+            self._check_outputs(receipt)
+            return receipt
+
     def _check_outputs(self, receipt, *, max_verification_bytes=None, should_cancel=None):
         if receipt.get("state") != "verified" or len(receipt.get("outputs", [])) != 1:
             raise ValueError("A verified result is required.")

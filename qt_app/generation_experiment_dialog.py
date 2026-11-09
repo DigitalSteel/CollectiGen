@@ -58,7 +58,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         intro = QLabel(
             "Draft → Choose → Finish. Review a bounded group, generate one at a time, then finish only your selected results."
             if not planning_only else
-            "Plan and save alternatives offline. You can reopen a group or save one alternative as a separate image draft."
+            "Plan alternatives offline. Reopen saved groups, compare verified images, or save a separate draft."
         )
         intro.setWordWrap(True); layout.addWidget(intro)
         self.workspaces = QTabWidget()
@@ -464,8 +464,6 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             QTimer.singleShot(0, self._start_thumbnail)
 
     def _start_thumbnail(self):
-        if self.planning_only:
-            return
         if self._thumb_task is not None or self._thumb_cancelled or self.owner._shutdown_requested:
             return
         rows = self.selected()
@@ -477,7 +475,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             from PIL import Image
             from core.training_source_io import read_stable_training_source
             _row, receipt, paths = self._verified([frozen])[0]
-            raw, identity = read_stable_training_source(Path(paths[0]))
+            raw, identity = read_stable_training_source(Path(paths[0]), max_bytes=96 * 1024 * 1024)
             if identity["sha256"] != receipt["outputs"][0]["sha256"]:
                 raise ValueError("The selected result changed; reconcile the retained job.")
             with Image.open(BytesIO(raw)) as image:
@@ -538,7 +536,9 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         show_use = len(selected) == 1
         self.candidate_area.setVisible(has_group)
         self.details.setVisible(has_group and bool(self.details.toPlainText()))
-        self.result_panel.setVisible(runtime and any(r["state"] == "verified" for r in rows))
+        self.result_panel.setVisible(any(r["state"] == "verified" for r in rows))
+        self.finish.setVisible(runtime)
+        self.ingest.setVisible(runtime)
         self.payload_details.setVisible(has_group)
         self.review.setVisible(runtime and has_group)
         self.up.setVisible(show_reorder); self.down.setVisible(show_reorder)
@@ -576,7 +576,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             and all(r["id"] in self.prepared for r in pending) and self.review_identity == self._identity())
         for button in (self.up, self.down): button.setEnabled(idle and len(selected) == 1 and selected[0]["state"] == "pending")
         self.retry.setEnabled(idle and show_retry)
-        self.recover.setEnabled(idle and show_recover); self.compare.setEnabled(runtime and idle and verified and len(selected) <= 4)
+        self.recover.setEnabled(idle and show_recover); self.compare.setEnabled(idle and verified and len(selected) <= 4)
         self.finish.setEnabled(runtime and idle and verified); self.ingest.setEnabled(runtime and idle and verified)
         self.use.setEnabled(idle and len(selected) == 1)
         self.pause.setEnabled(self._running); self.cancel.setEnabled(
@@ -793,6 +793,10 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
     def _verified(self, rows):
         result = []
         for row in rows:
+            if self.planning_only:
+                receipt = self.service.review_verified_candidate_result(row["job_id"], row["plan"]["digest"])
+                result.append((row, receipt, [output["path"] for output in receipt["outputs"]]))
+                continue
             receipt = self.service.recover(row["job_id"])
             if receipt.get("prepared", {}).get("plan", {}).get("digest") != row["plan"]["digest"]:
                 raise ValueError("The saved candidate does not match its generation receipt. Reconcile this group.")
@@ -801,7 +805,6 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         return result
 
     def compare_selected(self):
-        if self.planning_only: return
         rows = deepcopy(self.selected())
         if self.busy() or not 1 <= len(rows) <= 4 or any(r["state"] != "verified" for r in rows): return
         if self.experiment.get("grid"):
@@ -810,7 +813,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             from core.training_source_io import read_stable_training_source
             values = []
             for row, receipt, paths in self._verified(rows):
-                raw, identity = read_stable_training_source(Path(paths[0]))
+                raw, identity = read_stable_training_source(Path(paths[0]), max_bytes=96 * 1024 * 1024)
                 if identity["sha256"] != receipt["outputs"][0]["sha256"]: raise ValueError("A result changed while opening comparison.")
                 values.append((row["label"], paths[0], raw))
             return values
