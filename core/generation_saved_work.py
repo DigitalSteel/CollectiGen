@@ -366,8 +366,8 @@ def export_selected_saved_work(storage_root, kind, item_path, destination, *, ca
     """Export one managed item to an explicitly chosen new path without replacing it."""
     source = _checked_managed_path(storage_root, kind, item_path)
     destination = Path(destination).absolute()
-    if kind == "drafts" and ":" in destination.name:
-        raise ValueError("Choose a regular file for the draft copy.")
+    if ":" in destination.name:
+        raise ValueError("Choose a regular file for the export.")
     _assert_unredirected(destination)
     if callable(cancelled) and cancelled():
         raise InterruptedError("Saved-work export was cancelled.")
@@ -436,6 +436,8 @@ def export_reviewed_setup(storage_root, item_path, destination, review, *,
     if current != review:
         raise ValueError("The saved setup changed. Review Export Selected again before exporting.")
     destination = Path(destination).absolute()
+    if ":" in destination.name:
+        raise ValueError("Choose a regular file for the export.")
     _assert_unredirected(destination)
     if destination.exists():
         raise ValueError("Choose a new export filename; the existing file is preserved.")
