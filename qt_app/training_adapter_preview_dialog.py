@@ -422,7 +422,7 @@ class TrainingAdapterPreviewDialog(FeedbackEnabledDialog):
         self.status.setText(
             "Review the training images and captions, then explicitly prepare the local run. No files were changed and no training was started."
             if self._local_training_available else
-            f"{availability_error} The manual package remains available; no files were changed and no training was started.")
+            "Local training is unavailable. The manual package remains available.")
 
     def _failed(self, message):
         self._clear()
