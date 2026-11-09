@@ -336,6 +336,8 @@ def _has_safe_retry_outcome(receipt):
 def retry_failed(experiment, candidate_ids, *, receipts=()):
     result = validate_experiment(experiment)
     selected = set(candidate_ids)
+    if not selected or not selected <= {row["id"] for row in result["candidates"]}:
+        raise ValueError("Select existing experiment candidates before preparing retries.")
     proofs = {}
     for receipt in receipts:
         proofs.setdefault(receipt.get("job_id"), []).append(receipt)
