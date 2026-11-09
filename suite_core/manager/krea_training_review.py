@@ -289,13 +289,9 @@ class KreaTrainingReviewDialog(QDialog):
                 or self._handoff_folder is None or self._checking_dataset or self._checking_handoff
                 or self._adapter_preview is not None or self._cancel.is_set()):
             return
-        from core.training_package import TrainingPackageService, TrainingPackageVerificationLimits
-
         try:
             self._future = self._executor.submit(
-                partial(TrainingPackageService().verify, self._handoff_folder,
-                        should_cancel=self._cancel.is_set, limits=TrainingPackageVerificationLimits(),
-                        expected_package_fingerprint=self._handoff_fingerprint),
+                self._verify_handoff_folder, self._handoff_folder, self._handoff_fingerprint,
             )
         except (RuntimeError, ValueError):
             self.status.setText("Package recheck could not start. Return to Applications and review it again.")
@@ -307,16 +303,34 @@ class KreaTrainingReviewDialog(QDialog):
         self.return_button.setText("Cancel Check and Return")
         self._timer.start(50)
 
+    @staticmethod
+    def _handoff_directory_state(folder):
+        from core.training_package import _directory_state
+        from core.training_source_io import _assert_unredirected
+
+        _assert_unredirected(folder)
+        return _directory_state(folder)
+
+    def _verify_handoff_folder(self, folder, fingerprint):
+        from core.training_package import TrainingPackageService, TrainingPackageVerificationLimits
+
+        directory = self._handoff_directory_state(folder)
+        current = TrainingPackageService().verify(
+            folder, should_cancel=self._cancel.is_set, limits=TrainingPackageVerificationLimits(),
+            expected_package_fingerprint=fingerprint,
+        )
+        if (not current.valid or current.inspection_limited
+                or current.package_fingerprint != fingerprint
+                or self._handoff_directory_state(folder) != directory):
+            raise ValueError("Package identity changed")
+        return directory
+
     def _finish_package_handoff(self):
         self._checking_handoff = False
         try:
-            current = self._future.result()
-            if (not current.valid or current.inspection_limited
-                    or current.package_fingerprint != self._handoff_fingerprint):
+            directory = self._future.result()
+            if self._handoff_directory_state(self._handoff_folder) != directory:
                 raise ValueError("Package identity changed")
-            from core.training_source_io import _assert_unredirected
-
-            _assert_unredirected(self._handoff_folder)
         except (OSError, RuntimeError, ValueError):
             self._invalidate_package_review(
                 "Package changed or could not be rechecked. Return to Applications and review it again."
