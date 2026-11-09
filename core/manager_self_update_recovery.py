@@ -320,7 +320,14 @@ class ManagerRecovery:
             except FileExistsError as exc:
                 raise RecoveryHold("another_active_transaction") from exc
             require(self._check_active(j), "active_transaction_missing")
-            self.save(j, "preparing", "preparation_started")
+            try:
+                self.save(j, "preparing", "preparation_started")
+            except (OSError, RecoveryHold):
+                # No apply is possible yet. Keep the marker if any journal
+                # was published or its absence cannot be established.
+                if not safe_path(self.journal_path).exists() and self._check_active(j):
+                    self.active_path.unlink()
+                raise
             for n, row in data.items():
                 if row["before"]["exists"] and j["binding"]["migration"]:
                     raw = self.data_path(n).read_bytes()

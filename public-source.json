@@ -862,8 +862,8 @@
       "size_bytes": 31133
     },
     "core/manager_self_update_recovery.py": {
-      "sha256": "ac09764e61eb87bda4c388a32a2ee858112387d1143bb27a60e56288b1aed043",
-      "size_bytes": 25160
+      "sha256": "5d7d8dceb15dba5d8d0d14d3ca8f855e257f5d4bf5556ac9791ab1d0af2c8a4a",
+      "size_bytes": 25533
     },
     "core/manager_server_inventory.py": {
       "sha256": "70396390714db2f234b209a6b273bd4d1b0ad1933b3b022d0672e3f19b519cd1",
