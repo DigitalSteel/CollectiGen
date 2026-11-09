@@ -96,8 +96,8 @@ def save_video_draft(path: str | Path, request: VideoGenerationRequest | VideoAu
     if not isinstance(request, (VideoGenerationRequest, VideoAuthoringDraft)):
         raise TypeError("A video request or unfinished authoring draft is required.")
     target = Path(path).absolute()
-    if target.suffix.casefold() != ".json":
-        raise ValueError("Choose a .json draft filename.")
+    if ":" in target.name or target.suffix.casefold() != ".json":
+        raise ValueError("Choose a regular .json draft filename.")
     _assert_unredirected(target)
     if not target.parent.is_dir():
         raise FileNotFoundError("Choose an existing draft directory.")
