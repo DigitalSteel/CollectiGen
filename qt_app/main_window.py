@@ -2103,6 +2103,7 @@ class TagManagerWindow(QMainWindow):
         tag_id = characters.entity_tag_id(owner_kind, owner_id)
         tag = self.state.knowledge.tags.get(tag_id)
         names = (tag.display, *tag.aliases) if tag is not None else ()
+        export_for_manager = getattr(self, "export_character_outfit_setup_for_manager", None)
         dialog = CharacterOutfitSetupDialog(
             self.state.jobs, USER_DATA_DIR / "generation", dataset=dataset,
             owner_kind=owner_kind, owner_id=owner_id, owner_name=owner.name,
@@ -2115,8 +2116,12 @@ class TagManagerWindow(QMainWindow):
                                DEFAULTS_DIR / "conflicts.json"),
             registry=ModelResourceRegistry(MODEL_RESOURCES_PATH), settings=self.settings,
             protected_model_roots=protected_model_roots(self.settings), parent=self,
+            transfer_only=export_for_manager is not None,
         )
         if dialog.exec() == QDialog.Accepted and dialog.saved_path is not None:
+            if export_for_manager is not None:
+                export_for_manager(dialog, USER_DATA_DIR / "generation")
+                return
             saved_path = dialog.saved_path
             tag_editor = (getattr(page, "_active_tag_editor_dialog", None)
                           if characters is getattr(page, "characters", None) else None)

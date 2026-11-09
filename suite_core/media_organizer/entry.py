@@ -206,6 +206,33 @@ def make_window_type(base_window: type, *, current_application: Callable,
         def open_generation_workspace(self, *, force_new=False):
             return self._optional_workflow_unavailable()
 
+        def export_character_outfit_setup_for_manager(self, setup, storage_root):
+            from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
+            from core.generation_saved_work import export_reviewed_setup, review_setup_export
+            from qt_app.generation_saved_work_dialog import SetupExportReviewDialog
+
+            try:
+                setup._check_sources_before_save()
+                review = review_setup_export(storage_root, setup.saved_path)
+                dialog = SetupExportReviewDialog(review, self)
+                dialog.setWindowTitle("Review Setup Export for Manager")
+                dialog.format.removeItem(dialog.format.findData("swarmui"))
+                if dialog.exec() != QDialog.Accepted:
+                    return
+                path, _ = QFileDialog.getSaveFileName(
+                    self, "Export Setup for Manager", setup.saved_path.name, "CollectiGen setup (*.json)",
+                    options=QFileDialog.DontConfirmOverwrite,
+                )
+                if not path:
+                    return
+                setup._check_sources_before_save()
+                export_reviewed_setup(storage_root, setup.saved_path, path, review,
+                                      include_prompts=dialog.include_prompts.isChecked())
+            except (OSError, ValueError, RuntimeError) as error:
+                QMessageBox.warning(self, "Setup export unavailable", str(error))
+                return
+            self.statusBar().showMessage("Setup exported. In Suite Manager, import it through Use Saved Setup.", 12000)
+
         def open_training_workspace(self, *, group=None, draft=None, collection_reviewed=False):
             return self._optional_workflow_unavailable()
 

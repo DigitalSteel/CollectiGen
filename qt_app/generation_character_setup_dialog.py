@@ -78,13 +78,15 @@ class CharacterOutfitSetupDialog(ManualGenerationSetupDialog):
     def __init__(self, jobs, storage_root, *, dataset, owner_kind, owner_id,
                  owner_name, representative_tag_id="", representative_names=(),
                  authority_paths=(), alternative_paths=(), registry=None, settings=None,
-                 protected_model_roots=(), parent=None):
+                 protected_model_roots=(), parent=None, transfer_only=False):
         self.dataset = dataset
         self.owner_kind = owner_kind
         self.owner_id = owner_id
         self.owner_name = owner_name
         self.representative_tag_id = representative_tag_id
         self.representative_names = tuple(representative_names)
+        self._transfer_only = transfer_only
+        self._transfer_sources = {}
         self._source_capture = None
         self._review_task = None
         self._source_session = None
@@ -167,6 +169,8 @@ class CharacterOutfitSetupDialog(ManualGenerationSetupDialog):
         scope_group = QGroupBox("Choose image libraries")
         scope_layout = QVBoxLayout(scope_group)
         scope_hint = QLabel("Only checked, currently included libraries are searched. Existing Image Knowledge stays unchanged.")
+        if self._transfer_only:
+            scope_hint.setText("Choose eligible libraries for the Manager export. Local Only libraries are excluded.")
         scope_hint.setWordWrap(True)
         scope_layout.addWidget(scope_hint)
         self.library_tree = QTreeWidget()
@@ -176,11 +180,13 @@ class CharacterOutfitSetupDialog(ManualGenerationSetupDialog):
         self.library_tree.setAccessibleName("Image libraries to include in Character or Outfit suggestions")
         for profile, _manager in (dataset.scoped_profile_managers()
                                   if callable(getattr(dataset, "scoped_profile_managers", None)) else ()):
+            if self._transfer_only and not self._eligible_transfer_role(profile.role):
+                continue
             item = QTreeWidgetItem(("", profile.name,
                                     dataset.library_availability(profile.stable_id).replace("_", " ")))
             item.setData(0, Qt.UserRole, profile.stable_id)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(0, Qt.Checked)
+            item.setCheckState(0, Qt.Unchecked if self._transfer_only else Qt.Checked)
             self.library_tree.addTopLevelItem(item)
         self.library_tree.setColumnWidth(0, 62)
         self.library_tree.setColumnWidth(1, 370)
@@ -497,6 +503,23 @@ class CharacterOutfitSetupDialog(ManualGenerationSetupDialog):
                      for index in range(self.library_tree.topLevelItemCount())
                      if self.library_tree.topLevelItem(index).checkState(0) == Qt.Checked)
 
+    @staticmethod
+    def _eligible_transfer_role(role):
+        from core.library_profiles import LibraryRole
+        return role in {LibraryRole.NETWORK_SHARED, LibraryRole.CLOUD_SYNCED, LibraryRole.REMOVABLE_ARCHIVE}
+
+    def _transfer_scope_identities(self):
+        return {profile.stable_id: (profile.root, profile.role)
+                for profile, _manager in self.dataset.scoped_profile_managers()
+                if self._eligible_transfer_role(profile.role)}
+
+    def verify_transfer_scope(self):
+        if not self._transfer_only:
+            return
+        current = self._transfer_scope_identities()
+        if not self._transfer_sources or any(current.get(key) != value for key, value in self._transfer_sources.items()):
+            raise ValueError("The reviewed library scope is unavailable or changed. Start a new export review.")
+
     def _read_saved_owner_details(self):
         if not self._authority_paths:
             return self.owner_name, (), ()
@@ -676,6 +699,13 @@ class CharacterOutfitSetupDialog(ManualGenerationSetupDialog):
         if not scope:
             self.suggestion_status.setText("Check at least one named library, then find suggested details.")
             return
+        if self._transfer_only:
+            current = self._transfer_scope_identities()
+            if any(key not in current for key in scope) or any(
+                    current.get(key) != value for key, value in self._transfer_sources.items()):
+                self.suggestion_status.setText("The export library scope changed. Start a new export review.")
+                return
+            self._transfer_sources.update({key: current[key] for key in scope})
         self._source_capture = None
         self._source_session = None
         self._active_report = None
@@ -719,6 +749,7 @@ class CharacterOutfitSetupDialog(ManualGenerationSetupDialog):
         self._invalidate()
 
         def work(job):
+            self.verify_transfer_scope()
             owner_context = self._current_owner_context()
             sources, capture = load_suggestion_sources(
                 self.dataset, scope, should_cancel=lambda: job.cancel_requested,
@@ -1399,6 +1430,7 @@ class CharacterOutfitSetupDialog(ManualGenerationSetupDialog):
             self.edit_scroll.ensureWidgetVisible(field)
 
     def _check_sources_before_save(self, *, should_cancel=None):
+        self.verify_transfer_scope()
         if not self._saved_owner_ready:
             raise ValueError("Saved Character or Outfit details are unavailable; refresh saved details.")
         if self._saved_details_used:
