@@ -402,6 +402,30 @@ def test_partial_read_failure_and_previous_cache_preserved(tmp_path, incomplete_
     assert s.acquire(second).artifact.read_bytes() == b'A'*(1024*1024+20)
 
 
+def test_overlapping_discovery_refuses_before_contacting_feed(tmp_path):
+    feed = FakeFeed()
+    feed.add()
+    acquisition = service(tmp_path, feed)
+    original = acquisition.transport.opener
+    calls = []
+
+    def opener(request, timeout):
+        if not calls:
+            calls.append(request.full_url)
+            assert not feed.calls
+            with pytest.raises(ValueError, match="release check is already in progress"):
+                offers(acquisition)
+            assert not feed.calls
+        return original(request, timeout)
+
+    acquisition.transport.opener = opener
+    offer, = offers(acquisition)
+    assert offer.release.component_id == ComponentId(ID)
+    assert len(calls) == 1
+    refreshed, = offers(acquisition)
+    assert refreshed.release == offer.release
+
+
 def test_overlapping_acquisition_refuses_before_contacting_feed(tmp_path):
     feed = FakeFeed()
     feed.add()

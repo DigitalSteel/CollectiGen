@@ -206,6 +206,7 @@ class ComponentAcquisition:
         self.maximum = max_artifact_bytes
         self.cache_maximum = max_cache_bytes
         self._acquisition_lock = Lock()
+        self._discovery_lock = Lock()
         self._acquired = {}
         self._rejected_cache_paths = set()
         self.manifest_name, self.signature_name = manifest_name, signature_name
@@ -274,6 +275,15 @@ class ComponentAcquisition:
         Scope precedes candidate platform checks; selected offers retain the same
         complete listing, signature, trust, compatibility and artifact admission.
         """
+        if not self._discovery_lock.acquire(blocking=False):
+            raise ValueError("A component release check is already in progress. Retry after it finishes.")
+        try:
+            return self._discover(channel=channel, installed_versions=installed_versions,
+                                  should_cancel=should_cancel, component_id=component_id)
+        finally:
+            self._discovery_lock.release()
+
+    def _discover(self, *, channel, installed_versions, should_cancel, component_id):
         self._trust()
         require(type(installed_versions) is dict, "explicit_installed_versions")
         require(component_id is None or type(component_id) is ComponentId, "explicit_component_scope")
