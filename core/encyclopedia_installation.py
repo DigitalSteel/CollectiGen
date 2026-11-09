@@ -206,7 +206,8 @@ class EncyclopediaInstallation:
             guard(path)
             target = None if installed.selected is None else installed.selected.mapping()
             if path.exists():
-                intent = read_json(path)
+                publication = read_metadata_bytes(path)
+                intent = _json(publication, "connection publication intent")
                 require(set(intent) == {"schema", "journal_sha256", "target", "prior_selection"}
                         and intent["schema"] == 1 and intent["journal_sha256"] == installed.journal_sha256
                         and intent["target"] == target, "connection_publication_evidence_changed")
@@ -222,7 +223,9 @@ class EncyclopediaInstallation:
                           "target": target, "prior_selection": None if previous is None else previous.mapping()}
                 check()
                 atomic(path, intent)
-                require(read_json(path) == intent, "connection_intent_readback")
+                publication = read_metadata_bytes(path)
+                require(_json(publication, "connection publication intent") == intent,
+                        "connection_intent_readback")
             try:
                 saved = self.store.selected(self.store.observe())
                 saved_mapping = None if saved is None else saved.mapping()
@@ -230,6 +233,8 @@ class EncyclopediaInstallation:
                         "Saved reader changed independently. Review its connection before Retry save.")
                 if saved_mapping != target:
                     check()
+                    require(read_metadata_bytes(path) == publication,
+                            "changed_connection_publication_intent")
                     if installed.selected is None:
                         self.store.clear(expected=expected)
                     else:
@@ -238,7 +243,7 @@ class EncyclopediaInstallation:
                 check()
                 require(self._observe(root, base, owner) == replace(installed, connection_pending=True),
                         "changed_component_before_connection_completion")
-                require(read_json(path) == intent, "changed_connection_publication_intent")
+                require(read_metadata_bytes(path) == publication, "changed_connection_publication_intent")
                 path.unlink()
                 require(not path.exists(), "connection_intent_clear_readback")
                 installed = replace(installed, connection_pending=False)
