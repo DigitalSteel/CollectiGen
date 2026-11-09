@@ -285,7 +285,8 @@ class KreaTrainingReviewDialog(QDialog):
             )
 
     def _open_package_folder(self):
-        if (self._handoff_folder is None or self._checking_dataset or self._checking_handoff
+        if (not self.folder_button.isVisible() or not self.folder_button.isEnabled()
+                or self._handoff_folder is None or self._checking_dataset or self._checking_handoff
                 or self._adapter_preview is not None or self._cancel.is_set()):
             return
         from core.training_package import TrainingPackageService, TrainingPackageVerificationLimits
@@ -330,7 +331,8 @@ class KreaTrainingReviewDialog(QDialog):
                 "Package folder opened for manual handoff. Trainer readiness is unverified."
             )
         else:
-            self.status.setText("Package folder could not be opened. Return to Applications and select a current package.")
+            self.status.setText("The system could not open the verified package folder. Choose "
+                                f"{self.folder_button.text()} to recheck it and try again.")
 
     def _invalidate_package_review(self, message):
         self._handoff_folder = None
