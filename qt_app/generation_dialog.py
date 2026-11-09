@@ -3191,8 +3191,8 @@ class GenerationDialog(FeedbackEnabledDialog):
                 return
             QApplication.clipboard().setText(path)
             self.status.setText(
-                "Receipt path copied. In Organizer, choose Add Images → Review Manager Result "
-                "and paste the path into the file chooser."
+                "Receipt path copied. In Organizer, open Ingest, choose Import → Review Manager Result, "
+                "and paste the path to review a copy."
             )
 
         self._run("copy_receipt_path", verify, copy_path)
