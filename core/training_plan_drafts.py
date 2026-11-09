@@ -430,6 +430,10 @@ def _validated_manifest(
         raise TrainingPlanDraftError("A saved training plan is not an object.")
     manifest=deepcopy(value)
     checkpoint()
+    context = manifest.get("assessment_context_fingerprint")
+    if "assessment_context_fingerprint" in manifest and (
+            not isinstance(context, str) or not re.fullmatch(r"[a-f0-9]{64}", context)):
+        raise TrainingPlanDraftError("The saved draft assessment context fingerprint is invalid.")
     if manifest.get("kind")!="collectigen_training_candidate_plan":
         raise TrainingPlanDraftError("A draft does not contain a training candidate plan.")
     try:
@@ -693,6 +697,14 @@ class TrainingPlanDraft:
             "updated_at":self.updated_at,
         })
 
+    def matches_current_plan(self, plan: TrainingCandidatePlan) -> bool:
+        saved = dict(self.plan_manifest)
+        saved.pop("plan_fingerprint", None)
+        context = saved.pop("assessment_context_fingerprint", None)
+        return (context is None or context == plan.assessment_context_fingerprint) and (
+            _stable_hash(saved) == plan.to_manifest_dict()["plan_fingerprint"]
+        )
+
     @property
     def goal(self) -> TrainingGoal:
         value=self.plan_manifest["goal"]
@@ -747,6 +759,9 @@ class TrainingPlanDraft:
         """Name exact saved/current differences after the current source recheck."""
         current=plan.to_manifest_dict()
         changes=[]
+        context = self.plan_manifest.get("assessment_context_fingerprint")
+        if context is not None and context != plan.assessment_context_fingerprint:
+            changes.append("The Dataset caption assessment context changed.")
         saved_scope=self.plan_manifest["selection_scope"]
         current_scope=current["selection_scope"]
         if saved_scope.get("scope_fingerprint")!=current_scope.get("scope_fingerprint"):
@@ -982,7 +997,12 @@ class TrainingPlanDraftStore:
                 "Finish inspecting the exact selection before saving this draft."
             )
         clean_name=_clean_text(name,"a draft name",100)
-        manifest=_validated_manifest(plan.to_manifest_dict())
+        payload=plan.to_manifest_dict()
+        if plan.assessment_context_fingerprint:
+            payload.pop("plan_fingerprint")
+            payload["assessment_context_fingerprint"] = plan.assessment_context_fingerprint
+            payload["plan_fingerprint"] = _stable_hash(payload)
+        manifest=_validated_manifest(payload)
         now=datetime.now(timezone.utc).isoformat(timespec="seconds")
         current=self.drafts_by_id.get(draft_id) if draft_id else None
         if current is not None:

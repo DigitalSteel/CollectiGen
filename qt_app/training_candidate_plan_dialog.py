@@ -1748,9 +1748,7 @@ class TrainingCandidatePlanDialog(FeedbackEnabledDialog):
                     "candidate evidence before saving an updated snapshot to this same draft."
                 )
                 return
-            previous=self.draft.plan_manifest.get("plan_fingerprint")
-            current=self.plan.to_manifest_dict().get("plan_fingerprint")
-            if previous!=current:
+            if not self.draft.matches_current_plan(self.plan):
                 changes=self.draft.comparison_changes(self.plan)
                 detail=" ".join(changes[:3])
                 if len(changes)>3:
