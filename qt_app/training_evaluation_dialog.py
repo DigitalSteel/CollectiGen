@@ -206,7 +206,12 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         for start in range(0,len(self.cells),32):
             self.batch.addItem(f'Images {start+1}–{min(start+32,len(self.cells))}',start//32)
         self.spec.hide()
-        self.summary.setText(f"{len(self.cells)} fixed images · {self.path.name}\n{template_summary(self.session)}\nSelect two verified rows to compare. Queue batches contain at most 32 images and require review in Generate.")
+        count = len(self.cells)
+        image_label = "1 fixed image" if count == 1 else f"{count} fixed images"
+        preview_hint = ("Select a verified row to preview it, or two to compare."
+                        if count > 1 else "Select the verified row to preview it.")
+        self.summary.setText(f"{image_label} · {self.path.name}\n{template_summary(self.session)}\n"
+                             f"{preview_hint} Queue batches contain at most 32 images and require review in Generate.")
         self._render()
         self.status.setText(
             "Saved comparison ready. Queue missing samples in Generate, then refresh verified results here."
@@ -369,6 +374,13 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         self.results_splitter.setVisible(self.session is not None)
         self.preview_panel.setVisible(self.session is not None and has_verified_result)
         self.no_results.setVisible(self.session is not None and not has_verified_result)
+        if self.session is not None and not has_verified_result:
+            if self.results and all(self.results.get(cell.key) for cell in self.cells):
+                self.no_results.setText("No verified comparison images yet. Review the existing jobs "
+                                        "in Generate History, then refresh verified results here.")
+            else:
+                self.no_results.setText("No verified comparison images yet. Queue missing samples in Generate, "
+                                        "review and start that queue there, then refresh verified results here.")
         self.note_panel.setVisible(selected_result is not None)
         self.items.setEnabled(idle)
         self.refresh.setEnabled(idle and self.session is not None)

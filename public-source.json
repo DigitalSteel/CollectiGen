@@ -2666,8 +2666,8 @@
       "size_bytes": 7830
     },
     "qt_app/training_evaluation_dialog.py": {
-      "sha256": "de6cb6c60deef12fecaefb996a81b122975193931274dffa6e57dc5c49685da6",
-      "size_bytes": 26156
+      "sha256": "dbdc55daa74b6d459a26215cbe685cc94cecd6bec70bb77e167c0cb8f3b068d6",
+      "size_bytes": 27042
     },
     "qt_app/training_execution_setup_dialog.py": {
       "sha256": "d95c3fa37116b9f18199753a470e6c01c303179f84f6a9e3f0d050d823c3c418",
