@@ -201,8 +201,9 @@ def validate_experiment(value):
             raise ValueError("Candidate identities must be unique.")
         ids.add(row["id"])
         plan = GenerationPlan.from_dict(row["plan"])
-        membership = plan.target_context.get("experiment", {})
-        if (plan.plan_id in plan_ids or membership.get("id") != value["id"]
+        membership = plan.target_context.get("experiment")
+        if (not isinstance(membership, dict) or plan.plan_id in plan_ids
+                or membership.get("id") != value["id"]
                 or membership.get("label") != row.get("label")):
             raise ValueError("A candidate has duplicate identity or belongs to another saved group.")
         plan_ids.add(plan.plan_id)
