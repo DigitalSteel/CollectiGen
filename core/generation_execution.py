@@ -793,7 +793,7 @@ class GenerationExecutionService:
         return receipts
 
     def submit(self, adapter, prepared, *, confirmed=False, listener=None, check_authority=None):
-        if not confirmed:
+        if confirmed is not True:
             raise ValueError("Explicit reviewed generation submission is required.")
         frozen = deepcopy(prepared)
         fingerprint = frozen.pop("fingerprint", "")
