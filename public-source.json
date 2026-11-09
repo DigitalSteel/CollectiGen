@@ -397,10 +397,6 @@
       "sha256": "a513f7e1aefc2b8ec96117d1ae56f7b5b44882579ee30173a8f18f7bea6d9dcb",
       "size_bytes": 9693
     },
-    "core/duplicate_recycle_batch.py": {
-      "sha256": "85edcc1e1dcbeac376f8f42b19590cfcd2ece2e9de820103f486fc306a0128bb",
-      "size_bytes": 4163
-    },
     "core/edit_service.py": {
       "sha256": "67be0ae4756676e35dbeeeed3fe13ab9569ff60bae710ed8d012aef9ad0028ac",
       "size_bytes": 58942
@@ -760,10 +756,6 @@
     "core/knowledge_write_admission.py": {
       "sha256": "2ed86b35af3fa85736026d15ed9322c35fd26dd4bc02ae7f15061e0f82b09ac3",
       "size_bytes": 13714
-    },
-    "core/krea_training_compatibility.py": {
-      "sha256": "f46d2f8379dc6df9cc76a434aa9c8699abf4b1e91ff4aa22f6615660ac54abd2",
-      "size_bytes": 12518
     },
     "core/library_move_plan.py": {
       "sha256": "706e2eafcee008f6d048083898577f304663923cc8751ec4a5d553fec5ed29ff",
@@ -1861,149 +1853,9 @@
       "sha256": "ef58994610d2684cbfbb97ddb29b171d27e4d76aa51339a11a0964367a97b826",
       "size_bytes": 724
     },
-    "docs/KREA2_PACKAGE_REPORT.md": {
-      "sha256": "1878ac08c9f96bc7c353f708671147136b1cda803a574ec46189c67a07a34c4a",
-      "size_bytes": 2006
-    },
     "docs/USER_GUIDE.md": {
       "sha256": "801bc982a0b12de870efdb982bc0d180935adcf94f491d852980d452d5cdb272",
       "size_bytes": 2695
-    },
-    "docs/releases/MediaOrganizer-0.4.10-SOURCE.md": {
-      "sha256": "93568db4c57b053fceca5c3f7cd4a41c392703d10977beeb9bbcc7d1500cb313",
-      "size_bytes": 1157
-    },
-    "docs/releases/MediaOrganizer-0.4.10.md": {
-      "sha256": "6a3bdf96ae1d5f0718717281964148a1b255861ed52e0b8129d31b68ffdf15b4",
-      "size_bytes": 1106
-    },
-    "docs/releases/MediaOrganizer-0.4.11-SOURCE.md": {
-      "sha256": "af7f3d09723e48f1323e92848c246c244d891f3a472f28ef8cd51203d1467346",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.11.md": {
-      "sha256": "7607925b6ee870767b9f25a8c288d08623ddaee1e7c58a2c9e9ef47530b4208f",
-      "size_bytes": 1064
-    },
-    "docs/releases/MediaOrganizer-0.4.12-SOURCE.md": {
-      "sha256": "ab897a040497e0ea4953c9855e7a16368df6eb6730211938cf07f620bdc84507",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.12.md": {
-      "sha256": "2aea60b1469190abbef827d63800d16667c1277aaf1acd867d2f992ad6382e5c",
-      "size_bytes": 815
-    },
-    "docs/releases/MediaOrganizer-0.4.13-SOURCE.md": {
-      "sha256": "6b12dbc7ba283a8697fe4d2ca62e43157dcaacb0c6a6c1f31dea2ec20efb80db",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.13.md": {
-      "sha256": "876375406c6d20653f977ebc1e19c8264885f8df6633d55c8c724309965a72f8",
-      "size_bytes": 1037
-    },
-    "docs/releases/MediaOrganizer-0.4.14-SOURCE.md": {
-      "sha256": "8da1570f4e3bde6b1cca1330788a75d85f4c27bae753b064d160efa9856e31c3",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.14.md": {
-      "sha256": "f83730e55d5effed6a3305a98dede04809647c6b73487af8eaf88fae33ddd1d2",
-      "size_bytes": 1118
-    },
-    "docs/releases/MediaOrganizer-0.4.15-SOURCE.md": {
-      "sha256": "551b457b85519ffe1c668b3cec811c85cb460c9360f6a32ecfca3b27c139efc0",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.15.md": {
-      "sha256": "3025e2036137f8a8aecda25e90d1399992311d44f55114ea5eb4096fd9a82926",
-      "size_bytes": 1096
-    },
-    "docs/releases/MediaOrganizer-0.4.16-SOURCE.md": {
-      "sha256": "c71113127e8d94e7aa1396dd2ffa85c8e569d06d92e962a0418d1418d091c567",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.16.md": {
-      "sha256": "51ef60ad8a8f13cfa48c98319a04ec290046c7f315bd690e3b3d6952bae3e134",
-      "size_bytes": 1237
-    },
-    "docs/releases/MediaOrganizer-0.4.17-SOURCE.md": {
-      "sha256": "44ef213ae97a78f6719127c6893cc3de0f5a43f157e9f0f43d5d20bc9b9f0d27",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.17.md": {
-      "sha256": "6fde16648892ab15954a04053fbfcccb361f64f5ed5e8784fe61caa97c70281c",
-      "size_bytes": 1083
-    },
-    "docs/releases/MediaOrganizer-0.4.18-SOURCE.md": {
-      "sha256": "49e546177d319aa8ea73d95ec0b1d8a6b11a100442e2fb6a06fd80774b372c6c",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.18.md": {
-      "sha256": "5777507c4ab3fd0d9847659d70a6a366d8278c5a58fec2bc4c6ae7cba9ad1420",
-      "size_bytes": 1001
-    },
-    "docs/releases/MediaOrganizer-0.4.19-SOURCE.md": {
-      "sha256": "0b9a0382595b0d422ca70778334caedc27a8bca47c7790a65d2dadf2f854c50b",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.19.md": {
-      "sha256": "72cfd2dccda12a0f11ac9aaeb138ace4e737b3e0fff71f2699960573679eb651",
-      "size_bytes": 1053
-    },
-    "docs/releases/MediaOrganizer-0.4.20-SOURCE.md": {
-      "sha256": "b1274151d091d903fe9f67eb808df0f6eb01d1fddc80a83923b61e3dcd27cd88",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.20.md": {
-      "sha256": "20075555a273185a49fa432e513342a69ec117485e8f794369646edf53857b6c",
-      "size_bytes": 1047
-    },
-    "docs/releases/MediaOrganizer-0.4.21-SOURCE.md": {
-      "sha256": "6deab93c271895c7dcee7e5fdff655d8d149523da58cd442f8797cc2a2debdc7",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.21.md": {
-      "sha256": "8e0cd18b6258467663d7819375d296e23935eb7bdbc0cc80c6710f30752fbd1d",
-      "size_bytes": 1245
-    },
-    "docs/releases/MediaOrganizer-0.4.22-SOURCE.md": {
-      "sha256": "b0a2854243575a56d10cde98e5a34b54aacd55c7425c2eec2f5d9340e95fac41",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.22.md": {
-      "sha256": "1d7a8fb0856c98123de9e4517c90ea15034edc84060f120d40ca025deea74aeb",
-      "size_bytes": 1289
-    },
-    "docs/releases/MediaOrganizer-0.4.23-SOURCE.md": {
-      "sha256": "7453965a8e5f2d229731a7a16c0ce6adf63d27f1d7c5f733d80357a36c3d7432",
-      "size_bytes": 1137
-    },
-    "docs/releases/MediaOrganizer-0.4.23.md": {
-      "sha256": "1e0470aadf02a75205fd96a51980fc2b4bf9411e797b9740fc421af20feaf89f",
-      "size_bytes": 1291
-    },
-    "docs/releases/MediaOrganizer-0.4.7-SOURCE.md": {
-      "sha256": "817161b58bccbe0f1c9845b9ce5b5317ecda89c9d1846f928597814bf84900d0",
-      "size_bytes": 1048
-    },
-    "docs/releases/MediaOrganizer-0.4.7.md": {
-      "sha256": "71b9cff73799e4c165b41b586804d57b46c0c16d6ef6a0975816dd491839a0d9",
-      "size_bytes": 814
-    },
-    "docs/releases/MediaOrganizer-0.4.8-SOURCE.md": {
-      "sha256": "c49d4c2887c046bf301a8abd058b506ed9978b1e0445b1336aac3ff8f04d0485",
-      "size_bytes": 1123
-    },
-    "docs/releases/MediaOrganizer-0.4.8.md": {
-      "sha256": "fef31121feeecdff4b0b1452a9b6f79c71f0dc8b63e209689c9a019757fca927",
-      "size_bytes": 756
-    },
-    "docs/releases/MediaOrganizer-0.4.9-SOURCE.md": {
-      "sha256": "c8a3f6735d12cf9b6878ed32247df9e8047362a7554c2f005a15ed19ab30c497",
-      "size_bytes": 1133
-    },
-    "docs/releases/MediaOrganizer-0.4.9.md": {
-      "sha256": "86bf09299511112d1534af5d6c17524de4fa8fb95f4e781be4a73fe6a9c8cbe8",
-      "size_bytes": 908
     },
     "docs/releases/v0.4.5-alpha.1.md": {
       "sha256": "64924b26e62ba92657faa4941fcc32217b27b729f5bf1582e21c51c7c0267a28",
@@ -2313,10 +2165,6 @@
       "sha256": "7e734a64ef87bc82519a4dd0ff6ade5bec964fddaec5597594e36407aa6677c0",
       "size_bytes": 14522
     },
-    "qt_app/history_task_lifetime.py": {
-      "sha256": "b81b77917dda0784294b1654682bb6216d1a8081a3dd895d660ccb302823ec74",
-      "size_bytes": 4431
-    },
     "qt_app/history_versions_dialog.py": {
       "sha256": "08477b6fad1b44f60cd7d9f7cd70cb513a6f2bf8eb8c986bf2628bbe0e1498c1",
       "size_bytes": 31265
@@ -2352,10 +2200,6 @@
     "qt_app/image_tag_removal_dialog.py": {
       "sha256": "02ddef1c8671950f8764d1321c36aa20d9936f78e2bd64c6410775e3b78ca465",
       "size_bytes": 27733
-    },
-    "qt_app/indicator_resources.py": {
-      "sha256": "176f2d67fe34590c9133b32a729f9064c7d5e193b9b19cac2a23f189cae84a15",
-      "size_bytes": 3801
     },
     "qt_app/ingest_add_batch_dialog.py": {
       "sha256": "921420f7ae29726a4ffa932aa9631bc9ec447f56d2719eb01dfe7f2aa31b73ba",
@@ -3409,10 +3253,6 @@
       "sha256": "2235cee9c44d591ec185ba44b85acef2c8be3ba0a8305c7b0762bf603db9b847",
       "size_bytes": 190
     },
-    "tests/test_krea_training_compatibility.py": {
-      "sha256": "06d06eebbfa781a05fdd540caaf416d136d0d484d6f1616494db0168d6ede6e3",
-      "size_bytes": 12507
-    },
     "tests/test_lmstudio_connection_settings.py": {
       "sha256": "7c907ff8d1ce494d4b0a772ce699c35982740cb5fc75302ad300cdc27d09912e",
       "size_bytes": 13468
@@ -3449,14 +3289,6 @@
       "sha256": "d15cfc4a19b5da19ccc0f3590d24fdd5a74bfddb4b103b011ec089b78e7a0459",
       "size_bytes": 27445
     },
-    "tools/duplicate_custody_test_support.py": {
-      "sha256": "6e99f93e77cc733c1cae7ef4eb34362451f84de20dfdf3d8b9c74f380073df32",
-      "size_bytes": 1105
-    },
-    "tools/generate_indicator_resources.py": {
-      "sha256": "ed90209c060b6e598f7bd89ae0db2e5c14df452155b0b5b1c5eb57fee538cf7e",
-      "size_bytes": 1542
-    },
     "tools/optional-ai-profiles.json": {
       "sha256": "4181e1c9bda9e0bbce7006a62442643a88a7c05c45d82c4015aa6e785ab5d393",
       "size_bytes": 25624
@@ -3485,13 +3317,57 @@
       "sha256": "9032b549bd8f5722791dacb9221bc13e7c4fa565933a14fe43ce9e0d25f0650a",
       "size_bytes": 20279
     },
-    "tools/qt_test_support.py": {
-      "sha256": "e130a37827c6ddb3bb8431a0b34190954f609946f9c1ae3a20983833689f7998",
-      "size_bytes": 6481
-    },
     "tools/runtime-pins.json": {
       "sha256": "10134b91d387b32c345f6af0f18941ee2abbad27a3b751a2ce3bbe807d5d9407",
       "size_bytes": 1017
+    },
+    "tools/test_profile_isolation.py": {
+      "sha256": "e0449cbd578d19c1aeaea628b6d6af6a447386bb894bca21bc464f40d36942f8",
+      "size_bytes": 2456
+    },
+    "tools/trainer-sources/sd-scripts/LICENSE.md": {
+      "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+      "size_bytes": 11543
+    },
+    "version.py": {
+      "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48",
+      "size_bytes": 324
+    },
+    "core/krea_training_compatibility.py": {
+      "sha256": "f46d2f8379dc6df9cc76a434aa9c8699abf4b1e91ff4aa22f6615660ac54abd2",
+      "size_bytes": 12518
+    },
+    "tests/test_krea_training_compatibility.py": {
+      "sha256": "06d06eebbfa781a05fdd540caaf416d136d0d484d6f1616494db0168d6ede6e3",
+      "size_bytes": 12507
+    },
+    "docs/KREA2_PACKAGE_REPORT.md": {
+      "sha256": "1878ac08c9f96bc7c353f708671147136b1cda803a574ec46189c67a07a34c4a",
+      "size_bytes": 2006
+    },
+    "core/duplicate_recycle_batch.py": {
+      "sha256": "85edcc1e1dcbeac376f8f42b19590cfcd2ece2e9de820103f486fc306a0128bb",
+      "size_bytes": 4163
+    },
+    "qt_app/history_task_lifetime.py": {
+      "sha256": "b81b77917dda0784294b1654682bb6216d1a8081a3dd895d660ccb302823ec74",
+      "size_bytes": 4431
+    },
+    "qt_app/indicator_resources.py": {
+      "sha256": "176f2d67fe34590c9133b32a729f9064c7d5e193b9b19cac2a23f189cae84a15",
+      "size_bytes": 3801
+    },
+    "tools/duplicate_custody_test_support.py": {
+      "sha256": "6e99f93e77cc733c1cae7ef4eb34362451f84de20dfdf3d8b9c74f380073df32",
+      "size_bytes": 1105
+    },
+    "tools/generate_indicator_resources.py": {
+      "sha256": "ed90209c060b6e598f7bd89ae0db2e5c14df452155b0b5b1c5eb57fee538cf7e",
+      "size_bytes": 1542
+    },
+    "tools/qt_test_support.py": {
+      "sha256": "e130a37827c6ddb3bb8431a0b34190954f609946f9c1ae3a20983833689f7998",
+      "size_bytes": 6481
     },
     "tools/test_archive_destination.py": {
       "sha256": "7184742aab3847792c7016714d22a205706116508567f604bca4fdf720d5a9fc",
@@ -3549,10 +3425,6 @@
       "sha256": "54c9a0cb940fc792bb0ff6df9e2dc4ba3db55f541b1bac4a836fdd2e79c85507",
       "size_bytes": 5072
     },
-    "tools/test_profile_isolation.py": {
-      "sha256": "e0449cbd578d19c1aeaea628b6d6af6a447386bb894bca21bc464f40d36942f8",
-      "size_bytes": 2456
-    },
     "tools/test_relationship_caller_identity.py": {
       "sha256": "1399da6f8694c060848a2ec4ffa3dd1137b38988f97cc1e9456d2627631c6334",
       "size_bytes": 5920
@@ -3577,13 +3449,141 @@
       "sha256": "7b5536ed798a5ce8b807d438dce29b0650280455b1f11657c19675dcbab76644",
       "size_bytes": 10992
     },
-    "tools/trainer-sources/sd-scripts/LICENSE.md": {
-      "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
-      "size_bytes": 11543
+    "docs/releases/MediaOrganizer-0.4.7.md": {
+      "sha256": "71b9cff73799e4c165b41b586804d57b46c0c16d6ef6a0975816dd491839a0d9",
+      "size_bytes": 814
     },
-    "version.py": {
-      "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48",
-      "size_bytes": 324
+    "docs/releases/MediaOrganizer-0.4.7-SOURCE.md": {
+      "sha256": "817161b58bccbe0f1c9845b9ce5b5317ecda89c9d1846f928597814bf84900d0",
+      "size_bytes": 1048
+    },
+    "docs/releases/MediaOrganizer-0.4.8.md": {
+      "sha256": "fef31121feeecdff4b0b1452a9b6f79c71f0dc8b63e209689c9a019757fca927",
+      "size_bytes": 756
+    },
+    "docs/releases/MediaOrganizer-0.4.8-SOURCE.md": {
+      "sha256": "c49d4c2887c046bf301a8abd058b506ed9978b1e0445b1336aac3ff8f04d0485",
+      "size_bytes": 1123
+    },
+    "docs/releases/MediaOrganizer-0.4.9.md": {
+      "sha256": "86bf09299511112d1534af5d6c17524de4fa8fb95f4e781be4a73fe6a9c8cbe8",
+      "size_bytes": 908
+    },
+    "docs/releases/MediaOrganizer-0.4.9-SOURCE.md": {
+      "sha256": "c8a3f6735d12cf9b6878ed32247df9e8047362a7554c2f005a15ed19ab30c497",
+      "size_bytes": 1133
+    },
+    "docs/releases/MediaOrganizer-0.4.10.md": {
+      "sha256": "6a3bdf96ae1d5f0718717281964148a1b255861ed52e0b8129d31b68ffdf15b4",
+      "size_bytes": 1106
+    },
+    "docs/releases/MediaOrganizer-0.4.10-SOURCE.md": {
+      "sha256": "93568db4c57b053fceca5c3f7cd4a41c392703d10977beeb9bbcc7d1500cb313",
+      "size_bytes": 1157
+    },
+    "docs/releases/MediaOrganizer-0.4.11.md": {
+      "sha256": "7607925b6ee870767b9f25a8c288d08623ddaee1e7c58a2c9e9ef47530b4208f",
+      "size_bytes": 1064
+    },
+    "docs/releases/MediaOrganizer-0.4.11-SOURCE.md": {
+      "sha256": "af7f3d09723e48f1323e92848c246c244d891f3a472f28ef8cd51203d1467346",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.12.md": {
+      "sha256": "2aea60b1469190abbef827d63800d16667c1277aaf1acd867d2f992ad6382e5c",
+      "size_bytes": 815
+    },
+    "docs/releases/MediaOrganizer-0.4.12-SOURCE.md": {
+      "sha256": "ab897a040497e0ea4953c9855e7a16368df6eb6730211938cf07f620bdc84507",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.13.md": {
+      "sha256": "876375406c6d20653f977ebc1e19c8264885f8df6633d55c8c724309965a72f8",
+      "size_bytes": 1037
+    },
+    "docs/releases/MediaOrganizer-0.4.13-SOURCE.md": {
+      "sha256": "6b12dbc7ba283a8697fe4d2ca62e43157dcaacb0c6a6c1f31dea2ec20efb80db",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.14.md": {
+      "sha256": "f83730e55d5effed6a3305a98dede04809647c6b73487af8eaf88fae33ddd1d2",
+      "size_bytes": 1118
+    },
+    "docs/releases/MediaOrganizer-0.4.14-SOURCE.md": {
+      "sha256": "8da1570f4e3bde6b1cca1330788a75d85f4c27bae753b064d160efa9856e31c3",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.15.md": {
+      "sha256": "3025e2036137f8a8aecda25e90d1399992311d44f55114ea5eb4096fd9a82926",
+      "size_bytes": 1096
+    },
+    "docs/releases/MediaOrganizer-0.4.15-SOURCE.md": {
+      "sha256": "551b457b85519ffe1c668b3cec811c85cb460c9360f6a32ecfca3b27c139efc0",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.16.md": {
+      "sha256": "51ef60ad8a8f13cfa48c98319a04ec290046c7f315bd690e3b3d6952bae3e134",
+      "size_bytes": 1237
+    },
+    "docs/releases/MediaOrganizer-0.4.16-SOURCE.md": {
+      "sha256": "c71113127e8d94e7aa1396dd2ffa85c8e569d06d92e962a0418d1418d091c567",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.17.md": {
+      "sha256": "6fde16648892ab15954a04053fbfcccb361f64f5ed5e8784fe61caa97c70281c",
+      "size_bytes": 1083
+    },
+    "docs/releases/MediaOrganizer-0.4.17-SOURCE.md": {
+      "sha256": "44ef213ae97a78f6719127c6893cc3de0f5a43f157e9f0f43d5d20bc9b9f0d27",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.18.md": {
+      "sha256": "5777507c4ab3fd0d9847659d70a6a366d8278c5a58fec2bc4c6ae7cba9ad1420",
+      "size_bytes": 1001
+    },
+    "docs/releases/MediaOrganizer-0.4.18-SOURCE.md": {
+      "sha256": "49e546177d319aa8ea73d95ec0b1d8a6b11a100442e2fb6a06fd80774b372c6c",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.19.md": {
+      "sha256": "72cfd2dccda12a0f11ac9aaeb138ace4e737b3e0fff71f2699960573679eb651",
+      "size_bytes": 1053
+    },
+    "docs/releases/MediaOrganizer-0.4.19-SOURCE.md": {
+      "sha256": "0b9a0382595b0d422ca70778334caedc27a8bca47c7790a65d2dadf2f854c50b",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.20.md": {
+      "sha256": "20075555a273185a49fa432e513342a69ec117485e8f794369646edf53857b6c",
+      "size_bytes": 1047
+    },
+    "docs/releases/MediaOrganizer-0.4.20-SOURCE.md": {
+      "sha256": "b1274151d091d903fe9f67eb808df0f6eb01d1fddc80a83923b61e3dcd27cd88",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.21.md": {
+      "sha256": "8e0cd18b6258467663d7819375d296e23935eb7bdbc0cc80c6710f30752fbd1d",
+      "size_bytes": 1245
+    },
+    "docs/releases/MediaOrganizer-0.4.21-SOURCE.md": {
+      "sha256": "6deab93c271895c7dcee7e5fdff655d8d149523da58cd442f8797cc2a2debdc7",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.22.md": {
+      "sha256": "1d7a8fb0856c98123de9e4517c90ea15034edc84060f120d40ca025deea74aeb",
+      "size_bytes": 1289
+    },
+    "docs/releases/MediaOrganizer-0.4.22-SOURCE.md": {
+      "sha256": "b0a2854243575a56d10cde98e5a34b54aacd55c7425c2eec2f5d9340e95fac41",
+      "size_bytes": 1137
+    },
+    "docs/releases/MediaOrganizer-0.4.23.md": {
+      "sha256": "1e0470aadf02a75205fd96a51980fc2b4bf9411e797b9740fc421af20feaf89f",
+      "size_bytes": 1291
+    },
+    "docs/releases/MediaOrganizer-0.4.23-SOURCE.md": {
+      "sha256": "7453965a8e5f2d229731a7a16c0ce6adf63d27f1d7c5f733d80357a36c3d7432",
+      "size_bytes": 1137
     }
   },
   "fresh_history_required": true,
