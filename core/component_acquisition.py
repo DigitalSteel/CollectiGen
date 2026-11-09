@@ -293,7 +293,11 @@ class ComponentAcquisition:
             if self._expected_offer is not None: self._expected_offer.check_offer(offer)
             offers.append(offer)
         self._check(should_cancel)
-        self._offers = {o.release.manifest_sha256: o for o in offers}
+        refreshed = {o.release.manifest_sha256: o for o in offers}
+        if component_id is not None:
+            refreshed.update((key, offer) for key, offer in self._offers.items()
+                             if offer.release.component_id != component_id)
+        self._offers = refreshed
         return tuple(offers)
 
     def revalidate_offer(self, offer, *, should_cancel=None, refresh_listing=False):

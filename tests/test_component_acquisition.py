@@ -482,3 +482,21 @@ def test_invalidated_selected_assets_require_a_new_review_before_download(tmp_pa
         acquisition.acquire(offer)
     refreshed, = offers(acquisition)
     assert acquisition.acquire(refreshed).artifact.read_bytes() == PAYLOAD
+
+
+def test_scoped_refresh_retires_only_offers_for_the_selected_component(tmp_path):
+    feed = FakeFeed()
+    feed.add()
+    other_id = ComponentId("collectigen.second-reader")
+    feed.add(other_id.value)
+    acquisition = service(tmp_path, feed)
+    reviewed = {offer.release.component_id: offer for offer in offers(acquisition)}
+    selected = ComponentId(ID)
+
+    assert acquisition.discover(
+        channel="beta", installed_versions={ID: VERSION}, component_id=selected,
+    ) == ()
+
+    with pytest.raises(ValueError, match="current_signed_offer"):
+        acquisition.acquire(reviewed[selected])
+    assert acquisition.acquire(reviewed[other_id]).artifact.read_bytes() == PAYLOAD
