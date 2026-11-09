@@ -190,8 +190,8 @@ def test_cancel_during_hashing_stops_before_next_phase(tmp_path, monkeypatch, ha
     monkeypatch.setattr(knowledge_pack, "load_foundation_pack", load)
     cancelled = [False]
     calls = []
-    def verify(path, artifact):
-        original(path, artifact)
+    def verify(path, artifact, *, should_cancel=None):
+        original(path, artifact, should_cancel=should_cancel)
         calls.append(1)
         if len(calls) == hash_to_cancel:
             cancelled[0] = True

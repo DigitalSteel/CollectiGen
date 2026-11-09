@@ -562,6 +562,22 @@ def test_cache_quota_and_exact_reuse(tmp_path):
     assert first.artifact.read_bytes()==PAYLOAD
 
 
+def test_cached_artifact_in_replaced_attempt_is_refused(tmp_path):
+    feed = FakeFeed()
+    base, name = feed.add()
+    acquisition = service(tmp_path, feed)
+    offer, = offers(acquisition)
+    cached = acquisition.acquire(offer).artifact
+    retained = cached.parent.rename(cached.parent.with_name("retained-cache"))
+    cached.parent.mkdir()
+    cached.write_bytes(PAYLOAD)
+    original_downloads = sum(url == base + name for url, *_ in feed.calls)
+    with pytest.raises(staging.StagingHold, match="cache_attempt_changed"):
+        acquisition.acquire(offer)
+    assert cached.read_bytes() == (retained / cached.name).read_bytes() == PAYLOAD
+    assert sum(url == base + name for url, *_ in feed.calls) == original_downloads
+
+
 @pytest.mark.parametrize("same_offer", [True, False])
 def test_missing_cached_artifact_allows_a_fresh_signed_download(tmp_path, same_offer):
     feed = FakeFeed()

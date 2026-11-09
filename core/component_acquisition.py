@@ -200,6 +200,7 @@ class ComponentAcquisition:
         self._acquisition_lock = Lock()
         self._discovery_lock = Lock()
         self._acquired = {}
+        self._acquired_attempt_pins = {}
         self._rejected_cache = set()
         self.manifest_name, self.signature_name = manifest_name, signature_name
         self._owner = json.dumps(dict(purpose="COMPONENT_ACQUISITION_CACHE", owner=cache_owner), sort_keys=True).encode()
@@ -391,23 +392,31 @@ class ComponentAcquisition:
         finally:
             self._acquisition_lock.release()
 
+    def _check_cached_attempt(self, path):
+        guard(path)
+        expected = self._acquired_attempt_pins[path.parent]
+        observed = path.parent.stat()
+        require((observed.st_dev, observed.st_ino) == expected, "cache_attempt_changed")
+
     def _acquire(self, offer, *, progress, should_cancel):
         self.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
         verified = offer.release
         require(verified.artifact.size_bytes <= self.maximum, "artifact_bound")
         cached = self._acquired.get(verified.manifest_sha256)
         if cached is not None:
-            guard(cached)
             try:
+                self._check_cached_attempt(cached)
                 cached.stat()
             except FileNotFoundError:
                 del self._acquired[verified.manifest_sha256]
+                self._acquired_attempt_pins.pop(cached.parent)
                 cached = None
         if cached is not None:
             try:
                 verify_component_artifact(cached, verified, should_cancel=should_cancel)
             except (ReleaseContractError, FileNotFoundError) as error:
                 self._check_inflight_offer(offer, should_cancel)
+                self._check_cached_attempt(cached)
                 if self._acquired.get(verified.manifest_sha256) == cached:
                     self._rejected_cache.add(cached)
                     del self._acquired[verified.manifest_sha256]
@@ -415,6 +424,7 @@ class ComponentAcquisition:
                     f"{error} Retry to fetch a fresh copy."
                 ) from error
             self._check_inflight_offer(offer, should_cancel)
+            self._check_cached_attempt(cached)
             return AcquiredComponent(offer, cached)
         used = 0
         for cached_path in (*self._acquired.values(), *self._rejected_cache):
@@ -461,6 +471,7 @@ class ComponentAcquisition:
             verify_component_artifact(artifact, verified, should_cancel=should_cancel)
             self._check_inflight_offer(offer, should_cancel)
             check_attempt()
+            self._acquired_attempt_pins[attempt] = (attempt_info.st_dev, attempt_info.st_ino)
             self._acquired[verified.manifest_sha256] = artifact
             return AcquiredComponent(offer, artifact)
         except BaseException:
