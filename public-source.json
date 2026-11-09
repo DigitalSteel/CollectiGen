@@ -1622,8 +1622,8 @@
       "size_bytes": 23930
     },
     "core/training_dataset_binding.py": {
-      "sha256": "9d30043374b54c26b2cef17f35bd1ac8738d2bede0d867f0673bd96e22dd0e0b",
-      "size_bytes": 18875
+      "sha256": "819b9b39fcddbd1fb8a18df1c8bcc90c8aed4846252bb29970224161e3244c70",
+      "size_bytes": 20371
     },
     "core/training_dataset_package_contract.py": {
       "sha256": "1aff0241f5094fb302a3b201faf932429c29d4901e56cdbd1635f139325ed8ae",
@@ -3958,8 +3958,8 @@
       "size_bytes": 4346
     },
     "tools/training_preflight_worker.py": {
-      "sha256": "cf969df96c00adcf41dab9d20be33762cffa0f0990bd682aa0c8589e8e4fe101",
-      "size_bytes": 20107
+      "sha256": "7f02943bf41d760739d68454742c13ca919a0ebf875eadd2560118d978b40958",
+      "size_bytes": 20448
     },
     "tools/training_runtime_probe.py": {
       "sha256": "ac4b82610ed3afe39b9c216a620c0dcebe1a358c88d912b06fcb11cb5cc2e585",

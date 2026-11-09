@@ -221,7 +221,12 @@ def main():
                 exec(compile(package.archive.read(version_member), str(version_path), 'exec',
                              dont_inherit=True), version_module.__dict__)
                 project_root = Path(__file__).resolve().parents[1]
-                project_site = Path(sys.executable).parents[1] / 'Lib/site-packages'
+                interpreter_folder = Path(sys.executable).parent
+                prefix = interpreter_folder.parent if interpreter_folder.name.casefold() == 'scripts' else interpreter_folder
+                project_site = prefix / 'Lib/site-packages'
+                package.import_module('training_source_io')._assert_unredirected(project_site)
+                if not project_site.is_dir():
+                    return 2
                 sys.path[:0] = [str(project_site), str(project_root / 'tools')]
                 from training_runtime_probe import install_guard
                 def install_dataset_guard():

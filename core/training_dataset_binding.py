@@ -301,32 +301,59 @@ class ReviewedDatasetVerifier:
                                len(inventory.files), inventory.byte_count)
         return cls(pin, "python.exe", work_root)
 
-    def __call__(self, package, *, should_cancel):
-        from dataclasses import asdict
-        from tempfile import mkdtemp
-
-        from .background_jobs import BackgroundJobManager
+    def _selected_package(self, package):
         from .training_adapter_preview import SdxlLoraRecipe
-        from .training_dataset_preparation import assess_manifest, digest
 
         package_root = Path(package.destination).resolve(strict=True)
         root = self.work_root.resolve(strict=True)
         if any(root.is_relative_to(path) for path in
                (package_root, Path(self.inventory.root).resolve(strict=True))):
             raise TrainingProcessError("Use a separate owned directory for dataset verification.")
+        selection = {
+            "root": str(package_root),
+            "package_fingerprint": package.package_fingerprint,
+            "manifest_sha256": selected.digest(package.manifest),
+            "recipe": asdict(SdxlLoraRecipe()),
+        }
+        return root, selection
+
+    def prepare(self, package, *, source, environment, python_base, jobs,
+                should_cancel=None, progress=None):
+        """Prepare a selected SDXL dataset using the same reviewed worker inventory."""
+        from tempfile import mkdtemp
+
+        paths = tuple(Path(path) for path in (source, environment, python_base))
+        if any(not path.is_absolute() or ".." in path.parts for path in paths):
+            raise TrainingProcessError("Select explicit absolute trainer source, environment and base Python directories.")
+        root, selection = self._selected_package(package)
+        if any(root.is_relative_to(path) for path in paths):
+            raise TrainingProcessError("Use a separate owned directory for Training preparation.")
+        worker = ContainedRuntimeQualificationService.from_reviewed_worker_inventory(
+            self.inventory, self.python_relative, should_cancel=should_cancel,
+        )
+        work = Path(mkdtemp(prefix="dataset-preparation-", dir=root))
+        memory = selected.SelectionMemory(selection)
+        try:
+            return worker.preflight(paths[0], paths[1], work, jobs, prepare=True,
+                python_base=paths[2], selected_dataset={"memory": memory.descriptor,
+                    "binding": selected.binding(selection), "summary": selected.assess_manifest(package.manifest)},
+                should_cancel=should_cancel, progress=progress)
+        finally:
+            memory.close()
+
+    def __call__(self, package, *, should_cancel):
+        from tempfile import mkdtemp
+
+        from .background_jobs import BackgroundJobManager
+
+        root, selection = self._selected_package(package)
         worker = ContainedDatasetPreparationService.from_reviewed_worker_inventory(
             self.inventory, self.python_relative, should_cancel=should_cancel,
         )
         work = Path(mkdtemp(prefix="dataset-review-", dir=root))
-        selection = {
-            "root": str(package_root),
-            "package_fingerprint": package.package_fingerprint,
-            "manifest_sha256": digest(package.manifest),
-            "recipe": asdict(SdxlLoraRecipe()),
-        }
         jobs = BackgroundJobManager()
         try:
-            return worker.check(selection, assess_manifest(package.manifest), work, jobs,
+            return worker.check(selection, selected.assess_manifest(package.manifest), work, jobs,
                                 should_cancel=should_cancel)
         finally:
             jobs.shutdown(wait=True)
