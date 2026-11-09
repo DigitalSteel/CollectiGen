@@ -151,7 +151,8 @@ def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw):
             'existing_manager_version_required')
     module = decode(sources.get('suite_core/manager/MODULE_MANIFEST.json', b'{}'))
     require(module.get('software_version') == version, 'manager_version_changed')
-    require(set(name for name in expected if name.endswith('.py')) <= set(module.get('runtime_files', [])),
+    require({name for name in expected if name.endswith('.py') or name.startswith('tools/')}
+            <= set(module.get('runtime_files', [])),
             'undeclared_runtime_source')
     for name, row in generated.items():
         check_row(stage / 'source' / name, row)

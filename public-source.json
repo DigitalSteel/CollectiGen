@@ -3842,8 +3842,8 @@
       "size_bytes": 27445
     },
     "tools/build_manager_distribution.py": {
-      "sha256": "93d1d44c4c926933d27fa2d9ad8baf28b0b6ea4efca321c501bd5219f5f5b8aa",
-      "size_bytes": 23145
+      "sha256": "cb0defab3723e0612fbb1adb0a66c673e41fc43fcb9088768318f7836ccc7c4c",
+      "size_bytes": 23184
     },
     "tools/build_tag_database_pack.py": {
       "sha256": "19432b16b6c2a834fc4415de23a261b52d438d47d1eec327f6a9913f03cfd11d",
@@ -3926,8 +3926,8 @@
       "size_bytes": 17252
     },
     "tools/prepare_manager_production_stage.py": {
-      "sha256": "8a33fceb65f0f46b343c23a552b7892a3dc197ed46df0ecf25b8916ec6ab746e",
-      "size_bytes": 26410
+      "sha256": "641b28debd2c1cfa2e40973e6a9221aab394cf438c7ed5609cb3b3839a1de31f",
+      "size_bytes": 26938
     },
     "tools/public-source-manifest.json": {
       "sha256": "d2e89ef27a72b0ffdcc94a943a82fe23065d1207b3a94e6952c131c1d9796caa",

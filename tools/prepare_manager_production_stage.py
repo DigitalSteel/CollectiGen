@@ -102,14 +102,26 @@ def render_qualification_update_config(value, *, include_prior=False, mapping_sh
         "transport_id='github-release-assets-https', opener=ComponentReleaseTransport(ReleaseTransportPolicy()),",
         "transport_id='sealed-local-qualification', opener=SealedLocalQualificationOpener("+repr(mapping_sha256)+"),")
 
-def safe_source(workspace,name):
+_PUBLIC_TRAINING_INPUTS = frozenset({
+    'tools/optional-ai-profiles.json',
+    'tools/training_dataset_package.json',
+    'tools/training_dataset_profile_worker.py',
+    'tools/training_preflight_worker.py',
+    'tools/training_runtime_probe.py',
+    'tools/training_runtime_sources.json',
+    'tools/training_verification_worker.py',
+})
+
+
+def safe_source(workspace,name, *, public_training_inputs=False):
     relative=Path(name)
     if relative.is_absolute() or '..' in relative.parts or ':' in name or '\\' in name:
         raise ValueError('exact_relative_source_required')
     if any(part.startswith('private_') for part in relative.parts):
         raise ValueError('private_QA_source_excluded')
     if not (name.startswith(('core/','suite_core/','qt_app/','licenses/')) or
-            name in {'LICENSE','LICENSES.md','THIRD_PARTY_NOTICES.md','release_contract.py','runtime_contract.py','version.py'}):
+            name in {'LICENSE','LICENSES.md','THIRD_PARTY_NOTICES.md','release_contract.py','runtime_contract.py','version.py'} or
+            (public_training_inputs and name in _PUBLIC_TRAINING_INPUTS)):
         raise ValueError('outside_stock_application_source_scope')
     target=workspace/relative
     if not target.is_file() or target.resolve()!=target.absolute() or any(p.is_symlink() or p.is_junction() for p in [target,*target.parents]):
@@ -175,9 +187,9 @@ def prepare_public_stage(source_root,output,*,public_inventory_sha256,
             raise ValueError('exact_relative_source_required')
         if name.casefold() in aliases:raise ValueError('duplicate_frozen_source_path')
         aliases.add(name.casefold())
-        origin=safe_source(source_root,name)
+        origin=safe_source(source_root,name,public_training_inputs=True)
         if (inventory['files'].get(name)!={'size_bytes':row['bytes'],'sha256':row['sha256']} or
-                name.endswith('.py') and name not in declared):
+                (name.endswith('.py') or name in _PUBLIC_TRAINING_INPUTS) and name not in declared):
             raise ValueError('frozen_subset_not_declared_public_source')
         raw=pinned_bytes(origin,row['sha256'],'reviewed_public_source_changed')
         if len(raw)!=row['bytes']:raise ValueError('reviewed_public_source_size_changed')
