@@ -468,6 +468,8 @@ def export_reviewed_setup(storage_root, item_path, destination, review, *,
 
 def setup_export_payload(recipe, *, format="collectigen", include_prompts=False):
     """Preview exact portable content; prompt sharing is explicitly opt-in."""
+    if type(include_prompts) is not bool:
+        raise ValueError("Choose explicitly whether to include prompt text.")
     from .swarm_setup_file_import import translate_text_setup_to_swarm
     if format == "swarmui":
         return translate_text_setup_to_swarm(recipe, include_prompts=include_prompts)

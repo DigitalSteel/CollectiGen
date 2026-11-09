@@ -42,6 +42,8 @@ def translate_text_setup_to_swarm(recipe, *, include_prompts=False):
     Registry labels are not SwarmUI executable names. Resource-bound setups
     remain native-only until an exact version-qualified binding is reviewed.
     """
+    if type(include_prompts) is not bool:
+        raise ValueError("Choose explicitly whether to include prompt text.")
     from .generation_recipes import _validate, render_prompt_parts
     recipe = _validate(deepcopy(recipe))[0]
     title = recipe["name"]
