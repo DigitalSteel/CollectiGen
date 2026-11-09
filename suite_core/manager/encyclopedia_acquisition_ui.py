@@ -325,7 +325,9 @@ class EncyclopediaAcquisitionPanel(QWidget):
                     self.connection_changed()
         except Exception as error:
             self.reviewed = None
-            from core.component_acquisition import CachedComponentRejected, ComponentCacheFull, ExactOfferHold
+            from core.component_acquisition import (
+                CachedComponentRejected, ComponentArchiveTooLarge, ComponentCacheFull, ExactOfferHold,
+            )
             from core.encyclopedia_update_binding import StandaloneReaderCompatibilityHold
             if operation in ("Checking app status", "Refreshing releases"):
                 self.observation_stale = self.installed is not None
@@ -337,6 +339,11 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 self.status.setText(
                     f"{self.package_review_name()} installation is held. The published offer does not match "
                     "the release details approved for this Manager build. Your installation is unchanged."
+                )
+            elif isinstance(error, ComponentArchiveTooLarge) and operation == "Refreshing releases":
+                self.offer = None
+                self.status.setText(
+                    "This release exceeds the download size supported by this Manager build."
                 )
             elif operation == "Refreshing releases":
                 self.status.setText("The release check could not finish. Your installation is unchanged. Choose Check Again to retry.")

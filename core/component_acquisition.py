@@ -22,6 +22,10 @@ from suite_core.installation import ComponentId
 EXACT_OFFER_HOLD = "This release changed or differs from the exact package approved for this test. Installation is held; review the approved release again."
 
 
+class ComponentArchiveTooLarge(StagingHold):
+    """The signed archive exceeds the configured download capacity."""
+
+
 class ComponentCacheFull(StagingHold):
     """The active download cache cannot hold another verified archive."""
 
@@ -291,8 +295,10 @@ class ComponentAcquisition:
             if current is not None:
                 release = verify_release_manifest(message, signature, json.loads(self.trust), expected_channel=channel)
                 ensure_supported_upgrade(current, release)
-            require(verified.artifact.size_bytes <= self.maximum, "artifact_bound")
-            require(verified.artifact.size_bytes <= self.cache_maximum, "artifact_exceeds_cache_capacity")
+            if verified.artifact.size_bytes > self.maximum:
+                raise ComponentArchiveTooLarge("artifact_bound")
+            if verified.artifact.size_bytes > self.cache_maximum:
+                raise ComponentArchiveTooLarge("artifact_exceeds_cache_capacity")
             source = assets.get(verified.artifact.name)
             require(source is not None and source.declared_size == verified.artifact.size_bytes, "signed_asset_binding")
             offer = ComponentOffer(verified, "install" if current is None else "update",

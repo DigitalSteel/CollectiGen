@@ -396,3 +396,23 @@ def test_rejected_cached_download_explains_fresh_review(tmp_path, monkeypatch, f
         finally:
             panel.timer.stop()
             panel.close()
+
+
+def test_oversized_release_explains_download_limit(tmp_path, monkeypatch):
+    application = app()
+    fixture = Fixture(tmp_path, monkeypatch)
+    fixture.add()
+    fixture.acquisition.cache_maximum = 1
+    with executor_scope() as executor:
+        panel = EncyclopediaAcquisitionPanel(fixture.service, executor)
+        panel.show()
+        application.processEvents()
+        try:
+            click(panel.refresh)
+            wait(panel)
+            assert "exceeds the download size" in panel.status.text()
+            assert panel.offer is None and not panel.install.isVisible()
+            assert not any(url.endswith(".zip") for url, _, _ in fixture.calls)
+        finally:
+            panel.timer.stop()
+            panel.close()
