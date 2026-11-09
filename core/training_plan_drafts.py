@@ -851,18 +851,30 @@ class TrainingPlanDraft:
     @classmethod
     def read_transfer(cls, path: Path) -> "TrainingPlanDraft":
         """Read one user-selected canonical draft without resolving its source paths."""
-        limit = 16 * 1024 * 1024
+        from .training_source_io import read_stable_training_source
+
+        def unique_fields(pairs):
+            fields = {}
+            for key, value in pairs:
+                if key in fields:
+                    raise TrainingPlanDraftError("The Dataset draft contains duplicate JSON fields.")
+                fields[key] = value
+            return fields
+
+        def reject_constant(_value):
+            raise TrainingPlanDraftError("The Dataset draft contains a non-finite JSON value.")
+
         try:
-            if not path.is_file():
-                raise TrainingPlanDraftError("Choose a regular Dataset draft file.")
-            with path.open("rb") as stream:
-                raw = stream.read(limit + 1)
-            if len(raw) > limit:
-                raise TrainingPlanDraftError("The Dataset draft exceeds the 16 MiB transfer limit.")
-            value = json.loads(raw)
-        except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+            raw, _ = read_stable_training_source(path, max_bytes=16 * 1024 * 1024)
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise TrainingPlanDraftError(
+                "Choose a regular Dataset draft of at most 16 MiB at a stable, unredirected path."
+            ) from exc
+        try:
+            value = json.loads(raw, object_pairs_hook=unique_fields, parse_constant=reject_constant)
+            return cls.from_dict(value)
+        except (UnicodeError, ValueError, RecursionError) as exc:
             raise TrainingPlanDraftError("The selected Dataset draft could not be read.") from exc
-        return cls.from_dict(value)
 
     @classmethod
     def from_dict(cls,value: Any) -> "TrainingPlanDraft":
