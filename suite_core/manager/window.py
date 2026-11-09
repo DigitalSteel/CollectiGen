@@ -584,7 +584,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 button.clicked.connect(action)
                 generation_actions.addWidget(button)
             generation_actions.addStretch()
-            generation_panel = QWidget()
+            generation_panel = self.generation_panel = QWidget()
             generation_layout = QVBoxLayout(generation_panel)
             generation_layout.setContentsMargins(0, 0, 0, 0)
             generation_layout.addWidget(QLabel("Generate · Plan offline or submit with a checked generator"))
@@ -599,7 +599,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             generation_layout.addWidget(self.verified_result_remix_button, 0, Qt.AlignLeft)
             generation_panel.setVisible(not view.synthetic and normal_entry_session is not None)
             applications_layout.insertWidget(applications_layout.indexOf(self.categories_toggle), generation_panel)
-            training_panel = QWidget()
+            training_panel = self.training_panel = QWidget()
             training_layout = QVBoxLayout(training_panel)
             training_layout.setContentsMargins(0, 0, 0, 0)
             training_layout.addWidget(QLabel("Training review · Check a package before manual handoff"))
@@ -626,7 +626,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 not view.synthetic and getattr(normal_entry_session, "state", None) == "ready")
             self.training_merge_button.clicked.connect(self.open_training_merge)
             training_layout.addWidget(self.training_merge_button, 0, Qt.AlignLeft)
-            training_panel.setVisible(not view.synthetic)
+            training_panel.setVisible(not view.synthetic and normal_entry_session is not None)
             applications_layout.insertWidget(applications_layout.indexOf(self.categories_toggle), training_panel)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
@@ -2806,9 +2806,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 item.setText("" if compact else item.toolTip())
 
         def refresh_section_commands(self, *_):
-            training_ready = not view.synthetic and getattr(normal_entry_session, "state", None) == "ready"
-            self.krea_training_review_button.setVisible(training_ready)
-            self.training_merge_button.setVisible(training_ready)
+            session_ready = not view.synthetic and getattr(normal_entry_session, "state", None) == "ready"
+            self.krea_training_review_button.setVisible(session_ready)
+            self.training_merge_button.setVisible(session_ready)
+            for panel in (self.generation_panel, self.training_panel):
+                panel.setEnabled(session_ready)
+                panel.setToolTip("" if session_ready else "Available when the Manager session is ready.")
 
             section = next((name for name, row in self.page_rows.items() if row == self.navigation.currentRow()), "Dashboard")
             databases_hint = "Use Databases to connect a catalog, review content and recover interrupted work."
