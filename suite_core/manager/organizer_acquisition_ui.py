@@ -43,6 +43,8 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
 
     def observation_text(self):
         selected=None if self.installed is None else self.installed.selected
+        if selected is not None and self.installed.connection_pending:
+            return 'Installed Organizer: '+selected.version+' — finish saving its connection before opening.'
         return ('Organizer installation has not been checked.' if self.installed is None else
                 'No Organizer installed.' if selected is None else
                 'Installed Organizer: '+selected.version+(' — open and close it normally to finish setup.' if self.installed.phase=='activated' else ''))
@@ -59,6 +61,8 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
                 'No newer Organizer was found.')
 
     def pending_setup_guidance(self):
+        if self.installed is not None and self.installed.connection_pending:
+            return 'The Organizer files are retained. Finish saving the connection before opening the app.'
         return ('Choose Open Organizer, then close its window normally to finish setup.' if self.service.launch_available else
                 'Organizer is installed. Restart Manager to make this saved app available to open.')
 
@@ -84,20 +88,31 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         # evidence remain verbatim in their separate disclosure controls.
         return text.replace('Tag Encyclopedia','Media Organizer').replace('Reader','Organizer').replace('reader','Organizer')
 
+    def _open_ready(self):
+        installed = self.installed
+        return (installed is not None and installed.selected is not None
+                and not installed.pending and not installed.connection_pending
+                and not self.publication_pending and not self.close_held and not self.closing)
+
     def render(self):
         super().render()
         self.status.setText(self._organizer_text(self.status.text()))
         self.refresh.setText('Check Again' if self.check_attempted or self.installed is not None else 'Find Organizer')
         if self.open_action is None:return
-        selected=None if self.installed is None else self.installed.selected
-        ready=(selected is not None and not self.close_held and not self.closing
-               and not self.publication_pending and not self.installed.pending)
+        ready = self._open_ready()
         self.open_action.setVisible(ready)
-        self.open_action.setEnabled(ready and self.service.launch_available)
-        self.open_action.setToolTip('Open your installed Organizer.' if self.service.launch_available else
-                                   'Opening awaits the original root-owned native launch admission.')
-        _primary_action(self.open_action,ready and self.service.launch_available)
-        if ready and self.service.launch_available:_primary_action(self.return_action,False)
+        can_open = ready and not self.observation_stale and self.service.launch_available
+        self.open_action.setEnabled(can_open)
+        if ready and self.observation_stale:
+            self.health_accept.show()
+        self.open_action.setToolTip(
+            'Check app status again before opening Organizer.' if self.observation_stale else
+            'Open your installed Organizer.' if self.service.launch_available else
+            'Opening awaits the original root-owned native launch admission.'
+        )
+        _primary_action(self.open_action, can_open)
+        if can_open:
+            _primary_action(self.return_action, False)
         owner=self.service.native_owner
         retained=owner is not None and owner.close_held
         failed=retained and (owner.child is None or owner.identity is None)
@@ -150,7 +165,7 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         return box.exec()==QMessageBox.Yes
 
     def open_organizer(self):
-        if self.close_held or self.closing or not self.service.launch_available:return
+        if not self._open_ready() or self.observation_stale or not self.service.launch_available:return
         # Native creation belongs to the original owner. It must retain the Job,
         # birth witness and drain independently of this display operation.
         snapshot=self.installed
