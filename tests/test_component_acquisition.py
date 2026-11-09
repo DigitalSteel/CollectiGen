@@ -159,18 +159,25 @@ def test_scoped_discovery_still_rejects_selected_invalid_offer(tmp_path, fault):
         service(tmp_path, f).discover(channel='beta', installed_versions={}, component_id=ComponentId(ID))
 
 
-def test_revalidation_refuses_offer_reviewed_under_different_trust(tmp_path):
+@pytest.mark.parametrize("refresh", [False, True])
+def test_revalidation_retires_offer_reviewed_under_different_trust(tmp_path, refresh):
     feed = FakeFeed()
     feed.add()
     acquisition = service(tmp_path, feed)
     offer, = offers(acquisition)
+    original_trust, original_pin = acquisition.trust, acquisition.trust_pin
     acquisition.trust += b"\n"
     acquisition.trust_pin = sha256(acquisition.trust).hexdigest()
     feed.calls.clear()
-    for refresh in (False, True):
-        with pytest.raises(ValueError, match="changed_trust_evidence"):
-            acquisition.revalidate_offer(offer, refresh_listing=refresh)
+    with pytest.raises(ValueError, match="changed_trust_evidence"):
+        acquisition.revalidate_offer(offer, refresh_listing=refresh)
+    acquisition.trust, acquisition.trust_pin = original_trust, original_pin
+    with pytest.raises(ValueError, match="current_signed_offer_required"):
+        acquisition.revalidate_offer(offer)
     assert not feed.calls
+    refreshed, = offers(acquisition)
+    assert refreshed is not offer
+    acquisition.revalidate_offer(refreshed)
 
 
 def test_scoped_discovery_requires_typed_component_before_feed_access(tmp_path):

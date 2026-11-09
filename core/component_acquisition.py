@@ -339,7 +339,9 @@ class ComponentAcquisition:
         self._check(should_cancel)
         require(type(offer) is ComponentOffer and self._offers.get(offer.release.manifest_sha256) is offer,
                 "current_signed_offer_required")
-        require(offer.trust_sha256 == self.trust_pin, "changed_trust_evidence")
+        if offer.trust_sha256 != self.trust_pin:
+            self._offers.pop(offer.release.manifest_sha256, None)
+            raise StagingHold("changed_trust_evidence")
         expected = self._expected_offer
         if expected is None and not refresh_listing:
             return
