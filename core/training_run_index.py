@@ -605,7 +605,7 @@ class ScopedTrainingHistory:
 
     def review_preparation(self, record, revision):
         """Return the checked preparation deadline without opening linked files."""
-        if record.kind == "execution":
+        if record.kind in {"execution", "readiness"}:
             from .training_run_recovery import restore_indexed_review
 
             records, current = self.snapshot()
