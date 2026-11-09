@@ -327,16 +327,23 @@ def reconcile_experiment(experiment, receipts):
 def retry_failed(experiment, candidate_ids, *, receipts=()):
     result = validate_experiment(experiment)
     selected = set(candidate_ids)
-    proofs = {receipt.get("job_id"): receipt for receipt in receipts}
+    proofs = {}
+    for receipt in receipts:
+        proofs.setdefault(receipt.get("job_id"), []).append(receipt)
     for row in result["candidates"]:
         if row["id"] not in selected:
             continue
         if row["state"] not in {"failed", "cancelled"}:
             raise ValueError("Only confirmed failed or cancelled candidates can be retried.")
-        proof = proofs.get(row["job_id"], {})
+        matching = proofs.get(row["job_id"], [])
+        if len(matching) != 1:
+            raise ValueError("Retry requires a matching confirmed failed or cancelled receipt.")
+        proof = matching[0]
+        plan = proof.get("prepared", {}).get("plan", {})
         if (proof.get("state") not in {"failed", "cancelled"}
-                or not (proof.get("proven_unsubmitted") or proof.get("server_stopped"))
-                or proof.get("prepared", {}).get("plan", {}).get("digest") != row["plan"]["digest"]):
+                or not (proof.get("proven_unsubmitted") is True or proof.get("server_stopped") is True)
+                or plan.get("plan_id") != row["plan"]["plan_id"]
+                or plan.get("digest") != row["plan"]["digest"]):
             raise ValueError("Retry requires a matching confirmed failed or cancelled receipt.")
         row["plan"] = GenerationPlan.from_dict(row["plan"]).fork().to_dict()
         row.update(state="pending", job_id="", error="")
