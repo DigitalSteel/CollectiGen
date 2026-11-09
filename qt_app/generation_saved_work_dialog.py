@@ -132,7 +132,7 @@ class SavedGenerationWorkDialog(QDialog):
         self.storage_root = Path(storage_root).absolute()
         self.kind = kind
         self.selection_only = bool(selection_only)
-        self._setup_picker_open = False
+        self._file_picker_open = False
         self._allow_setup_transfer = kind == "recipes" and allow_setup_transfer
         self._allow_draft_transfer = kind == "drafts" and allow_draft_transfer
         self.selected_path = None
@@ -561,11 +561,11 @@ class SavedGenerationWorkDialog(QDialog):
 
     def import_file(self):
         if self._task is not None: return
-        self._setup_picker_open = self._allow_setup_transfer
+        self._file_picker_open = self._allow_setup_transfer
         try:
             path, _ = QFileDialog.getOpenFileName(self, "Import One Saved Item", "", "Saved JSON (*.json)")
         finally:
-            self._setup_picker_open = False
+            self._file_picker_open = False
         if not path: return
         self._run("Import selected saved item",
             lambda cancelled: import_selected_saved_work(self.storage_root, self.kind, path, cancelled=cancelled),
@@ -624,8 +624,12 @@ class SavedGenerationWorkDialog(QDialog):
                     self.storage_root, item["path"], selected_digest=item.get("content_digest")),
                 lambda review: self._review_setup_export(item, review))
             return
-        path, _ = QFileDialog.getSaveFileName(self, "Export One Saved Item", Path(item["path"]).name,
-            "Saved JSON (*.json)", options=QFileDialog.DontConfirmOverwrite)
+        self._file_picker_open = True
+        try:
+            path, _ = QFileDialog.getSaveFileName(self, "Export One Saved Item", Path(item["path"]).name,
+                "Saved JSON (*.json)", options=QFileDialog.DontConfirmOverwrite)
+        finally:
+            self._file_picker_open = False
         if not path: return
         self._run("Export selected saved item",
             lambda cancelled: export_selected_saved_work(self.storage_root, self.kind,
@@ -642,13 +646,13 @@ class SavedGenerationWorkDialog(QDialog):
             return
         format = dialog.format.currentData()
         include_prompts = dialog.include_prompts.isChecked()
-        self._setup_picker_open = self._allow_setup_transfer
+        self._file_picker_open = self._allow_setup_transfer
         try:
             path, _ = QFileDialog.getSaveFileName(self, "Export Reviewed Setup to a New File",
                 Path(item["path"]).stem + ("-swarmui.json" if format == "swarmui" else ".json"),
                 "JSON (*.json)", options=QFileDialog.DontConfirmOverwrite)
         finally:
-            self._setup_picker_open = False
+            self._file_picker_open = False
         if not path:
             self.status.setText("Export cancelled. No export file was created.")
             return
@@ -679,7 +683,7 @@ class SavedGenerationWorkDialog(QDialog):
         return self.has_active_background_work()
 
     def reject(self):
-        if self._setup_picker_open:
+        if self._file_picker_open:
             return
         if self._recovery_dialog is not None: self._recovery_dialog.reject()
         if self._task is not None:
@@ -687,7 +691,7 @@ class SavedGenerationWorkDialog(QDialog):
         QDialog.reject(self)
 
     def closeEvent(self, event):
-        if self._setup_picker_open:
+        if self._file_picker_open:
             event.ignore()
             return
         if self._task is not None:
