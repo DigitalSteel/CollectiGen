@@ -301,7 +301,6 @@ class ApplicationUpdateService:
         if should_cancel and should_cancel():
             raise InterruptedError("The update download was cancelled safely.")
         complete = downloads / artifact.name
-        complete.unlink(missing_ok=True)
         part.replace(complete)
         return complete
 
