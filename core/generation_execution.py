@@ -317,9 +317,12 @@ class SwarmLocalAdapter:
         if not caps or binding.get("capability_fingerprint") != caps["fingerprint"]:
             raise ValueError("Connection changed; check and bind the exact model again.")
         request = plan.request
-        if plan.source_identity.get("protected") or (
+        source = plan.source_identity
+        if source.get("protected") or (
                 isinstance(source_current, dict) and source_current.get("protected")):
             raise ValueError("Generation readiness is blocked: use an explicitly permitted source image.")
+        if source and source_current != source:
+            raise ValueError("Recheck the source image identity before generation.")
         if any(resource.provenance.get("protected") for resource in request.resources):
             raise ValueError("Generation readiness is blocked: use explicitly permitted model resources.")
         resolution = registry.resolve(binding["resource_id"], role="checkpoint")
@@ -543,9 +546,6 @@ class SwarmLocalAdapter:
             values = [str(v).split("///")[0] for v in caps["parameters"][key].get("values", [])]
             if getattr(request, key) not in values:
                 raise ValueError(f"The selected {key} is not offered by this adapter.")
-        source = plan.to_dict().get("source_identity")
-        if source and (source_current is None or source_current != source):
-            raise ValueError("Recheck the source image identity before generation.")
         if remix:
             frozen_source = freeze_init_image(self.source_image_provider, source_hash)
             if task == "upscale" and not (request.width > frozen_source["width"] and request.height > frozen_source["height"]):
