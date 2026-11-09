@@ -1356,14 +1356,20 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
         _IMAGE_PICKER_CLOSE_NOTICE = "Close held. Finish or close the image chooser, then close Manager again."
 
         def open_generate_plan(self):
-            if self._image_draft_picker_open or self.generation_state() is None:
+            if self._image_draft_picker_open:
+                return
+            state = self.generation_state()
+            if state is None:
                 return
             from qt_app.generation_workflow import choose_generation_draft, open_generation_workspace
 
             if getattr(self, "_generation_dialog", None) is None:
                 self._image_draft_picker_open = True
                 try:
-                    choose_generation_draft(self, allow_draft_transfer=True)
+                    choose_generation_draft(
+                        self, allow_draft_transfer=True,
+                        selection_allowed=lambda: self.generation_state() is state,
+                    )
                 finally:
                     self._image_draft_picker_open = False
                     if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:

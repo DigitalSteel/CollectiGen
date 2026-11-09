@@ -366,7 +366,7 @@ def _apply_finishing_draft(target, value):
     target._refresh_from_plan("Winner opened for refinement at its source size. Review the final size, then preview and apply its output stages.")
 
 
-def choose_generation_draft(parent, *, allow_draft_transfer=False):
+def choose_generation_draft(parent, *, allow_draft_transfer=False, selection_allowed=None):
     """Choose and validate a saved request before adding a Generate workspace."""
     from core.generation_planning import load_plan_with_digest
     from .generation_saved_work_dialog import SavedGenerationWorkDialog
@@ -384,6 +384,8 @@ def choose_generation_draft(parent, *, allow_draft_transfer=False):
         selected_digest = browser.selected_digest
     finally:
         browser.deleteLater()
+    if selection_allowed is not None and not selection_allowed():
+        return
     if requested_action == "create":
         open_generation_workspace(parent, force_new=True)
         return
