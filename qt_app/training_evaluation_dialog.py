@@ -210,10 +210,15 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         image_label = "1 fixed image" if count == 1 else f"{count} fixed images"
         preview_hint = ("Select a verified row to preview it, or two to compare."
                         if count > 1 else "Select the verified row to preview it.")
+        batch_hint = ("Review Missing Samples saves the batch and opens its first sample in offline Generate."
+                      if self.batch_review_only else
+                      "Queue batches contain at most 32 images and require review in Generate.")
         self.summary.setText(f"{image_label} · {self.path.name}\n{template_summary(self.session)}\n"
-                             f"{preview_hint} Queue batches contain at most 32 images and require review in Generate.")
+                             f"{preview_hint} {batch_hint}")
         self._render()
         self.status.setText(
+            "Saved comparison ready. Choose Review Missing Samples to open the first sample for review."
+            if self.batch_review_only else
             "Saved comparison ready. Queue missing samples in Generate, then refresh verified results here."
         )
         self._update()
@@ -392,6 +397,9 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
             if self.results and all(self.results.get(cell.key) for cell in self.cells):
                 self.no_results.setText("No verified comparison images yet. Review the existing jobs "
                                         "in Generate History, then refresh verified results here.")
+            elif self.batch_review_only:
+                self.no_results.setText("No verified comparison images yet. Review Missing Samples opens "
+                                        "the first sample for review. Batch submission is unavailable here.")
             else:
                 self.no_results.setText("No verified comparison images yet. Queue missing samples in Generate, "
                                         "review and start that queue there, then refresh verified results here.")
