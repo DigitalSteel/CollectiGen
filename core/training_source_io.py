@@ -68,6 +68,10 @@ def read_stable_training_source(path: str|Path, *, max_bytes: int|None=None) -> 
             )
         if max_bytes is not None and opened.st_size > max_bytes:
             raise ValueError("The source exceeds the requested byte limit.")
+        if _identity(before_path)!=_identity(opened):
+            raise RuntimeError(
+                f"{source.name} changed before its source bytes could be read."
+            )
         blocks=[]
         total=0
         while True:
