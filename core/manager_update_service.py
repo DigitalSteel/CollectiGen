@@ -178,7 +178,7 @@ class ManagerUpdateService:
             inventory_sha256=offer.release.artifact.portable_manifest_sha256)
         require(all(identity[name]==value for name,value in expected.items()), 'changed_reviewed_stage_identity')
         if should_cancel and should_cancel(): raise InterruptedError('Root update review cancelled safely.')
-        readback(artifact, expected['artifact_size'], expected['artifact_sha256'])
+        readback(artifact, expected['artifact_size'], expected['artifact_sha256'], should_cancel=should_cancel)
         proof = produce_detached_inventory(artifact, inventory_profile=PROFILE,
             expected_version=expected['version'], expected_channel=self.channel, should_cancel=should_cancel)
         admission = self._admit(artifact, offer, proof, trust_pin=offer.trust_sha256, should_cancel=should_cancel)

@@ -870,8 +870,8 @@
       "size_bytes": 3343
     },
     "core/manager_stock_apply.py": {
-      "sha256": "888d0b64e7ca4be0129177b94806287b22ba3b202e505138d90fd24bee96befe",
-      "size_bytes": 13268
+      "sha256": "81c2fb3e682792d09629c1079b07b00e1b619fd0175307ce2617ac51d1c3e52b",
+      "size_bytes": 13487
     },
     "core/manager_stock_hook_admission.py": {
       "sha256": "0de230eda571d18b1beb6db70880656adac32c5c0d15a9f1e517b76f43fb5ea0",
@@ -894,8 +894,8 @@
       "size_bytes": 25540
     },
     "core/manager_update_service.py": {
-      "sha256": "c3597c58ecb26893db8189316c394ff4e0e6244fea307bc382592daa1a65fa64",
-      "size_bytes": 22407
+      "sha256": "8b2870b36b3b5cebe2ac0e2a1425e94c49a15b6cc7cc662d743de21a3058d5b3",
+      "size_bytes": 22436
     },
     "core/media_inventory.py": {
       "sha256": "5117d1bcec46ca4f0b2e9d0caee3648a8f2384cfdff95f4a21c2344624cbcf41",

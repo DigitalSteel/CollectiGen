@@ -121,14 +121,19 @@ def validate_argv(request, argv):
     return argv
 
 
-def readback(path, size=None, expected=None):
+def readback(path, size=None, expected=None, *, should_cancel=None):
     path = physical(str(path))
     require(path.is_file(), "regular_payload_file")
     before = path.stat()
     require(size is None or before.st_size == size, "changed_payload_size")
     h = sha256()
     with path.open("rb") as source:
-        for block in iter(lambda: source.read(1024 * 1024), b""):
+        while True:
+            if should_cancel is not None and should_cancel():
+                raise InterruptedError("Manager package readback was cancelled.")
+            block = source.read(1024 * 1024)
+            if not block:
+                break
             h.update(block)
     after = path.stat()
     require((before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) ==
