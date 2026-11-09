@@ -257,7 +257,7 @@ def _registered_resource(registry, resource_id, *, selected_role="", selected_fa
     return resource
 
 
-def _registered_resource_with_label(registry, resource_id, *, selected_role="", selected_family=""):
+def _registered_resource_with_label(registry, resource_id, *, selected_role="", selected_family="", resource_guard=None):
     """Read one exact resource and a path-free presentation label together."""
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", str(resource_id)):
         raise ValueError("This generation adapter requires a single-file SHA-256 resource; preparation packs stay in Setup.")
@@ -265,6 +265,8 @@ def _registered_resource_with_label(registry, resource_id, *, selected_role="", 
     record = value["resources"].get(resource_id)
     if record is None:
         raise ValueError("The selected registered model is no longer in the model registry.")
+    if resource_guard is not None:
+        resource_guard(record)
     declarations = deepcopy(record.get("declarations", []))
     if selected_role:
         declarations = [item for item in declarations if item.get("role") == selected_role
@@ -407,7 +409,7 @@ def choose_generation_draft(parent, *, allow_draft_transfer=False, selection_all
                               preloaded_draft=(plan, target, token))
 
 
-def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", selected_role="", selected_family="", remix=False, force_new=False, on_opened=None, initial_plan=None, source_context=None, initial_task="remix", initial_image_intent=None, repair_context=None, setup_from_image=False, preloaded_draft=None, source_result_allowed=None):
+def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", selected_role="", selected_family="", remix=False, force_new=False, on_opened=None, initial_plan=None, source_context=None, initial_task="remix", initial_image_intent=None, repair_context=None, setup_from_image=False, preloaded_draft=None, source_result_allowed=None, resource_guard=None):
     """Bounded selected-image context; source hashing and loading use shared I/O."""
     if repair_context is not None:
         allowed = {"reason", "original_location", "source_workspace"}
@@ -521,7 +523,8 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
                     "reviewed": True, "included": False, "scope": f"selected image {index + 1}",
                     "source": "reviewed_image_knowledge", "provenance": identity["collection"][index]})
         resource, resource_label = _registered_resource_with_label(model_registry, resource_id,
-            selected_role=selected_role, selected_family=selected_family) if resource_id else (None, "")
+            selected_role=selected_role, selected_family=selected_family,
+            resource_guard=resource_guard) if resource_id else (None, "")
         image_bytes = None
         if remix:
             from core.generation_inputs import freeze_init_image

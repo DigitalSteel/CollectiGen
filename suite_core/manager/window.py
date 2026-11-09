@@ -1555,6 +1555,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             dialog.open_button.setText("Review Selected Preparation")
             self._training_history_dialog = dialog
             task = None
+            reviewed = None
+            handoff = None
+            plan_result = QPushButton("Plan an Image With This Result…", dialog)
+            plan_result.setAutoDefault(False)
+            plan_result.hide()
+            dialog.layout().addWidget(plan_result)
 
             def has_saved_outcome(record):
                 return (record.kind == "execution" and bool(record.latest_journal_tip)
@@ -1562,7 +1568,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                                              "verification_required", "registration_required", "completed"})
 
             def verify(record, revision):
-                nonlocal task
+                nonlocal task, reviewed
+                reviewed = None
+                plan_result.hide()
                 if self.generation_state() is not state:
                     dialog.set_retained_index_status(
                         "Manager session is no longer ready. Close this review and reopen it when ready.")
@@ -1599,6 +1607,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                             dialog.set_retained_index_status(message)
 
                 def complete(result):
+                    nonlocal reviewed
                     if preparations:
                         finish("Saved SDXL preparation receipt verified. Training was not started. Live inputs were not rechecked.")
                     elif validation:
@@ -1621,6 +1630,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                                          if registered is not None else "")
                         finish(f"Saved journal verified: the training process {outcome} and its process tree stopped. "
                                f"{exit_detail}{result_detail}Output files and live inputs were not checked.")
+                        if (registered is not None and self._training_history_dialog is dialog
+                                and self.generation_state() is state and dialog._selected() == record
+                                and dialog._revision == revision
+                                and Path(record.registry_path) == state.generation_data_root / MODEL_RESOURCES_PATH.name):
+                            reviewed = record, revision, registered
+                            plan_result.show()
                     else:
                         finish(f"Saved preparation verified for {record.annotation.name or record.run_id}. "
                                f"Configured time limit: {result:g} seconds. Results have not been checked.")
@@ -1634,6 +1649,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     finish(str(exc))
 
             def selection_changed():
+                nonlocal reviewed
+                reviewed = None
+                plan_result.hide()
                 dialog.set_retained_index_status("")
                 selected = dialog._selected()
                 completed_validation = selected is not None and selected.kind == "validation" and selected.phase == "completed"
@@ -1644,6 +1662,19 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 else:
                     dialog.open_button.setText("Review Selected Preparation")
 
+            def plan_with_result():
+                nonlocal handoff
+                if (reviewed is None or self.generation_state() is not state
+                        or dialog._selected() != reviewed[0] or dialog._revision != reviewed[1]):
+                    return
+                current = getattr(self, "_generation_dialog", None)
+                if current is not None and not current._closed:
+                    dialog.set_retained_index_status("Close the current image draft before planning with this result.")
+                    return
+                handoff = reviewed
+                dialog.accept()
+
+            plan_result.clicked.connect(plan_with_result)
             dialog.runs.itemSelectionChanged.connect(selection_changed)
             dialog.openRunRequested.connect(verify)
             try:
@@ -1653,6 +1684,24 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if task is not None:
                     task.cancel()
                 dialog.deleteLater()
+            if handoff is not None and self.generation_state() is state:
+                from qt_app.generation_workflow import open_generation_workspace
+
+                record, revision, registered = handoff
+
+                def check_resource(resource):
+                    if history.review_execution_outcome(record, revision)[2] != registered or not any(
+                            row.get("operation") == "training"
+                            and row.get("authority") == "collectigen_verified"
+                            and row.get("plan_fingerprint") == record.plan_fingerprint
+                            and row.get("output_id") == registered.resource_id
+                            and row.get("execution_receipt") == "sha256:" + registered.receipt_sha256
+                            for row in resource["lineage"]):
+                        raise ValueError("The registered Training result changed. Review it again in Training History.")
+
+                open_generation_workspace(self, resource_id=registered.resource_id, selected_role="lora",
+                    selected_family="sdxl", force_new=True, resource_guard=check_resource,
+                    source_result_allowed=lambda: self.generation_state() is state)
 
         def open_training_comparison(self):
             state = self.generation_state()
