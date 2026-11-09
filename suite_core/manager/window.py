@@ -145,7 +145,7 @@ def view_for_candidate(observation):
             dict(observation.release_dates).get(observation.software_version), "Unsigned developer candidate", observation.notes),))
 
 
-def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None, dataset_verifier=None, training_draft_settings_path=None):
+def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None, dataset_verifier=None, training_draft_settings_path=None, training_caption_review_factory=None):
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtGui import QIcon
     if organizer_connection_host is not None:
@@ -1632,7 +1632,28 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     registry = AppSettings._from_bytes(raw).library_registry()
                 except (OSError, RuntimeError, ValueError) as exc:
                     raise ValueError("Manager library settings could not be read.") from exc
-                return draft.recheck_source_files(registry, should_cancel=lambda: job.cancel_requested)
+                counts = None
+
+                def read_sources(consume=None):
+                    nonlocal counts
+                    counts = draft.recheck_source_files(
+                        registry, should_cancel=lambda: job.cancel_requested,
+                        on_verified_annotation=consume,
+                    )
+
+                caption_status = "unavailable"
+                if training_caption_review_factory is not None and draft.plan_manifest.get("assessment_context_fingerprint"):
+                    try:
+                        review = training_caption_review_factory()
+                    except (OSError, RuntimeError, ValueError):
+                        review = None
+                    if review is not None:
+                        caption_status = review(
+                            draft.plan_manifest, read_sources, cancel=lambda: job.cancel_requested,
+                        )
+                if counts is None:
+                    read_sources()
+                return counts, caption_status
 
             def finish(message):
                 nonlocal task
@@ -1647,11 +1668,22 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 button.setEnabled(False)
                 status.setText("Checking saved source images…")
                 task = CoordinatedCallTask(state.jobs, "Check Training draft images", check, resource="io")
-                task.signals.complete.connect(lambda counts: finish(
-                    f"Checked {counts[0]:,} image(s). {counts[1]:,} changed. "
-                    f"Saved Image Knowledge: {counts[2]:,} changed, {counts[3]:,} unavailable. "
-                    "Current captions were not projected."
-                ))
+                def show_result(result):
+                    counts, caption_status = result
+                    captions = {
+                        "matches": "Current captions match the saved draft.",
+                        "captions_changed": "Current captions differ from the saved draft.",
+                        "context_changed": "Dataset context changed. Rebuild the draft in Organizer.",
+                        "unavailable": "Current captions could not be checked.",
+                        "cancelled": "Caption check cancelled.",
+                    }
+                    finish(
+                        f"Checked {counts[0]:,} image(s). {counts[1]:,} changed. "
+                        f"Saved Image Knowledge: {counts[2]:,} changed, {counts[3]:,} unavailable. "
+                        + captions[caption_status]
+                    )
+
+                task.signals.complete.connect(show_result)
                 task.signals.failed.connect(finish)
                 task.signals.cancelled.connect(lambda: finish("Source check cancelled."))
                 try:

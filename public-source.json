@@ -3106,8 +3106,8 @@
       "size_bytes": 96
     },
     "suite_core/manager/__main__.py": {
-      "sha256": "3b1b72cc8ca237327cc052209cd5509804cf47b039c6e28401ee48fc764f555d",
-      "size_bytes": 32033
+      "sha256": "75631a699c0c479ee3e308f52be96fdf3b6670a7db01caf2b42ed3ea39693d90",
+      "size_bytes": 32247
     },
     "suite_core/manager/assets/collectigen.ico": {
       "sha256": "f819e00ab1dbaad539c7f25f08b9353561a56701eb83b6440e21b87dcf83bd10",
@@ -3370,8 +3370,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "4db1011913b8151485d77e9cd14e77b868f879abe2dc314aaeb31b47076dfbbc",
-      "size_bytes": 211109
+      "sha256": "20e7b77a06406a7ffe20ea8a78476b7b0c5bf0e9c03a52ae757956d3ad3909bb",
+      "size_bytes": 212663
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

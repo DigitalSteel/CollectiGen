@@ -368,7 +368,7 @@ def organizer_factory_for_entry(explicit_factory, normal_entry_session):
     raise EntryHold('organizer_metadata_factory_not_supplied')
 
 
-def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagnostics_root=None, owned_runtime_admission=None, entry_probe=None, before_window_probe=None, normal_entry_session=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None,direct_runtime_selection=None,encyclopedia_acquisition_factory=None,organizer_connection_factory=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, model_workspace_factory=None, tag_content_factory=None, organizer_acquisition_factory=None, dataset_verifier=None):
+def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagnostics_root=None, owned_runtime_admission=None, entry_probe=None, before_window_probe=None, normal_entry_session=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None,direct_runtime_selection=None,encyclopedia_acquisition_factory=None,organizer_connection_factory=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, model_workspace_factory=None, tag_content_factory=None, organizer_acquisition_factory=None, dataset_verifier=None, training_caption_review_factory=None):
     if normal_entry_session is not None:
         from .bootstrap_entry import EntryHold, NormalEntrySession
         if type(normal_entry_session) is not NormalEntrySession:
@@ -538,6 +538,9 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             model_workspace_factory=model_workspace_factory, tag_content_host=entry_owner.tag_content_host,
             dataset_verifier=dataset_verifier,
             training_draft_settings_path=None if args.demo else app_settings_path,
+            training_caption_review_factory=(
+                training_caption_review_factory if normal_entry_session is not None and not args.demo else None
+            ),
             krea_registry_path=(Path(app_settings_path).parent / "model_resources.json"
                                 if not args.demo and app_settings_path is not None else None))
         entry_owner.window = window
