@@ -75,14 +75,15 @@ def render_compiled_update_config(value, *, include_prior=False):
         if (not path.parts or path.is_absolute() or '..' in path.parts or ':' in spec['path'] or path.parts[0]!='Recovery'
                 or type(spec['size']) is not int or spec['size']<=0 or not re.fullmatch('[0-9a-f]{64}',spec['sha256'])):
             raise ValueError('compiled_prior_recovery_scope_required')
-    # No CDN origins are qualified by this schema; stock redirects remain held.
+    # GitHub release assets redirect to this exact publisher transport origin.
     return ('# Reviewed build-bound public inputs; no runtime enrollment.\n'
         'from core.component_release_transport import ComponentReleaseTransport, ReleaseTransportPolicy\n'
         'from core.manager_update_host import CompiledManagerUpdateProfile, QualifiedStockReview\n'
         'PROFILE = CompiledManagerUpdateProfile(\n'
         '    trust_bytes=bytes.fromhex('+repr(value['trust_hex'])+'),\n'
         '    trust_sha256='+repr(value['trust_sha256'])+',\n'
-        '    channel='+repr(value['channel'])+', transport_id='+repr(value['transport_id'])+', opener=ComponentReleaseTransport(ReleaseTransportPolicy()),\n'
+        '    channel='+repr(value['channel'])+', transport_id='+repr(value['transport_id'])+', '
+        'opener=ComponentReleaseTransport(ReleaseTransportPolicy(asset_redirect_origins=("https://release-assets.githubusercontent.com",))),\n'
         '    initial_prior='+repr(prior if include_prior else None)+',\n'
         '    updater_sha256='+repr(value['updater_sha256'])+',\n'
         '    native_review=QualifiedStockReview(bytes.fromhex('+repr(value['stock_review_hex'])+'), '+repr(value['stock_review_sha256'])+'))\n')
@@ -99,7 +100,8 @@ def render_qualification_update_config(value, *, include_prior=False, mapping_sh
     return template.replace('from core.component_release_transport import ComponentReleaseTransport, ReleaseTransportPolicy\n','').replace(
         'CompiledManagerUpdateProfile, QualifiedStockReview\n',
         'CompiledManagerUpdateProfile, QualifiedStockReview, SealedLocalQualificationOpener\n').replace(
-        "transport_id='github-release-assets-https', opener=ComponentReleaseTransport(ReleaseTransportPolicy()),",
+        "transport_id='github-release-assets-https', "
+        'opener=ComponentReleaseTransport(ReleaseTransportPolicy(asset_redirect_origins=("https://release-assets.githubusercontent.com",))),',
         "transport_id='sealed-local-qualification', opener=SealedLocalQualificationOpener("+repr(mapping_sha256)+"),")
 
 _PUBLIC_TRAINING_INPUTS = frozenset({

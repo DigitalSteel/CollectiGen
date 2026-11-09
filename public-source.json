@@ -3778,8 +3778,8 @@
       "size_bytes": 22355
     },
     "tests/test_manager_production_stage.py": {
-      "sha256": "f1b95c7817d60a8badfadb87d4e6878eaeba4d3d121b134e1301694ee9c5bcd5",
-      "size_bytes": 24015
+      "sha256": "bc53bda9bedd81169f58f48fdc03ff435a8edeaf176eadeb7d92f013fe0a8422",
+      "size_bytes": 24029
     },
     "tests/test_organizer_portable_runtime.py": {
       "sha256": "cd9761acdfe29fa12a52f43dbfb20b682a02fb395f730b29d4aa0ddc305b9303",
@@ -3938,8 +3938,8 @@
       "size_bytes": 17252
     },
     "tools/prepare_manager_production_stage.py": {
-      "sha256": "f005d49ab006e0ad0a4ebd272dcb5c065edcfdcbf2fa1c8b3b92ea2653f80542",
-      "size_bytes": 27086
+      "sha256": "bf835eca501f6439ba396791769599856f8d95ad2879a8d833100963749083bf",
+      "size_bytes": 27253
     },
     "tools/public-source-manifest.json": {
       "sha256": "d2e89ef27a72b0ffdcc94a943a82fe23065d1207b3a94e6952c131c1d9796caa",

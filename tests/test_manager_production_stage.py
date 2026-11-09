@@ -268,7 +268,7 @@ def test_compiled_profile_root_is_explicit_and_public_data_cannot_inject_code(in
     import ast
     ast.parse(rendered)
     assert 'QualifiedStockReview' in rendered and 'urlopen' not in rendered
-    assert 'opener=ComponentReleaseTransport(ReleaseTransportPolicy())' in rendered
+    assert 'asset_redirect_origins=("https://release-assets.githubusercontent.com",)' in rendered
     assert 'initial_prior=None' in rendered
     root=candidate.root_entry('a'*64,compiled_update_profile=True,compiled_profile_input=value)
     assert 'compiled_update_profile=PROFILE' in root and 'Recovery/retained-A/' in root
