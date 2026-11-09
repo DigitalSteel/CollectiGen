@@ -285,9 +285,18 @@ class CompiledManagerUpdateProfile:
         def raw(name):
             if name == 'proof':
                 return read_manager_inventory_proof(files[name])
-            require(files[name]['size']<=MAX_METADATA_BYTES,'compiled_release_metadata_bounds')
-            readback(files[name]['path'],files[name]['size'],files[name]['sha256'])
-            return Path(files[name]['path']).read_bytes()
+            spec = files[name]
+            size = spec['size']
+            require(type(size) is int and 0 < size <= MAX_METADATA_BYTES,
+                    'compiled_release_metadata_bounds')
+            path = Path(spec['path'])
+            guard(path)
+            require(path.is_file() and path.stat().st_size == size, 'changed_payload_size')
+            with path.open('rb') as source:
+                data = source.read(size + 1)
+            require(len(data) == size and sha256(data).hexdigest() == spec['sha256'],
+                    'changed_payload_pin')
+            return data
         manifest,signature,trust,proof=(raw(name) for name in ('manifest','signature','trust','proof'))
         require(trust==self.trust_bytes,'compiled_prior_trust_changed')
         verified=verify_component_release(manifest,signature,trust,expected_component=MANAGER,

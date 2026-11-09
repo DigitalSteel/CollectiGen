@@ -890,8 +890,8 @@
       "size_bytes": 15742
     },
     "core/manager_update_host.py": {
-      "sha256": "e69077a3bb63ad42a11435c8226970d36258e1102c86d9e63074e02df12b4355",
-      "size_bytes": 29131
+      "sha256": "b1d815d08ed26df48c932a03241854c1a932be42afb6c15c12cfd8532b3d8239",
+      "size_bytes": 29482
     },
     "core/manager_update_service.py": {
       "sha256": "e6a3e8839f0737ca703c4b1c4810e2c3347abe2c145a1ccecdda79e9a4b2c3e6",
