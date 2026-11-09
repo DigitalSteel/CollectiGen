@@ -389,7 +389,7 @@ class SavedGenerationWorkDialog(QDialog):
                                if imported and imported["available"] else
                                "Setup imported. Refresh or browse to select it")
                 elif imported and imported["available"]:
-                    message = "Draft imported and selected. Choose Resume Selected Draft to open it"
+                    message = f"Draft imported and selected. Choose {self.open_button.text()} to open it"
                 else:
                     message = "Draft imported. Refresh or browse the folder to select it"
             self.status.setText(message + ".")
@@ -610,7 +610,7 @@ class SavedGenerationWorkDialog(QDialog):
 
     def _imported(self, path):
         self.search.clear()
-        if self._allow_draft_transfer or self._allow_setup_transfer:
+        if self.kind == "drafts" or self._allow_setup_transfer:
             self._load_page(0, [], "", imported_path=path)
         else:
             self.restart()

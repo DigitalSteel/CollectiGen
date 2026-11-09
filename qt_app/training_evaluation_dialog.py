@@ -41,6 +41,7 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         self._closing = False
         self._serial = 0
         self._editor_selection = []
+        self._evaluation_source_held = False
         self._observation_baseline = (False, '')
         self._restoring_selection = False
         self._template_plan = None
@@ -127,14 +128,22 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         self.queue_missing.clicked.connect(self._queue_missing)
         self.cancel = QPushButton("Cancel Check"); self.cancel.clicked.connect(self._cancel)
         close = QDialogButtonBox(QDialogButtonBox.Close); close.rejected.connect(self.reject)
-        for control in (self.refresh,self.generate,self.batch,self.queue_missing,self.cancel,close): actions.addWidget(control)
+        for control in (self.refresh,self.batch,self.queue_missing,self.cancel,close): actions.addWidget(control)
         layout.addLayout(actions)
+        self.expert_toggle = QCheckBox("Show selected-image tools")
+        self.expert_toggle.setToolTip(
+            "Select one row to review its exact prompt and seed in Generate. "
+            "Opening the draft does not start generation."
+        )
+        self.expert_toggle.toggled.connect(self._update)
+        layout.addWidget(self.expert_toggle)
+        layout.addWidget(self.generate, 0, Qt.AlignLeft)
         self.status = QLabel("No evaluation loaded."); self.status.setWordWrap(True); self.status.setTextFormat(Qt.PlainText)
         layout.addWidget(self.status)
         self._update()
 
     def _launch(self, label, work, done):
-        if self._task is not None or self._closing: return
+        if self._task is not None or self._closing or self._evaluation_source_held: return
         task = CoordinatedCallTask(self.jobs,label,work,resource="io")
         self._task = task; self.status.setText(label); self._update()
         task.signals.complete.connect(lambda value:self._finished(task,done,value))
@@ -361,21 +370,33 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
             updated=review_cell(self.session,selected[0],job_id=result['job_id'],output_sha256=result['sha256'],
                 favorite=self.favorite.isChecked(),notes=self.notes.text())
         except Exception as exc:self.status.setText(str(exc));return
-        expected=self.digest
+        session, path, expected = self.session, self.path, self.digest
+        submitted = self.favorite.isChecked(), self.notes.text()
         def work(job):
             if job.cancel_requested:raise InterruptedError("Saving observation cancelled.")
-            current=matched_results(self.session,self.service,should_cancel=lambda:job.cancel_requested)
+            current=matched_results(session,self.service,should_cancel=lambda:job.cancel_requested)
             if result not in current[selected[0]]:raise ValueError("The reviewed result changed.")
             if job.cancel_requested:raise InterruptedError("Saving observation cancelled.")
-            return save_plan(self.path,updated,expected_digest=expected)
+            return save_plan(path,updated,expected_digest=expected)
         def saved(digest):
-            self.session,self.digest=updated,digest; self.status.setText("Personal observation saved.")
-            self._observation_baseline=(self.favorite.isChecked(),self.notes.text())
+            same_source = self.session is session and self.path == path and self.digest == expected
+            same_editor = (list(self._editor_selection) == selected
+                           and (self.favorite.isChecked(), self.notes.text()) == submitted)
+            if same_source:
+                self.session, self.digest = updated, digest
+                if list(self._editor_selection) == selected:
+                    self._observation_baseline = submitted
+            if not same_source or not same_editor:
+                self._evaluation_source_held = True
+                self.status.setText("The observation was saved to its original comparison. "
+                                    "The current view changed. Close and reopen before continuing.")
+                return
+            self.status.setText("Personal observation saved.")
             if after_save is not None:after_save()
         self._launch("Save evaluation observation",work,saved)
 
     def _update(self):
-        idle=self._task is None and not self._closing
+        idle=self._task is None and not self._closing and not self._evaluation_source_held
         selected=self._selection()
         has_verified_result=any(row.get('path') for rows in self.results.values() for row in rows)
         selected_result=(self._result(selected[0]) if self.session is not None and len(selected)==1
@@ -407,12 +428,14 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         self.items.setEnabled(idle)
         self.refresh.setEnabled(idle and self.session is not None)
         self.generate.setEnabled(idle and len(selected)==1)
-        self.generate.setVisible(self.session is not None and len(selected)==1)
+        self.expert_toggle.setVisible(self.session is not None)
+        self.generate.setVisible(self.session is not None and self.expert_toggle.isChecked()
+                                 and len(selected) == 1)
         for control in (self.refresh, self.queue_missing):
             control.setVisible(self.session is not None)
         self.save_note.setEnabled(idle and selected_result is not None)
         self.favorite.setEnabled(self.save_note.isEnabled());self.notes.setEnabled(self.save_note.isEnabled())
-        self.cancel.setVisible(not idle and not self._closing)
+        self.cancel.setVisible(self._task is not None and not self._closing)
         if not hasattr(self,'preview_button'):
             self.preview_button=QPushButton("Preview Comparison")
             self.preview_button.clicked.connect(self.preview_selected)
@@ -453,9 +476,12 @@ class TrainingEvaluationDialog(FeedbackEnabledDialog):
         if not self.has_unsaved_changes():
             return True
         if self._task is not None:return False
-        answer=QMessageBox.question(self,'Unsaved observation',
-            'Save this observation before leaving it?',
-            QMessageBox.Save|QMessageBox.Discard|QMessageBox.Cancel,QMessageBox.Cancel)
+        buttons = QMessageBox.Discard | QMessageBox.Cancel
+        if not self._evaluation_source_held:
+            buttons |= QMessageBox.Save
+        prompt = ("Discard the unsaved edit and close this comparison?"
+                  if self._evaluation_source_held else "Save this observation before leaving it?")
+        answer=QMessageBox.question(self,'Unsaved observation',prompt,buttons,QMessageBox.Cancel)
         if answer==QMessageBox.Save:
             self._save_note(after_save=after_save)
             return False
