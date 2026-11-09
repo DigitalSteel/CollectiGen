@@ -115,7 +115,7 @@ def prepare_dataset_caption_review(data_root: Path):
 
     from .automation_repository import automation_engine_for_caption_review
     from .conflict_rules import ConflictRuleEngine
-    from .automation_rule_conversion import RulePairAdmission
+    from .automation_rule_conversion import RuleConversionAdmissionError, RulePairAdmission
     from .category_registry import CategoryRegistry
     from .default_tag_identity import bind_saved_default_identity
     from .knowledge_editor_context import PreparedCharacterDatabase
@@ -126,10 +126,19 @@ def prepare_dataset_caption_review(data_root: Path):
     from .tag_semantic_relationships import TagSemanticRelationshipService
     from .tag_template_projection import active_tag_template_projection_service
 
-    current = capture_dataset_caption_authority(data_root)
     defaults, user = data_root / "defaults", data_root / "user"
     admission = RulePairAdmission(user)
     admission.assert_clear()
+    current = capture_dataset_caption_authority(data_root)
+
+    def context_is_current():
+        try:
+            admission.assert_clear()
+            unchanged = current()
+            admission.assert_clear()
+        except RuleConversionAdmissionError:
+            return False
+        return unchanged
     tags = TagDatabase(admission.knowledge_path, rule_pair_admission=admission)
     categories = CategoryRegistry(defaults / "categories.json", user / "categories.json")
     default_relationships = defaults / "relationships.json"
@@ -152,11 +161,11 @@ def prepare_dataset_caption_review(data_root: Path):
         tags, require_projection=True, authority_roots=(defaults, user),
     )
     service = TrainingCandidateSelectionService(tags, PreparedCharacterDatabase(user), categories)
-    if not current():
+    if not context_is_current():
         raise ValueError("Dataset caption authority changed while it was being loaded.")
     return partial(
         service.review_saved_captions, automation_engine=engine,
-        relationship_evaluator=relationships, template_service=templates, context_is_current=current,
+        relationship_evaluator=relationships, template_service=templates, context_is_current=context_is_current,
     )
 
 
