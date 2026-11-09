@@ -187,7 +187,9 @@ class TagDatabasePane(QWidget):
         destination = self.controller.choice.transactions.destination
         refreshing = self.encyclopedia.path == destination
         if not self.encyclopedia.open_snapshot(destination, refreshing=refreshing):
-            self.controller.error = "Encyclopedia reader refresh failed. Retain the saved catalog and retry reload."
+            self.controller.error = "Encyclopedia reader refresh failed."
+            self.controller.reason = "The saved catalog was kept. Choose Reload saved catalog to refresh Encyclopedia."
+            return
         if show:
             self.encyclopedia.show(); self.encyclopedia.raise_()
 

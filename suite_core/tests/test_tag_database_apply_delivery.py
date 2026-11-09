@@ -99,3 +99,55 @@ def test_failed_write_and_failed_observation_invalidate_cached_capability_eviden
         assert controller.choice.capability_inventory==() and controller.choice.capability_revision==''
         assert 'observation hold' in controller.error and not controller.can_apply
     finally:executor.begin_close()
+
+
+def test_failed_encyclopedia_refresh_offers_reload_without_apply(tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QApplication
+    from suite_core.manager.tag_database_ui import TagDatabasePane
+
+    app = QApplication.instance() or QApplication([])
+    calls = []
+    choice = stock_choice(tmp_path, lambda *_a, **_kw: calls.append("apply"))
+    snapshot = tmp_path / "snapshot.json"
+    snapshot.write_bytes(b"synthetic published snapshot")
+    choice.transactions.destination = snapshot
+    choice.transactions.controller = None
+    choice.transactions.reload = lambda: calls.append("reload") or True
+    monkeypatch.setattr(module, "_observe", lambda choice, **_kwargs: choice)
+
+    class Encyclopedia:
+        path = None
+
+        def open_snapshot(self, path, *, refreshing):
+            assert path == snapshot
+            calls.append("refresh")
+            return calls.count("refresh") == 2
+
+        def show(self):
+            calls.append("show")
+
+        def raise_(self):
+            pass
+
+    executor = ResourceExecutorOwner()
+    controller = module.TagDatabaseController(choices=(choice,), executor=executor, apply_authorized=True)
+    panel = TagDatabasePane(controller, encyclopedia=Encyclopedia())
+    try:
+        panel.show()
+        app.processEvents()
+        panel.open_encyclopedia.click()
+        assert calls == ["refresh"]
+        assert "Reload saved catalog" in panel.status.text()
+        assert panel.reload.isVisible() and panel.reload.isEnabled()
+        panel.reload.click()
+        deadline = monotonic() + 3
+        while controller.pending and monotonic() < deadline:
+            app.processEvents()
+            sleep(.005)
+        assert not controller.pending and not controller.error
+        assert calls == ["refresh", "reload", "refresh"]
+        assert snapshot.read_bytes() == b"synthetic published snapshot"
+    finally:
+        panel.timer.stop()
+        panel.close()
+        executor.begin_close()
