@@ -601,7 +601,10 @@ class SavedGenerationWorkDialog(QDialog):
         choice.setDefaultButton(later)
         choice.exec()
         if choice.clickedButton() is review:
+            from core.generation_recipes import recipe_storage_digest
+
             self.selected_path = dialog.saved_path
+            self.selected_digest = recipe_storage_digest(dialog.recipe)
             self.requested_action = "open"
             self.accept()
         else:
