@@ -159,23 +159,30 @@ def test_scoped_discovery_still_rejects_selected_invalid_offer(tmp_path, fault):
         service(tmp_path, f).discover(channel='beta', installed_versions={}, component_id=ComponentId(ID))
 
 
-@pytest.mark.parametrize("refresh", [False, True])
-def test_revalidation_retires_offer_reviewed_under_different_trust(tmp_path, refresh):
+@pytest.mark.parametrize("action", ["confirm", "refresh", "download"])
+def test_revalidation_retires_offer_reviewed_under_different_trust(tmp_path, action):
     feed = FakeFeed()
     feed.add()
+    other = ComponentId("collectigen.other")
+    feed.add(component=other.value)
     acquisition = service(tmp_path, feed)
-    offer, = offers(acquisition)
+    reviewed = {item.release.component_id: item for item in offers(acquisition)}
+    offer = reviewed[ComponentId(ID)]
     original_trust, original_pin = acquisition.trust, acquisition.trust_pin
     acquisition.trust += b"\n"
     acquisition.trust_pin = sha256(acquisition.trust).hexdigest()
     feed.calls.clear()
     with pytest.raises(ValueError, match="changed_trust_evidence"):
-        acquisition.revalidate_offer(offer, refresh_listing=refresh)
+        if action == "download":
+            acquisition.acquire(offer)
+        else:
+            acquisition.revalidate_offer(offer, refresh_listing=action == "refresh")
     acquisition.trust, acquisition.trust_pin = original_trust, original_pin
     with pytest.raises(ValueError, match="current_signed_offer_required"):
         acquisition.revalidate_offer(offer)
+    acquisition.revalidate_offer(reviewed[other])
     assert not feed.calls
-    refreshed, = offers(acquisition)
+    refreshed, = acquisition.discover(channel="beta", installed_versions={}, component_id=ComponentId(ID))
     assert refreshed is not offer
     acquisition.revalidate_offer(refreshed)
 

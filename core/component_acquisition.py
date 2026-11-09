@@ -392,11 +392,6 @@ class ComponentAcquisition:
             self._acquisition_lock.release()
 
     def _acquire(self, offer, *, progress, should_cancel):
-        self._trust()
-        self._check(should_cancel)
-        require(type(offer) is ComponentOffer and self._offers.get(offer.release.manifest_sha256) is offer,
-                "current_signed_offer_required")
-        require(offer.trust_sha256 == self.trust_pin, "changed_trust_evidence")
         self.revalidate_offer(offer, should_cancel=should_cancel, refresh_listing=True)
         verified = offer.release
         require(verified.artifact.size_bytes <= self.maximum, "artifact_bound")
