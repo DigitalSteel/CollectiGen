@@ -402,6 +402,33 @@ def test_partial_read_failure_and_previous_cache_preserved(tmp_path, incomplete_
     assert s.acquire(second).artifact.read_bytes() == b'A'*(1024*1024+20)
 
 
+def test_replaced_download_attempt_is_preserved(tmp_path, monkeypatch):
+    from suite_core.discovery.component_staging import StagingHold
+
+    feed = FakeFeed()
+    feed.add()
+    acquisition = service(tmp_path, feed)
+    offer, = offers(acquisition)
+    original = acquisition.transport.download_artifact
+    displaced = acquisition.root / "displaced"
+    replacement = []
+
+    def replace_attempt(*args, **kwargs):
+        artifact = original(*args, **kwargs)
+        artifact.parent.rename(displaced)
+        artifact.parent.mkdir()
+        artifact.write_bytes(b"foreign")
+        replacement.append(artifact)
+        return artifact
+
+    monkeypatch.setattr(acquisition.transport, "download_artifact", replace_attempt)
+    with pytest.raises(StagingHold, match="cache_attempt_changed"):
+        acquisition.acquire(offer)
+    assert replacement[0].read_bytes() == b"foreign"
+    assert (displaced / offer.release.artifact.name).read_bytes() == PAYLOAD
+    assert not acquisition._acquired
+
+
 def test_overlapping_discovery_refuses_before_contacting_feed(tmp_path):
     feed = FakeFeed()
     feed.add()

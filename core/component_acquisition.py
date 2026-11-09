@@ -433,11 +433,20 @@ class ComponentAcquisition:
             raise ComponentCacheFull("cache_bound")
         attempt = self.root / ("attempt-" + uuid4().hex)
         attempt.mkdir()
+        attempt_info = attempt.stat()
+
+        def check_attempt():
+            guard(attempt)
+            current = attempt.stat()
+            require((current.st_dev, current.st_ino) == (attempt_info.st_dev, attempt_info.st_ino),
+                    "cache_attempt_changed")
+
         names = [verified.artifact.name, verified.artifact.name + ".part", verified.artifact.name + ".part.rejected"]
         try:
             artifact = self.transport.download_artifact(offer.artifact_source, verified.artifact,
                 cache_directory=attempt, progress=progress, should_cancel=should_cancel)
             self._check(should_cancel)
+            check_attempt()
             self._trust()
             require(offer.trust_sha256 == self.trust_pin
                     and self._offers.get(offer.release.manifest_sha256) is offer, "changed_inflight_offer")
@@ -445,11 +454,13 @@ class ComponentAcquisition:
             require(artifact.parent == attempt and artifact.name == verified.artifact.name, "cache_artifact_binding")
             verify_component_artifact(artifact, verified, should_cancel=should_cancel)
             self._check_inflight_offer(offer, should_cancel)
+            check_attempt()
             self._acquired[verified.manifest_sha256] = artifact
             return AcquiredComponent(offer, artifact)
         except BaseException:
             # Exact files in this fresh owned attempt only; no recursive cleanup.
             self._check(None)
+            check_attempt()
             for name in names:
                 path = attempt / name
                 guard(path)
