@@ -74,6 +74,7 @@ class WorkspaceCommandController(QObject):
             add("video_ingest_button","View",keywords=("video","clip","playback","lineage","media","mixed","unsupported"))
             add("refresh_button","Home",keywords=("refresh","scan","incoming"))
             add("import_external_evidence_button","Import",keywords=("metadata","txt","sidecar","evidence"))
+            add("add_manager_result_action","Import",move=False,keywords=("manager","generation","receipt","copy"))
             add_summary_toggle()
         elif index==2:
             add("media_library_button","View",keywords=("media","images","video","mixed","unsupported"))

@@ -30,7 +30,8 @@ class IngestImportPreviewDialog(FeedbackEnabledDialog):
     feedback_workflow = "Add Images preview"
     preview_page_size = 250
 
-    def __init__(self, plan: IngestImportPlan, parent=None, *, fixed_action: IngestImportAction | None = None) -> None:
+    def __init__(self, plan: IngestImportPlan, parent=None, *,
+                 fixed_action: IngestImportAction | None = None, copy_only: bool = False) -> None:
         super().__init__(parent)
         self.plan = plan
         self.fixed_action = fixed_action
@@ -71,7 +72,11 @@ class IngestImportPreviewDialog(FeedbackEnabledDialog):
         self.action_label = action_label
         self.action_combo = QComboBox()
         self.action_combo.addItem("Copy to Ingest", "copy")
-        self.action_combo.addItem("Move to Ingest", "move")
+        if copy_only:
+            self.action_combo.setEnabled(False)
+            action_label.setText("Verified result add method")
+        else:
+            self.action_combo.addItem("Move to Ingest", "move")
         if fixed_action is not None:
             index = self.action_combo.findData(fixed_action)
             if index < 0:
@@ -79,7 +84,7 @@ class IngestImportPreviewDialog(FeedbackEnabledDialog):
             self.action_combo.setCurrentIndex(index)
             self.action_combo.setEnabled(False)
             action_label.setText("Saved add method")
-        self.action_combo.setAccessibleName("Choose Copy to Ingest or Move to Ingest")
+        self.action_combo.setAccessibleName("Copy to Ingest" if copy_only else "Choose Copy to Ingest or Move to Ingest")
         action_label.setBuddy(self.action_combo)
         self.action_explanation = QLabel()
         self.action_explanation.setWordWrap(True)

@@ -2302,12 +2302,12 @@
       "size_bytes": 3804
     },
     "qt_app/ingest_import_dialog.py": {
-      "sha256": "299d231fe03ee68216bf896f11cb36eb6b61a2cd2202ea5689e7e1c1700306c6",
-      "size_bytes": 14920
+      "sha256": "d6a9bba9174a5971f4c6c9566400ec88a4d69f576dacc3f4b3cf662029a8da57",
+      "size_bytes": 15148
     },
     "qt_app/ingest_page.py": {
-      "sha256": "f00685d0fdf09ad2e095d415d3ea09ff8f180c8d8d04847cfbcb6548ef1ae3d2",
-      "size_bytes": 366665
+      "sha256": "35344b2d648cc3d0e15be857643759c3375429a5aca1bc08c76f5497bd1e4e99",
+      "size_bytes": 366699
     },
     "qt_app/ingest_preparation_queue.py": {
       "sha256": "82870eaf359ff7108e51ca2d0bd91d95f422abb404d96c42f411f10cac2f6d6b",
@@ -2770,8 +2770,8 @@
       "size_bytes": 1751
     },
     "qt_app/workspace_commands.py": {
-      "sha256": "426cf7cd8ff96bcfb59909eff44598bd75b0977727299246dfecafdf3a773469",
-      "size_bytes": 18518
+      "sha256": "146ac710c96b8b3295e9e06e568541557325a176420fe8e45398bf8de85968e2",
+      "size_bytes": 18634
     },
     "qt_main.py": {
       "sha256": "f8f196d57f96b09777e757082b4ce8a1f9663ccf209a70d204b51c0a4fa1abb8",

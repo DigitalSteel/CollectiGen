@@ -1307,7 +1307,7 @@ class IngestPage(QWidget):
         self._active_add_images_verified_versions=()
         ordinary=self._active_add_images_ordinary
         self._active_add_images_ordinary=False
-        dialog=IngestImportPreviewDialog(result,self)
+        dialog=IngestImportPreviewDialog(result,self,copy_only=bool(verified_versions))
         if dialog.exec()!=QDialog.Accepted:
             if request is not None and request[2]:
                 source_kind,paths,preserve_source=request
