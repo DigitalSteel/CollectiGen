@@ -2010,6 +2010,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.statusBar().showMessage(self._TRAINING_PICKER_CLOSE_NOTICE)
                 event.ignore()
                 return
+            if self._krea_review_dialog is not None:
+                self._close_after_krea_review = True
+                self._krea_review_dialog.reject()
+                event.ignore()
+                return
             comparison = getattr(self, "_training_comparison_controller", None)
             if comparison is not None:
                 if not comparison.has_active_background_work():
@@ -2055,11 +2060,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     event.ignore()
                     return
                 del self.state
-            if self._krea_review_dialog is not None:
-                self._close_after_krea_review = True
-                self._krea_review_dialog.reject()
-                event.ignore()
-                return
             host = self._model_workspace_factory
             if host is not None and hasattr(host, 'begin_close'):
                 host.begin_close()
