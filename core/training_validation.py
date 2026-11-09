@@ -539,7 +539,8 @@ def read_report(prepared: PreparedValidation, outcome: TrainingProcessResult):
 
 def read_retained_report(prepared: PreparedValidation, expected_journal_tip: str):
     """Verify a saved measurement and stopped journal without rereading live inputs."""
-    rows, tip = TrainingRunJournal(prepared.plan.destination).read()
+    journal = TrainingRunJournal(prepared.plan.destination)
+    rows, tip = journal.read()
     if not rows or rows[-1]['state'] != 'exited_unverified' or tip != expected_journal_tip:
         raise TrainingValidationError('validation_process_changed')
     reserved = TrainingProcessService._receipt(prepared.plan)
@@ -566,4 +567,6 @@ def read_retained_report(prepared: PreparedValidation, expected_journal_tip: str
             or not math.isfinite(value['elapsed_seconds']) or value['elapsed_seconds'] <= 0
             or type(value['peak_cuda_memory_bytes']) is not int or value['peak_cuda_memory_bytes'] <= 0):
         raise TrainingValidationError('validation_receipt_invalid')
+    if journal.read()[1] != tip:
+        raise TrainingValidationError('validation_process_changed')
     return value
