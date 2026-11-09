@@ -599,6 +599,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.training_comparison_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.training_comparison_button.clicked.connect(self.open_training_comparison)
             training_layout.addWidget(self.training_comparison_button, 0, Qt.AlignLeft)
+            self.training_history_button = compact_action(QPushButton("Review Saved Training Runs…"))
+            self.training_history_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.training_history_button.clicked.connect(self.open_training_history)
+            training_layout.addWidget(self.training_history_button, 0, Qt.AlignLeft)
             training_panel.setVisible(not view.synthetic)
             applications_layout.insertWidget(applications_layout.indexOf(self.categories_toggle), training_panel)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
@@ -1481,6 +1485,58 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         _TRAINING_PICKER_CLOSE_NOTICE = "Close held. Finish or close the training package chooser, then close Manager again."
 
+        def open_training_history(self):
+            state = self.generation_state()
+            if state is None or getattr(self, "_training_history_dialog", None) is not None:
+                return
+            from core.training_run_index import ScopedTrainingHistory
+            from qt_app.training_history_dialog import TrainingHistoryDialog
+            from qt_app.workers import CoordinatedCallTask
+
+            history = ScopedTrainingHistory(state.generation_data_root / "training")
+            dialog = TrainingHistoryDialog(history, state.jobs, self, read_only=True)
+            dialog.open_button.setText("Verify Selected Receipt")
+            self._training_history_dialog = dialog
+            task = None
+
+            def verify(record, revision):
+                nonlocal task
+                if task is not None:
+                    return
+                dialog.set_retained_index_status("Checking the selected receipt…")
+                task = CoordinatedCallTask(state.jobs, "Verify Training receipt",
+                                           lambda _job: history.verify_selected(record, revision),
+                                           resource="io")
+
+                def finish(message):
+                    nonlocal task
+                    task = None
+                    if self._training_history_dialog is dialog:
+                        if dialog._selected() == record and dialog._revision == revision:
+                            dialog.set_retained_index_status(message)
+                        else:
+                            dialog.set_retained_index_status("")
+
+                task.signals.complete.connect(lambda selected: finish(
+                    f"Receipt verified for {selected.annotation.name or selected.run_id}. "
+                    "This confirms the saved receipt bytes."))
+                task.signals.failed.connect(finish)
+                task.signals.cancelled.connect(lambda: finish("Receipt check cancelled."))
+                try:
+                    task.start()
+                except (RuntimeError, ValueError) as exc:
+                    finish(str(exc))
+
+            dialog.runs.itemSelectionChanged.connect(lambda: dialog.set_retained_index_status(""))
+            dialog.openRunRequested.connect(verify)
+            try:
+                dialog.exec()
+            finally:
+                self._training_history_dialog = None
+                if task is not None:
+                    task.cancel()
+                dialog.deleteLater()
+
         def open_training_comparison(self):
             state = self.generation_state()
             if state is None:
@@ -2081,6 +2137,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.render_library()
 
         def closeEvent(self, event):
+            if getattr(self, "_training_history_dialog", None) is not None:
+                self.statusBar().showMessage("Close the Training History review before closing Manager.")
+                event.ignore()
+                return
             comparison = getattr(self, "_training_comparison_controller", None)
             if comparison is not None:
                 if not comparison.has_active_background_work():

@@ -17,7 +17,7 @@ import stat
 from uuid import uuid4
 
 from .external_write_transaction import atomic_verified_bytes
-from .training_source_io import _assert_unredirected, _identity
+from .training_source_io import _assert_unredirected, _identity, _redirected
 
 
 SCHEMA_VERSION = 1
@@ -548,3 +548,47 @@ class TrainingRunIndex:
             self._finish_pending(pending_raw)
             self._discard_recovery(recovery)
             return receipt["after_sha256"]
+
+
+class ScopedTrainingHistory:
+    """Read-only history for a host whose run state is confined to one root."""
+
+    def __init__(self, root):
+        self._root = Path(root).absolute()
+        self._index = TrainingRunIndex(self._root / "training-runs.json")
+
+    def _check_records(self, records):
+        for record in records:
+            for value in (record.review_path, record.destination, record.registry_path):
+                if not value:
+                    continue
+                path = Path(value)
+                if (path == self._root or not path.is_relative_to(self._root)
+                        or any(":" in part or part.endswith((".", " ")) for part in path.parts[1:])):
+                    raise TrainingRunIndexError("A saved review refers outside this host's Training history.")
+
+    def page(self, *, offset=0, limit=MAX_PAGE_SIZE):
+        page = self._index.page(offset=offset, limit=limit)
+        self._check_records(page.records)
+        return page
+
+    def snapshot(self):
+        records, revision = self._index.snapshot()
+        self._check_records(records)
+        return records, revision
+
+    def verify_selected(self, record, revision):
+        """Verify the indexed receipt bytes without following paths in the receipt."""
+        records, current = self.snapshot()
+        if current != revision or record not in records:
+            raise TrainingRunIndexError("Training history changed. Refresh and select the review again.")
+        receipt = Path(record.review_path)
+        for path in (*reversed(receipt.parents), receipt):
+            if _redirected(path):
+                raise TrainingRunIndexError("The selected training receipt uses a redirected path.")
+        raw = _read_optional(receipt, limit=256 * 1024)
+        if raw is None or hashlib.sha256(raw).hexdigest() != record.review_sha256:
+            raise TrainingRunIndexError("The selected training receipt changed or is unavailable.")
+        if self.snapshot()[1] != revision:
+            raise TrainingRunIndexError("Training history changed while opening the review.")
+        return record

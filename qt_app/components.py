@@ -7,7 +7,7 @@ import core
 from PySide6.QtCore import QAbstractTableModel,QEvent,QModelIndex,QObject,QRect,QSize,QTimer,Qt,Signal
 from PySide6.QtGui import QBrush,QColor,QKeySequence,QPainter,QPalette,QShortcut,QTextCursor
 from PySide6.QtWidgets import (
-    QAbstractItemView,QAbstractScrollArea,QBoxLayout,QCheckBox,QComboBox,QCompleter,QDialog,QDialogButtonBox,QDoubleSpinBox,QHBoxLayout,QLabel,QListWidget,
+    QApplication,QAbstractItemView,QAbstractScrollArea,QBoxLayout,QCheckBox,QComboBox,QCompleter,QDialog,QDialogButtonBox,QDoubleSpinBox,QHBoxLayout,QLabel,QListWidget,
     QFrame,QLineEdit,QMainWindow,QPlainTextEdit,QProgressBar,QPushButton,QScrollArea,QSizePolicy,QSpinBox,QStatusBar,QStyle,QTextBrowser,QTreeWidget,QVBoxLayout,QWidget,
 )
 
@@ -631,6 +631,7 @@ class StatusFooter(QFrame):
         self.rows.setContentsMargins(10,5,10,5); self.rows.setSpacing(4)
         self._bindings={}; self._global_activity=None; self._status_revision=0
         self._notice_has_extra_detail=False
+        self._notice_severity=None; self.notice_help_button=None
         self._refresh_timer=QTimer(self); self._refresh_timer.setSingleShot(True)
         self._refresh_timer.timeout.connect(self._refresh_activity)
         self.activity_slot=QVBoxLayout(); self.activity_slot.setSpacing(0)
@@ -836,8 +837,32 @@ class StatusFooter(QFrame):
         # A notice can create a footer before the rest of a dialog is built.
         root.removeWidget(self); root.addWidget(self)
 
+    def enable_notice_learning(self):
+        """Opt a guarded main window into general, content-free notice reading."""
+        if not isinstance(self.window(),QMainWindow):
+            raise ValueError("Notice Help requires a main-window owner.")
+        if self.notice_help_button is None:
+            button=compact_button(QPushButton("Notice Help",self))
+            button.setAccessibleName("Read general troubleshooting guidance")
+            button.setToolTip("Read general troubleshooting; this does not diagnose the current notice.")
+            button.clicked.connect(self._show_notice_learning)
+            self.actions.addWidget(button); self.notice_help_button=button
+        self._update_notice_learning()
+        return self.notice_help_button
+
+    def _update_notice_learning(self):
+        if self.notice_help_button is not None:
+            self.notice_help_button.setVisible(bool(self.details.toPlainText())
+                and self._notice_severity in {"warning","error"})
+
+    def _show_notice_learning(self):
+        if self.notice_help_button is not None and self.notice_help_button.isVisible():
+            from .learning_help_search import show_learning_library
+            show_learning_library(self,topic_id="learning:common-errors")
+
     def show_message(self,text,*,severity="info",summary=None):
         text=str(text or "")
+        self._notice_severity=severity
         visible=(str(summary).strip() if summary is not None else "") or next(
             (line.strip() for line in text.splitlines() if line.strip()),""
         )
@@ -853,6 +878,7 @@ class StatusFooter(QFrame):
         self.notice.setToolTip(text)
         self.notice.setAccessibleDescription(text)
         self.details.setPlainText(text)
+        self._update_notice_learning()
         self.details_button.setChecked(False)
         # Full text stays keyboard-accessible even when resizing elides a short notice.
         self.details_button.setVisible(self._notice_needs_details())
@@ -1105,7 +1131,7 @@ class GlobalStatusStrip(FooterActivityRow):
 class ContextHelpDialog(QDialog):
     """One read-only guide with direct topic and literal-text navigation."""
 
-    def __init__(self,title: str,help_text: str,parent=None):
+    def __init__(self,title: str,help_text: str,parent=None,*,learning_context: str | None=None):
         super().__init__(parent)
         self.setWindowTitle(f"{title} Help")
         self.setModal(False)
@@ -1114,6 +1140,7 @@ class ContextHelpDialog(QDialog):
         layout=QVBoxLayout(self); layout.setContentsMargins(20,18,20,18); layout.setSpacing(12)
         heading=QLabel(title); heading.setObjectName("pageTitle"); layout.addWidget(heading)
         self.guide=QTextBrowser(); self.guide.setOpenExternalLinks(False)
+        self.guide.setTextInteractionFlags(self.guide.textInteractionFlags() | Qt.TextSelectableByKeyboard)
         self.guide.setMarkdown(str(help_text or "")); self.guide.setAccessibleName(f"{title} help")
         topic_row=QHBoxLayout()
         topic_label=QLabel("Topic")
@@ -1153,12 +1180,31 @@ class ContextHelpDialog(QDialog):
         layout.addWidget(self.guide,1)
         buttons=QDialogButtonBox(QDialogButtonBox.Close)
         from .learning_help_search import add_help_search_button
-        add_help_search_button(self,buttons)
+        add_help_search_button(self,buttons,help_text=help_text,learning_context=learning_context)
         buttons.button(QDialogButtonBox.Close).setAutoDefault(False)
         buttons.rejected.connect(self.close); layout.addWidget(buttons)
 
     def _focus_find(self):
         self.find_text.setFocus(); self.find_text.selectAll()
+
+    def _close_owned_help(self):
+        # A child owns its task/notes; deleting its parent must respect that
+        # child's ordinary Close refusal until work or an unsaved draft settles.
+        for name in ("_learning_search_dialog", "_learning_library_dialog"):
+            child = getattr(self, name, None)
+            if child is not None and isValid(child) and not child.close():
+                return False
+        return True
+
+    def done(self, result: int) -> None:
+        if self._close_owned_help():
+            super().done(result)
+
+    def closeEvent(self, event):
+        if not self._close_owned_help():
+            event.ignore()
+            return
+        super().closeEvent(event)
 
     def _go_to_topic(self,index):
         position=self.topics.itemData(index)
@@ -1194,12 +1240,17 @@ class ContextHelpDialog(QDialog):
         self.find_status.setText(f"Match {self._match_index+1} of {len(self._matches)}")
 
 
-def _show_context_help(owner,title: str,help_text: str):
+def _show_context_help(owner,title: str,help_text: str,*,learning_context: str | None=None,
+                       window_modal: bool=False):
     """Reuse one guide per entry point, including menu-only page guidance."""
     if owner._help_dialog is not None and owner._help_dialog.isVisible():
         owner._help_dialog.raise_(); owner._help_dialog.activateWindow()
         return owner._help_dialog
-    dialog=ContextHelpDialog(title,help_text,owner.window())
+    dialog=ContextHelpDialog(title,help_text,owner.window(),learning_context=learning_context)
+    if window_modal:
+        # A staged modal decision can retain its native choices while reading.
+        # The guide's own Library/search children remain usable Qt descendants.
+        dialog.setWindowModality(Qt.WindowModal)
     owner._help_dialog=dialog
 
     def clear_dialog():
@@ -1211,21 +1262,55 @@ def _show_context_help(owner,title: str,help_text: str):
     return dialog
 
 
+def show_focused_context_help(root: QWidget,focus: QWidget | None) -> bool:
+    """Open the nearest explicit Help scope in this active page/window only."""
+    if focus is None:
+        focus=root
+    if (focus.window() is not root.window()
+            or (focus is not root and not root.isAncestorOf(focus))):
+        return False
+    while focus is not None:
+        button=getattr(focus,"_context_help_button",None)
+        if (button is not None and isValid(button) and button.isVisible()
+                and button.isEnabled() and button.help_text.strip()):
+            button.show_help()
+            return True
+        if focus is root:
+            break
+        focus=focus.parentWidget()
+    return False
+
+
 class ContextHelpButton(QPushButton):
     """Visible, consistent access to guidance for a page or section."""
 
-    def __init__(self,title: str,help_text: str,parent=None):
+    def __init__(self,title: str,help_text: str,parent=None,*,learning_context: str | None=None,
+                 focus_scope: QWidget | None=None,window_modal: bool=False):
         super().__init__("Help",parent)
         self.help_title=str(title); self.help_text=str(help_text or "")
+        self.learning_context=learning_context
+        self.window_modal=bool(window_modal)
         self._help_dialog=None
         compact_button(self)
         self.setAccessibleName(f"Help for {self.help_title}")
         self.setAccessibleDescription(f"Open the guide for {self.help_title}.")
         self.setToolTip(f"Open the guide for {self.help_title}.")
         self.clicked.connect(self.show_help)
+        if focus_scope is not None:
+            focus_scope._context_help_button=self
+            window=focus_scope.window()
+            if isinstance(window,QDialog) and not hasattr(window,"_context_help_shortcut"):
+                # Root already has one Help action; dialogs need their own window key.
+                shortcut=QShortcut(QKeySequence("F1"),window)
+                shortcut.activated.connect(
+                    lambda:show_focused_context_help(window,QApplication.focusWidget())
+                )
+                window._context_help_shortcut=shortcut
 
     def show_help(self,_checked=False):
-        return _show_context_help(self,self.help_title,self.help_text)
+        return _show_context_help(self,self.help_title,self.help_text,
+                                  learning_context=self.learning_context,
+                                  window_modal=self.window_modal)
 
 
 def ui_setting_bool(settings,key: str,default: bool=True) -> bool:
@@ -1250,8 +1335,10 @@ class PageHeader(QWidget):
     leaving page-wide actions free of duplicate Help buttons.
     """
 
-    def __init__(self,title: str,subtitle: str="",help_text: str="",parent=None):
+    def __init__(self,title: str,subtitle: str="",help_text: str="",parent=None,*,
+                 learning_context: str | None=None):
         super().__init__(parent); self.help_text=help_text; self._help_dialog=None
+        self.learning_context=learning_context
         layout=QVBoxLayout(self); layout.setContentsMargins(0,0,0,0); layout.setSpacing(4)
         row=QHBoxLayout(); self.title=QLabel(title); self.title.setObjectName("pageTitle")
         self.status=QLabel(); self.status.setObjectName("mutedLabel"); self.status.hide()
@@ -1295,7 +1382,8 @@ class PageHeader(QWidget):
 
     def show_help(self):
         if self.help_text:
-            return _show_context_help(self,self.title.text(),self.help_text)
+            return _show_context_help(self,self.title.text(),self.help_text,
+                                      learning_context=self.learning_context)
         return None
 
 

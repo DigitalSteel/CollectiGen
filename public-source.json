@@ -1786,8 +1786,8 @@
       "size_bytes": 7608
     },
     "core/training_run_index.py": {
-      "sha256": "d79ee3097a7b3a4d915985362a4c17ec412afd29bd7e88d8f2098450738e4882",
-      "size_bytes": 26976
+      "sha256": "f7bef87430f4d52b588b4f153883e2f31a7962e9aa2102e65df97bbaa87d70c1",
+      "size_bytes": 29138
     },
     "core/training_run_recovery.py": {
       "sha256": "c1388e24b8e6ae920101d36a56fe9159d734491568fbbf15e2a0a00cf17c92fe",
@@ -2106,8 +2106,8 @@
       "size_bytes": 8368
     },
     "qt_app/components.py": {
-      "sha256": "e904b9d93b469370974489ccc06205dbceedd53fd0d0ac1609b92a0f028a7f2a",
-      "size_bytes": 62805
+      "sha256": "b1c2d0bc8fc3bf23eb18fd8287fadc64b461ca8772883c47420f2499de7236d7",
+      "size_bytes": 67375
     },
     "qt_app/concept_group_dialog.py": {
       "sha256": "5279d13c774153e52bc71daf50c126f9e1ee48a3f98e52dc768c60f5e6090a27",
@@ -2254,8 +2254,8 @@
       "size_bytes": 33155
     },
     "qt_app/help_content.py": {
-      "sha256": "0ffc42c9f8c8baf351b4464a015decbc4d82e15fba4715634668b1cf7b62638c",
-      "size_bytes": 35371
+      "sha256": "c20cc55f497166295b8a898c6adbd2e10b56977ded426a62efff60dd15f837e8",
+      "size_bytes": 607029
     },
     "qt_app/history_domain_panel.py": {
       "sha256": "7e734a64ef87bc82519a4dd0ff6ade5bec964fddaec5597594e36407aa6677c0",
@@ -2342,8 +2342,8 @@
       "size_bytes": 413201
     },
     "qt_app/learning_help_search.py": {
-      "sha256": "09b04fb3267acd1aad4cfe836a7b42a43e363494bc657ca4434b9aadb47c5ab4",
-      "size_bytes": 12266
+      "sha256": "25aac591f812961a2c34d2b7a0d616f59d85cd7a027c58ebf48257f00f385246",
+      "size_bytes": 28996
     },
     "qt_app/library_move_dialog.py": {
       "sha256": "946f120c2f125a50ed6c0d61c60b8ae8b596de278566526e76ed725ac8d735d7",
@@ -2678,8 +2678,8 @@
       "size_bytes": 37278
     },
     "qt_app/training_history_dialog.py": {
-      "sha256": "7af4e09a40178bae3fc32a861ced0d6ae622136f57f041bee48fcc8112a80898",
-      "size_bytes": 18999
+      "sha256": "94731c3d1e13873e0182fd5d809244d1fe89ec37c3dfaf2ef4f5ecc5b525fb63",
+      "size_bytes": 39547
     },
     "qt_app/training_metrics_widget.py": {
       "sha256": "9fe51256d3ee85961965c65d930a6c00444523ec047a0f17c0f5e34e954b773a",
@@ -3354,8 +3354,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "2d94f8dc9ecdababf0fff574a985b8048dc26869fff4aa426dadf9f8a4836f20",
-      "size_bytes": 189312
+      "sha256": "d656bd2fbc329fb697b8a8f58ed18915fd809ab7cf0b014734caf685a20dff92",
+      "size_bytes": 192436
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
