@@ -1,5 +1,6 @@
 """Contained real stock-transport calls over inert fake responses only."""
 from dataclasses import replace
+from email.message import Message
 from hashlib import sha256
 from io import BytesIO
 import json
@@ -9,8 +10,9 @@ import subprocess
 from urllib.parse import quote
 
 import pytest
-from core.application_update import UpdateServiceError
+from core.application_update import ApplicationUpdateService, ReleaseAssetSource, UpdateServiceError
 from core.component_acquisition import ComponentAcquisition, ExactComponentOffer, ExactOfferHold
+from release_contract import ReleaseArtifact
 from suite_core.discovery.github_component_releases import discover_releases, discover_component_ids, DiscoveryHold
 from suite_core.discovery import component_staging as staging
 from suite_core.installation import ComponentId
@@ -394,3 +396,56 @@ def test_metadata_response_bound_before_parse(tmp_path):
     s.transport.opener=lambda request,timeout:Response(b' '*(1024*1024+1))
     with pytest.raises(UpdateServiceError,match='safety limit'):offers(s)
     assert list(s.root.iterdir())==[s._marker]
+
+
+@pytest.mark.parametrize("retry", ["range", "ignored", "missing_header", "wrong_hash"])
+def test_self_update_short_download_retries_with_signed_integrity(tmp_path, retry):
+    name = "inert.zip"
+    artifact = ReleaseArtifact(name, "portable", sha256(PAYLOAD).hexdigest(), len(PAYLOAD), "")
+    source = ReleaseAssetSource(name, "https://example.invalid/inert.zip", len(PAYLOAD))
+    offset = 9
+    calls = []
+
+    def opener(request, *, timeout):
+        calls.append(request.get_header("Range"))
+        if len(calls) == 1:
+            return Response(PAYLOAD[:offset])
+        if retry == "ignored":
+            return Response(PAYLOAD)
+        remaining = PAYLOAD[offset:]
+        if retry == "wrong_hash":
+            remaining = b"X" * len(remaining)
+        response = Response(remaining)
+        response.status = 206
+        response.headers = Message()
+        if retry != "missing_header":
+            response.headers["Content-Range"] = f"bytes {offset}-{len(PAYLOAD)-1}/{len(PAYLOAD)}"
+        return response
+
+    service = ApplicationUpdateService(tmp_path, "1.0.0", opener=opener)
+    cache = service.state_root / "downloads"
+    cache.mkdir(parents=True)
+    complete = cache / name
+    complete.write_bytes(b"previous verified archive")
+    partial = cache / (name + ".part")
+
+    with pytest.raises(UpdateServiceError, match="Retry to resume"):
+        service._download(source, artifact)
+    assert partial.read_bytes() == PAYLOAD[:offset]
+    assert complete.read_bytes() == b"previous verified archive"
+
+    if retry == "missing_header":
+        with pytest.raises(UpdateServiceError, match="signed byte range"):
+            service._download(source, artifact)
+        assert partial.read_bytes() == PAYLOAD[:offset]
+        assert complete.read_bytes() == b"previous verified archive"
+    elif retry == "wrong_hash":
+        with pytest.raises(UpdateServiceError, match="quarantined.*SHA-256"):
+            service._download(source, artifact)
+        assert (cache / (name + ".part.rejected")).read_bytes() == PAYLOAD[:offset] + b"X" * (len(PAYLOAD) - offset)
+        assert complete.read_bytes() == b"previous verified archive"
+    else:
+        assert service._download(source, artifact).read_bytes() == PAYLOAD
+        assert not partial.exists()
+
+    assert calls == [None, f"bytes={offset}-"]
