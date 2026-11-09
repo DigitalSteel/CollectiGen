@@ -1503,9 +1503,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 nonlocal task
                 if task is not None:
                     return
-                dialog.set_retained_index_status("Checking the selected receipt…")
+                validation = record.kind == "validation" and record.phase == "completed"
+                review = history.review_validation if validation else history.review_preparation
+                dialog.set_retained_index_status("Checking the selected saved review…")
                 task = CoordinatedCallTask(state.jobs, "Verify Training receipt",
-                                           lambda _job: history.review_preparation(record, revision),
+                                           lambda _job: review(record, revision),
                                            resource="io")
 
                 def finish(message):
@@ -1517,9 +1519,17 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         else:
                             dialog.set_retained_index_status("")
 
-                task.signals.complete.connect(lambda seconds: finish(
-                    f"Saved preparation verified for {record.annotation.name or record.run_id}. "
-                    f"Configured time limit: {seconds:g} seconds. Results have not been checked."))
+                def complete(result):
+                    if validation:
+                        qualification = ("Candidate measurement. " if result["qualification"] == "candidate_only" else "")
+                        finish(f"{qualification}Saved held-out denoising MSE: {result['mean_mse']:.6g}. "
+                               f"Sample count: {len(result['values'])}. "
+                               "Live inputs were not rechecked. MSE does not measure image quality.")
+                    else:
+                        finish(f"Saved preparation verified for {record.annotation.name or record.run_id}. "
+                               f"Configured time limit: {result:g} seconds. Results have not been checked.")
+
+                task.signals.complete.connect(complete)
                 task.signals.failed.connect(finish)
                 task.signals.cancelled.connect(lambda: finish("Receipt check cancelled."))
                 try:
@@ -1527,7 +1537,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 except (RuntimeError, ValueError) as exc:
                     finish(str(exc))
 
-            dialog.runs.itemSelectionChanged.connect(lambda: dialog.set_retained_index_status(""))
+            def selection_changed():
+                dialog.set_retained_index_status("")
+                selected = dialog._selected()
+                completed_validation = selected is not None and selected.kind == "validation" and selected.phase == "completed"
+                dialog.open_button.setText("Review Saved Measurement" if completed_validation
+                                           else "Review Selected Preparation")
+
+            dialog.runs.itemSelectionChanged.connect(selection_changed)
             dialog.openRunRequested.connect(verify)
             try:
                 dialog.exec()

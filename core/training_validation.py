@@ -532,8 +532,22 @@ def _current_inputs(request, should_cancel=None):
 def read_report(prepared: PreparedValidation, outcome: TrainingProcessResult):
     if not outcome.tree_stopped or outcome.status != 'exited_unverified' or outcome.exit_code != 0:
         raise TrainingValidationError('validation_process_unverified')
+    value = read_retained_report(prepared, outcome.journal_tip)
+    _current_inputs(prepared.request)
+    return value
+
+
+def read_retained_report(prepared: PreparedValidation, expected_journal_tip: str):
+    """Verify a saved measurement and stopped journal without rereading live inputs."""
     rows, tip = TrainingRunJournal(prepared.plan.destination).read()
-    if not rows or rows[-1]['state'] != 'exited_unverified' or tip != outcome.journal_tip:
+    if not rows or rows[-1]['state'] != 'exited_unverified' or tip != expected_journal_tip:
+        raise TrainingValidationError('validation_process_changed')
+    reserved = TrainingProcessService._receipt(prepared.plan)
+    expected = {'plan': reserved, 'fingerprint': _digest(reserved)}
+    terminal = rows[-1]['details']
+    if (rows[0]['state'] != 'reserved' or _bytes(rows[0]['details']) != _bytes(expected)
+            or terminal.get('tree_stopped') is not True
+            or type(terminal.get('exit_code')) is not int or terminal['exit_code'] != 0):
         raise TrainingValidationError('validation_process_changed')
     raw = _read(prepared.plan.destination / 'work' / RESULT_NAME, limit=MAX_RESULT)
     value = json.loads(raw)
@@ -552,5 +566,4 @@ def read_report(prepared: PreparedValidation, outcome: TrainingProcessResult):
             or not math.isfinite(value['elapsed_seconds']) or value['elapsed_seconds'] <= 0
             or type(value['peak_cuda_memory_bytes']) is not int or value['peak_cuda_memory_bytes'] <= 0):
         raise TrainingValidationError('validation_receipt_invalid')
-    _current_inputs(prepared.request)
     return value

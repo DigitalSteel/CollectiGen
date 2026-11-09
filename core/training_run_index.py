@@ -560,12 +560,19 @@ class ScopedTrainingHistory:
     def _check_records(self, records):
         for record in records:
             for value in (record.review_path, record.destination, record.registry_path):
-                if not value:
-                    continue
-                path = Path(value)
-                if (path == self._root or not path.is_relative_to(self._root)
-                        or any(":" in part or part.endswith((".", " ")) for part in path.parts[1:])):
-                    raise TrainingRunIndexError("A saved review refers outside this host's Training history.")
+                if value:
+                    self._check_path(Path(value))
+
+    def _check_path(self, path):
+        if (path == self._root or not path.is_relative_to(self._root)
+                or any(":" in part or part.endswith((".", " ")) for part in path.parts[1:])):
+            raise TrainingRunIndexError("A saved review refers outside this host's Training history.")
+
+    def _check_read_path(self, path):
+        self._check_path(path)
+        for part in (*reversed(path.parents), path):
+            if _redirected(part):
+                raise TrainingRunIndexError("The selected training receipt uses a redirected path.")
 
     def page(self, *, offset=0, limit=MAX_PAGE_SIZE):
         page = self._index.page(offset=offset, limit=limit)
@@ -584,6 +591,30 @@ class ScopedTrainingHistory:
 
     def review_preparation(self, record, revision):
         """Return the checked preparation deadline without opening linked files."""
+        plan, _ = self._preparation(record, revision)
+        return plan.timeout_seconds
+
+    def review_validation(self, record, revision):
+        """Read a completed saved validation measurement from the host's run store."""
+        from .training_validation import RESULT_NAME, read_retained_report, restore_prepared
+
+        if record.kind != "validation" or record.phase != "completed" or not record.latest_journal_tip:
+            raise TrainingRunIndexError("Choose a completed held-out validation with a saved journal.")
+        plan, value = self._preparation(record, revision)
+        request = value.get("request_path")
+        expected = Path(plan.root) / (plan.name + ".validation-request.json")
+        if type(request) is not str or Path(request) != expected:
+            raise TrainingRunIndexError("The saved validation request does not match its run.")
+        self._check_read_path(expected)
+        self._check_read_path(plan.destination / "events")
+        self._check_read_path(plan.destination / "work" / RESULT_NAME)
+        prepared = restore_prepared(record.review_path, record.review_sha256)
+        report = read_retained_report(prepared, record.latest_journal_tip)
+        if self.snapshot()[1] != revision:
+            raise TrainingRunIndexError("Training history changed while opening the review.")
+        return report
+
+    def _preparation(self, record, revision):
         from .training_run_recovery import _plan
 
         raw = self._selected_receipt(record, revision)
@@ -606,16 +637,14 @@ class ScopedTrainingHistory:
                 or (record.kind in {"execution", "readiness"}
                     and value.get("fingerprint") != plan.fingerprint)):
             raise TrainingRunIndexError("The training preparation differs from the saved run identity.")
-        return plan.timeout_seconds
+        return plan, value
 
     def _selected_receipt(self, record, revision):
         records, current = self.snapshot()
         if current != revision or record not in records:
             raise TrainingRunIndexError("Training history changed. Refresh and select the review again.")
         receipt = Path(record.review_path)
-        for path in (*reversed(receipt.parents), receipt):
-            if _redirected(path):
-                raise TrainingRunIndexError("The selected training receipt uses a redirected path.")
+        self._check_read_path(receipt)
         raw = _read_optional(receipt, limit=256 * 1024)
         if raw is None or hashlib.sha256(raw).hexdigest() != record.review_sha256:
             raise TrainingRunIndexError("The selected training receipt changed or is unavailable.")
