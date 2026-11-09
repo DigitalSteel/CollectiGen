@@ -1420,6 +1420,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 batch_review_only=True,
             )
 
+        _TRAINING_PICKER_CLOSE_NOTICE = "Close the Training package chooser before closing Manager."
+
         def open_krea_training_review(self):
             registry_path = krea_registry_path
             if self.view.synthetic or self.close_policy.pending or self._krea_review_dialog is not None or self._krea_picker_open:
@@ -1431,6 +1433,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 destination = QFileDialog.getExistingDirectory(self, "Select a verified training package")
             finally:
                 self._krea_picker_open = False
+                if self.statusBar().currentMessage() == self._TRAINING_PICKER_CLOSE_NOTICE:
+                    self.statusBar().clearMessage()
             if not destination or self.close_policy.pending:
                 return
             from core.background_jobs import BackgroundJobManager
@@ -2002,6 +2006,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.render_library()
 
         def closeEvent(self, event):
+            if self._krea_picker_open:
+                self.statusBar().showMessage(self._TRAINING_PICKER_CLOSE_NOTICE)
+                event.ignore()
+                return
             comparison = getattr(self, "_training_comparison_controller", None)
             if comparison is not None:
                 if not comparison.has_active_background_work():
@@ -2047,10 +2055,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     event.ignore()
                     return
                 del self.state
-            if self._krea_picker_open:
-                self.statusBar().showMessage("Close the Training package chooser before closing Manager.")
-                event.ignore()
-                return
             if self._krea_review_dialog is not None:
                 self._close_after_krea_review = True
                 self._krea_review_dialog.reject()
