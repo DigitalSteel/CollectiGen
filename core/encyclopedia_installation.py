@@ -14,7 +14,7 @@ from core.encyclopedia_connection import COMPONENT, ReaderConnection, review_dir
 from suite_core.discovery.component_staging import (
     ComponentStageAdmission, active, active_token, canonical, read_json,
     validate_journal, prior_journal_bytes, stage_and_activate_admitted, finish_or_recover_admitted,
-    MAX_ARCHIVE, require, atomic, guard,
+    MAX_ARCHIVE, require, atomic, guard, read_metadata_bytes, _json,
 )
 
 
@@ -315,14 +315,15 @@ class EncyclopediaInstallation:
             pending = base / "connection-pending.json"
             guard(pending)
             if pending.exists():
-                intent = read_json(pending)
+                publication = read_metadata_bytes(pending)
+                intent = _json(publication, "connection recovery intent")
                 current = read_json(base / "transaction.json")
                 validate_journal(current, self.component, owner, self.acquisition.trust)
                 require(set(intent) == {"schema", "journal_sha256", "target", "prior_selection"}
                         and intent["schema"] == 1 and intent["journal_sha256"] == sha256(canonical(current)).hexdigest()
                         and intent["target"] in [None if value is None else value.mapping() for value in allowed],
                         "unknown_connection_recovery_intent")
-                old_publication[0] = pending.read_bytes()
+                old_publication[0] = publication
         reference = finish_or_recover_admitted(self.admission, component=self.component,
             trust_bytes=self.acquisition.trust, rollback_approved=True, preflight=preflight, payload_policy=self.payload_policy)
         # A failed recovery save/clear is also resumable without repeating the
@@ -333,7 +334,7 @@ class EncyclopediaInstallation:
             if pending.exists():
                 # Supersede only the exact previous journal's intent after this
                 # explicitly reviewed rollback, never an unknown state record.
-                require(old_publication[0] is not None and pending.read_bytes() == old_publication[0],
+                require(old_publication[0] is not None and read_metadata_bytes(pending) == old_publication[0],
                         "changed_connection_recovery_intent")
                 from suite_core.discovery.component_staging import atomic_bytes
                 atomic_bytes(base / ("connection-history-" + uuid4().hex + ".json"), old_publication[0])
