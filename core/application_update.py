@@ -276,6 +276,8 @@ class ApplicationUpdateService:
                             block = response.read(min(1024 * 1024, remaining + 1))
                             if not block:
                                 break
+                            if should_cancel and should_cancel():
+                                raise InterruptedError("The update download was cancelled safely.")
                             if len(block) > remaining:
                                 raise UpdateServiceError("Downloaded release exceeds its signed size.")
                             output.write(block)

@@ -440,6 +440,9 @@ class ComponentAcquisition:
         trust = self.trust
 
         def transfer_cancelled():
+            check_attempt()
+            for name in names:
+                guard(attempt / name)
             if should_cancel is not None and should_cancel():
                 return True
             require(self.trust == trust and self.trust_pin == offer.trust_sha256
@@ -447,6 +450,8 @@ class ComponentAcquisition:
             return False
 
         try:
+            if transfer_cancelled():
+                raise InterruptedError("The component download was cancelled safely.")
             artifact = self.transport.download_artifact(offer.artifact_source, verified.artifact,
                 cache_directory=attempt, progress=progress, should_cancel=transfer_cancelled)
             self._check_inflight_offer(offer, should_cancel)

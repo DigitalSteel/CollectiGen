@@ -291,6 +291,31 @@ def test_failed_transfer_cleans_only_attempt(tmp_path,kind):
     assert s.acquire(o).artifact.read_bytes()==PAYLOAD
 
 
+def test_replaced_attempt_refuses_before_opening_partial(tmp_path):
+    feed = FakeFeed()
+    base, name = feed.add()
+    acquisition = None
+    replacement = None
+
+    def opener(request, timeout):
+        nonlocal replacement
+        response = feed(request, timeout)
+        if request.full_url == base + name:
+            replacement, = acquisition.root.glob("attempt-*")
+            replacement.rename(replacement.with_name("retained-attempt"))
+            replacement.mkdir()
+            (replacement / "sentinel").write_bytes(b"untouched")
+        return response
+
+    acquisition = service(tmp_path, feed, opener=opener)
+    offer, = offers(acquisition)
+    with pytest.raises(staging.StagingHold, match="cache_attempt_changed"):
+        acquisition.acquire(offer)
+    assert {path.name: path.read_bytes() for path in replacement.iterdir()} == {
+        "sentinel": b"untouched",
+    }
+
+
 @pytest.mark.parametrize('point',['before','metadata','after_block'])
 def test_cancel_cleans_no_completed_transfer(tmp_path,point):
     f=FakeFeed(); f.add(); s=service(tmp_path,f); o,=offers(s)
