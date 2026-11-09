@@ -10,7 +10,8 @@ import re
 
 from core.component_acquisition import ComponentAcquisition, ComponentOffer, AcquiredComponent
 from suite_core.installation import ComponentId
-from suite_core.discovery.component_release_signature import _version
+from suite_core.discovery.component_release_signature import _version, verify_component_artifact
+from suite_core.discovery.component_staging import guard
 
 TAG_DATABASE_COMPONENT = ComponentId("TagDatabase")
 
@@ -146,4 +147,7 @@ class TagDefaultAcquisition:
         self._check(baseline, should_cancel)
         if type(acquired) is not AcquiredComponent or acquired.offer is not offer:
             raise ValueError("Original acquired Tag data artifact required")
+        guard(acquired.artifact)
+        verify_component_artifact(acquired.artifact, offer.release)
+        self._check(baseline, should_cancel)
         return AcquiredTagDefault(baseline, acquired)

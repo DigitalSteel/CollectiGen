@@ -229,3 +229,26 @@ def test_stock_extractor_refuses_unsafe_or_nonempty(tmp_path, case):
     with pytest.raises(ValueError):
         staging.extract_component_archive(archive_path, destination)
     assert not (tmp_path / "outside.txt").exists()
+
+
+def test_tag_download_refuses_cached_bytes_changed_during_final_listing(tmp_path):
+    feed = FakeFeed()
+    feed.add(component="TagDatabase", version="0.1.2", supported_from="0.1.0")
+    stock = service(tmp_path, feed)
+    api = TagDefaultAcquisition(acquisition=stock, component_id=TAG_DATABASE_COMPONENT)
+    baseline = TagDefaultBaseline("synthetic", "1", "synthetic-pack",
+                                  observation_status="verified_empty")
+    offer, = api.discover(baseline=baseline, channel="stable").offers
+    open_original = stock.transport.opener
+
+    def replace_after_download(request, timeout):
+        cached = stock._acquired.get(offer.release.manifest_sha256)
+        if cached is not None:
+            cached.write_bytes(b"X" * offer.release.artifact.size_bytes)
+        return open_original(request, timeout)
+
+    stock.transport.opener = replace_after_download
+    with pytest.raises(ValueError, match="SHA-256"):
+        api.acquire(offer, baseline=baseline, confirmed=True)
+    with pytest.raises(ValueError, match="Confirm the exact freshly discovered"):
+        api.acquire(offer, baseline=baseline, confirmed=True)
