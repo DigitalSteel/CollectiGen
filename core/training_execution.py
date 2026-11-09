@@ -302,7 +302,13 @@ class TrainingExecutionService:
                     else 'interrupted' if result.status == 'trial_interrupted' else 'stopped')
             else:
                 phase = 'recovery_required' if outcome.status == 'recovery_required' else result.status
-            if not note_outcome(self.run_index, plan, phase, getattr(outcome, 'journal_tip', '')):
+            tip = getattr(outcome, 'journal_tip', '')
+            result_pin = ()
+            if phase == 'completed' and result.verified is not None:
+                from .training_run_index import RegisteredTrainingResult
+
+                result_pin = (RegisteredTrainingResult(result.resource_id, result.verified.receipt_sha256, tip),)
+            if not note_outcome(self.run_index, plan, phase, tip, *result_pin):
                 result = replace(result, message=result.message +
                     ' The saved run list needs recovery; keep this run workspace and review.')
         return result

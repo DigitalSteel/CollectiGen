@@ -39,6 +39,7 @@ _RECORD_FIELDS = {"run_id", "kind", "review_path", "review_sha256",
 _INDEX_FIELDS = {"schema_version", "kind", "next_sequence", "records"}
 _ANNOTATION_FIELD = "experiment_annotation"
 _VALIDATION_REPORT_FIELD = "validation_report_sha256"
+_REGISTERED_RESULT_FIELD = "registered_result"
 
 
 class TrainingRunIndexError(RuntimeError):
@@ -155,6 +156,19 @@ def _with_unknown(value: dict, rows: tuple[tuple[str, bytes], ...]) -> dict:
 
 
 @dataclass(frozen=True)
+class RegisteredTrainingResult:
+    resource_id: str
+    receipt_sha256: str
+    journal_tip: str
+
+    def validate(self):
+        if type(self.resource_id) is not str or not re.fullmatch(r"sha256:[0-9a-f]{64}", self.resource_id):
+            raise TrainingRunIndexError("The registered training resource identity is invalid.")
+        _sha(self.receipt_sha256, "registered training receipt")
+        _sha(self.journal_tip, "registered training journal")
+
+
+@dataclass(frozen=True)
 class TrainingRunRecord:
     run_id: str
     kind: str
@@ -170,6 +184,7 @@ class TrainingRunRecord:
     annotation: "TrainingRunAnnotation" = field(default_factory=lambda: TrainingRunAnnotation())
     _forward: tuple[tuple[str, bytes], ...] = field(default=(), repr=False)
     validation_report_sha256: str = ""
+    registered_result: RegisteredTrainingResult | None = None
 
     def validate(self, *, stored=False) -> None:
         if type(self.run_id) is not str or RUN_ID.fullmatch(self.run_id) is None:
@@ -184,6 +199,10 @@ class TrainingRunRecord:
         _sha(self.validation_report_sha256, "validation report", optional=True)
         if self.validation_report_sha256 and self.kind != "validation":
             raise TrainingRunIndexError("Only validation pointers can bind a measurement report.")
+        if self.registered_result is not None:
+            if self.kind != "execution" or type(self.registered_result) is not RegisteredTrainingResult:
+                raise TrainingRunIndexError("Only execution pointers can bind a registered result.")
+            self.registered_result.validate()
         if type(self.phase) is not str or self.phase not in PHASES:
             raise TrainingRunIndexError("The training run phase is unsupported.")
         if type(self.sequence) is not int or self.sequence < (1 if stored else 0):
@@ -199,7 +218,7 @@ class TrainingRunRecord:
         seen = set()
         for key, raw in self._forward:
             if (type(key) is not str or not key or len(key) > 100 or key in _RECORD_FIELDS
-                    or key in {_ANNOTATION_FIELD, _VALIDATION_REPORT_FIELD}
+                    or key in {_ANNOTATION_FIELD, _VALIDATION_REPORT_FIELD, _REGISTERED_RESULT_FIELD}
                     or key in seen or type(raw) is not bytes):
                 raise TrainingRunIndexError("A forward training run field is invalid.")
             _decode(raw)
@@ -212,16 +231,26 @@ class TrainingRunRecord:
             value[_ANNOTATION_FIELD] = self.annotation.payload()
         if self.validation_report_sha256:
             value[_VALIDATION_REPORT_FIELD] = self.validation_report_sha256
+        if self.registered_result is not None:
+            from dataclasses import asdict
+
+            value[_REGISTERED_RESULT_FIELD] = asdict(self.registered_result)
         return _with_unknown(value, self._forward)
 
     @classmethod
     def from_dict(cls, value):
         if type(value) is not dict or not _RECORD_FIELDS.issubset(value):
             raise TrainingRunIndexError("A training run pointer is incomplete.")
+        result = None
+        if _REGISTERED_RESULT_FIELD in value:
+            saved = value[_REGISTERED_RESULT_FIELD]
+            if type(saved) is not dict or set(saved) != {"resource_id", "receipt_sha256", "journal_tip"}:
+                raise TrainingRunIndexError("The saved training result is invalid.")
+            result = RegisteredTrainingResult(**saved)
         record = cls(**{name: value[name] for name in _RECORD_FIELDS},
             annotation=TrainingRunAnnotation.from_dict(value.get(_ANNOTATION_FIELD, {})),
-            _forward=_unknown(value, _RECORD_FIELDS | {_ANNOTATION_FIELD, _VALIDATION_REPORT_FIELD}),
-            validation_report_sha256=value.get(_VALIDATION_REPORT_FIELD, ""))
+            _forward=_unknown(value, _RECORD_FIELDS | {_ANNOTATION_FIELD, _VALIDATION_REPORT_FIELD, _REGISTERED_RESULT_FIELD}),
+            validation_report_sha256=value.get(_VALIDATION_REPORT_FIELD, ""), registered_result=result)
         record.validate(stored=True)
         return record
 
@@ -382,7 +411,7 @@ class TrainingRunIndex:
         return self._mutate(expected_revision, change)
 
     def update_phase(self, run_id: str, phase: str, expected_revision: str,
-                     *, latest_journal_tip=None, validation_report_sha256=None) -> str:
+                     *, latest_journal_tip=None, validation_report_sha256=None, registered_result=None) -> str:
         if type(run_id) is not str or RUN_ID.fullmatch(run_id) is None:
             raise TrainingRunIndexError("The training run identity is invalid.")
         if type(phase) is not str or phase not in PHASES:
@@ -391,6 +420,9 @@ class TrainingRunIndex:
             _sha(latest_journal_tip, "latest training journal", optional=True)
         if validation_report_sha256 is not None:
             _sha(validation_report_sha256, "validation report")
+        if registered_result is not None and (type(registered_result) is not RegisteredTrainingResult
+                or phase != "completed" or registered_result.journal_tip != latest_journal_tip):
+            raise TrainingRunIndexError("A registered result requires the completed execution journal.")
         def change(current):
             found = False
             records = []
@@ -399,10 +431,13 @@ class TrainingRunIndex:
                     found = True
                     if validation_report_sha256 and item.validation_report_sha256 not in {"", validation_report_sha256}:
                         raise TrainingRunIndexError("The saved validation report identity changed.")
+                    if registered_result is not None and item.registered_result not in (None, registered_result):
+                        raise TrainingRunIndexError("The saved registered result identity changed.")
                     item = replace(item, phase=phase,
                         latest_journal_tip=(item.latest_journal_tip
                             if latest_journal_tip is None else latest_journal_tip),
-                        validation_report_sha256=validation_report_sha256 or item.validation_report_sha256)
+                        validation_report_sha256=validation_report_sha256 or item.validation_report_sha256,
+                        registered_result=registered_result or item.registered_result)
                 records.append(item)
             if not found:
                 raise TrainingRunIndexError("The selected training run is not indexed.")

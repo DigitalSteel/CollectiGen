@@ -62,14 +62,15 @@ def register_review(index, plan, kind, path, sha256, *, registry_path='', regist
     index.update_phase(plan.run_id, 'starting', revision)
 
 
-def note_outcome(index, plan, phase, tip=''):
+def note_outcome(index, plan, phase, tip='', registered_result=None):
     """An index failure must not interrupt process ownership or hide outputs."""
     try:
         records, revision = index.snapshot()
         record = next((item for item in records if item.run_id == plan.run_id), None)
         if record is None or record.plan_fingerprint != plan.fingerprint:
             return False
-        index.update_phase(plan.run_id, phase, revision, latest_journal_tip=tip or None)
+        index.update_phase(plan.run_id, phase, revision, latest_journal_tip=tip or None,
+                           registered_result=registered_result)
         return True
     except (OSError, RuntimeError, ValueError):
         return False
