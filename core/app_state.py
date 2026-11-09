@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import json
 import os
+from pathlib import Path
 from threading import RLock, get_ident
 from typing import Any
 import time
@@ -295,6 +296,55 @@ def _refresh_knowledge_relationship_authority(knowledge,categories):
     knowledge._app_tag_alias_service=alias_service
     knowledge._app_tag_semantic_service=semantic_service
     return workspace
+
+
+def prepare_dataset_caption_review(data_root: Path):
+    """Prepare caption comparison for a caller-admitted read-only Dataset root."""
+    from functools import partial
+
+    from .automation_repository import automation_engine_for_caption_review
+    from .conflict_rules import ConflictRuleEngine
+    from .knowledge_editor_context import PreparedCharacterDatabase
+    from .knowledge_relationships import KnowledgeRelationshipRegistry
+    from .relationship_evaluator import RelationshipEvaluator, _with_compatible_legacy_specificity
+    from .relationship_workspace import RelationshipWorkspaceService
+    from .tag_alias_relationships import TagAliasRelationshipService
+    from .tag_semantic_relationships import TagSemanticRelationshipService
+    from .tag_template_projection import active_tag_template_projection_service
+    from .training_candidate_selection import (
+        TrainingCandidateSelectionService, capture_dataset_caption_authority,
+    )
+
+    current = capture_dataset_caption_authority(data_root)
+    defaults, user = data_root / "defaults", data_root / "user"
+    admission = RulePairAdmission(user)
+    admission.assert_clear()
+    tags = TagDatabase(admission.knowledge_path, rule_pair_admission=admission)
+    categories = CategoryRegistry(defaults / "categories.json", user / "categories.json")
+    revision = _bind_default_identity_authority(tags, defaults_root=defaults)
+    default_relationships = defaults / "relationships.json"
+    user_relationships = user / "relationships.json"
+    workspace = RelationshipWorkspaceService(default_relationships, user_relationships, tags=tags)
+    categories.configure_category_base_authority(workspace.effective)
+    tags.apply_category_ordering(categories)
+    _bind_default_identity_authority(tags, defaults_root=defaults, expected_revision=revision)
+    TagAliasRelationshipService(tags, default_path=default_relationships, user_path=user_relationships, workspace=workspace)
+    TagSemanticRelationshipService(tags, default_path=default_relationships, user_path=user_relationships, workspace=workspace)
+    relationships = RelationshipEvaluator(_with_compatible_legacy_specificity(
+        KnowledgeRelationshipRegistry(workspace.effective, tags=tags), tags,
+    ))
+    conflicts = ConflictRuleEngine.load(defaults / "conflicts.json", relationship_evaluator=relationships)
+    engine = automation_engine_for_caption_review(tags, defaults_path=defaults / "automation_rules.json", conflicts=conflicts)
+    templates = active_tag_template_projection_service(
+        tags, require_projection=True, authority_roots=(defaults, user),
+    )
+    service = TrainingCandidateSelectionService(tags, PreparedCharacterDatabase(user), categories)
+    if not current():
+        raise ValueError("Dataset caption authority changed while it was being loaded.")
+    return partial(
+        service.review_saved_captions, automation_engine=engine,
+        relationship_evaluator=relationships, template_service=templates, context_is_current=current,
+    )
 
 
 def _load_knowledge() -> TagDatabase:
