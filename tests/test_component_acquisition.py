@@ -712,3 +712,33 @@ def test_manager_stages_only_packages_that_pass_stock_admission(tmp_path, hold):
     assert updater.revalidate(prepared) == prepared.admission
     assert reviewed_stage_identity(prepared)["inventory_sha256"] == sha256(proof).hexdigest()
     assert not prepared.production_install_authorized
+
+
+def test_grown_cache_marker_is_read_with_a_bound(tmp_path, monkeypatch):
+    feed = FakeFeed()
+    feed.add()
+    owner = service(tmp_path, feed)
+    offer, = offers(owner)
+    original = owner._marker.read_bytes()
+    open_path = Path.open
+    count = len(feed.calls)
+
+    class Observed(BytesIO):
+        def read(self, size=-1):
+            assert size == len(original) + 1
+            return super().read(size)
+
+    def grow(path, mode="r", *args, **kwargs):
+        if path == owner._marker and mode == "rb":
+            grown = original + b"x" * 4096
+            with open_path(path, "wb") as marker:
+                marker.write(grown)
+            return Observed(grown)
+        return open_path(path, mode, *args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "open", grow)
+        with pytest.raises(ValueError, match="cache_owner_changed"):
+            owner.acquire(offer)
+    assert len(feed.calls) == count
+    assert owner._marker.read_bytes() == original + b"x" * 4096

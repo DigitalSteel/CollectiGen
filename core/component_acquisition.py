@@ -219,7 +219,8 @@ class ComponentAcquisition:
         guard(self.root)
         guard(self._marker)
         require(self._marker.stat().st_size == len(self._owner), "cache_owner_changed")
-        require(self._marker.read_bytes() == self._owner, "cache_owner_changed")
+        with self._marker.open("rb") as marker:
+            require(marker.read(len(self._owner) + 1) == self._owner, "cache_owner_changed")
         if cancel is not None and cancel():
             raise InterruptedError("Component acquisition cancelled safely.")
 
