@@ -2,6 +2,7 @@
 from pathlib import Path
 from core.tag_database_feed_binding import factory_for_tag_data
 from core.tag_database_feed_registration import published_tag_data_registration
+from core.training_source_io import read_stable_training_source
 from suite_core.discovery.component_staging import guard, require
 from suite_core.discovery.component_release_signature import MAX_METADATA_BYTES
 from suite_core.installation import _path
@@ -28,7 +29,7 @@ def standalone_tag_data_factory(*, settings_path, trust_bytes=None, trust_path=N
             guard(trust_path)
             require(trust_path.is_file() and trust_path.stat().st_size <= MAX_METADATA_BYTES,
                 'bounded_existing_public_trust_required')
-            public_trust = trust_path.read_bytes()
+            public_trust, _ = read_stable_training_source(trust_path, max_bytes=MAX_METADATA_BYTES)
         registration = published_tag_data_registration(public_trust)
         parent = settings.parent / 'TagDataAcquisition'
         guard(parent)

@@ -2986,8 +2986,8 @@
       "size_bytes": 29602
     },
     "suite_core/encyclopedia/tag_data_feed_entry.py": {
-      "sha256": "941c7f6a23cc6a74a1333ba5bc4a2b6ffc9592a33abeb9ab2b455808f33a9635",
-      "size_bytes": 2871
+      "sha256": "6059a6c09a7bacdf2335bb5d6c8b1ba862e3c9c02f969b51ea7f4dfa15a06e10",
+      "size_bytes": 2985
     },
     "suite_core/encyclopedia/version.py": {
       "sha256": "41f5fc3a8f6d8dc585d3896a2b76c51ba097ae1d3e3d1bac113324eb2f20ce48",
