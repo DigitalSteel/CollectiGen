@@ -290,13 +290,21 @@ class ComponentAcquisition:
                       discover_component_ids(listing, complete=True))
         for component in components:
             current = installed_versions.get(component.value)
-            selected = discover_releases(listing, component_id=component, channel=channel,
-                                         current_version=current, complete=True).candidate
+            try:
+                selected = discover_releases(listing, component_id=component, channel=channel,
+                                             current_version=current, complete=True).candidate
+                if selected is not None:
+                    assets = {asset.name: asset for asset in selected.assets}
+                    require(self.manifest_name in assets and self.signature_name in assets,
+                            "signed_asset_pair_required")
+            except (DiscoveryHold, StagingHold):
+                if component_id is not None:
+                    self._offers = {key: offer for key, offer in self._offers.items()
+                                    if offer.release.component_id != component_id}
+                raise
             if selected is None:
                 continue
             if self._expected_offer is not None: self._expected_offer.check_locator(selected)
-            assets = {asset.name: asset for asset in selected.assets}
-            require(self.manifest_name in assets and self.signature_name in assets, "signed_asset_pair_required")
             manifest_url, signature_url = assets[self.manifest_name].url, assets[self.signature_name].url
             message = self._fetch(manifest_url, should_cancel)
             signature = self._fetch(signature_url, should_cancel)
