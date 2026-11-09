@@ -292,6 +292,7 @@ class ComponentAcquisition:
                 release = verify_release_manifest(message, signature, json.loads(self.trust), expected_channel=channel)
                 ensure_supported_upgrade(current, release)
             require(verified.artifact.size_bytes <= self.maximum, "artifact_bound")
+            require(verified.artifact.size_bytes <= self.cache_maximum, "artifact_exceeds_cache_capacity")
             source = assets.get(verified.artifact.name)
             require(source is not None and source.declared_size == verified.artifact.size_bytes, "signed_asset_binding")
             offer = ComponentOffer(verified, "install" if current is None else "update",

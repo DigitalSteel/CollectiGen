@@ -570,3 +570,16 @@ def test_manager_stage_refuses_archive_replaced_during_final_offer_check(tmp_pat
     with pytest.raises(ValueError, match="SHA-256"):
         updater.prepare(offer)
     assert updater._prepared is None
+
+
+def test_signed_offer_larger_than_empty_cache_is_not_reviewable(tmp_path):
+    feed = FakeFeed()
+    feed.add()
+    acquisition = service(tmp_path, feed, max_cache_bytes=len(PAYLOAD) - 1)
+
+    with pytest.raises(ValueError, match="artifact_exceeds_cache_capacity"):
+        offers(acquisition)
+
+    assert not acquisition._offers
+    assert list(acquisition.root.iterdir()) == [acquisition._marker]
+    assert not any(url.endswith(".zip") for url, _, _ in feed.calls)
