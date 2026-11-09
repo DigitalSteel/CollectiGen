@@ -1405,7 +1405,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self._image_draft_picker_open = False
                 if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:
                     self.statusBar().clearMessage()
-            if path and not self.close_policy.pending:
+            if path and self.generation_state() is not None:
                 open_generation_workspace(self, paths=(Path(path),), remix=True, force_new=True)
 
         def open_video_plan(self, *, reopen=False):
