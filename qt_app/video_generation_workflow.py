@@ -25,6 +25,7 @@ def choose_video_generation_draft(parent, *, import_copy=False):
     if import_copy and (not scoped or getattr(host.state, "generation_runtime_allowed", True)):
         raise ValueError("Import a copy from Manager's offline video workspace.")
     title = "Import a copy of a video draft" if import_copy else "Open video draft"
+    retry_action = "Import Video Draft Copy" if import_copy else "Open Video Draft"
     path, _ = QFileDialog.getOpenFileName(
         parent, title, str(directory),
         "Video draft (*.json)",
@@ -41,7 +42,7 @@ def choose_video_generation_draft(parent, *, import_copy=False):
         QMessageBox.information(
             parent, "Video draft needs attention",
             "The selected video draft could not be opened. Existing work was not changed. "
-            f"Choose Open Video Draft again after checking the file.\n\n{exc}",
+            f"Choose {retry_action} again after checking the file.\n\n{exc}",
         )
         return None
     window = _setup_window(_host(parent))
