@@ -1,4 +1,4 @@
-"""Pure explicit saved-default identity context; never reads or writes files."""
+"""Explicit saved-default identity validation and read-only binding."""
 from collections import Counter
 from dataclasses import dataclass
 from hashlib import sha256
@@ -163,3 +163,47 @@ def resolve_tag_identity(stable_id, *, active_ids, removed_ids, redirects, conte
     if mapped:
         raise DefaultTagIdentityHold("Identity graph changed to a cycle")
     return None
+
+
+def bind_saved_default_identity(knowledge, *, defaults_root, relationships_path, expected_revision=None):
+    """Explicit host read of the exact admitted native Tags/tracking pair."""
+    from .knowledge_write_admission import _read, MAX_PARTICIPANT_BYTES
+    from .default_sync import load_effective_tag_defaults
+    from .relationship_store import RelationshipStore
+    binding=getattr(knowledge,"rule_pair_admission",None)
+    if binding is None:
+        return None
+    if not binding.owns(knowledge.path,"knowledge"):
+        raise DefaultTagIdentityHold("Default identity host must use its exact admitted Tags participant")
+    knowledge.invalidate_default_identity_context()
+    binding.assert_clear()
+    if not defaults_root.is_absolute() or ".." in defaults_root.parts:
+        raise DefaultTagIdentityHold("Supply the exact absolute default identity root")
+    tags_path=binding.knowledge_path
+    tracking_path=binding.root/"default_knowledge_state.json"
+    tags_raw=_read(tags_path,MAX_PARTICIPANT_BYTES)
+    tracking_raw=_read(tracking_path,MAX_PARTICIPANT_BYTES)
+    revision=pair_revision(tags_raw,tracking_raw,str(tags_path.absolute()),str(tracking_path.absolute()))
+    if expected_revision is not None and revision!=expected_revision:
+        knowledge.invalidate_default_identity_context()
+        raise DefaultTagIdentityHold("Native Tags/tracking pair changed during dependent index refresh")
+    state=_payload(tracking_raw)
+    tracked=state.get("records",{}).get("tags",{})
+    defaults=load_effective_tag_defaults(defaults_root)
+    required={row["id"] for row in defaults.tags}
+    required.update(defaults.merged_tag_ids)
+    required.update(defaults.merged_tag_ids.values())
+    required.update(target for target in knowledge.merged_tag_ids.values() if target in tracked)
+    for path in (defaults_root/"relationships.json", relationships_path):
+        for row in RelationshipStore(path).relationships.values():
+            required.update(endpoint.id for endpoint in row.endpoints
+                if endpoint.kind=="tag" and endpoint.id in tracked)
+    equivalent={}
+    for identity in required:
+        equivalent.setdefault(defaults.canonical_id(identity),set()).add(identity)
+    context=admit_default_tag_identity(tags_raw,tracking_raw,
+        tags_identity=str(tags_path.absolute()),tracking_identity=str(tracking_path.absolute()),
+        required_ids=required,generation=knowledge.default_identity_generation,
+        equivalent_ids=equivalent.values())
+    knowledge.bind_default_identity_context(context,pair_revision=revision)
+    return revision

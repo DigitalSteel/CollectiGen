@@ -90,6 +90,76 @@ def capture_dataset_caption_authority(data_root: Path) -> Callable[[], bool]:
     )
 
 
+def admit_dataset_caption_root(data_root: Path, registry):
+    """Admit only a selected Dataset root within a recognized non-private library."""
+    from .library_profiles import LibraryPrivacyPolicy, _is_within
+    from suite_core.installation import _path
+
+    if not data_root.is_absolute() or ".." in data_root.parts:
+        raise ValueError("Choose an absolute Dataset data folder.")
+    profile = registry.profile_for_path(data_root)
+    if profile is None or not LibraryPrivacyPolicy.permits_derived_network_content(profile):
+        raise ValueError("Caption review requires a registered library outside Local Only storage.")
+    if any(
+        item.root and _is_within(item.root, data_root)
+        and not LibraryPrivacyPolicy.permits_derived_network_content(item)
+        for item in registry.profiles
+    ):
+        raise ValueError("The selected folder contains a restricted library.")
+    return _path(data_root)
+
+
+def prepare_dataset_caption_review(data_root: Path):
+    """Prepare caption comparison for a caller-admitted read-only Dataset root."""
+    from functools import partial
+
+    from .automation_repository import automation_engine_for_caption_review
+    from .conflict_rules import ConflictRuleEngine
+    from .automation_rule_conversion import RulePairAdmission
+    from .category_registry import CategoryRegistry
+    from .default_tag_identity import bind_saved_default_identity
+    from .knowledge_editor_context import PreparedCharacterDatabase
+    from .knowledge_relationships import KnowledgeRelationshipRegistry
+    from .relationship_evaluator import RelationshipEvaluator, _with_compatible_legacy_specificity
+    from .relationship_workspace import RelationshipWorkspaceService
+    from .tag_alias_relationships import TagAliasRelationshipService
+    from .tag_semantic_relationships import TagSemanticRelationshipService
+    from .tag_template_projection import active_tag_template_projection_service
+
+    current = capture_dataset_caption_authority(data_root)
+    defaults, user = data_root / "defaults", data_root / "user"
+    admission = RulePairAdmission(user)
+    admission.assert_clear()
+    tags = TagDatabase(admission.knowledge_path, rule_pair_admission=admission)
+    categories = CategoryRegistry(defaults / "categories.json", user / "categories.json")
+    default_relationships = defaults / "relationships.json"
+    user_relationships = user / "relationships.json"
+    revision = bind_saved_default_identity(tags, defaults_root=defaults, relationships_path=user_relationships)
+    workspace = RelationshipWorkspaceService(default_relationships, user_relationships, tags=tags)
+    categories.configure_category_base_authority(workspace.effective)
+    tags.apply_category_ordering(categories)
+    bind_saved_default_identity(
+        tags, defaults_root=defaults, relationships_path=user_relationships, expected_revision=revision,
+    )
+    TagAliasRelationshipService(tags, default_path=default_relationships, user_path=user_relationships, workspace=workspace)
+    TagSemanticRelationshipService(tags, default_path=default_relationships, user_path=user_relationships, workspace=workspace)
+    relationships = RelationshipEvaluator(_with_compatible_legacy_specificity(
+        KnowledgeRelationshipRegistry(workspace.effective, tags=tags), tags,
+    ))
+    conflicts = ConflictRuleEngine.load(defaults / "conflicts.json", relationship_evaluator=relationships)
+    engine = automation_engine_for_caption_review(tags, defaults_path=defaults / "automation_rules.json", conflicts=conflicts)
+    templates = active_tag_template_projection_service(
+        tags, require_projection=True, authority_roots=(defaults, user),
+    )
+    service = TrainingCandidateSelectionService(tags, PreparedCharacterDatabase(user), categories)
+    if not current():
+        raise ValueError("Dataset caption authority changed while it was being loaded.")
+    return partial(
+        service.review_saved_captions, automation_engine=engine,
+        relationship_evaluator=relationships, template_service=templates, context_is_current=current,
+    )
+
+
 PERMISSION_FIELD_LABELS = (
     ("creator", "Creator"),
     ("source", "Source"),

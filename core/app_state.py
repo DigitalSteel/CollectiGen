@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import json
 import os
-from pathlib import Path
 from threading import RLock, get_ident
 from typing import Any
 import time
@@ -177,56 +176,13 @@ def _configure_category_base_authority(
     categories.configure_category_base_authority(workspace.effective)
 
 
-def _bind_default_identity_authority(knowledge, *, expected_revision=None, defaults_root=None):
-    """Explicit host read of the exact admitted native Tags/tracking pair."""
-    from .default_tag_identity import (
-        DefaultTagIdentityHold, _payload, admit_default_tag_identity, pair_revision,
+def _bind_default_identity_authority(knowledge, *, expected_revision=None):
+    from .default_tag_identity import bind_saved_default_identity
+
+    return bind_saved_default_identity(
+        knowledge, defaults_root=DEFAULTS_DIR, relationships_path=RELATIONSHIPS_PATH,
+        expected_revision=expected_revision,
     )
-    from .knowledge_write_admission import _read, MAX_PARTICIPANT_BYTES
-    from .default_sync import load_effective_tag_defaults
-    from .relationship_store import RelationshipStore
-    binding=getattr(knowledge,"rule_pair_admission",None)
-    if binding is None:
-        return None
-    if not binding.owns(knowledge.path,"knowledge"):
-        raise DefaultTagIdentityHold("Default identity host must use its exact admitted Tags participant")
-    knowledge.invalidate_default_identity_context()
-    binding.assert_clear()
-    if defaults_root is None:
-        defaults_root = DEFAULTS_DIR
-        relationships_path = RELATIONSHIPS_PATH
-    else:
-        if not defaults_root.is_absolute() or ".." in defaults_root.parts:
-            raise DefaultTagIdentityHold("Supply the exact absolute default identity root")
-        relationships_path = binding.root / "relationships.json"
-    tags_path=binding.knowledge_path
-    tracking_path=binding.root/"default_knowledge_state.json"
-    tags_raw=_read(tags_path,MAX_PARTICIPANT_BYTES)
-    tracking_raw=_read(tracking_path,MAX_PARTICIPANT_BYTES)
-    revision=pair_revision(tags_raw,tracking_raw,str(tags_path.absolute()),str(tracking_path.absolute()))
-    if expected_revision is not None and revision!=expected_revision:
-        knowledge.invalidate_default_identity_context()
-        raise DefaultTagIdentityHold("Native Tags/tracking pair changed during dependent index refresh")
-    state=_payload(tracking_raw)
-    tracked=state.get("records",{}).get("tags",{})
-    defaults=load_effective_tag_defaults(defaults_root)
-    required={row["id"] for row in defaults.tags}
-    required.update(defaults.merged_tag_ids)
-    required.update(defaults.merged_tag_ids.values())
-    required.update(target for target in knowledge.merged_tag_ids.values() if target in tracked)
-    for path in (defaults_root/"relationships.json", relationships_path):
-        for row in RelationshipStore(path).relationships.values():
-            required.update(endpoint.id for endpoint in row.endpoints
-                if endpoint.kind=="tag" and endpoint.id in tracked)
-    equivalent={}
-    for identity in required:
-        equivalent.setdefault(defaults.canonical_id(identity),set()).add(identity)
-    context=admit_default_tag_identity(tags_raw,tracking_raw,
-        tags_identity=str(tags_path.absolute()),tracking_identity=str(tracking_path.absolute()),
-        required_ids=required,generation=knowledge.default_identity_generation,
-        equivalent_ids=equivalent.values())
-    knowledge.bind_default_identity_context(context,pair_revision=revision)
-    return revision
 
 
 def _require_default_identity_authority(knowledge, revision):
@@ -296,74 +252,6 @@ def _refresh_knowledge_relationship_authority(knowledge,categories):
     knowledge._app_tag_alias_service=alias_service
     knowledge._app_tag_semantic_service=semantic_service
     return workspace
-
-
-def admit_dataset_caption_root(data_root: Path, registry):
-    """Admit only a selected Dataset root within a recognized non-private library."""
-    from .library_profiles import LibraryPrivacyPolicy, _is_within
-    from suite_core.installation import _path
-
-    if not data_root.is_absolute() or ".." in data_root.parts:
-        raise ValueError("Choose an absolute Dataset data folder.")
-    profile = registry.profile_for_path(data_root)
-    if profile is None or not LibraryPrivacyPolicy.permits_derived_network_content(profile):
-        raise ValueError("Caption review requires a registered library outside Local Only storage.")
-    if any(
-        item.root and _is_within(item.root, data_root)
-        and not LibraryPrivacyPolicy.permits_derived_network_content(item)
-        for item in registry.profiles
-    ):
-        raise ValueError("The selected folder contains a restricted library.")
-    return _path(data_root)
-
-
-def prepare_dataset_caption_review(data_root: Path):
-    """Prepare caption comparison for a caller-admitted read-only Dataset root."""
-    from functools import partial
-
-    from .automation_repository import automation_engine_for_caption_review
-    from .conflict_rules import ConflictRuleEngine
-    from .knowledge_editor_context import PreparedCharacterDatabase
-    from .knowledge_relationships import KnowledgeRelationshipRegistry
-    from .relationship_evaluator import RelationshipEvaluator, _with_compatible_legacy_specificity
-    from .relationship_workspace import RelationshipWorkspaceService
-    from .tag_alias_relationships import TagAliasRelationshipService
-    from .tag_semantic_relationships import TagSemanticRelationshipService
-    from .tag_template_projection import active_tag_template_projection_service
-    from .training_candidate_selection import (
-        TrainingCandidateSelectionService, capture_dataset_caption_authority,
-    )
-
-    current = capture_dataset_caption_authority(data_root)
-    defaults, user = data_root / "defaults", data_root / "user"
-    admission = RulePairAdmission(user)
-    admission.assert_clear()
-    tags = TagDatabase(admission.knowledge_path, rule_pair_admission=admission)
-    categories = CategoryRegistry(defaults / "categories.json", user / "categories.json")
-    revision = _bind_default_identity_authority(tags, defaults_root=defaults)
-    default_relationships = defaults / "relationships.json"
-    user_relationships = user / "relationships.json"
-    workspace = RelationshipWorkspaceService(default_relationships, user_relationships, tags=tags)
-    categories.configure_category_base_authority(workspace.effective)
-    tags.apply_category_ordering(categories)
-    _bind_default_identity_authority(tags, defaults_root=defaults, expected_revision=revision)
-    TagAliasRelationshipService(tags, default_path=default_relationships, user_path=user_relationships, workspace=workspace)
-    TagSemanticRelationshipService(tags, default_path=default_relationships, user_path=user_relationships, workspace=workspace)
-    relationships = RelationshipEvaluator(_with_compatible_legacy_specificity(
-        KnowledgeRelationshipRegistry(workspace.effective, tags=tags), tags,
-    ))
-    conflicts = ConflictRuleEngine.load(defaults / "conflicts.json", relationship_evaluator=relationships)
-    engine = automation_engine_for_caption_review(tags, defaults_path=defaults / "automation_rules.json", conflicts=conflicts)
-    templates = active_tag_template_projection_service(
-        tags, require_projection=True, authority_roots=(defaults, user),
-    )
-    service = TrainingCandidateSelectionService(tags, PreparedCharacterDatabase(user), categories)
-    if not current():
-        raise ValueError("Dataset caption authority changed while it was being loaded.")
-    return partial(
-        service.review_saved_captions, automation_engine=engine,
-        relationship_evaluator=relationships, template_service=templates, context_is_current=current,
-    )
 
 
 def _load_knowledge() -> TagDatabase:

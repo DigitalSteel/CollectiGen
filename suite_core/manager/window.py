@@ -1649,7 +1649,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
                 caption_status = "unavailable"
                 if selected_root is not None:
-                    from core.app_state import admit_dataset_caption_root, prepare_dataset_caption_review
+                    from core.training_candidate_selection import admit_dataset_caption_root, prepare_dataset_caption_review
 
                     root = admit_dataset_caption_root(selected_root, registry)
                     review = prepare_dataset_caption_review(root)
