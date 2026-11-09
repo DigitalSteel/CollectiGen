@@ -235,7 +235,6 @@ class ManagerUpdateService:
         """
         def cancelled():
             if should_cancel and should_cancel():
-                self._offer = self._prepared = None
                 raise InterruptedError('Manager version check cancelled safely.')
 
         # Match ordinary rediscovery's invalidation even if observation is
@@ -287,6 +286,8 @@ class ManagerUpdateService:
         before = observe()
         cancelled()
         offer = self.discover(should_cancel=should_cancel)
+        # Publish the offer only once the enclosing check can return its result.
+        self._offer = None
         cancelled()
         after = observe(before)
         cancelled()
@@ -301,7 +302,9 @@ class ManagerUpdateService:
             authoritative=offer is not None, comparator_id='semver' if offer else None,
             matching_artifact_available=True if offer else None,
             evidence_ref=offer.trust_sha256 if offer else None)
-        return ManagerVersionCheck(offer, derive_version_status(binding, after, running, comparison, now=checked))
+        result = ManagerVersionCheck(offer, derive_version_status(binding, after, running, comparison, now=checked))
+        self._offer = offer
+        return result
 
     def _admit(self, artifact, offer, proof, *, trust_pin, should_cancel=None):
         return admit_detached(artifact, inventory_profile=PROFILE,
