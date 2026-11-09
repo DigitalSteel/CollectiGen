@@ -241,13 +241,21 @@ class KreaTrainingReviewDialog(QDialog):
         base = ("Exact registered base bytes verified" if report.base_status == "identity_verified"
                 else "Exact registered base unavailable")
         self.status.setText(f"{base}. Training readiness is unverified.")
+        captions = []
+        for item in report.images[:100]:
+            captions.extend((
+                f"{item.stable_id} ({item.role}, {item.effective_exposures} exposures)",
+                item.caption[:4096],
+            ))
+            if len(item.caption) > 4096:
+                captions.append("Caption preview shortened. See the verified caption file for the full text.")
+            captions.append("")
         sections = (
             f"{identity}\nRegistered base: {report.base_resource_id}\n\n"
             + "\n\n".join(f"{item.summary}\n{item.reason}\n{item.next_action}" for item in report.requirements),
             "\n\n".join(f"{item.field} [{item.disposition}]\nRequested: {item.requested}\n{item.reason}"
                        for item in report.settings),
-            "\n\n".join(f"{item.stable_id} ({item.role}, {item.effective_exposures} exposures)\n{item.caption}"
-                       for item in report.images[:100]),
+            "\n".join(captions),
         )
         for widget, text in zip(self.sections, sections):
             widget.setPlainText(text)
