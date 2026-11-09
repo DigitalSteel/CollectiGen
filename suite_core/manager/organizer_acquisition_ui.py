@@ -160,7 +160,10 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         box.setDetailedText(f'Installation folder: {reviewed.destination}\nPackage SHA256: {reviewed.offer.release.artifact.sha256}')
         box.setStandardButtons(QMessageBox.Yes|QMessageBox.No);box.setDefaultButton(QMessageBox.No)
         box.button(QMessageBox.Yes).setText(verb);box.button(QMessageBox.No).setText('Cancel')
-        return box.exec()==QMessageBox.Yes
+        try:
+            return box.exec() == QMessageBox.Yes
+        finally:
+            box.deleteLater()
 
     def open_organizer(self):
         if self.close_held or self.closing or self.observation_stale or not self.service.launch_available:return
@@ -182,7 +185,11 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         box.setInformativeText('Unsaved Organizer changes may be lost. This will not count as a normal Close or finish app setup. Manager will wait for verified cleanup.')
         box.setStandardButtons(QMessageBox.Yes|QMessageBox.No);box.setDefaultButton(QMessageBox.No)
         box.button(QMessageBox.Yes).setText('Stop Organizer');box.button(QMessageBox.No).setText('Keep running')
-        if box.exec()==QMessageBox.Yes:
+        try:
+            confirmed = box.exec() == QMessageBox.Yes
+        finally:
+            box.deleteLater()
+        if confirmed:
             try:owner.stop_failed_start();self.poll()
             except Exception as error:
                 self.status.setText('Organizer cleanup is still held. Keep Manager open and review Details.')
