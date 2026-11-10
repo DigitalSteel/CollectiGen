@@ -298,6 +298,10 @@ class PublicLaunch:
         if (type(host) is not ManagerUpdateHostBinding or host.apply_review != self.review_update_for_close
                 or not route._live_peer() or request['body'] != reviewed_stage_identity(prepared)):
             raise ValueError('original_root_live_signed_apply_review_required')
+        compiled = getattr(self, 'compiled_update_profile', None)
+        if (compiled is not None and self.current_successor_selection is None
+                and compiled.initial_prior is None):
+            return dict(status='held',result=dict(reason='compiled_prior_release_required'))
         host.service.revalidate(prepared)
         # Host handler already independently rediscovered/re-admitted these bytes.
         # Retain exact identity before sending ACK; no new transaction writes here.

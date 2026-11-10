@@ -3234,8 +3234,8 @@
       "size_bytes": 62612
     },
     "suite_core/manager/launcher_main.py": {
-      "sha256": "33adf7ee200a23dd52062074697fc2a5a62c5ef611572c38308dada16d9b13e5",
-      "size_bytes": 47012
+      "sha256": "24f065bd2edbe71762e000c9c0725fc0d09598f854abe39cb5e6ddbd104b8065",
+      "size_bytes": 47306
     },
     "suite_core/manager/lifecycle_controller.py": {
       "sha256": "94d85571116b3f8a6bf8c529945a1b4311880e80028c6b0869cb46e3c5075924",
