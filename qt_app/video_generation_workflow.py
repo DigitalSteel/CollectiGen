@@ -128,9 +128,11 @@ def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_op
     scoped = getattr(state, "generation_data_root", None) is not None
     data_root = _generation_data_root(host) if scoped else USER_DATA_DIR
     registry_path = data_root / MODEL_RESOURCES_PATH.name if scoped else MODEL_RESOURCES_PATH
+    session_state = getattr(state, "video_draft_session_state", None)
     dialog = VideoGenerationDialog(state.jobs, ModelResourceRegistry(registry_path),
         state.settings, data_root / "video_generation", parent=host,
         scoped_drafts=scoped, runtime_allowed=getattr(state, "generation_runtime_allowed", True),
+        draft_load_allowed=(lambda: session_state() is state) if session_state else None,
         **runtime_options)
     if initial_request is not None:
         if source_path is not None:

@@ -112,11 +112,12 @@ class VideoGenerationDialog(QDialog):
     def __init__(self, jobs, registry, settings, storage_root, parent=None, *,
                  adapter_factory=None, verify_output=None, pinned_wan_resource_id="",
                  runtime_binding=None, decoder_lifetime=None, scoped_drafts=False, runtime_allowed=True,
-                 encoder_binding=None):
+                 encoder_binding=None, draft_load_allowed=None):
         super().__init__(parent)
         self.jobs, self.registry, self.settings = jobs, registry, settings
         self.storage_root = Path(storage_root).absolute()
         self.scoped_drafts = scoped_drafts
+        self._draft_load_allowed = draft_load_allowed
         self.runtime_allowed = runtime_allowed
         self.adapter_factory = adapter_factory
         self.pinned_wan_resource_id = pinned_wan_resource_id
@@ -2115,16 +2116,28 @@ class VideoGenerationDialog(QDialog):
             self.offline_draft_work_settled.emit()
 
     def _choose_draft_to_load(self):
+        if not self._can_load_draft():
+            return
         path = self._choose_draft_file(QFileDialog.getOpenFileName, "Load video draft",
             str(self.storage_root), "Video draft (*.json)")
-        if not path:
+        if not path or not self._can_load_draft():
             return
         try:
             target = scoped_video_draft_path(self.storage_root, path) if self.scoped_drafts else Path(path).absolute()
         except (OSError, RuntimeError, ValueError) as exc:
             self._set_status(str(exc))
             return
-        self._run("Load video draft", lambda: load_video_draft(target), self._restore_draft)
+        self._run("Load video draft", lambda: load_video_draft(target), self._apply_loaded_draft)
+
+    def _can_load_draft(self):
+        if self._draft_load_allowed is None or self._draft_load_allowed():
+            return True
+        self._set_status("Video draft was not loaded because the Manager session ended.")
+        return False
+
+    def _apply_loaded_draft(self, request):
+        if self._can_load_draft():
+            self._restore_draft(request)
 
     def _restore_draft(self, request):
         if self._runtime_receipt is not None or self._job_id or self._runtime_storage_locator is not None:
