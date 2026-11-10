@@ -1631,6 +1631,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             status.setText("Check the saved images or choose their Dataset data folder to compare captions."
                            if button.isEnabled() else "Source checks require a configured Manager profile.")
             task = None
+            closed = False
 
             def check(job, selected_root):
                 try:
@@ -1678,6 +1679,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             def finish(message):
                 nonlocal task
                 task = None
+                if closed:
+                    return
                 status.setText(message)
                 enabled = self.generation_state() is state
                 button.setEnabled(enabled)
@@ -1685,7 +1688,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
             def start(selected_root=None):
                 nonlocal task
-                if task is not None or self.generation_state() is not state:
+                if closed or task is not None or self.generation_state() is not state:
                     return
                 button.setEnabled(False)
                 caption_button.setEnabled(False)
@@ -1720,7 +1723,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 except (RuntimeError, ValueError):
                     finish("Source check could not start. Try again.")
 
-            def cancel():
+            def cancel(*_):
+                nonlocal closed
+                if closed:
+                    return
+                closed = True
                 if task is not None:
                     task.cancel()
 
@@ -1733,6 +1740,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
             button.clicked.connect(lambda: start())
             caption_button.clicked.connect(choose_caption_root)
+            dialog.finished.connect(cancel)
             return cancel
 
         def open_training_history(self, *, preparations=False):
