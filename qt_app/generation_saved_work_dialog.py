@@ -119,7 +119,8 @@ class SavedGenerationWorkDialog(QDialog):
 
     def __init__(self, jobs, storage_root, kind, parent=None, *, settings=None,
                  settings_path=None, registry=None, protected_model_roots=(),
-                 selection_only=False, allow_draft_transfer=False, allow_setup_transfer=False):
+                 selection_only=False, allow_draft_transfer=False, allow_setup_transfer=False,
+                 file_transfer_allowed=None):
         super().__init__(parent)
         if kind not in {"groups", "recipes", "drafts", "prompt_presets"}:
             raise ValueError("Choose saved groups, recipes, drafts or prompt presets.")
@@ -133,6 +134,7 @@ class SavedGenerationWorkDialog(QDialog):
         self.kind = kind
         self.selection_only = bool(selection_only)
         self._file_picker_open = False
+        self._file_transfer_allowed = file_transfer_allowed
         self._allow_setup_transfer = kind == "recipes" and allow_setup_transfer
         self._allow_draft_transfer = kind == "drafts" and allow_draft_transfer
         self.selected_path = None
@@ -567,14 +569,22 @@ class SavedGenerationWorkDialog(QDialog):
             child.setWindowModality(Qt.WindowModal); child.show()
         self._run("Read retained preset recovery", lambda cancelled: collection.pending_operations(item_id), show)
 
+    def _can_transfer_file(self):
+        if self._closing:
+            return False
+        if self._file_transfer_allowed is not None and not self._file_transfer_allowed():
+            self.status.setText("The Manager session ended. Reopen Saved Generation Setups to transfer a file.")
+            return False
+        return True
+
     def import_file(self):
-        if self._task is not None: return
+        if self._task is not None or not self._can_transfer_file(): return
         self._file_picker_open = self._allow_setup_transfer
         try:
             path, _ = QFileDialog.getOpenFileName(self, "Import One Saved Item", "", "Saved JSON (*.json)")
         finally:
             self._file_picker_open = False
-        if not path: return
+        if not path or not self._can_transfer_file(): return
         self._run("Import selected saved item",
             lambda cancelled: import_selected_saved_work(self.storage_root, self.kind, path, cancelled=cancelled),
             self._imported)
@@ -627,7 +637,8 @@ class SavedGenerationWorkDialog(QDialog):
 
     def export_selected(self):
         item = self._selected_item()
-        if self._task is not None or not item or not item.get("exportable", item["available"]): return
+        if (self._task is not None or not item or not item.get("exportable", item["available"])
+                or not self._can_transfer_file()): return
         if self.kind == "recipes":
             self._run("Read selected setup for export",
                 lambda _cancelled: review_setup_export(
@@ -640,7 +651,7 @@ class SavedGenerationWorkDialog(QDialog):
                 "Saved JSON (*.json)", options=QFileDialog.DontConfirmOverwrite)
         finally:
             self._file_picker_open = False
-        if not path: return
+        if not path or not self._can_transfer_file(): return
         self._run("Export selected saved item",
             lambda cancelled: export_selected_saved_work(self.storage_root, self.kind,
                 item["path"], path, selected_digest=item.get("content_digest"), cancelled=cancelled),
@@ -654,6 +665,8 @@ class SavedGenerationWorkDialog(QDialog):
         if dialog.exec() != QDialog.Accepted:
             self.status.setText("Export cancelled. The saved setup is unchanged.")
             return
+        if not self._can_transfer_file():
+            return
         format = dialog.format.currentData()
         include_prompts = dialog.include_prompts.isChecked()
         self._file_picker_open = self._allow_setup_transfer
@@ -665,6 +678,8 @@ class SavedGenerationWorkDialog(QDialog):
             self._file_picker_open = False
         if not path:
             self.status.setText("Export cancelled. No export file was created.")
+            return
+        if not self._can_transfer_file():
             return
         self._run("Export reviewed setup",
             lambda cancelled: export_reviewed_setup(self.storage_root, item["path"], path, review,
