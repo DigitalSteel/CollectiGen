@@ -549,6 +549,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             applications_layout.addWidget(self.repository_inspection_button, 0, Qt.AlignLeft)
             self._krea_review_dialog = None
             self._training_package_picker_open = False
+            self._training_package_recovery_task = None
             self._close_after_krea_review = False
             self.krea_training_review_button = compact_action(QPushButton("Review Training Package…"))
             self.krea_training_review_button.setVisible(
@@ -604,6 +605,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             training_layout.setContentsMargins(0, 0, 0, 0)
             training_layout.addWidget(QLabel("Training review · Check a package before manual handoff"))
             training_layout.addWidget(self.krea_training_review_button, 0, Qt.AlignLeft)
+            self.training_package_recovery_button = compact_action(QPushButton("Review Interrupted Training Package…"))
+            self.training_package_recovery_button.clicked.connect(self.review_interrupted_training_package)
+            training_layout.addWidget(self.training_package_recovery_button, 0, Qt.AlignLeft)
             self.training_comparison_button = compact_action(QPushButton("Compare Training Samples…"))
             self.training_comparison_button.setToolTip("Plan comparisons and review saved samples. Generator access is unavailable.")
             self.training_comparison_button.setVisible(not view.synthetic and normal_entry_session is not None)
@@ -2148,10 +2152,78 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 batch_review_only=True,
             )
 
+        def review_interrupted_training_package(self):
+            state = self.generation_state()
+            if (state is None or self._training_package_picker_open
+                    or self._training_package_recovery_task is not None or self._krea_review_dialog is not None):
+                return
+            from PySide6.QtWidgets import QFileDialog, QMessageBox
+            from threading import Event
+            from core.training_package import TrainingPackageService
+            from qt_app.workers import CoordinatedCallTask
+
+            self._training_package_picker_open = True
+            try:
+                path, _ = QFileDialog.getOpenFileName(self, "Select a Training package recovery receipt", "",
+                                                       "JSON receipts (*.json)")
+            finally:
+                self._training_package_picker_open = False
+                if self.statusBar().currentMessage() == self._TRAINING_PICKER_CLOSE_NOTICE:
+                    self.statusBar().clearMessage()
+            if not path or self.generation_state() is not state:
+                return
+
+            cancelled = self._training_package_recovery_cancel = Event()
+
+            def preview(job):
+                return TrainingPackageService().preview_recovery(path, should_cancel=lambda: (
+                    cancelled.is_set() or normal_entry_session.state != "ready" or not job.checkpoint()))
+
+            task = CoordinatedCallTask(state.jobs, "Review interrupted Training package", preview, resource="io")
+            self._training_package_recovery_task = task
+            self.training_package_recovery_button.setEnabled(False)
+            self.statusBar().showMessage("Checking the selected Training package receipt…")
+
+            def settle(result=None):
+                if self._training_package_recovery_task is not task:
+                    return
+                self._training_package_recovery_task = None
+                active = self.generation_state() is state
+                self.training_package_recovery_button.setEnabled(active)
+                if not active:
+                    return
+                if result is None or cancelled.is_set():
+                    self.statusBar().showMessage("Receipt review stopped. Choose Review Interrupted Training Package to try again.")
+                    return
+                self.statusBar().clearMessage()
+                details = "\n".join(result.issues)
+                if result.recovery_phase:
+                    details = f"Destination: {result.destination}\n\n{details}"
+                    next_step = ("Use Review a Training Package to check the published folder. "
+                                 "Use the original package workspace to finalize its receipt."
+                                 if result.recovery_phase == "promoted" else
+                                 "Return to the original package workspace to review recovery.")
+                    details += f"\n\n{next_step}"
+                box = QMessageBox(self)
+                box.setWindowTitle("Interrupted Training Package")
+                box.setTextFormat(Qt.PlainText)
+                box.setText(details + "\n\nManager did not change any package files.")
+                box.exec()
+                box.deleteLater()
+
+            task.signals.complete.connect(settle)
+            task.signals.failed.connect(lambda _error: settle())
+            task.signals.cancelled.connect(settle)
+            try:
+                task.start()
+            except (RuntimeError, ValueError):
+                settle()
+
         def open_krea_training_review(self):
             registry_path = krea_registry_path
             if (self.view.synthetic or getattr(normal_entry_session, "state", None) != "ready"
                     or self.close_policy.pending or self._training_package_picker_open
+                    or self._training_package_recovery_task is not None
                     or self._krea_review_dialog is not None):
                 return
             from PySide6.QtWidgets import QFileDialog
@@ -2801,6 +2873,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 return
             if self._training_package_picker_open:
                 self.statusBar().showMessage(self._TRAINING_PICKER_CLOSE_NOTICE)
+                event.ignore()
+                return
+            if self._training_package_recovery_task is not None:
+                self._training_package_recovery_cancel.set()
+                self.statusBar().showMessage("Stopping the Training package receipt check. Close Manager again after it finishes.")
                 event.ignore()
                 return
             if self._krea_review_dialog is not None:
