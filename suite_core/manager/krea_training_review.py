@@ -553,6 +553,9 @@ class KreaTrainingReviewDialog(QDialog):
             return
         if self._checking_dataset:
             self._checking_dataset = False
+            if self._package_review_cancelled():
+                self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+                return
             self.adapter_button.setEnabled(True)
             self.folder_button.setEnabled(True)
             self._show_dataset_receipt()
@@ -976,6 +979,9 @@ class KreaTrainingReviewDialog(QDialog):
                 or self._adapter_preview is not None or self._cancel.is_set()
                 or self._verification is None):
             return
+        if self._package_review_cancelled():
+            self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+            return
         overview = self.sections[0]
         if self._dataset_overview is None:
             self._dataset_overview = overview.toPlainText()
@@ -983,7 +989,7 @@ class KreaTrainingReviewDialog(QDialog):
             overview.setPlainText(self._dataset_overview)
         try:
             self._future = self._executor.submit(
-                partial(self._dataset_verifier, self._verification, should_cancel=self._cancel.is_set),
+                partial(self._dataset_verifier, self._verification, should_cancel=self._package_review_cancelled),
             )
         except (RuntimeError, ValueError):
             self.status.setText("Dataset verification could not start. Review the runtime before retrying.")
