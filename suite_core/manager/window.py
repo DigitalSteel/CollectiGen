@@ -2341,6 +2341,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from core.training_run_index import TrainingRunIndex
             from core.training_source_io import _assert_unredirected
             from qt_app.training_workflow_controller import TrainingWorkflowController
+            from .krea_training_review import resolve_manager_saved_sdxl_setup
 
             root = state.generation_data_root / "training"
             runs = root / "runs"
@@ -2353,10 +2354,20 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     from PySide6.QtWidgets import QMessageBox
                     QMessageBox.warning(self, "Training folder unavailable", str(exc))
                     return False
+                def session_allowed():
+                    return normal_entry_session.state == "ready" and not self.close_policy.pending
+
+                def load_saved_setup(*, should_cancel, progress):
+                    return resolve_manager_saved_sdxl_setup(
+                        training_draft_settings_path, registry.path,
+                        should_cancel=lambda: should_cancel() or not session_allowed(), progress=progress,
+                    )
+
                 controller = TrainingWorkflowController(
                     state.jobs, self, run_index=TrainingRunIndex(root / "training-runs.json"),
                     preparation_root=root / "preparation", run_output_scope=runs,
-                    session_allowed=lambda: normal_entry_session.state == "ready" and not self.close_policy.pending,
+                    saved_setup=load_saved_setup if training_draft_settings_path is not None else None,
+                    session_allowed=session_allowed,
                 )
                 controller.packageReviewRequested.connect(
                     lambda selected: self.open_krea_training_review(destination=selected.destination,

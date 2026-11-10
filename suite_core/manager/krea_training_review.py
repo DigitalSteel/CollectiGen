@@ -25,6 +25,37 @@ class _StaleAnimaSetup(ValueError):
     pass
 
 
+def resolve_manager_saved_sdxl_setup(settings_path, registry_path, *, should_cancel, progress=None):
+    from core.model_selection import protected_model_roots
+    from core.model_resource_registry import ModelResourceRegistry
+    from core.settings import AppSettings
+    from core.training_setup_resources import SavedTrainingSetupResolver
+    from core.training_setup_selection import _require_disjoint_protected_paths
+    from core.training_source_io import read_stable_training_source
+    from qt_app.model_companion_workflow import resource_boundaries
+
+    path = Path(settings_path)
+    if should_cancel() or Path(registry_path) != path.parent / "model_resources.json":
+        raise InterruptedError("The Manager review session ended.")
+    raw, _ = read_stable_training_source(path, max_bytes=16 * 1024 * 1024)
+    settings = AppSettings._from_bytes(raw)
+    registry = ModelResourceRegistry(registry_path)
+    _require_disjoint_protected_paths((registry.path,), protected_model_roots(settings))
+    models, model_revision = registry.snapshot()
+    protected, _ = resource_boundaries(models, settings)
+    resolver = SavedTrainingSetupResolver(path.parent / "training-setup.json")
+    _require_disjoint_protected_paths((resolver.selection.path, resolver.profile_path), protected)
+    _, revision = resolver.selection.snapshot()
+    result = resolver(should_cancel=should_cancel, progress=progress, protected_roots=protected)
+    if should_cancel():
+        raise InterruptedError("Saved Trainer Setup loading was cancelled.")
+    current, _ = read_stable_training_source(path, max_bytes=16 * 1024 * 1024)
+    if (current != raw or registry.snapshot()[1] != model_revision
+            or resolver.selection.snapshot()[1] != revision):
+        raise ValueError("Trainer Setup or profile settings changed. Load Saved Trainer again.")
+    return result
+
+
 class KreaTrainingReviewDialog(QDialog):
     def __init__(self, package_path, registry_path, parent, *, dataset_verifier=None, preview_jobs=None,
                  anima_settings_path=None, anima_review_allowed=None, anima_history_root=None,
@@ -919,33 +950,8 @@ class KreaTrainingReviewDialog(QDialog):
                 self.reject()
 
     def _resolve_saved_sdxl_setup(self, should_cancel):
-        from core.model_selection import protected_model_roots
-        from core.model_resource_registry import ModelResourceRegistry
-        from core.settings import AppSettings
-        from core.training_setup_resources import SavedTrainingSetupResolver
-        from core.training_setup_selection import _require_disjoint_protected_paths
-        from core.training_source_io import read_stable_training_source
-        from qt_app.model_companion_workflow import resource_boundaries
-
-        path = Path(self._anima_settings_path)
-        if should_cancel() or Path(self._registry_path) != path.parent / "model_resources.json":
-            raise InterruptedError("The Manager review session ended.")
-        raw, _ = read_stable_training_source(path, max_bytes=16 * 1024 * 1024)
-        settings = AppSettings._from_bytes(raw)
-        registry = ModelResourceRegistry(self._registry_path)
-        _require_disjoint_protected_paths((registry.path,), protected_model_roots(settings))
-        models, model_revision = registry.snapshot()
-        protected, _ = resource_boundaries(models, settings)
-        resolver = SavedTrainingSetupResolver(path.parent / "training-setup.json")
-        _require_disjoint_protected_paths((resolver.selection.path, resolver.profile_path), protected)
-        _, revision = resolver.selection.snapshot()
-        result = resolver(should_cancel=should_cancel, protected_roots=protected)
-        if should_cancel():
-            raise InterruptedError("Saved Trainer Setup loading was cancelled.")
-        current, _ = read_stable_training_source(path, max_bytes=16 * 1024 * 1024)
-        if (current != raw or registry.snapshot()[1] != model_revision
-                or resolver.selection.snapshot()[1] != revision):
-            raise ValueError("Trainer Setup or profile settings changed. Load Saved Trainer again.")
+        result = resolve_manager_saved_sdxl_setup(
+            self._anima_settings_path, self._registry_path, should_cancel=should_cancel)
         return tuple(result[key] for key in ("source_root", "environment_root", "python_base_root"))
 
     def _prepare_dataset(self):

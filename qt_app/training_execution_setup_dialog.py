@@ -336,6 +336,11 @@ class TrainingExecutionSetupDialog(FeedbackEnabledDialog):
         return validated
 
     def _finish_saved_setup(self, delivery, outer_error=''):
+        if self._session_allowed is not None and not self._session_allowed():
+            message = 'The Training session ended. Current choices were kept.'
+            self.saved_setup_status.setText(message)
+            self._phase = message
+            return
         if not isinstance(delivery, _SavedSetupDelivery):
             message = str(outer_error or 'The saved training setup could not be loaded.')[:2000]
             self.saved_setup_status.setText(message)
