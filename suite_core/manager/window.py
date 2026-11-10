@@ -1747,12 +1747,30 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             history = (ScopedPreparationHistory(state.generation_data_root / "TrainingReview") if preparations
                        else ScopedTrainingHistory(state.generation_data_root / "training",
                            model_registry_path=state.generation_data_root / MODEL_RESOURCES_PATH.name))
-            dialog = TrainingHistoryDialog(history, state.jobs, self, read_only=True)
+            task = None
+            closing_review = False
+
+            class ManagerTrainingHistoryDialog(TrainingHistoryDialog):
+                def done(self, result):
+                    nonlocal closing_review
+                    if task is not None:
+                        if result == QDialog.Rejected and not closing_review:
+                            closing_review = True
+                            self.set_retained_index_status("Closing after the current receipt check finishes…")
+                            if task.job_id:
+                                try:
+                                    state.jobs.cancel(task.job_id)
+                                except Exception:
+                                    self.set_retained_index_status(
+                                        "Stop could not be requested. Closing after the receipt check finishes.")
+                        return
+                    super().done(result)
+
+            dialog = ManagerTrainingHistoryDialog(history, state.jobs, self, read_only=True)
             if preparations:
                 dialog.setWindowTitle("Saved SDXL Preparations")
             dialog.open_button.setText("Review Selected Preparation")
             self._training_history_dialog = dialog
-            task = None
             reviewed = None
             handoff = None
             plan_result = QPushButton("Plan an Image With This Result…", dialog)
@@ -1796,6 +1814,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 def finish(message):
                     nonlocal task
                     task = None
+                    if closing_review:
+                        dialog.reject()
+                        return
                     if self._training_history_dialog is dialog:
                         if self.generation_state() is not state:
                             dialog.set_retained_index_status(
@@ -1809,6 +1830,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
                 def complete(result):
                     nonlocal reviewed
+                    if closing_review:
+                        finish("")
+                        return
                     if preparations:
                         finish("Saved SDXL preparation receipt verified. Training was not started. Live inputs were not rechecked.")
                     elif anima:
