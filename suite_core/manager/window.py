@@ -1652,7 +1652,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     from core.training_candidate_selection import admit_dataset_caption_root, prepare_dataset_caption_review
 
                     root = admit_dataset_caption_root(selected_root, registry)
-                    review = prepare_dataset_caption_review(root, cancel=lambda: job.cancel_requested)
+                    try:
+                        review = prepare_dataset_caption_review(root, cancel=lambda: job.cancel_requested)
+                    except FileNotFoundError as exc:
+                        raise ValueError(
+                            "The selected Dataset folder is missing files needed to check captions. "
+                            "Choose the original Dataset data folder or rebuild the draft in Organizer."
+                        ) from exc
                     caption_status = review(
                         draft.plan_manifest, read_sources, cancel=lambda: job.cancel_requested,
                     )
