@@ -196,7 +196,7 @@ class TrainingWorkflowController(QObject):
         if previous is not None: service = _ResumeService(service, previous, contract)
         dialog = TrainingExecutionSetupDialog(package, registry, recipe, self.jobs,
             service=service, saved_setup=self.saved_setup if previous is None else None,
-            parent=self.parent())
+            session_allowed=self._session_allowed, parent=self.parent())
         if request is not None:
             for key, value in request.items():
                 if key == 'checkpoint_interval': dialog.checkpoint_interval.setValue(value)
@@ -651,7 +651,8 @@ class TrainingWorkflowController(QObject):
             return None
         dialog = TrainingRunDialog(prepared.plan, prepared.contract, self.jobs, registry,
             expected_registry=prepared.contract['resources']['registry_revision'],
-            service=self.run_service, retained=retained, retained_tip=retained_tip, parent=self.parent())
+            service=self.run_service, retained=retained, retained_tip=retained_tip,
+            session_allowed=self._session_allowed, parent=self.parent())
         dialog.reviewPackageRequested.connect(lambda _: self.packageReviewRequested.emit(package))
         dialog.resourceRegistered.connect(self.resourceRegistered)
         dialog.resumeRequested.connect(lambda previous: self._resume(dialog, package, registry, recipe, request, previous))

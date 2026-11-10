@@ -133,10 +133,12 @@ class TrainingExecutionSetupDialog(FeedbackEnabledDialog):
     manualPackageRequested = Signal()
     feedback_workflow = 'Local training preparation'
 
-    def __init__(self, package, registry, recipe, jobs, *, service, saved_setup=None, parent=None):
+    def __init__(self, package, registry, recipe, jobs, *, service, saved_setup=None,
+                 session_allowed=None, parent=None):
         super().__init__(parent)
         self.package, self.registry, self.recipe, self.jobs, self.service = package, registry, recipe, jobs, service
         self.saved_setup = saved_setup
+        self._session_allowed = session_allowed
         self.preparation = None
         self._prepared_request = None
         self._task = None
@@ -418,6 +420,9 @@ class TrainingExecutionSetupDialog(FeedbackEnabledDialog):
     def _prepare(self):
         if self._task is not None or not self._ready or bool(getattr(self.service, 'recovery_required', False)):
             return
+        if self._session_allowed is not None and not self._session_allowed():
+            self.status.setText('The Training session ended. Reopen the package to prepare a run.')
+            return
         try: request = self._current_request()
         except ValueError as exc:
             self.status.setText(str(exc)); return
@@ -426,9 +431,11 @@ class TrainingExecutionSetupDialog(FeedbackEnabledDialog):
         self._serial += 1; token = self._serial
         def operation(job):
             should_cancel, progress = self._callbacks(job)
+            def cancel_preparation():
+                return should_cancel() or (self._session_allowed is not None and not self._session_allowed())
             try:
                 result = self.service.prepare(self.package, self.registry, self.recipe, deepcopy(request),
-                    should_cancel=should_cancel, progress=progress)
+                    should_cancel=cancel_preparation, progress=progress)
                 return _Delivery(token, request, result)
             except Exception as exc:
                 return _Delivery(token, request, error=str(exc)[:2000])

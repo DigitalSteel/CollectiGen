@@ -160,12 +160,14 @@ class TrainingRunDialog(FeedbackEnabledDialog):
     feedback_workflow = 'Local training'
 
     def __init__(self, plan, contract, jobs, registry, *, expected_registry,
-                 service=None, goal_summary='', retained=False, retained_tip='', parent=None):
+                 service=None, goal_summary='', retained=False, retained_tip='',
+                 session_allowed=None, parent=None):
         super().__init__(parent)
         self.plan, self.jobs, self.registry = plan, jobs, registry
         self.contract = deepcopy(contract) if type(contract) is dict else {}
         self.expected_registry = expected_registry
         self.service = service if service is not None else TrainingExecutionService()
+        self._session_allowed = session_allowed
         self._task = self._outcome = None
         self._cancel_event = Event()
         self._process_invoked = Event()
@@ -340,6 +342,10 @@ class TrainingRunDialog(FeedbackEnabledDialog):
 
     def _start(self):
         if not self._ready or self._attempted or self._task is not None: return
+        if self._session_allowed is not None and not self._session_allowed():
+            self._phase = 'The Training session ended. Reopen the package to prepare a run.'
+            self._update_actions()
+            return
         selected_trial = None
         if self.trial_toggle.isChecked():
             if not self.trial_confirm.isChecked(): return
@@ -362,7 +368,11 @@ class TrainingRunDialog(FeedbackEnabledDialog):
             if (hashlib.sha256(raw).hexdigest() != self.plan.preview_fingerprint
                     or self.contract['resources']['registry_revision'] != self.expected_registry):
                 raise ValueError('The prepared contract or resource registry review changed. Prepare a new run review.')
-            if self._cancel_event.is_set() or job.cancel_requested:
+            def should_cancel():
+                if job.cancel_requested or (self._session_allowed is not None and not self._session_allowed()):
+                    self._cancel_event.set()
+                return self._cancel_event.is_set()
+            if should_cancel():
                 return _Delivery(fingerprint, TrainingExecutionOutcome('cancelled', self.plan.destination,
                     'Cancelled before training started.'), ())
             maximum = self.contract['result_binding']['expected_final_step']
@@ -377,9 +387,6 @@ class TrainingRunDialog(FeedbackEnabledDialog):
                         if record['max_train_steps'] != maximum: return
                     self._progressReceived.emit(token, deepcopy(record))
                 except (TypeError, ValueError, KeyError): return
-            def should_cancel():
-                if job.cancel_requested: self._cancel_event.set()
-                return self._cancel_event.is_set()
             options = dict(expected_registry=self.expected_registry,
                 should_cancel=should_cancel, progress_callback=progress)
             if getattr(self.service, 'supports_metrics', False):
