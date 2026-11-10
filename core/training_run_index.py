@@ -431,7 +431,9 @@ class TrainingRunIndex:
                     found = True
                     if validation_report_sha256 and item.validation_report_sha256 not in {"", validation_report_sha256}:
                         raise TrainingRunIndexError("The saved validation report identity changed.")
-                    if registered_result is not None and item.registered_result not in (None, registered_result):
+                    if item.registered_result is not None and (
+                            registered_result not in (None, item.registered_result)
+                            or latest_journal_tip not in (None, item.latest_journal_tip)):
                         raise TrainingRunIndexError("The saved registered result identity changed.")
                     item = replace(item, phase=phase,
                         latest_journal_tip=(item.latest_journal_tip
