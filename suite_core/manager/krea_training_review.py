@@ -236,6 +236,7 @@ class KreaTrainingReviewDialog(QDialog):
 
     def _start_anima_check(self, reviewed=None):
         if (self._checking_anima_setup or self._anima_base_id is None or self._anima_review is not None
+                or self._retry_history_save is not None
                 or self._cancel.is_set() or not self._anima_review_allowed()):
             return
         self._checking_anima_setup = True
@@ -360,14 +361,19 @@ class KreaTrainingReviewDialog(QDialog):
             from core.training_retained_history import upsert_retained_review
             from core.training_run_index import TrainingRunIndex
 
-            require_current()
-            _assert_unredirected(history_root)
-            try:
+            def save_history():
+                if cancelled():
+                    raise InterruptedError("The Manager review session ended.")
+                _assert_unredirected(history_root)
                 upsert_retained_review(TrainingRunIndex(history_root / "training-runs.json"), "anima",
                     {"prepared": prepared, "outcome": None, "registered": False})
+
+            require_current()
+            try:
+                save_history()
             except (OSError, RuntimeError, ValueError):
-                return preview, directory, current, (review_path, False)
-            return preview, directory, current, (review_path, True)
+                return preview, directory, current, (review_path, save_history)
+            return preview, directory, current, (review_path, None)
 
     def _open_anima_verification(self):
         if (self._anima_review is not None or self._cancel.is_set()
@@ -458,11 +464,16 @@ class KreaTrainingReviewDialog(QDialog):
                 self.status.setText("Saved trainer setup could not be verified. Review your trainer setup or use the package in an external trainer.")
             else:
                 if prepared is not None:
-                    path, indexed = prepared
+                    path, retry = prepared
                     self.sections[0].appendPlainText(f"\nRetained review: {path}")
+                    if retry is not None:
+                        self._retry_history_save = retry
+                        self.retry_history_button.setEnabled(True)
+                        self.retry_history_button.show()
+                        self.anima_setup_button.setEnabled(False)
                     self.status.setText("Anima run prepared. Review Saved Training Runs to reopen it. Training did not start."
-                                        if indexed else "Anima preparation was retained, but Training History could not save it. "
-                                        "Keep the retained review shown below. Training did not start.")
+                                        if retry is None else "Anima preparation was retained. Choose Retry Saving to History "
+                                        "to make it available in Saved Training Runs. Training did not start.")
                 elif preview.ready:
                     self._anima_preflight = preflight
                     self.anima_prepare_button.setVisible(self._anima_history_root is not None)
@@ -485,6 +496,8 @@ class KreaTrainingReviewDialog(QDialog):
             self._saving_preparation = False
             for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
                 action.setEnabled(True)
+            if self._anima_base_id is not None:
+                self.anima_button.setEnabled(self._anima_review_allowed())
             try:
                 self._future.result()
             except Exception:
@@ -493,7 +506,11 @@ class KreaTrainingReviewDialog(QDialog):
             else:
                 self._retry_history_save = None
                 self.retry_history_button.hide()
-                self.status.setText("SDXL preparation saved to History. Training has not started.")
+                if self._anima_base_id is not None:
+                    self.anima_setup_button.setEnabled(self._anima_review_allowed())
+                    self.status.setText("Anima preparation saved to History. Review Saved Training Runs to reopen it.")
+                else:
+                    self.status.setText("SDXL preparation saved to History. Training has not started.")
             return
         if self._preparing_dataset:
             self._preparing_dataset = False
@@ -716,6 +733,9 @@ class KreaTrainingReviewDialog(QDialog):
     def _retry_preparation_history(self):
         if self._retry_history_save is None or self._executor.close_held or self._cancel.is_set():
             return
+        if self._anima_base_id is not None and not self._anima_review_allowed():
+            self.status.setText("The Manager session ended. The preparation is still retained at the path shown below.")
+            return
         try:
             self._future = self._executor.submit(self._retry_history_save)
         except (RuntimeError, ValueError):
@@ -724,6 +744,8 @@ class KreaTrainingReviewDialog(QDialog):
         self._saving_preparation = True
         for action in (self.retry_history_button, self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
             action.setEnabled(False)
+        if self._anima_base_id is not None:
+            self.anima_button.setEnabled(False)
         self.return_button.setText("Wait for Save and Return")
         self.status.setText("Saving the completed preparation to History…")
         self._timer.start(50)
