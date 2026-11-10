@@ -222,7 +222,7 @@ class SwarmRuntimeWidget(QGroupBox):
         layout.addLayout(tasks, 1)
         if adoption_only:
             intro.setText("Review an existing local installation and save its connection for Manager.")
-            connect_note.setText("This checks the selected installation files. Generate stays in planning mode.")
+            connect_note.setText("Review and save an existing SwarmUI installation, then check the running connection before using Generate Readiness.")
             self.task_nav.hide()
             self.install_button.hide()
             first_actions.insertWidget(1, self.health_button)
@@ -424,12 +424,11 @@ class SwarmRuntimeWidget(QGroupBox):
         if self.adoption_only and snapshot.ownership:
             self.state_label.setText(f"Saved for Manager: {snapshot.endpoint}")
             if not snapshot.last_health_check:
-                detail = "The running generator has not been checked."
+                detail = "The running generator has not been checked. Choose Check Connection to continue."
             elif self.manager.checked_adopted_connection() is not None:
-                detail = "Connection checked. SwarmUI reported a compatible backend."
+                detail = "Connection checked. Return to Generate Readiness to check the generator, bind the model and prepare the request."
             else:
-                detail = "Connection check needs attention. " + snapshot.detail
-            detail += " Generate remains in planning mode."
+                detail = "Connection check needs attention. Generate remains in planning mode. " + snapshot.detail
             self.state_detail.setText(detail)
             self.state_detail.setAccessibleName(detail)
         self.status_changed.emit(snapshot)
