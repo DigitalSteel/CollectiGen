@@ -13,6 +13,14 @@ from PySide6.QtWidgets import (
 from .resource_executor import ResourceExecutorOwner
 
 
+class _StaleAnimaPackage(ValueError):
+    pass
+
+
+class _StaleAnimaInventory(ValueError):
+    pass
+
+
 class _StaleAnimaSetup(ValueError):
     pass
 
@@ -91,7 +99,7 @@ class KreaTrainingReviewDialog(QDialog):
         self.anima_button.hide()
         self.anima_button.clicked.connect(self._open_anima_verification)
         layout.addWidget(self.anima_button, 0, Qt.AlignLeft)
-        self.anima_setup_button = QPushButton("Check Saved Trainer Setup")
+        self.anima_setup_button = QPushButton("Check Anima Readiness")
         self.anima_setup_button.hide()
         self.anima_setup_button.clicked.connect(self._check_anima_setup)
         layout.addWidget(self.anima_setup_button, 0, Qt.AlignLeft)
@@ -222,14 +230,19 @@ class KreaTrainingReviewDialog(QDialog):
         self.anima_button.setEnabled(False)
         self.folder_button.setEnabled(False)
         self.return_button.setText("Cancel Check and Return")
-        self.status.setText("Checking saved trainer files and folders…")
+        self.status.setText("Checking the Anima package, trainer setup and model files…")
         self._future = self._executor.submit(self._review_anima_setup)
         self._timer.start(50)
 
     def _review_anima_setup(self):
         from core.model_selection import protected_model_roots
         from core.settings import AppSettings
-        from core.training_anima import inspect_anima_runtime, validate_anima_trainer_request
+        from tempfile import TemporaryDirectory
+
+        from core.model_resource_registry import ModelResourceRegistry
+        from core.training_anima import AnimaTrainingService
+        from qt_app.model_companion_workflow import resource_boundaries
+        from qt_app.training_anima_dialog import anima_package_settings
         from core.training_setup_resources import SavedTrainingSetupResolver
         from core.training_setup_selection import _require_disjoint_protected_paths
         from core.training_source_io import read_stable_training_source
@@ -241,7 +254,12 @@ class KreaTrainingReviewDialog(QDialog):
         if cancelled() or Path(self._registry_path) != settings_path.parent / "model_resources.json":
             raise InterruptedError("The Manager review session ended.")
         raw, _ = read_stable_training_source(settings_path, max_bytes=16 * 1024 * 1024)
-        protected = protected_model_roots(AppSettings._from_bytes(raw))
+        settings = AppSettings._from_bytes(raw)
+        protected = protected_model_roots(settings)
+        registry = ModelResourceRegistry(self._registry_path)
+        _require_disjoint_protected_paths((registry.path,), protected)
+        model_snapshot, model_revision = registry.snapshot()
+        protected, managed = resource_boundaries(model_snapshot, settings)
         resolver = SavedTrainingSetupResolver(settings_path.parent / "training-setup.json")
         _require_disjoint_protected_paths((resolver.selection.path, resolver.profile_path), protected)
         _, revision = resolver.selection.snapshot()
@@ -250,16 +268,47 @@ class KreaTrainingReviewDialog(QDialog):
             if cancelled():
                 raise InterruptedError("The Manager review session ended.")
             current, _ = read_stable_training_source(settings_path, max_bytes=16 * 1024 * 1024)
-            if current != raw or resolver.selection.snapshot()[1] != revision:
+            if (current != raw or resolver.selection.snapshot()[1] != revision
+                    or registry.snapshot()[1] != model_revision):
                 raise _StaleAnimaSetup
 
         setup = resolver(should_cancel=cancelled, protected_roots=protected)
         require_current()
-        paths = validate_anima_trainer_request(setup)
-        inspection = inspect_anima_runtime(paths["source_root"], paths["environment_root"],
-                                           should_cancel=cancelled)
-        require_current()
-        return inspection.probe_ready
+        package = self._verification
+        run_settings, _ = anima_package_settings(package)
+        service = AnimaTrainingService(registry, protected_roots=protected, managed_roots=managed)
+        with TemporaryDirectory(prefix="collectigen-anima-review-") as temporary:
+            output = Path(temporary)
+            selection = service.prepare_selection(
+                package.destination, {**setup, "output_root": str(output)}, output / ".anima-selection-review",
+                should_cancel=cancelled)
+            preview = service.preview(selection, run_settings, should_cancel=cancelled)
+            require_current()
+            if preview.package_fingerprint != self._handoff_fingerprint:
+                raise _StaleAnimaPackage
+            try:
+                directory = self._verify_handoff_folder(
+                    self._handoff_folder, self._handoff_fingerprint, should_cancel=cancelled)
+            except InterruptedError:
+                raise
+            except (OSError, RuntimeError, ValueError) as exc:
+                raise _StaleAnimaPackage from exc
+            require_current()
+            if preview.ready:
+                from core.training_file_inventory import SoftwareInventoryService
+
+                inventory = SoftwareInventoryService()
+                try:
+                    inventory.verify(selection.environment_root, selection.environment_inventory,
+                                     should_cancel=cancelled)
+                    inventory.verify(selection.python_base_root, selection.python_base_inventory,
+                                     should_cancel=cancelled)
+                except InterruptedError:
+                    raise
+                except (OSError, RuntimeError, ValueError) as exc:
+                    raise _StaleAnimaInventory from exc
+            require_current()
+        return preview, directory
 
     def _open_anima_verification(self):
         if (self._anima_review is not None or self._cancel.is_set()
@@ -327,9 +376,22 @@ class KreaTrainingReviewDialog(QDialog):
                 self.status.setText("The Manager session ended. Reopen package review to check the trainer setup again.")
                 return
             try:
-                runtime_matches = self._future.result()
+                preview, directory = self._future.result()
+                try:
+                    if self._handoff_directory_state(self._handoff_folder) != directory:
+                        raise _StaleAnimaPackage
+                except (OSError, RuntimeError, ValueError) as exc:
+                    raise _StaleAnimaPackage from exc
+            except _StaleAnimaPackage:
+                self.anima_setup_button.setEnabled(False)
+                self.anima_button.setEnabled(False)
+                self._invalidate_package_review(
+                    "The Anima package changed or could not be rechecked. Return to Applications and review it again.")
+            except _StaleAnimaInventory:
+                self.sections[0].clear()
+                self.status.setText("Trainer files changed during preflight. Recheck Trainer Setup, then check Anima readiness again.")
             except _StaleAnimaSetup:
-                self.status.setText("Settings or the saved trainer setup changed. Check Saved Trainer Setup again.")
+                self.status.setText("Settings, trainer setup or model registrations changed. Check Anima Readiness again.")
             except InterruptedError:
                 self.status.setText("The Manager session ended. Reopen package review to check the trainer setup again.")
             except AnimaError as exc:
@@ -337,10 +399,16 @@ class KreaTrainingReviewDialog(QDialog):
             except (OSError, RuntimeError, ValueError, TypeError):
                 self.status.setText("Saved trainer setup could not be verified. Review your trainer setup or use the package in an external trainer.")
             else:
-                if runtime_matches:
-                    self.status.setText("Saved trainer files and Anima runtime metadata match. Run readiness requires a separate check.")
+                if preview.ready:
+                    self.status.setText("Anima preflight passed. This review cannot prepare or start training.")
                 else:
-                    self.status.setText("Saved trainer files verified, but Anima runtime metadata does not match. Review the selected trainer or use an external trainer.")
+                    from qt_app.training_anima_dialog import ISSUE_MESSAGES
+
+                    reasons = "\n".join(ISSUE_MESSAGES.get(issue, issue.replace("_", " "))
+                                        for issue in preview.issues)
+                    self.status.setText("Anima preflight is held. See Readiness for details.")
+                    self.sections[0].setPlainText(reasons)
+                    self.tabs.setCurrentIndex(0)
             return
         if self._checking_handoff:
             self._finish_package_handoff()
@@ -437,6 +505,7 @@ class KreaTrainingReviewDialog(QDialog):
                 if (configuration.base_model_id == BASE_ID and self._registry_path is not None
                         and self._anima_settings_path is not None and self._preview_jobs is not None
                         and self._anima_review_allowed is not None):
+                    self._verification = verification
                     self._anima_base_id = BASE_ID
                     self.anima_button.show()
                     self.anima_setup_button.show()
@@ -632,12 +701,12 @@ class KreaTrainingReviewDialog(QDialog):
         _assert_unredirected(folder)
         return _directory_state(folder)
 
-    def _verify_handoff_folder(self, folder, fingerprint):
+    def _verify_handoff_folder(self, folder, fingerprint, *, should_cancel=None):
         from core.training_package import TrainingPackageService, TrainingPackageVerificationLimits
 
         directory = self._handoff_directory_state(folder)
         current = TrainingPackageService().verify(
-            folder, should_cancel=self._cancel.is_set, limits=TrainingPackageVerificationLimits(),
+            folder, should_cancel=should_cancel or self._cancel.is_set, limits=TrainingPackageVerificationLimits(),
             expected_package_fingerprint=fingerprint,
         )
         if (not current.valid or current.inspection_limited
