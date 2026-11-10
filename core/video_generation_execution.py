@@ -22,6 +22,7 @@ from .video_generation import VideoGenerationRequest, VideoSourceAsset
 
 _LOCK = threading.RLock()
 _ID = re.compile(r"[a-f0-9]{32}\Z")
+_MAX_RECEIPT_BYTES = 32 * 1024 * 1024
 _USAGE_OWNER = "collectigen.video-generation"
 _USAGE_VERSION = "1"
 _USAGE_STATES = {"attempting", "admitted", "disabled", "unavailable", "stale", "history_full",
@@ -66,11 +67,7 @@ class VideoExecutionService:
 
     def _load(self, job_id):
         path = self._directory(job_id) / "receipt.json"
-        if path.stat().st_size > 32 * 1024 * 1024:
-            raise ValueError("The retained video receipt exceeds the supported size.")
-        raw, _ = read_stable_training_source(path)
-        if len(raw) > 32 * 1024 * 1024:
-            raise ValueError("The retained video receipt exceeds the supported size.")
+        raw, _ = read_stable_training_source(path, max_bytes=_MAX_RECEIPT_BYTES)
         receipt = strict_json(raw)
         if (not isinstance(receipt, dict) or receipt.get("schema_id") != "collectigen.video-execution.v1"
                 or receipt.get("job_id") != job_id):
@@ -81,7 +78,7 @@ class VideoExecutionService:
     def _save(self, receipt, *, expected=None):
         with _LOCK:
             self._validate_receipt(receipt)
-            if len(json.dumps(receipt, ensure_ascii=False, allow_nan=False).encode()) > 32 * 1024 * 1024:
+            if len(json.dumps(receipt, ensure_ascii=False, allow_nan=False).encode()) > _MAX_RECEIPT_BYTES:
                 raise ValueError("The video receipt exceeds the supported size.")
             path = self._directory(receipt["job_id"]) / "receipt.json"
             _assert_unredirected(path)
@@ -543,6 +540,13 @@ class VideoExecutionService:
             return receipt  # Missing history never authorizes resubmission.
         return self._accept_history(receipt, history[receipt["prompt_id"]], adapter)
 
+    def verified_video_outputs_from_receipt(self, receipt_path):
+        """Reopen one explicitly selected result in the already admitted job store."""
+        selected = Path(receipt_path)
+        if not selected.is_absolute() or selected != self._directory(selected.parent.name) / "receipt.json":
+            raise ValueError("Select a video receipt from the admitted result store.")
+        return self.verified_video_outputs(self._load(selected.parent.name))
+
     def verified_video_outputs(self, expected_receipt):
         if not isinstance(expected_receipt, dict):
             raise ValueError("A retained verified video receipt is required.")
@@ -588,9 +592,7 @@ class VideoExecutionService:
                     or checked.verification.asset.to_dict() != output["source_asset"]):
                 raise ValueError("The retained final-video timeline or recipe differs from its exact resize receipt.")
         receipt_path = self._directory(current["job_id"]) / "receipt.json"
-        if receipt_path.stat().st_size > 32 * 1024 * 1024:
-            raise ValueError("The retained video receipt exceeds the supported size.")
-        receipt_raw, _ = read_stable_training_source(receipt_path)
+        receipt_raw, _ = read_stable_training_source(receipt_path, max_bytes=_MAX_RECEIPT_BYTES)
         if strict_json(receipt_raw) != current:
             raise ValueError("The video receipt changed before Ingest handoff.")
         result = deepcopy(current["outputs"])
