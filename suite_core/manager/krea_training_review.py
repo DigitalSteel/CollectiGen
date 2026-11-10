@@ -888,6 +888,9 @@ class KreaTrainingReviewDialog(QDialog):
         if (not self.adapter_button.isEnabled() or not self.adapter_button.isVisible() or self._checking_dataset
                 or self._adapter_preview is not None or self._cancel.is_set()):
             return
+        if self._package_review_cancelled():
+            self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+            return
         from core.model_resource_registry import ModelResourceRegistry
         from core.training_adapter_preview import SdScriptsSdxlLoraPreviewService
         from core.training_package import TrainingPackageVerificationLimits
