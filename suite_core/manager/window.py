@@ -1692,15 +1692,18 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     counts, caption_status = result
                     captions = {
                         "matches": "Current captions match the saved draft.",
-                        "captions_changed": "Current captions differ from the saved draft.",
+                        "captions_changed": "Current captions differ from the saved draft. Rebuild the draft in Organizer.",
                         "context_changed": "Dataset context changed. Rebuild the draft in Organizer.",
                         "unavailable": "Current captions could not be checked.",
                         "cancelled": "Caption check cancelled.",
                     }
+                    guidance = captions[caption_status]
+                    if caption_status == "unavailable" and (counts[1] or counts[2]):
+                        guidance += " Review the changed sources and rebuild the draft in Organizer."
                     finish(
                         f"Checked {counts[0]:,} image(s). {counts[1]:,} changed. "
                         f"Saved Image Knowledge: {counts[2]:,} changed, {counts[3]:,} unavailable. "
-                        + captions[caption_status]
+                        + guidance
                     )
 
                 task.signals.complete.connect(show_result)
