@@ -113,6 +113,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         checked_connection_provider=None,
         checked_image_submission=False,
         offline_alternatives=False,
+        file_selection_allowed=None,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -131,6 +132,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.prompt_knowledge = prompt_knowledge
         self.swarm_preset_service = swarm_preset_service
         self.runtime_allowed = runtime_allowed
+        self._file_selection_allowed = file_selection_allowed
         self._alternatives_allowed = runtime_allowed or offline_alternatives
         self._save_verified_result_draft = offline_alternatives and review_verified_results and not runtime_allowed
         self._checked_connection = checked_connection
@@ -4420,13 +4422,21 @@ class GenerationDialog(FeedbackEnabledDialog):
     def _choose_plan_file(self, picker, *args, **kwargs):
         if self._planning_file_picker_open:
             return ""
+        allowed = self._file_selection_allowed
+        if allowed is not None and not allowed():
+            self.status.setText("The Manager session ended. Reopen Generate to choose a file.")
+            return ""
         self._planning_file_picker_open = not self.runtime_allowed
         try:
             path, _ = picker(self, *args, **kwargs)
-            return path
         finally:
             self._planning_file_picker_open = False
             self._notify_background_work_finished()
+        if allowed is not None and not allowed():
+            if not self._closed and not self._shutdown_requested:
+                self.status.setText("The Manager session ended. Reopen Generate to choose a file.")
+            return ""
+        return path
 
     def _choose_load(self):
         if self._planning_file_picker_open:

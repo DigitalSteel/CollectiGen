@@ -1361,6 +1361,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     jobs=BackgroundJobManager(), settings=None, generation_data_root=root,
                     generation_runtime_allowed=False, video_decoder_lifetime=VideoDecoderLifetime(),
                     video_draft_session_state=self.generation_state,
+                    generation_session_state=self.generation_state,
                     checked_image_connection=self.checked_image_connection,
                     checked_image_submission=True,
                     offline_generation_alternatives=True,

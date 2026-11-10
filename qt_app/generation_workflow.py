@@ -555,6 +555,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
         )
         if checked_connection is not None:
             endpoint, connection_issue = checked_connection[0], ""
+        session_state = getattr(state, "generation_session_state", None)
         dialog = GenerationDialog(state.jobs, registry=model_registry,
             storage_root=data_root / "generation", source_record=source,
             source_identity=identity, knowledge_fragments=fragments,
@@ -571,7 +572,9 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             checked_connection=checked_connection, checked_connection_provider=provider,
             review_verified_results=getattr(state, "review_verified_generation_results", False),
             checked_image_submission=getattr(state, "checked_image_submission", False),
-            offline_alternatives=getattr(state, "offline_generation_alternatives", False), parent=host)
+            offline_alternatives=getattr(state, "offline_generation_alternatives", False),
+            file_selection_allowed=(lambda: session_state() is state) if callable(session_state) else None,
+            parent=host)
         dialog.source_records = saved_records
         if preloaded_draft is not None:
             plan, target, token = preloaded_draft
