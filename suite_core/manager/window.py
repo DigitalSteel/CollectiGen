@@ -1884,7 +1884,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 nonlocal reviewed
                 reviewed = None
                 plan_result.hide()
-                dialog.set_retained_index_status("")
+                if not closing_review:
+                    message = "Still checking a saved receipt…" if task is not None else ""
+                    dialog.set_retained_index_status(message)
                 selected = dialog._selected()
                 completed_validation = selected is not None and selected.kind == "validation" and selected.phase == "completed"
                 if selected is not None and selected.kind == "anima":
