@@ -172,7 +172,7 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
         snapshot=self.installed
         def work():
             from core.encyclopedia_installation import InstallationResult
-            self.service.launch(confirmed=True)
+            self.service.launch(confirmed=True, should_cancel=self.cancel.is_set)
             return InstallationResult(snapshot,True,
                 'Organizer is opening. Close its window normally when you finish.')
         self._start('Opening Organizer',work)

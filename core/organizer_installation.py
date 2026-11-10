@@ -136,8 +136,9 @@ class OrganizerInstallation(EncyclopediaInstallation):
             result=self.native_owner.native_health(signed)
             check();return result
 
-    def launch(self, *, confirmed=False):
+    def launch(self, *, confirmed=False, should_cancel=None):
         require(confirmed is True,'explicit_organizer_launch_required')
+        self._cancel(should_cancel)
         require(self.native_owner is not None,'original_organizer_native_owner_required')
         with self._scope() as (root,base,owner,check):
             installed=self._observe(root,base,owner)
@@ -149,6 +150,7 @@ class OrganizerInstallation(EncyclopediaInstallation):
             check()
         # Release staging exclusion before creation; original native capability
         # independently re-admits its exact selected program and root generation.
+        self._cancel(should_cancel)
         return self.native_owner.launch(selected)
 
     @property
