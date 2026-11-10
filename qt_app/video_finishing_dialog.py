@@ -29,7 +29,7 @@ class VideoFinishingDialog(QDialog):
     def __init__(self, jobs, path: str | Path, asset: VideoSourceAsset,
                  request: VideoGenerationRequest, *, allowed_root: str | Path,
                  storage_root: str | Path, verified_source, settings=None,
-                 runtime_binding=None, decoder_lifetime=None, parent=None):
+                 runtime_binding=None, decoder_lifetime=None, encoder_binding=None, parent=None):
         super().__init__(parent)
         if (not isinstance(asset, VideoSourceAsset) or not isinstance(request, VideoGenerationRequest)
                 or not asset.timing.frame_pts or not callable(verified_source)):
@@ -38,6 +38,7 @@ class VideoFinishingDialog(QDialog):
         self.allowed_root, self.storage_root = Path(allowed_root), Path(storage_root)
         self.verified_source, self.settings = verified_source, settings
         self.runtime_binding, self.decoder_lifetime = runtime_binding, decoder_lifetime
+        self.encoder_binding = encoder_binding
         self._task = None
         self._preview = None
         self._closing = False
@@ -225,7 +226,8 @@ class VideoFinishingDialog(QDialog):
     def load_saved_finishes(self):
         def work(job):
             return discover_finished_video(self.storage_root / "finishing", self.asset,
-                self.request, self._source_descriptor(), should_cancel=lambda: job.cancel_requested)
+                self.request, self._source_descriptor(), should_cancel=lambda: job.cancel_requested,
+                runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime)
         def complete(result):
             self._saved_frames = list(result["frames"])
             self._saved_trims = list(result["trims"])
@@ -366,7 +368,9 @@ class VideoFinishingDialog(QDialog):
             root = self._finishing_root()
             destination = root / f"trim-{self.asset.sha256[:12]}-{first + 1}-{stop}-{uuid4().hex[:12]}.mp4"
             return trim_verified_video(self.path, self.asset, self.request, first, stop,
-                destination, allowed_root=root, should_cancel=lambda: job.cancel_requested)
+                destination, allowed_root=root, should_cancel=lambda: job.cancel_requested,
+                runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime,
+                encoder_binding=self.encoder_binding)
         def complete(result):
             self._trim_result = result
             self._saved_trims.append(result)
@@ -421,7 +425,8 @@ class VideoFinishingDialog(QDialog):
         def verified_outputs(check_path):
             if Path(check_path).absolute() != result.receipt_path.absolute():
                 raise ValueError("The selected finishing receipt differs from exact reviewed work.")
-            return [verified_trimmed_output(result, self._source_descriptor(), self.request)]
+            return [verified_trimmed_output(result, self._source_descriptor(), self.request,
+                runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime)]
         def work(_job):
             return verified_outputs(result.receipt_path)
         def complete(_outputs):

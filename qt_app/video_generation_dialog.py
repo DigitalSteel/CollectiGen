@@ -123,6 +123,7 @@ class VideoGenerationDialog(QDialog):
         self.adapter_factory = adapter_factory
         self.pinned_wan_resource_id = pinned_wan_resource_id
         self.runtime_binding, self.decoder_lifetime = runtime_binding, decoder_lifetime
+        self.encoder_binding = encoder_binding if runtime_allowed else None
         self._video_output_preview = None
         self._verify_output = verify_output or (lambda path, request: verify_video_output(
             path, request, allowed_root=self.storage_root / "jobs",
@@ -131,7 +132,7 @@ class VideoGenerationDialog(QDialog):
             verify_output=self._verify_output, registry=self.registry,
             protected_roots=protected_model_roots(self.settings),
             runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime,
-            encoder_binding=encoder_binding if runtime_allowed else None)
+            encoder_binding=self.encoder_binding)
         self._task = None
         self._task_label = ""
         self._task_cancelable = False
@@ -1723,7 +1724,7 @@ class VideoGenerationDialog(QDialog):
             allowed_root=self.storage_root / "jobs", storage_root=self.storage_root,
             verified_source=lambda: self.service.verified_video_outputs(self._verified_receipt),
             settings=self.settings, runtime_binding=self.runtime_binding,
-            decoder_lifetime=self.decoder_lifetime, parent=self)
+            decoder_lifetime=self.decoder_lifetime, encoder_binding=self.encoder_binding, parent=self)
         self._finishing_dialog = dialog
         dialog.background_work_finished.connect(self._advance_shutdown)
         dialog.ingest_requested.connect(self.ingest_requested.emit)

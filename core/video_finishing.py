@@ -189,6 +189,7 @@ def trim_verified_video(
     source_request: VideoGenerationRequest, first_frame: int, stop_frame: int,
     destination: str | Path, *, allowed_root: str | Path,
     should_cancel: Callable[[], bool] | None = None, timeout_seconds: float = 180,
+    runtime_binding=None, decoder_lifetime=None, encoder_binding=None,
 ) -> TrimmedVideo:
     """Transcode a reviewed half-open frame interval to a new silent MP4.
 
@@ -212,7 +213,8 @@ def trim_verified_video(
     target, receipt = _destination(destination, allowed_root, ".mp4")
     source = Path(source_path).absolute()
     deadline = monotonic() + timeout_seconds
-    _source_check(source, source_asset, source_request, should_cancel, deadline)
+    _source_check(source, source_asset, source_request, should_cancel, deadline,
+                  runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     output_count = stop_frame - first_frame
     output_request = replace(_request_for_asset(source_request, source_asset), frame_count=output_count)
     limit = min(MAX_VIDEO_BYTES, source_request.expected_output_bytes or MAX_VIDEO_BYTES,
@@ -229,13 +231,15 @@ def trim_verified_video(
             "height": output_request.height, "first_frame": first_frame,
             "stop_frame": stop_frame, "stage_id": stage_id,
             "source_max_bytes": MAX_VIDEO_BYTES, "output_max_bytes": limit,
-            "timeout_seconds": _remaining(deadline)}, should_cancel=should_cancel, deadline=deadline)
+            "timeout_seconds": _remaining(deadline)}, should_cancel=should_cancel, deadline=deadline,
+            encoder_binding=encoder_binding)
         if (result.get("source_sha256") != source_asset.sha256
                 or result.get("selected_frames") != output_count
                 or stage.stat(follow_symlinks=False).st_ino != stage_id):
             raise VideoOutputProcessingError("The isolated trim changed exact source or stage evidence.")
         verified = verify_video_output(stage, output_request, allowed_root=target.parent,
-            should_cancel=should_cancel, max_seconds=_remaining(deadline), max_bytes=limit)
+            should_cancel=should_cancel, max_seconds=_remaining(deadline), max_bytes=limit,
+            runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
         output = verified.asset
         selected = points[first_frame:stop_frame]
         if tuple(timing.seconds_at(p) - timing.seconds_at(selected[0]) for p in selected) != tuple(
@@ -266,7 +270,7 @@ def trim_verified_video(
 def verified_trimmed_output(
     trimmed: TrimmedVideo, original_descriptor: dict,
     source_request: VideoGenerationRequest,
-    *, should_cancel: Callable[[], bool] | None = None,
+    *, should_cancel: Callable[[], bool] | None = None, runtime_binding=None, decoder_lifetime=None,
 ) -> dict:
     """Recheck a finished result and project its exact lineage for Ingest.
 
@@ -283,7 +287,8 @@ def verified_trimmed_output(
     if not source_path.is_file():
         raise VideoOutputProcessingError("The original verified video is unavailable.")
     deadline = monotonic() + 120
-    _source_check(source_path, source, source_request, should_cancel, deadline)
+    _source_check(source_path, source, source_request, should_cancel, deadline,
+                  runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     target, receipt = trimmed.output_path.absolute(), trimmed.receipt_path.absolute()
     if receipt != target.with_name(f".{target.name}.collectigen-finishing.json"):
         raise VideoOutputProcessingError("The exact trim receipt path changed.")
@@ -319,7 +324,8 @@ def verified_trimmed_output(
     output_request = replace(_request_for_asset(source_request, source),
                              frame_count=output.timing.frame_count)
     observed = verify_video_output(target, output_request, allowed_root=target.parent,
-        max_seconds=_remaining(deadline), should_cancel=should_cancel)
+        max_seconds=_remaining(deadline), should_cancel=should_cancel,
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     if observed.asset.to_dict() != output.to_dict():
         raise VideoOutputProcessingError("The finished clip differs from its exact receipt.")
     _hash_source(source_path, source, should_cancel, deadline)
@@ -486,6 +492,7 @@ def discover_finished_video(
     source_request: VideoGenerationRequest, original_descriptor: dict, *,
     should_cancel: Callable[[], bool] | None = None,
     max_entries: int = 128, max_results: int = 12,
+    runtime_binding=None, decoder_lifetime=None,
 ) -> dict:
     """Find only this clip's published, fully reverified finishing receipts.
 
@@ -545,7 +552,8 @@ def discover_finished_video(
                 lineage = DerivedClipMapping.from_dict(value["lineage"])
                 result = TrimmedVideo(path, receipt, VideoVerification(lineage.output_asset, {}), lineage)
                 verified_trimmed_output(result, original_descriptor, source_request,
-                                        should_cancel=should_cancel)
+                    should_cancel=should_cancel, runtime_binding=runtime_binding,
+                    decoder_lifetime=decoder_lifetime)
                 trims.append(result)
             else:
                 raise VideoOutputProcessingError("Saved finishing operation differs.")
