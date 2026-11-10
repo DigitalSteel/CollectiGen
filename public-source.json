@@ -1797,6 +1797,10 @@
       "sha256": "2bbed799135641cb01a25903f8bf5749029368a196ea39e162985acf2a3e26a6",
       "size_bytes": 5989
     },
+    "core/training_resume_experiment.py": {
+      "sha256": "88e1b2de859ba9e08e97bbdd1e78d10c10170d92b98a7b297eda78c5364ca546",
+      "size_bytes": 16025
+    },
     "core/training_retained_history.py": {
       "sha256": "75c14e1c0757c71d9dd750daebe52de7eb8b662fd5da83f4024b88e8cb80907c",
       "size_bytes": 8517
@@ -3950,8 +3954,8 @@
       "size_bytes": 27253
     },
     "tools/public-source-manifest.json": {
-      "sha256": "d2e89ef27a72b0ffdcc94a943a82fe23065d1207b3a94e6952c131c1d9796caa",
-      "size_bytes": 40110
+      "sha256": "c7cba83f59e7395364a749cbe86fe8341037b8cf442807b9906c82cf1a61deb6",
+      "size_bytes": 40152
     },
     "tools/public_source.py": {
       "sha256": "be416250ad754efccb6f018a758890cd5d29cb7dfb0cf90478e37dcdd7b76b32",

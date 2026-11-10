@@ -443,6 +443,7 @@
     "core/training_resource_guidance.py",
     "core/training_result.py",
     "core/training_resume_adapter.py",
+    "core/training_resume_experiment.py",
     "core/training_retained_history.py",
     "core/training_run_index.py",
     "core/training_run_recovery.py",
