@@ -273,7 +273,12 @@ def import_selected_saved_work(storage_root, kind, source_path, *, cancelled=Non
     _assert_unredirected(source)
     if callable(cancelled) and cancelled():
         raise InterruptedError("Saved-work import was cancelled.")
-    value = _load(kind, source)
+    try:
+        value = _load(kind, source)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ValueError(
+            "The selected file is not readable as saved JSON. Choose another CollectiGen file or export it again."
+        ) from exc
     if kind == "prompt_presets":
         collection = PromptPresetCollection(storage_root)
         review = collection.preview_save(value, action="copy")
