@@ -364,9 +364,12 @@ class KreaTrainingReviewDialog(QDialog):
             for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
                 action.setEnabled(True)
             from core.training_dataset_binding import TrainingDatasetAdmissionHold, TrainingPreparationRetentionError
+            from core.training_preflight import TrainingPreflightWorkspacePathError
 
             try:
                 inspection, plan, request, receipt = self._future.result()
+            except TrainingPreflightWorkspacePathError as exc:
+                self.status.setText(str(exc))
             except TrainingDatasetAdmissionHold as exc:
                 self.status.setText("This package is outside the reviewed SDXL preparation profile. Manual handoff is still available.")
                 self.sections[0].appendPlainText("\n" + self._dataset_hold_details(exc.holds))
@@ -799,8 +802,14 @@ class KreaTrainingReviewDialog(QDialog):
         self._timer.start(50)
 
     def _show_dataset_receipt(self):
+        from core.training_preflight import TrainingPreflightWorkspacePathError
+
         try:
             result = self._future.result()
+        except TrainingPreflightWorkspacePathError as exc:
+            self.status.setText(str(exc))
+            self.dataset_button.setEnabled(True)
+            return
         except Exception:
             self.status.setText("Dataset verification did not finish. The package review is still available. Choose Verify SDXL Dataset to retry.")
             self.dataset_button.setEnabled(True)

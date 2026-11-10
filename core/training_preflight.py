@@ -266,6 +266,14 @@ def decode_result(value, request, helper_plan):
     return inspection, plan, parser
 
 
+class TrainingPreflightWorkspacePathError(TrainingProcessError):
+    """The Windows process owner cannot open the preflight working directory."""
+
+    def __init__(self):
+        super().__init__("The Manager Training workspace path is too long for the Windows worker. "
+                         "Use a suite location with a shorter path, then retry. The package is unchanged.")
+
+
 class PreflightReply:
     receipt_key = 'preflight_receipt_sha256'
     bytes_message = 'Verifying selected software bytes'
@@ -512,6 +520,11 @@ class ContainedRuntimeQualificationService:
     def _run(self, request, root, jobs, *, worker, extra_code=(), reply_type=PreflightReply,
              should_cancel=None, progress=None, timeout_seconds=PREFLIGHT_SECONDS):
         """Shared contained transport; callers validate their exact read scope."""
+        if os.name == "nt":
+            cwd = Path(root).absolute() / ("preflight-" + request["nonce"]) / "work"
+            # CreateProcessW needs room for a trailing separator and terminator.
+            if len(str(cwd).encode("utf-16-le")) // 2 > 258:
+                raise TrainingPreflightWorkspacePathError()
         reviewed_python = self._worker_python
         reviewed_inventory = self._worker_inventory
         program = sys.executable
