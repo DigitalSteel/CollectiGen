@@ -75,17 +75,27 @@ def _request(value):
 
 
 class TrainingWorkflowService:
-    def __init__(self, jobs, *, readiness=None, selection=None, preparation=None, preparation_root=None):
+    def __init__(self, jobs, *, readiness=None, selection=None, preparation=None,
+                 preparation_root=None, run_output_scope=None):
         from .paths import USER_DATA_DIR
         self.jobs = jobs
         self.preparation_root = Path(preparation_root if preparation_root is not None
             else USER_DATA_DIR / 'training-preparation').absolute()
+        self.run_output_scope = Path(run_output_scope).absolute() if run_output_scope is not None else None
         self.readiness = readiness or TrainingExecutionReadinessService()
         self.selection = selection or TrainingExecutionSelectionService()
         self.preparation = preparation or TrainingExecutionPreparationService()
         self.last_readiness = None
         self.recovery_required = False
         self.last_preparation_root = None
+
+    def _check_output_scope(self, output):
+        if self.run_output_scope is None:
+            return
+        _assert_unredirected(self.run_output_scope)
+        _assert_unredirected(output)
+        if not output.resolve(strict=True).is_relative_to(self.run_output_scope.resolve(strict=True)):
+            raise ValueError('Choose a Training output folder inside this workspace.')
 
     def prepare(self, package, registry, recipe, request, *, should_cancel=None, progress=None,
                 previous=None, resume_contract=None, native_receipt=None):
@@ -102,6 +112,8 @@ class TrainingWorkflowService:
         recipe.validate()
         profile, evidence, specs = _assets(package, recipe)
         selected = _request(request)
+        output = selected['output_root']
+        self._check_output_scope(output)
         fresh = TrainingPackageService().verify(package.destination, should_cancel=should_cancel)
         if not fresh.valid or fresh.manifest != package.manifest or fresh.package_fingerprint != package.package_fingerprint:
             raise ValueError('The training package changed. Review it again.')
@@ -116,7 +128,6 @@ class TrainingWorkflowService:
             RegisteredModelSelection(config.base_model_id, str(base.inspection.path)),
             str(token_root / 'tokenizer'), str(token_root / 'tokenizer_2'))
         components.validate()
-        output = selected['output_root']
         inputs = [selected[name] for name in ('source_root', 'environment_root', 'python_base_root', 'tokenizers_root')]
         inputs += [fresh.destination, base.inspection.path]
         if any(output == path or output.is_relative_to(path) or path.is_relative_to(output) for path in inputs):
@@ -164,6 +175,7 @@ class TrainingWorkflowService:
             should_cancel=should_cancel, progress=progress)
         environment = QualifiedExecutionEnvironment(selected['python'], selected['source_root'],
             selected['environment_root'], selected['python_base_root'], patch, evidence)
+        self._check_output_scope(output)
         return self.preparation.prepare(fresh, registry, recipe, components, joined.admission,
             joined.resolved, environment, joined.device_observation, folder / 'execution-inputs',
             output, selected['run_name'], tensor_specs=specs, previous=previous,
