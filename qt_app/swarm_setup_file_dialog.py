@@ -285,6 +285,7 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         self.file_status.setText("Reading the selected local file…")
         self.choose_file_button.setEnabled(False)
         self.refresh_file_button.setEnabled(False)
+        self.stop_file_button.setEnabled(True)
         self.stop_file_button.show()
         self.use_preset_button.setEnabled(False)
         self.add_block_button.setEnabled(False)
@@ -366,8 +367,11 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         self._refresh_composition()
 
     def stop_reading(self):
-        if self._source_task is not None:
-            self._source_task.cancel()
+        if self._source_task is not None and self._source_task.job_id:
+            self.stop_file_button.setEnabled(False)
+            self.file_status.setText("Stopping the selected file read…")
+            # Keep the observer so the terminal callback restores the controls.
+            self.jobs.cancel(self._source_task.job_id)
 
     def _show_selected(self, _index):
         if self._source_review is None:
@@ -1028,5 +1032,6 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
 
     def reject(self):
         self._closing = True
-        self.stop_reading()
+        if self._source_task is not None:
+            self._source_task.cancel()
         super().reject()

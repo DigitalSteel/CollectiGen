@@ -2586,8 +2586,8 @@
       "size_bytes": 44983
     },
     "qt_app/swarm_setup_file_dialog.py": {
-      "sha256": "c7d26645136f6e6f3cb2f7cd224b8a0766376ec17d536fd97ac0b28049331eb8",
-      "size_bytes": 53844
+      "sha256": "4983c62462258486a8461ac6d149dd1263c3f360792568da3e498822d59192c4",
+      "size_bytes": 54196
     },
     "qt_app/system_knowledge_maintenance_widget.py": {
       "sha256": "6610f64438d234f0b53eb58a86332def5a2d2c94c751bb9131b6229a2ffc3de2",
