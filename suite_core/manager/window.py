@@ -1779,7 +1779,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     return
                 validation = record.kind == "validation" and record.phase == "completed"
                 execution = has_saved_outcome(record)
-                if validation:
+                anima = record.kind == "anima"
+                if anima:
+                    review = history.verify_selected
+                elif validation:
                     review = history.review_validation
                 elif execution:
                     review = history.review_execution_outcome
@@ -1808,6 +1811,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     nonlocal reviewed
                     if preparations:
                         finish("Saved SDXL preparation receipt verified. Training was not started. Live inputs were not rechecked.")
+                    elif anima:
+                        finish("Saved Anima review receipt verified. Model outputs and live inputs were not rechecked.")
                     elif validation:
                         qualification = ("Candidate measurement. " if result["qualification"] == "candidate_only" else "")
                         integrity = ("Saved report hash verified. " if record.validation_report_sha256
@@ -1853,7 +1858,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 dialog.set_retained_index_status("")
                 selected = dialog._selected()
                 completed_validation = selected is not None and selected.kind == "validation" and selected.phase == "completed"
-                if completed_validation:
+                if selected is not None and selected.kind == "anima":
+                    dialog.open_button.setText("Review Saved Anima Receipt")
+                elif completed_validation:
                     dialog.open_button.setText("Review Saved Measurement")
                 elif selected is not None and has_saved_outcome(selected):
                     dialog.open_button.setText("Review Saved Process Outcome")
