@@ -3094,8 +3094,8 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "88c881e740a230519000ffa62419a8df40dd6b6de715ab3f64e0deb230df1edd",
-      "size_bytes": 34949
+      "sha256": "c5f6894bde6badc977cbfe0dc0ec4a16f42c0b6591d351c4185456fba4e709a1",
+      "size_bytes": 35037
     },
     "suite_core/manager/README.md": {
       "sha256": "c1e2868bced18b4b10646f0e55c707bbaafb036459cf22324149cdbb739c681f",
@@ -3950,8 +3950,8 @@
       "size_bytes": 17252
     },
     "tools/prepare_manager_production_stage.py": {
-      "sha256": "bf835eca501f6439ba396791769599856f8d95ad2879a8d833100963749083bf",
-      "size_bytes": 27253
+      "sha256": "6608ed45179c1f277113beb969716f41b23f0658387d5eda07cf8320b2c2502b",
+      "size_bytes": 27343
     },
     "tools/public-source-manifest.json": {
       "sha256": "c7cba83f59e7395364a749cbe86fe8341037b8cf442807b9906c82cf1a61deb6",
@@ -3989,6 +3989,10 @@
       "sha256": "f7161af6f6ae0d02bd14671f0926e2615bb4be791138fd80ecf5b213d5e03162",
       "size_bytes": 62717
     },
+    "tools/trainer_runtime_health_worker.py": {
+      "sha256": "fc7fc894387857150b7365d6343eb8bdda32082e3675ac8237da5db042e84620",
+      "size_bytes": 9601
+    },
     "tools/trainer_runtime_profile.json": {
       "sha256": "895dc409c144e0adc756f233a5998b7197c7bf1cf8872d839e24aee7bf85bc18",
       "size_bytes": 8035262
@@ -4000,6 +4004,10 @@
     "tools/training_dataset_profile_worker.py": {
       "sha256": "0668f30b8dad24c28d4424fb3c95e0eab4fff53f3819a7277f2b565ec1e0eac1",
       "size_bytes": 4346
+    },
+    "tools/training_execution_worker.py": {
+      "sha256": "5386562a8dd487a813abf61b973de9a3569cc5adc66acf68f6b500fe728e6eb6",
+      "size_bytes": 25693
     },
     "tools/training_preflight_worker.py": {
       "sha256": "7f02943bf41d760739d68454742c13ca919a0ebf875eadd2560118d978b40958",
