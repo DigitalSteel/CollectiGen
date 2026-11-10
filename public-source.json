@@ -3382,8 +3382,8 @@
       "size_bytes": 9149
     },
     "suite_core/manager/update_review_ui.py": {
-      "sha256": "23e9a3c2b1424548e9cb87869ea9d4c918efa0d3c5b4e033561d8d0b9ddb49e8",
-      "size_bytes": 14391
+      "sha256": "a2c3614ac69bb7903ceb22c4413737e655418ed4cbf447578f37ee84c97d8661",
+      "size_bytes": 14780
     },
     "suite_core/manager/version.py": {
       "sha256": "063a0dc0886974f059838d598a7523a44f7aadd3b12c5927b554eb0aa90c0f7f",

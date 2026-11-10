@@ -171,6 +171,9 @@ class ManagerUpdateReviewPanel(QGroupBox):
                 if self.operation == 'discover' and isinstance(error, ValueError) and error.args == ('signed_asset_pair_required',):
                     self.message = ('The listed Manager release is missing signed update metadata. '
                         'No update can be staged from this release. Check again after the publisher adds the metadata.')
+                elif self.operation == 'apply' and isinstance(error, ValueError) and error.args == ('compiled_prior_release_required',):
+                    self.message = ('Manager stayed open. This update requires a verified rollback package for your current version. '
+                        'Keep using this installation and check the release notes for a supported upgrade path.')
                 else:
                     self.message = 'Update review failed: ' + str(error)[:240] + '\nCheck again to obtain fresh evidence.'
         self.timer.stop(); self.render()
