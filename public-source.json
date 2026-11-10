@@ -2306,8 +2306,8 @@
       "size_bytes": 15148
     },
     "qt_app/ingest_page.py": {
-      "sha256": "35344b2d648cc3d0e15be857643759c3375429a5aca1bc08c76f5497bd1e4e99",
-      "size_bytes": 366699
+      "sha256": "c9f1d2c42ff2d2836e2edc34dddc3e80a3e06e5ec6bd8ddd959e1e6f1972e0be",
+      "size_bytes": 367178
     },
     "qt_app/ingest_preparation_queue.py": {
       "sha256": "82870eaf359ff7108e51ca2d0bd91d95f422abb404d96c42f411f10cac2f6d6b",
