@@ -2402,8 +2402,8 @@
       "size_bytes": 1915
     },
     "qt_app/model_companion_readiness_dialog.py": {
-      "sha256": "87dd41ca7fdf6822a243b99e1f454e871ac0e4f7949a830d125e983ba7867ed5",
-      "size_bytes": 30527
+      "sha256": "97b3da545175840be41893ab1cc58409b99d4a1f6a773dda51c103553f8115b4",
+      "size_bytes": 31963
     },
     "qt_app/model_companion_workflow.py": {
       "sha256": "ade8113ecdc4c77fa96b92557629c10c68da5ee8b181a9376a53217c317b5524",
@@ -3222,8 +3222,8 @@
       "size_bytes": 3128
     },
     "suite_core/manager/krea_training_review.py": {
-      "sha256": "f7523a4c0cbf7b159177c26970cbacb1726a22e8c1b53939fa7169db35636bf0",
-      "size_bytes": 40573
+      "sha256": "f1e8897cfdeee8be34e035be380a3d5d3f7f6286528c985eceea20ee4ed2fa62",
+      "size_bytes": 51424
     },
     "suite_core/manager/launcher_main.py": {
       "sha256": "33adf7ee200a23dd52062074697fc2a5a62c5ef611572c38308dada16d9b13e5",
@@ -3382,8 +3382,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "1ed8aae084cbf71eeae44266c55a633a9ae5c0d3ee8a85abf8bc4200de0e5049",
-      "size_bytes": 217636
+      "sha256": "0aa6fcc81cfaf3f405585cb184e13a3bf11fc0ed31773b9a2cac8f789b86aa96",
+      "size_bytes": 218025
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

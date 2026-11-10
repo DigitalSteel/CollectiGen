@@ -1976,7 +1976,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             preview_jobs = BackgroundJobManager()
             try:
                 dialog = KreaTrainingReviewDialog(destination, registry_path, self,
-                                                    dataset_verifier=dataset_verifier, preview_jobs=preview_jobs)
+                                                    dataset_verifier=dataset_verifier, preview_jobs=preview_jobs,
+                                                    anima_settings_path=training_draft_settings_path,
+                                                    anima_review_allowed=lambda: (
+                                                        not self.close_policy.pending
+                                                        and getattr(normal_entry_session, "state", None) == "ready"))
             except BaseException:
                 preview_jobs.shutdown(wait=True)
                 raise

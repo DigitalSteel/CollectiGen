@@ -13,8 +13,13 @@ from PySide6.QtWidgets import (
 from .resource_executor import ResourceExecutorOwner
 
 
+class _StaleAnimaSetup(ValueError):
+    pass
+
+
 class KreaTrainingReviewDialog(QDialog):
-    def __init__(self, package_path, registry_path, parent, *, dataset_verifier=None, preview_jobs=None):
+    def __init__(self, package_path, registry_path, parent, *, dataset_verifier=None, preview_jobs=None,
+                 anima_settings_path=None, anima_review_allowed=None):
         super().__init__(parent)
         self.setWindowTitle("Training Package Review")
         self.resize(850, 630)
@@ -34,6 +39,11 @@ class KreaTrainingReviewDialog(QDialog):
         self._krea_package = False
         self._preview_jobs = preview_jobs
         self._registry_path = registry_path
+        self._anima_settings_path = anima_settings_path
+        self._anima_review_allowed = anima_review_allowed
+        self._anima_base_id = None
+        self._anima_review = None
+        self._checking_anima_setup = False
         self._adapter_preview = None
         self._preparation_setup = None
 
@@ -77,6 +87,14 @@ class KreaTrainingReviewDialog(QDialog):
         self.adapter_button.hide()
         self.adapter_button.clicked.connect(self._open_adapter_preview)
         layout.addWidget(self.adapter_button, 0, Qt.AlignLeft)
+        self.anima_button = QPushButton("Verify Anima Model Files…")
+        self.anima_button.hide()
+        self.anima_button.clicked.connect(self._open_anima_verification)
+        layout.addWidget(self.anima_button, 0, Qt.AlignLeft)
+        self.anima_setup_button = QPushButton("Check Saved Trainer Setup")
+        self.anima_setup_button.hide()
+        self.anima_setup_button.clicked.connect(self._check_anima_setup)
+        layout.addWidget(self.anima_setup_button, 0, Qt.AlignLeft)
         layout.addWidget(self.tabs, 1)
         actions = QHBoxLayout()
         self.folder_button = QPushButton("Open Package Folder")
@@ -133,7 +151,10 @@ class KreaTrainingReviewDialog(QDialog):
                     available.append("a Krea 2 LoRA package")
                 available.extend(("an SDXL LoRA package", "an Anima LoRA package"))
                 raise ValueError("Return to Applications and choose " + " or ".join(available) + ".")
-            return verification, configuration, None
+            registration = None
+            if configuration.target_model_family.casefold() == "anima" and configuration.output_kind == "lora":
+                registration = self._anima_registration(configuration, registry_path)
+            return verification, configuration, registration
         if registry_path is None:
             return verification, configuration, None
         try:
@@ -152,6 +173,140 @@ class KreaTrainingReviewDialog(QDialog):
 
         return verification, configuration, report
 
+    @staticmethod
+    def _anima_registration(configuration, registry_path):
+        from core.model_resource_registry import ModelResourceError, ModelResourceRegistry
+        from core.training_anima import (
+            AnimaError, RESOURCE_ADAPTER_ID, RESOURCE_PROFILE_ID, SOURCE_REVISION, anima_resource_contract,
+        )
+
+        try:
+            contract = anima_resource_contract(
+                workflow_kind="training", profile_id=RESOURCE_PROFILE_ID, adapter_id=RESOURCE_ADAPTER_ID,
+                adapter_version=SOURCE_REVISION, main_resource_id=configuration.base_model_id,
+            )
+        except AnimaError:
+            return "This package does not identify the exact supported Anima Base model."
+        if registry_path is None:
+            return "Model registrations are unavailable in this Manager session."
+        try:
+            snapshot, _ = ModelResourceRegistry(registry_path).snapshot()
+        except (ModelResourceError, OSError, ValueError):
+            return "The model registry could not be read. Use the app that manages this registry to resolve the problem, then reopen this package."
+
+        labels = {"main": "Anima Base", "text_encoder": "Qwen3 text encoder", "vae": "Qwen-Image VAE"}
+        resources = snapshot["resources"]
+        lines = []
+        for requirement in contract.requirements:
+            record = resources.get(requirement.resource_id, {})
+            if not record.get("locations"):
+                status = "no local file registered"
+            elif not any(
+                declaration["role"] == requirement.role
+                and declaration["family"].casefold() == requirement.family.casefold()
+                for declaration in record["declarations"]
+            ):
+                status = "registered with a different or missing role or family"
+            else:
+                status = "registered for this role"
+            lines.append(f"{labels[requirement.slot]}: {status}")
+        lines.append("Registration only. Model files and trainer readiness have not been verified.")
+        return "\n".join(lines)
+
+    def _check_anima_setup(self):
+        if (self._checking_anima_setup or self._anima_base_id is None or self._anima_review is not None
+                or self._cancel.is_set() or not self._anima_review_allowed()):
+            return
+        self._checking_anima_setup = True
+        self.anima_setup_button.setEnabled(False)
+        self.anima_button.setEnabled(False)
+        self.folder_button.setEnabled(False)
+        self.return_button.setText("Cancel Check and Return")
+        self.status.setText("Checking saved trainer files and folders…")
+        self._future = self._executor.submit(self._review_anima_setup)
+        self._timer.start(50)
+
+    def _review_anima_setup(self):
+        from core.model_selection import protected_model_roots
+        from core.settings import AppSettings
+        from core.training_anima import inspect_anima_runtime, validate_anima_trainer_request
+        from core.training_setup_resources import SavedTrainingSetupResolver
+        from core.training_setup_selection import _require_disjoint_protected_paths
+        from core.training_source_io import read_stable_training_source
+
+        def cancelled():
+            return self._cancel.is_set() or not self._anima_review_allowed()
+
+        settings_path = Path(self._anima_settings_path)
+        if cancelled() or Path(self._registry_path) != settings_path.parent / "model_resources.json":
+            raise InterruptedError("The Manager review session ended.")
+        raw, _ = read_stable_training_source(settings_path, max_bytes=16 * 1024 * 1024)
+        protected = protected_model_roots(AppSettings._from_bytes(raw))
+        resolver = SavedTrainingSetupResolver(settings_path.parent / "training-setup.json")
+        _require_disjoint_protected_paths((resolver.selection.path, resolver.profile_path), protected)
+        _, revision = resolver.selection.snapshot()
+
+        def require_current():
+            if cancelled():
+                raise InterruptedError("The Manager review session ended.")
+            current, _ = read_stable_training_source(settings_path, max_bytes=16 * 1024 * 1024)
+            if current != raw or resolver.selection.snapshot()[1] != revision:
+                raise _StaleAnimaSetup
+
+        setup = resolver(should_cancel=cancelled, protected_roots=protected)
+        require_current()
+        paths = validate_anima_trainer_request(setup)
+        inspection = inspect_anima_runtime(paths["source_root"], paths["environment_root"],
+                                           should_cancel=cancelled)
+        require_current()
+        return inspection.probe_ready
+
+    def _open_anima_verification(self):
+        if (self._anima_review is not None or self._cancel.is_set()
+                or self._anima_base_id is None or self._anima_review_allowed is None
+                or not self._anima_review_allowed()):
+            return
+        from core.model_companion_readiness import CompanionReadinessRequest, CompanionReadinessService
+        from core.model_resource_registry import ModelResourceRegistry
+        from core.settings import AppSettings
+        from core.training_anima import RESOURCE_ADAPTER_ID, RESOURCE_PROFILE_ID, SOURCE_REVISION
+        from core.training_source_io import read_stable_training_source
+        from qt_app.model_companion_readiness_dialog import ModelCompanionReadinessDialog
+        from qt_app.model_companion_workflow import resource_boundaries
+
+        settings_path = Path(self._anima_settings_path)
+        registry = ModelResourceRegistry(self._registry_path)
+
+        def settings():
+            if not self._anima_review_allowed() or registry.path != settings_path.parent / "model_resources.json":
+                raise ValueError("The Manager model review session is no longer available.")
+            try:
+                raw, _ = read_stable_training_source(settings_path, max_bytes=16 * 1024 * 1024)
+                return AppSettings._from_bytes(raw)
+            except (OSError, RuntimeError, ValueError):
+                raise ValueError("Manager settings could not be checked. Reopen a current profile and try again.") from None
+
+        def service_factory(snapshot):
+            try:
+                protected, managed = resource_boundaries(snapshot, settings())
+            except ImportError:
+                raise ValueError("Managed model boundaries could not be checked in this Manager build.") from None
+            return CompanionReadinessService(registry, protected_roots=protected, managed_roots=managed)
+
+        try:
+            profile_settings = settings()
+        except ValueError as exc:
+            self.status.setText(str(exc))
+            return
+        request = CompanionReadinessRequest(self._anima_base_id, "training", RESOURCE_PROFILE_ID,
+                                            RESOURCE_ADAPTER_ID, SOURCE_REVISION)
+        dialog = ModelCompanionReadinessDialog(registry, self._preview_jobs, self._anima_base_id, self,
+            settings=profile_settings, service_factory=service_factory, initial_request=request, verification_only=True,
+            verification_allowed=self._anima_review_allowed)
+        self._anima_review = dialog
+        dialog.finished.connect(lambda _: setattr(self, "_anima_review", None))
+        dialog.show()
+
     def _settle(self):
         if not self._future.done() or self._executor.close_held:
             return
@@ -160,6 +315,33 @@ class KreaTrainingReviewDialog(QDialog):
             super().reject()
             return
         self.return_button.setText("Return to Applications")
+        if self._checking_anima_setup:
+            from core.training_anima import AnimaError
+
+            self._checking_anima_setup = False
+            session_ready = self._anima_review_allowed()
+            self.anima_setup_button.setEnabled(session_ready)
+            self.anima_button.setEnabled(session_ready)
+            self.folder_button.setEnabled(True)
+            if not session_ready:
+                self.status.setText("The Manager session ended. Reopen package review to check the trainer setup again.")
+                return
+            try:
+                runtime_matches = self._future.result()
+            except _StaleAnimaSetup:
+                self.status.setText("Settings or the saved trainer setup changed. Check Saved Trainer Setup again.")
+            except InterruptedError:
+                self.status.setText("The Manager session ended. Reopen package review to check the trainer setup again.")
+            except AnimaError as exc:
+                self.status.setText(f"{exc} Review the saved trainer setup before retrying.")
+            except (OSError, RuntimeError, ValueError, TypeError):
+                self.status.setText("Saved trainer setup could not be verified. Review your trainer setup or use the package in an external trainer.")
+            else:
+                if runtime_matches:
+                    self.status.setText("Saved trainer files and Anima runtime metadata match. Run readiness requires a separate check.")
+                else:
+                    self.status.setText("Saved trainer files verified, but Anima runtime metadata does not match. Review the selected trainer or use an external trainer.")
+            return
         if self._checking_handoff:
             self._finish_package_handoff()
             return
@@ -232,9 +414,9 @@ class KreaTrainingReviewDialog(QDialog):
         if binding is not None:
             identity += (f"\nCollection version: {binding['version_id']}"
                          f"\nCandidate plan: {binding['candidate_plan_fingerprint']}")
-        if report is None:
+        anima = configuration.target_model_family.casefold() == "anima" and configuration.output_kind == "lora"
+        if report is None or anima:
             status = "Package verified for manual handoff. Trainer readiness is unverified."
-            anima = configuration.target_model_family.casefold() == "anima" and configuration.output_kind == "lora"
             if anima:
                 status = "Anima package verified for manual handoff. Use the verified package in an external trainer."
             if self._krea_package:
@@ -246,6 +428,15 @@ class KreaTrainingReviewDialog(QDialog):
             self.sections[2].setAccessibleName("Training dataset")
             self.sections[0].setPlainText(identity + (
                 "\n\nRegistered base and trainer readiness are unverified." if self._krea_package else ""))
+            if anima:
+                from core.training_anima import BASE_ID
+                self.sections[0].appendPlainText("\nModel registrations\n" + report)
+                if (configuration.base_model_id == BASE_ID and self._registry_path is not None
+                        and self._anima_settings_path is not None and self._preview_jobs is not None
+                        and self._anima_review_allowed is not None):
+                    self._anima_base_id = BASE_ID
+                    self.anima_button.show()
+                    self.anima_setup_button.show()
             if (self._registry_path is not None and self._preview_jobs is not None
                     and configuration.target_model_family.casefold() == "sdxl"
                     and configuration.output_kind == "lora"):
@@ -744,6 +935,9 @@ class KreaTrainingReviewDialog(QDialog):
         if self._adapter_preview is not None:
             self._adapter_preview.reject()
             return
+        if self._anima_review is not None:
+            self._anima_review.reject()
+            return
         self._executor.begin_close()
         if self._executor.close_held:
             self.status.setText("Stopping the package check. Waiting for the review worker to finish…")
@@ -753,7 +947,8 @@ class KreaTrainingReviewDialog(QDialog):
         super().reject()
 
     def closeEvent(self, event):
-        if self._preparation_setup is not None or self._adapter_preview is not None or self._executor.close_held:
+        if (self._preparation_setup is not None or self._adapter_preview is not None
+                or self._anima_review is not None or self._executor.close_held):
             event.ignore()
             self.reject()
         else:

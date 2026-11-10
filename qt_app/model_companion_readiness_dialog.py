@@ -34,10 +34,13 @@ class ModelCompanionReadinessDialog(QDialog):
 
     def __init__(self, registry, jobs, main_resource_id, parent=None, *, service=None,
                  settings=None, protected_roots=(), managed_roots=(), service_factory=None, initial_request=None,
-                 collect_for_import=False, on_guidance_choices=None):
+                 collect_for_import=False, on_guidance_choices=None, verification_only=False,
+                 verification_allowed=None):
         super().__init__(parent)
         self.registry, self.jobs, self.settings = registry, jobs, settings
         self.collect_for_import = bool(collect_for_import)
+        self.verification_only = bool(verification_only)
+        self._verification_allowed = verification_allowed
         self.on_guidance_choices = on_guidance_choices
         self.main_resource_id = main_resource_id
         self.service = service or CompanionReadinessService(registry,
@@ -109,6 +112,10 @@ class ModelCompanionReadinessDialog(QDialog):
         actions.addWidget(self.reload); actions.addWidget(self.stop); actions.addStretch(1)
         actions.addWidget(self.prepare); actions.addWidget(self.close_button)
         actions.addWidget(self.return_to_guidance_button); body.addLayout(actions)
+        if self.verification_only:
+            self.acquire.hide()
+            self.prepare.hide()
+            self.close_button.setText("Back to Package Review")
         self.goal.currentIndexChanged.connect(self._goal_changed)
         self.profile.currentIndexChanged.connect(self._profile_changed)
         self._update_actions(); QTimer.singleShot(0, self.refresh_after_child)
@@ -133,7 +140,9 @@ class ModelCompanionReadinessDialog(QDialog):
         if not hasattr(self, "close_button"): return
         idle = self._task is None and self._selector is None and self._external_child is None and not self._closing
         row = self._row()
-        for widget in (self.goal, self.profile, self.rows, self.reload): widget.setEnabled(idle)
+        for widget in (self.rows, self.reload): widget.setEnabled(idle)
+        self.goal.setEnabled(idle and not self.verification_only)
+        self.profile.setEnabled(idle and not self.verification_only)
         self.locate.setEnabled(idle and row is not None and self._token is not None)
         self.clear_choice.setEnabled(idle and row is not None and any(choice.slot == row.slot for choice in self.request.choices))
         self.acquire.setEnabled(idle and row is not None and self.report is not None)
@@ -335,10 +344,19 @@ class ModelCompanionReadinessDialog(QDialog):
         row = self._row()
         if self._task is not None or self._selector is not None or row is None or not self._policy_current(): return
         from .model_selector_dialog import ModelSelectorDialog
-        dialog = ModelSelectorDialog(self.registry, self.jobs, parent=self, role="" if row.slot == "main" else row.role or "", family="" if row.slot == "main" else row.family or "",
-            settings=self.settings, protected_roots=self.service.protected_roots,
-            current_choice_label=row.resource_id or "No resource chosen", allow_manage=not self.collect_for_import,
-            collect_for_import=self.collect_for_import)
+        choice_only = self.collect_for_import or self.verification_only
+        generic_main = row.slot == "main" and not self.verification_only
+        protected = self.service.protected_roots
+        if self.verification_only:
+            protected = (*protected, *self.service.managed_roots)
+        dialog = ModelSelectorDialog(self.registry, self.jobs, parent=self, role="" if generic_main else row.role or "",
+            family="" if generic_main else row.family or "", settings=self.settings, protected_roots=protected,
+            current_choice_label=row.resource_id or "No resource chosen", allow_manage=not choice_only,
+            collect_for_import=choice_only)
+        if self.verification_only:
+            dialog.use_button.setText("Choose Registered File")
+            dialog.use_button.setToolTip("Choose this registered path. File verification is a separate check.")
+            dialog.import_location.setAccessibleName("Exact registered file")
         self._selector = dialog
         slot, context = row.slot, self._profile_key(self.request)
         if slot == "main": dialog.search.setText(self.main_resource_id)
@@ -373,15 +391,23 @@ class ModelCompanionReadinessDialog(QDialog):
         if self.collect_for_import: return
         if self._task is not None or not self.request.choices or self._token is None or not self._policy_current(): return
         request, token, service = self.request, self._token, self.service
+        allowed = self._verification_allowed
         self.report = None
         self._run("Rechecking explicitly chosen model files", lambda job: service.verify(request, expected_registry=token,
-            should_cancel=lambda: job.cancel_requested, progress=self._progress(job)), self._verified)
+            should_cancel=lambda: job.cancel_requested or (allowed is not None and not allowed()),
+            progress=self._progress(job)), self._verified)
 
     def _verified(self, report):
+        if self.verification_only and not self._policy_current():
+            return
         self._show_report(report)
-        self.status.setText("Chosen paths rechecked. Review verification and compatibility separately; preparation requires its own review.")
+        if self.verification_only:
+            self.status.setText("File check complete. Review verification and compatibility below. Run readiness is separate.")
+        else:
+            self.status.setText("Chosen paths rechecked. Review verification and compatibility separately; preparation requires its own review.")
 
     def _acquire(self):
+        if self.verification_only: return
         row = self._row()
         if self._task is not None or row is None or self.report is None or not self._policy_current(): return
         try: handoff = self.service.acquisition_handoff(self.report, row.slot)
@@ -390,6 +416,7 @@ class ModelCompanionReadinessDialog(QDialog):
         self.acquisition_requested.emit(handoff)
 
     def _prepare(self):
+        if self.verification_only: return
         if self.collect_for_import:
             if self._task is None and self._selector is None and self._external_child is None and not self._closing and self.report is not None:
                 self.import_choices_selected.emit(self.request)
