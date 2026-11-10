@@ -1799,7 +1799,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 execution = has_saved_outcome(record)
                 anima = record.kind == "anima"
                 if anima:
-                    review = history.verify_selected
+                    review = history.review_anima_settings
                 elif validation:
                     review = history.review_validation
                 elif execution:
@@ -1836,7 +1836,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     if preparations:
                         finish("Saved SDXL preparation receipt verified. Training was not started. Live inputs were not rechecked.")
                     elif anima:
-                        finish("Saved Anima review receipt verified. Model outputs and live inputs were not rechecked.")
+                        finish(f"Saved Anima settings: {result.max_steps} optimizer steps, "
+                               f"{result.resolution} px, LoRA rank {result.rank}, seed {result.seed}, "
+                               f"learning rate {result.learning_rate:g}, time limit {result.timeout_seconds:g} seconds. "
+                               "Model outputs and live inputs were not rechecked.")
                     elif validation:
                         qualification = ("Candidate measurement. " if result["qualification"] == "candidate_only" else "")
                         integrity = ("Saved report hash verified. " if record.validation_report_sha256
@@ -1883,7 +1886,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 selected = dialog._selected()
                 completed_validation = selected is not None and selected.kind == "validation" and selected.phase == "completed"
                 if selected is not None and selected.kind == "anima":
-                    dialog.open_button.setText("Review Saved Anima Receipt")
+                    dialog.open_button.setText("Review Saved Anima Settings")
                 elif completed_validation:
                     dialog.open_button.setText("Review Saved Measurement")
                 elif selected is not None and has_saved_outcome(selected):

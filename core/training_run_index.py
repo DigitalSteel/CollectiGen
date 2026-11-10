@@ -663,6 +663,22 @@ class ScopedTrainingHistory:
         plan, _ = self._preparation(record, revision)
         return plan.timeout_seconds
 
+    def review_anima_settings(self, record, revision):
+        """Read saved Anima settings without opening linked training inputs."""
+        from .training_anima import AnimaSettings
+
+        if record.kind != "anima":
+            raise TrainingRunIndexError("Choose a saved Anima run.")
+        plan, value = self._preparation(record, revision)
+        try:
+            settings = AnimaSettings(**value["settings"])
+            settings.validate()
+        except (KeyError, TypeError, ValueError) as exc:
+            raise TrainingRunIndexError("The saved Anima settings are invalid.") from exc
+        if settings.timeout_seconds != plan.timeout_seconds:
+            raise TrainingRunIndexError("The saved Anima settings do not match the run's time limit.")
+        return settings
+
     def _review_sdxl_plan(self, record, revision):
         from .training_run_recovery import restore_indexed_review
 
