@@ -1777,14 +1777,22 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             plan_result.setAutoDefault(False)
             plan_result.hide()
             dialog.layout().addWidget(plan_result)
+            open_prepared = QPushButton("Open Prepared Workspace", dialog)
+            open_prepared.setAutoDefault(False)
+            open_prepared.hide()
+            if preparations:
+                dialog.layout().addWidget(open_prepared)
+            prepared_review = None
 
             def has_saved_outcome(record):
                 return (record.kind == "execution" and bool(record.latest_journal_tip)
                         and record.phase in {"stopped", "cancelled", "failed", "interrupted",
                                              "verification_required", "registration_required", "completed"})
 
-            def verify(record, revision):
-                nonlocal task, reviewed
+            def verify(record, revision, *, open_workspace=False):
+                nonlocal task, reviewed, prepared_review
+                prepared_review = None
+                open_prepared.hide()
                 reviewed = None
                 plan_result.hide()
                 if self.generation_state() is not state:
@@ -1806,9 +1814,23 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     review = history.review_execution_outcome
                 else:
                     review = history.review_preparation
+                def inspect(_job):
+                    result = review(record, revision)
+                    if not open_workspace:
+                        return result
+                    from core.training_source_io import _assert_unredirected
+                    from core.training_package import _directory_state
+
+                    folder = Path(record.destination) / "work" / "prepared"
+                    try:
+                        _assert_unredirected(folder)
+                        return folder, _directory_state(folder)
+                    except (OSError, RuntimeError, ValueError):
+                        raise ValueError("The prepared workspace is missing or changed. Restore the original folder or prepare the package again.") from None
+
                 dialog.set_retained_index_status("Checking the selected saved review…")
                 task = CoordinatedCallTask(state.jobs, "Verify Training receipt",
-                                           lambda _job: review(record, revision),
+                                           inspect,
                                            resource="io")
 
                 def finish(message):
@@ -1829,12 +1851,33 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                             dialog.set_retained_index_status(message)
 
                 def complete(result):
-                    nonlocal reviewed
+                    nonlocal reviewed, prepared_review
                     if closing_review:
                         finish("")
                         return
                     if preparations:
                         finish("Saved SDXL preparation receipt verified. Training was not started. Live inputs were not rechecked.")
+                        if (self._training_history_dialog is not dialog or self.generation_state() is not state
+                                or dialog._selected() != record or dialog._revision != revision):
+                            return
+                        if open_workspace:
+                            from core.training_source_io import _assert_unredirected
+                            from core.training_package import _directory_state
+                            from PySide6.QtCore import QUrl
+                            from PySide6.QtGui import QDesktopServices
+
+                            folder, identity = result
+                            try:
+                                _assert_unredirected(folder)
+                                if _directory_state(folder) != identity:
+                                    raise ValueError("Prepared workspace changed")
+                            except (OSError, RuntimeError, ValueError):
+                                dialog.set_retained_index_status("The prepared workspace changed. Review the saved preparation again.")
+                                return
+                            if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder))):
+                                dialog.set_retained_index_status("Windows could not open the prepared workspace. Choose Open Prepared Workspace to retry.")
+                        prepared_review = record, revision
+                        open_prepared.show()
                     elif anima:
                         finish(f"Saved Anima settings: {result.max_steps} optimizer steps, "
                                f"{result.resolution} px, LoRA rank {result.rank}, seed {result.seed}, "
@@ -1881,7 +1924,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     finish(str(exc))
 
             def selection_changed():
-                nonlocal reviewed
+                nonlocal reviewed, prepared_review
+                prepared_review = None
+                open_prepared.hide()
                 reviewed = None
                 plan_result.hide()
                 if not closing_review:
@@ -1910,6 +1955,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 handoff = reviewed
                 dialog.accept()
 
+            def open_saved_workspace():
+                if (task is not None or prepared_review is None or self.generation_state() is not state
+                        or dialog._selected() != prepared_review[0] or dialog._revision != prepared_review[1]):
+                    return
+                verify(*prepared_review, open_workspace=True)
+
+            open_prepared.clicked.connect(open_saved_workspace)
             plan_result.clicked.connect(plan_with_result)
             dialog.runs.itemSelectionChanged.connect(selection_changed)
             dialog.openRunRequested.connect(verify)
