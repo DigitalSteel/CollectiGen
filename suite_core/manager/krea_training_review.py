@@ -242,6 +242,7 @@ class KreaTrainingReviewDialog(QDialog):
 
         from core.model_resource_registry import ModelResourceRegistry
         from core.training_anima import AnimaTrainingService
+        from core.training_file_inventory import SoftwareInventoryService
         from qt_app.model_companion_workflow import resource_boundaries
         from qt_app.training_anima_dialog import anima_package_settings
         from core.training_setup_resources import SavedTrainingSetupResolver
@@ -283,6 +284,15 @@ class KreaTrainingReviewDialog(QDialog):
             selection = service.prepare_selection(
                 package.destination, {**setup, "output_root": str(output)}, output / ".anima-selection-review",
                 should_cancel=cancelled)
+            inventories = (
+                (selection.environment_root, selection.environment_inventory),
+                (selection.python_base_root, selection.python_base_inventory),
+            )
+            inventory = SoftwareInventoryService()
+            try:
+                fingerprints = tuple(inventory.load(root, manifest).fingerprint for root, manifest in inventories)
+            except (OSError, RuntimeError, ValueError) as exc:
+                raise _StaleAnimaInventory from exc
             preview = service.preview(selection, run_settings, should_cancel=cancelled)
             require_current()
             if preview.package_fingerprint != self._handoff_fingerprint:
@@ -296,18 +306,15 @@ class KreaTrainingReviewDialog(QDialog):
                 raise _StaleAnimaPackage from exc
             require_current()
             if preview.ready:
-                from core.training_file_inventory import SoftwareInventoryService
-
-                inventory = SoftwareInventoryService()
                 try:
-                    inventory.verify(selection.environment_root, selection.environment_inventory,
-                                     should_cancel=cancelled)
-                    inventory.verify(selection.python_base_root, selection.python_base_inventory,
-                                     should_cancel=cancelled)
+                    verified = tuple(inventory.verify(root, manifest, should_cancel=cancelled)["inventory_sha256"]
+                                     for root, manifest in inventories)
                 except InterruptedError:
                     raise
                 except (OSError, RuntimeError, ValueError) as exc:
                     raise _StaleAnimaInventory from exc
+                if verified != fingerprints:
+                    raise _StaleAnimaInventory
             require_current()
         return preview, directory
 
