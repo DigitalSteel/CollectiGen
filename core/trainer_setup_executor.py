@@ -385,6 +385,8 @@ class TrainerSetupExecutor:
         else:
             selected=store.prepare_managed(TrainerEnvironmentService(self.managed_root,profile),profile,
                 generation.generation_id,tokenizers_root,output_root,should_cancel=should_cancel)
+        if should_cancel and should_cancel():
+            raise InterruptedError('Saving Trainer Setup was cancelled.')
         revision=store.save(selected,expected_revision)
         recovery.append('resources_saved',{'selection_path':str(Path(selection_path).absolute()),'revision':revision,
             'health_receipt_path':str(receipt_path),'health_receipt_sha256':recorded['receipt_sha256'],

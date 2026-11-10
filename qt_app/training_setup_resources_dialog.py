@@ -11,9 +11,10 @@ from .workers import CoordinatedCallTask
 class TrainingSetupResourcesDialog(FeedbackEnabledDialog):
     feedback_workflow='Saved local training resources'
 
-    def __init__(self,executor,reference,selection_path,jobs,*,default_tokenizers='',default_output='',parent=None):
+    def __init__(self,executor,reference,selection_path,jobs,*,default_tokenizers='',default_output='',parent=None, validate_paths=None):
         super().__init__(parent)
         self.executor,self.reference,self.selection_path,self.jobs=executor,dict(reference),Path(selection_path),jobs
+        self.validate_paths = validate_paths
         self._task=None;self._revision=None;self._closing=False
         self.setWindowTitle('Save Local Training Setup');self.resize(780,350)
         layout=QVBoxLayout(self)
@@ -32,7 +33,11 @@ class TrainingSetupResourcesDialog(FeedbackEnabledDialog):
         buttons=QDialogButtonBox(QDialogButtonBox.Save|QDialogButtonBox.Cancel);layout.addWidget(buttons)
         self.save_button=buttons.button(QDialogButtonBox.Save);self.save_button.setText('Verify and Save Setup')
         buttons.accepted.connect(self._save);buttons.rejected.connect(self.reject)
-        self._start('Loading saved trainer resources',lambda job:TrainingSetupSelectionService(self.selection_path).snapshot(),self._loaded)
+        def load(job):
+            if self.validate_paths is not None:
+                self.validate_paths(self.selection_path)
+            return TrainingSetupSelectionService(self.selection_path).snapshot()
+        self._start('Loading saved trainer resources',load,self._loaded)
 
     def _choose(self,key):
         selected=QFileDialog.getExistingDirectory(self,'Choose '+('SDXL tokenizer folder' if key=='tokenizers' else 'training output folder'),self.fields[key].text())
@@ -73,6 +78,8 @@ class TrainingSetupResourcesDialog(FeedbackEnabledDialog):
             if not tokens or not output or not Path(tokens).is_absolute() or not Path(output).is_absolute():
                 raise ValueError('Choose absolute tokenizer and training output folders.')
             if job.cancel_requested:raise InterruptedError('Setup saving cancelled.')
+            if self.validate_paths is not None:
+                self.validate_paths(self.selection_path, tokens, output)
             from core.training_source_io import _assert_unredirected
             _assert_unredirected(Path(output));Path(output).mkdir(parents=True,exist_ok=True)
             return self.executor.save_resources(self.reference,self.selection_path,tokens,output,revision,

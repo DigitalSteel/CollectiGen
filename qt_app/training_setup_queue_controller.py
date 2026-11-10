@@ -87,6 +87,59 @@ class TrainerSetupQueueController:
         return self.queue.cancel_operation(pending.operation_id)
 
 
+@dataclass(frozen=True)
+class VerifiedExistingTrainerSetup:
+    reference: dict
+    result: object
+
+
+class ExistingTrainerSetupController(TrainerSetupQueueController):
+    '''Use the stock executor without exposing managed software operations.'''
+
+    def __init__(self, profile, executor, *, session_allowed, protected_roots):
+        super().__init__(profile, executor, None)
+        self.session_allowed = session_allowed
+        self.protected_roots = protected_roots
+
+    def supports(self, action):
+        return self.profile is not None and action == 'existing'
+
+    def _cancel_check(self, should_cancel):
+        return lambda: should_cancel() or not self.session_allowed()
+
+    def _check_paths(self, *paths):
+        from core.training_setup_selection import _require_disjoint_protected_paths
+        _require_disjoint_protected_paths(paths, self.protected_roots())
+
+    def prepare(self, action, selection, *, should_cancel, progress):
+        cancel = self._cancel_check(should_cancel)
+        if cancel():
+            raise InterruptedError('Trainer Setup review was cancelled.')
+        if not self.supports(action):
+            raise ValueError('Manager can only verify an existing trainer here.')
+        self._check_paths(selection, self.executor.root)
+        return super().prepare(action, selection, should_cancel=cancel, progress=progress)
+
+    def apply(self, preview, *, should_cancel, progress):
+        from types import SimpleNamespace
+
+        cancel = self._cancel_check(should_cancel)
+        if cancel():
+            raise InterruptedError('Trainer Setup verification was cancelled.')
+        if not self.supports(preview.action) or preview.profile_sha256 != self.profile.sha256:
+            raise ValueError('The trainer profile changed. Review Setup again.')
+        reference = dict(preview.payload)
+        value, _ = self.executor._review(reference, cancel)
+        if value['action'] != 'existing':
+            raise ValueError('Manager can only verify an existing trainer here.')
+        self._check_paths(value['selection'], self.executor.root)
+        self.executor(SimpleNamespace(params=reference), should_cancel=cancel, progress=progress)
+        result = self.executor.completed_result(reference, should_cancel=cancel)
+        if cancel():
+            raise InterruptedError('Trainer Setup verification was cancelled.')
+        return VerifiedExistingTrainerSetup(reference, result)
+
+
 def open_trainer_setup(state,parent,*,return_review=None):
     """Load only reviewed trainer metadata off the GUI thread, then show Setup."""
     from pathlib import Path

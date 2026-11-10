@@ -605,6 +605,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             training_layout = QVBoxLayout(training_panel)
             training_layout.setContentsMargins(0, 0, 0, 0)
             training_layout.addWidget(QLabel("Training review · Check a package before manual handoff"))
+            self._trainer_setup_dialog = None
+            self._trainer_setup_close_requested = False
+            self.trainer_setup_button = compact_action(QPushButton("Review Existing Trainer…"))
+            self.trainer_setup_button.clicked.connect(self.open_existing_trainer_setup)
+            self.trainer_setup_button.setVisible(self.krea_training_review_button.isVisibleTo(self)
+                                                 and training_draft_settings_path is not None)
+            training_layout.addWidget(self.trainer_setup_button, 0, Qt.AlignLeft)
             training_layout.addWidget(self.krea_training_review_button, 0, Qt.AlignLeft)
             self.training_package_recovery_button = compact_action(QPushButton("Review Interrupted Training Package…"))
             self.training_package_recovery_button.clicked.connect(self.review_interrupted_training_package)
@@ -2236,6 +2243,91 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             except (RuntimeError, ValueError):
                 settle()
 
+        def open_existing_trainer_setup(self):
+            state = self.generation_state()
+            if state is None or training_draft_settings_path is None or self._trainer_setup_dialog is not None:
+                return
+            from core.model_selection import protected_model_roots
+            from core.paths import PROGRAM_ROOT
+            from core.settings import AppSettings
+            from core.trainer_setup_executor import TrainerSetupExecutor
+            from core.training_setup_selection import _require_disjoint_protected_paths
+            from core.training_source_io import read_stable_training_source
+            from qt_app.training_setup_dialog import TrainingSetupDialog
+            from qt_app.training_setup_queue_controller import ExistingTrainerSetupController
+            from qt_app.training_setup_resources_dialog import TrainingSetupResourcesDialog
+
+            settings_path = Path(training_draft_settings_path)
+            selection_path = settings_path.with_name("training-setup.json")
+            tools = PROGRAM_ROOT / "tools"
+            executor = TrainerSetupExecutor(
+                state.jobs, state.generation_data_root / "training" / "setup",
+                profile_path=tools / "trainer_runtime_profile.json",
+                catalog_path=tools / "trainer_runtime_catalog.json",
+                source_root=tools / "trainer-sources" / "sd-scripts",
+            )
+
+            def session_allowed():
+                return not self._trainer_setup_close_requested and self.generation_state() is state
+
+            def protected_roots():
+                if not session_allowed():
+                    raise InterruptedError("The Manager Trainer Setup session ended.")
+                raw, _ = read_stable_training_source(settings_path, max_bytes=16 * 1024 * 1024)
+                return protected_model_roots(AppSettings._from_bytes(raw))
+
+            def validate_paths(*paths):
+                _require_disjoint_protected_paths((*paths, executor.root), protected_roots())
+
+            class GuardedResources:
+                def save_resources(self, reference, path, tokens, output, revision, *, should_cancel):
+                    cancel = lambda: should_cancel() or not session_allowed()
+                    if cancel():
+                        raise InterruptedError('Saving Trainer Setup was cancelled.')
+                    review, _ = executor._review(reference, cancel)
+                    validate_paths(path, tokens, output, review['selection'])
+                    return executor.save_resources(
+                        reference, path, tokens, output, revision,
+                        should_cancel=lambda: should_cancel() or not session_allowed(),
+                    )
+
+            self._trainer_setup_close_requested = False
+            try:
+                profile = executor.profile()
+            except (OSError, RuntimeError, ValueError):
+                self.statusBar().showMessage("Trainer Setup profile unavailable. Manual folder choices are still available.")
+                return
+            controller = ExistingTrainerSetupController(
+                profile, executor, session_allowed=session_allowed, protected_roots=protected_roots)
+            dialog = TrainingSetupDialog(
+                profile, state.jobs, parent=self, controller=controller,
+                goal_summary="Verify an existing SDXL trainer and save its local folders for preparation.",
+                machine_fit_summary="Trainer Setup checks software health. Training needs a separate review.",
+            )
+            selected = {}
+            dialog.preparationSelected.connect(selected.update)
+            self._trainer_setup_dialog = dialog
+            try:
+                dialog.exec()
+                reference = selected.get("review_reference")
+                if reference and session_allowed():
+                    resources = TrainingSetupResourcesDialog(
+                        GuardedResources(), reference, selection_path, state.jobs,
+                        default_output=str(state.generation_data_root / "training" / "runs"),
+                        parent=self, validate_paths=validate_paths,
+                    )
+                    self._trainer_setup_dialog = resources
+                    try:
+                        if resources.exec() == QDialog.Accepted:
+                            self.statusBar().showMessage("Trainer Setup saved. Use Load Saved Trainer when preparing an SDXL dataset.")
+                    finally:
+                        resources.deleteLater()
+            finally:
+                self._trainer_setup_dialog = None
+                dialog.deleteLater()
+                if self._trainer_setup_close_requested:
+                    QTimer.singleShot(0, self.close)
+
         def open_krea_training_review(self, *, destination=None, expected_package_fingerprint=None):
             registry_path = krea_registry_path
             if (self.view.synthetic or getattr(normal_entry_session, "state", None) != "ready"
@@ -2904,6 +2996,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.statusBar().showMessage("Stopping the Training package receipt check. Close Manager again after it finishes.")
                 event.ignore()
                 return
+            if self._trainer_setup_dialog is not None:
+                self._trainer_setup_close_requested = True
+                self._trainer_setup_dialog.reject()
+                event.ignore()
+                return
             if self._krea_review_dialog is not None:
                 self._close_after_krea_review = True
                 self._krea_review_dialog.reject()
@@ -3159,6 +3256,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
         def refresh_section_commands(self, *_):
             session_ready = not view.synthetic and getattr(normal_entry_session, "state", None) == "ready"
             self.krea_training_review_button.setVisible(session_ready)
+            self.trainer_setup_button.setVisible(session_ready and training_draft_settings_path is not None)
             self.training_merge_button.setVisible(session_ready)
             for panel in (self.generation_panel, self.training_panel):
                 panel.setEnabled(session_ready)

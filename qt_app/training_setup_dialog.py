@@ -602,7 +602,10 @@ class TrainingSetupDialog(FeedbackEnabledDialog):
         self._run(preview.confirmation_label, work, lambda result: self._applied(preview.action, result))
 
     def _applied(self, action, result):
-        from .training_setup_queue_controller import QueuedTrainerSetup
+        from .training_setup_queue_controller import QueuedTrainerSetup, VerifiedExistingTrainerSetup
+        if isinstance(result, VerifiedExistingTrainerSetup):
+            self._candidate_reference = dict(result.reference)
+            result = result.result
         self.open_recovery_button.hide()
         self._review_active = True
         self._show_review()
