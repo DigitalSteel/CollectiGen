@@ -207,7 +207,10 @@ class TrainingRunRecord:
                 raise TrainingRunIndexError("Only completed execution pointers can bind registered results.")
             self.registered_result.validate()
             if self.registered_result.journal_tip != self.latest_journal_tip:
-                raise TrainingRunIndexError("The registered training result journal changed.")
+                raise TrainingRunIndexError(
+                    "The registered training result journal changed. Keep a copy of the current Training History "
+                    "index. If you have a verified backup for this profile, restore it before choosing Refresh."
+                )
         if type(self.sequence) is not int or self.sequence < (1 if stored else 0):
             raise TrainingRunIndexError("The training run sequence is invalid.")
         if not isinstance(self.annotation, TrainingRunAnnotation):
