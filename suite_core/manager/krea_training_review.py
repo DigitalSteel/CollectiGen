@@ -940,7 +940,10 @@ class KreaTrainingReviewDialog(QDialog):
             browse.setAccessibleName(f"Browse {label.lower()}")
             def choose(_checked=False, field=field, label=label):
                 folder = QFileDialog.getExistingDirectory(dialog, f"Select {label.lower()}")
-                if folder:
+                from shiboken6 import isValid
+
+                if (folder and self._preparation_setup is dialog and isValid(dialog)
+                        and dialog.isVisible() and not self._package_review_cancelled()):
                     field.setText(folder)
             browse.clicked.connect(choose)
             fields.append(field)
