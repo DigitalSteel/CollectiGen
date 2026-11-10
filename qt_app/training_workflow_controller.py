@@ -115,15 +115,17 @@ class TrainingWorkflowController(QObject):
     resourceRegistered = Signal(str)
 
     def __init__(self, jobs, parent, *, workflow_factory=None, run_service=None,
-                 run_index=None, saved_setup=None, preparation_root=None):
+                 run_index=None, saved_setup=None, preparation_root=None,
+                 run_output_scope=None, session_allowed=None):
         super().__init__(parent)
         self.jobs = jobs
         from core.training_execution import TrainingExecutionService
         from core.training_execution_readiness import TrainingExecutionReadinessService
         self.run_index, self.saved_setup = run_index, saved_setup
+        self._session_allowed = session_allowed
         self.workflow_factory = workflow_factory or (lambda: TrainingWorkflowService(jobs,
             readiness=TrainingExecutionReadinessService(run_index=run_index),
-            preparation_root=preparation_root))
+            preparation_root=preparation_root, run_output_scope=run_output_scope))
         self.run_service = run_service if run_service is not None else (
             TrainingExecutionService(run_index=run_index) if run_index is not None else None)
         self.dialogs = set()
@@ -169,7 +171,8 @@ class TrainingWorkflowController(QObject):
         return True
 
     def prepare(self, package, registry, recipe, *, request=None, previous=None, contract=None):
-        if self._closing: return None
+        if self._closing or (self._session_allowed is not None and not self._session_allowed()):
+            return None
         family = package.manifest.get('training_configuration', {}).get('target', {}).get('model_family', '') if isinstance(getattr(package, 'manifest', None), dict) else ''
         if str(family).casefold() == 'anima':
             if previous is not None:
@@ -644,7 +647,8 @@ class TrainingWorkflowController(QObject):
             retained_tip=context.review.record.latest_journal_tip)
 
     def _run(self, prepared, package, registry, recipe, request, *, retained=False, retained_tip=''):
-        if self._closing: return None
+        if self._closing or (self._session_allowed is not None and not self._session_allowed()):
+            return None
         dialog = TrainingRunDialog(prepared.plan, prepared.contract, self.jobs, registry,
             expected_registry=prepared.contract['resources']['registry_revision'],
             service=self.run_service, retained=retained, retained_tip=retained_tip, parent=self.parent())

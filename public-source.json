@@ -2758,8 +2758,8 @@
       "size_bytes": 17728
     },
     "qt_app/training_workflow_controller.py": {
-      "sha256": "12b242bfd23b3c7d0e7b16e925885c7da035a8e1ddf79b3105d6c8065c57e460",
-      "size_bytes": 45369
+      "sha256": "3a8bf7a75f0acac6f2053c292edd68b04fb33ee368a59ef26328b9f9a21ea92b",
+      "size_bytes": 45684
     },
     "qt_app/training_workspace.py": {
       "sha256": "588ad7cdc02f6d7efc4a96f63fc6a71125f358648977036c62037e5b5e029e5c",
