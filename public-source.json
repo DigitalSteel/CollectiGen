@@ -3210,8 +3210,8 @@
       "size_bytes": 5245
     },
     "suite_core/manager/encyclopedia_acquisition_ui.py": {
-      "sha256": "8076ab2bfce5078e60a83c4d8ac96c2e7b88f3915c3837fbd08fd074fdca0579",
-      "size_bytes": 29387
+      "sha256": "e296882695d29bac693e40c5bc44a0567263abc15812f493531adba1fbdf49fd",
+      "size_bytes": 29416
     },
     "suite_core/manager/encyclopedia_connection_ui.py": {
       "sha256": "60675d41a1efffa13f835aa32606bf8dfd54f87eb33dde0be4d56aa2f0946ef4",

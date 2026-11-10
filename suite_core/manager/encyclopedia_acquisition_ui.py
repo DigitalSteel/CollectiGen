@@ -383,7 +383,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 accepted = False
             finally:
                 self.confirming = False
-            if accepted and not self.closing and self.reviewed is confirmation:
+            if accepted and not self.closing and not self.cancel.is_set() and self.reviewed is confirmation:
                 self.reviewed = None
                 phase_options = ({'phase_progress': lambda value: self.progress.put(('phase', value))}
                     if getattr(self.service, 'phase_progress_supported', False) else {})
