@@ -681,7 +681,7 @@ class PromptPresetCollection:
             pending.unlink()
         return outcome
 
-    def recover(self, operation_id, *, confirmed=False):
+    def recover(self, operation_id, *, confirmed=False, cancelled=None):
         if confirmed is not True:
             raise ValueError("Confirm review of this prompt preset recovery first.")
         with self._writer():
@@ -697,6 +697,8 @@ class PromptPresetCollection:
             path = self._path(checked["item_id"])
             current = _preset_bytes(path) if path.exists() else None
             pending = path.with_suffix(".pending.json")
+            if cancelled and cancelled():
+                raise InterruptedError("Prompt preset recovery cancelled before writing.")
             if current == after:
                 return self._finish(journal, pending, "saved")
             if current == before:

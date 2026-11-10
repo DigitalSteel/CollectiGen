@@ -553,7 +553,8 @@ class SavedGenerationWorkDialog(QDialog):
                 def complete(result):
                     self.status.setText("Recovery checked: " + result["state"].replace("_", " ") + ". Review again before any new save.")
                     child.accept(); self.refresh()
-                self._run("Reconcile selected preset save", lambda cancelled: collection.recover(operation, confirmed=True), complete)
+                self._run("Reconcile selected preset save", lambda cancelled: collection.recover(
+                    operation, confirmed=True, cancelled=cancelled), complete)
             reconcile.clicked.connect(apply); close.clicked.connect(child.reject)
             child.finished.connect(lambda *_: setattr(self, "_recovery_dialog", None))
             child.setWindowModality(Qt.WindowModal); child.show()
