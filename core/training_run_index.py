@@ -796,8 +796,13 @@ class ScopedPreparationHistory(ScopedTrainingHistory):
         records, current = self.snapshot()
         if revision != current or record not in records:
             raise TrainingRunIndexError("Training history changed. Refresh and select the review again.")
-        receipt = read_preparation_receipt(record.destination, owned_root=self._root,
-            receipt_sha256=record.review_sha256, journal_tip=record.latest_journal_tip)
+        try:
+            receipt = read_preparation_receipt(record.destination, owned_root=self._root,
+                receipt_sha256=record.review_sha256, journal_tip=record.latest_journal_tip)
+        except FileNotFoundError as exc:
+            raise TrainingRunIndexError(
+                "Saved preparation files are missing. Restore the original files or prepare the package again."
+            ) from exc
         if (receipt["nonce"] != record.run_id or receipt["process_fingerprint"] != record.plan_fingerprint
                 or self.snapshot()[1] != revision):
             raise TrainingRunIndexError("The saved SDXL preparation differs from the selected record.")
