@@ -1981,11 +1981,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
                 find_anima = QPushButton("Review Unlisted Anima Preparation…", dialog)
                 save_anima = QPushButton("Add Reviewed Preparation to History", dialog)
-                for button in (find_anima, save_anima):
+                review_pending = QPushButton("Review Pending Anima History Write", dialog)
+                finish_pending = QPushButton("Recover Reviewed Anima History Entry", dialog)
+                for button in (find_anima, save_anima, review_pending, finish_pending):
                     button.setAutoDefault(False)
                     dialog.layout().addWidget(button)
                 save_anima.hide()
+                finish_pending.hide()
                 anima_review = None
+                pending_review = None
                 restored_run = None
 
                 def select_restored_run():
@@ -2002,26 +2006,34 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
                 dialog.runs.model().rowsInserted.connect(lambda *_: QTimer.singleShot(0, select_restored_run))
 
-                def recover_anima(*, save=False):
-                    nonlocal task, anima_review
+                def recover_anima(*, save=False, pending=False):
+                    nonlocal task, anima_review, pending_review
                     if task is not None or closing_review or self.generation_state() is not state:
                         return
-                    current = anima_review
+                    current = pending_review if pending else anima_review
                     save_anima.hide()
+                    finish_pending.hide()
                     anima_review = None
+                    pending_review = None
                     if save:
                         if current is None:
                             return
 
                         def work(job):
-                            try:
-                                record = history.save_unlisted_anima(current, confirmed=True,
-                                    session_ready=lambda: not job.cancel_requested and self.generation_state() is state)
-                            except OSError:
-                                return None, None
+                            session_ready = lambda: not job.cancel_requested and self.generation_state() is state
+                            if pending:
+                                history.recover_pending_anima(current, confirmed=True, session_ready=session_ready)
+                                record = current[1]
+                            else:
+                                try:
+                                    record = history.save_unlisted_anima(current, confirmed=True, session_ready=session_ready)
+                                except OSError:
+                                    return None, None
                             rows, _ = history.snapshot()
                             position = next((i for i, row in enumerate(rows) if row.run_id == record.run_id), None)
                             return record, None if position is None else position // PAGE_SIZE * PAGE_SIZE
+                    elif pending:
+                        work = lambda _job: history.review_pending_anima()
                     else:
                         path, _ = QFileDialog.getOpenFileName(dialog, "Select the retained Anima receipt",
                             str(state.generation_data_root / "training"), "Anima receipt (anima-review.json)")
@@ -2031,12 +2043,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         work = lambda _job: history.review_unlisted_anima(path)
 
                     find_anima.setEnabled(False)
+                    review_pending.setEnabled(False)
                     dialog.set_retained_index_status("Saving the reviewed preparation…" if save else
                                                      "Checking the retained Anima receipt…")
                     task = CoordinatedCallTask(state.jobs, "Recover Anima preparation", work, resource="io")
 
                     def finish(message="", result=None):
-                        nonlocal task, anima_review, restored_run
+                        nonlocal task, anima_review, pending_review, restored_run
                         task = None
                         if closing_review:
                             dialog.reject()
@@ -2045,6 +2058,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                             dialog.set_retained_index_status("Manager session ended. Reopen Training History to retry.")
                             return
                         find_anima.setEnabled(True)
+                        review_pending.setEnabled(True)
                         if result is None:
                             dialog.set_retained_index_status(message)
                         elif save:
@@ -2061,6 +2075,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                             restored_run = record.run_id
                             dialog._request_page(offset)
                             dialog.set_retained_index_status("Anima preparation saved. Reading its Training History page…")
+                        elif pending:
+                            pending_review = result
+                            _, record, settings = result
+                            dialog.set_retained_index_status(
+                                f"Pending Anima History entry {record.run_id}: {settings.max_steps} steps. "
+                                "Recover to finish saving this entry. Training will not start.")
+                            finish_pending.show()
                         else:
                             anima_review = result
                             _, settings = result
@@ -2082,6 +2103,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
                 find_anima.clicked.connect(lambda: recover_anima())
                 save_anima.clicked.connect(lambda: recover_anima(save=True))
+                review_pending.clicked.connect(lambda: recover_anima(pending=True))
+                finish_pending.clicked.connect(lambda: recover_anima(save=True, pending=True))
             dialog.runs.itemSelectionChanged.connect(selection_changed)
             dialog.openRunRequested.connect(verify)
             try:

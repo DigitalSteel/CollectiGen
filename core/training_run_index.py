@@ -573,9 +573,14 @@ class TrainingRunIndex:
             pass
 
     def recover(self) -> str:
+        return self._recover()
+
+    def _recover(self, *, review_only=False, validate=None):
         with self._locked():
             pending_raw = _read_optional(self.pending, limit=MAX_RECOVERY_BYTES)
             if pending_raw is None:
+                if validate is not None:
+                    raise TrainingRunIndexRecoveryRequired("No pending Training History write was found.")
                 return self.snapshot()[1]
             receipt = _decode(pending_raw, limit=MAX_RECOVERY_BYTES)
             fields = {"schema_version", "kind", "operation_id", "target", "before_absent",
@@ -602,7 +607,14 @@ class TrainingRunIndex:
                 raise TrainingRunIndexRecoveryRequired("The retained training run index recovery evidence changed.")
             _state(after)
             current = _read_optional(self.path)
-            if _digest(current) == receipt["before_sha256"]:
+            current_digest = _digest(current)
+            if validate is not None:
+                if current_digest not in (receipt["before_sha256"], receipt["after_sha256"]):
+                    raise TrainingRunIndexRecoveryRequired("The training run index differs from both retained recovery states.")
+                reviewed = validate(pending_raw, _state(None if receipt["before_absent"] else before), _state(after))
+                if review_only:
+                    return reviewed
+            if current_digest == receipt["before_sha256"]:
                 _assert_unredirected(self.path)
                 atomic_verified_bytes(self.path, after, label="Recovered training run index")
                 current = _read_optional(self.path)
@@ -729,6 +741,33 @@ class ScopedTrainingHistory:
                                    plan.fingerprint, str(destination), phase="prepared")
         record.validate()
         return record, settings
+
+    def _pending_anima_review(self, pending, before, after):
+        if (len(after.records) != len(before.records) + 1
+                or after.records[:-1] != before.records
+                or after.next_sequence != before.next_sequence + 1
+                or after.forward != before.forward):
+            raise TrainingRunIndexRecoveryRequired("The pending write is not one Manager Anima addition.")
+        added = after.records[-1]
+        if added.kind != "anima" or added.sequence != before.next_sequence:
+            raise TrainingRunIndexRecoveryRequired("The pending write is not one Manager Anima addition.")
+        record, settings = self.review_unlisted_anima(added.review_path)
+        if replace(record, sequence=before.next_sequence) != added:
+            raise TrainingRunIndexRecoveryRequired("The pending Anima preparation changed.")
+        return _digest(pending), record, settings
+
+    def review_pending_anima(self):
+        return self._index._recover(review_only=True, validate=self._pending_anima_review)
+
+    def recover_pending_anima(self, reviewed, *, confirmed, session_ready):
+        if confirmed is not True or not session_ready():
+            raise TrainingRunIndexError("An active Manager session and confirmation are required.")
+
+        def validate(pending, before, after):
+            if self._pending_anima_review(pending, before, after) != reviewed or not session_ready():
+                raise TrainingRunIndexRecoveryRequired("The pending Anima write or Manager session changed. Review it again.")
+
+        return self._index._recover(validate=validate)
 
     def save_unlisted_anima(self, reviewed, *, confirmed, session_ready):
         """Add the exact reviewed preparation to History after fresh confirmation."""
