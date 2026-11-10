@@ -1839,6 +1839,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         finish(f"Saved Anima settings: {result.max_steps} optimizer steps, "
                                f"{result.resolution} px, LoRA rank {result.rank}, seed {result.seed}, "
                                f"learning rate {result.learning_rate:g}, time limit {result.timeout_seconds:g} seconds. "
+                               f"Batch size {result.batch_size}, gradient accumulation {result.gradient_accumulation}, "
+                               f"repeats {result.repeats}. "
                                "Model outputs and live inputs were not rechecked.")
                     elif validation:
                         qualification = ("Candidate measurement. " if result["qualification"] == "candidate_only" else "")
