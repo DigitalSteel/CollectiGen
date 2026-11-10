@@ -4,10 +4,10 @@ CollectiGen is a developing suite for collecting, identifying and organizing med
 
 ## Downloads
 
-For organizing images, [start with Media Organizer](#media-organizer). For
-looking up tags, [install Tag Encyclopedia Reader through Suite Manager](#install-tag-encyclopedia-reader-with-suite-manager).
-The applications are separate Windows x64 alpha downloads. Each release page
-contains its matching source, checksums, and supported scope.
+To organize images, [download Media Organizer](#media-organizer). To look up
+tags, [install Tag Encyclopedia Reader through Suite Manager](#install-tag-encyclopedia-reader-with-suite-manager).
+These are Windows x64 alpha releases. Each release page includes matching
+source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
@@ -61,13 +61,10 @@ project landing/source checkpoint; use each component's tagged source or matchin
 source asset to reproduce that component. Unreleased code and roadmap plans do
 not describe the capabilities of the downloads.
 
-Organizer's recent patches have signed package, generated component, isolated
-offscreen host startup/reopen/Close and disposable update/recovery evidence.
-Live Manager-managed Organizer installation, active native editor/reader work,
-non-elevated/clean-machine/DPI/assistive-technology and independent novice
-acceptance remain unqualified. See each release's validation receipt.
-Reader/Manager have their own qualification boundaries in their release notes.
-Signatures and checksums establish integrity, not Windows publisher trust.
+Install Media Organizer separately. Its release notes and validation receipt
+describe the startup, update, and recovery checks for that package. The Manager
+and Reader release notes describe the supported fresh Reader installation.
+Use the supplied checksums to verify downloaded files.
 
 Broader cross-app automatic updating, training, generation and model execution
 remain under development or require their own qualified releases. No models or
