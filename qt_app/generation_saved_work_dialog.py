@@ -304,7 +304,7 @@ class SavedGenerationWorkDialog(QDialog):
             self._load_page(self._previous_offsets[-1], self._previous_offsets[:-1], self._active_query)
 
     def _run(self, label, work, completed):
-        if self._task is not None:
+        if self._closing or self._task is not None:
             return
         self._cancel_requested = False
         task = CoordinatedCallTask(self.jobs, label,
