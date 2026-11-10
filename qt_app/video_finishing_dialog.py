@@ -29,7 +29,8 @@ class VideoFinishingDialog(QDialog):
     def __init__(self, jobs, path: str | Path, asset: VideoSourceAsset,
                  request: VideoGenerationRequest, *, allowed_root: str | Path,
                  storage_root: str | Path, verified_source, settings=None,
-                 runtime_binding=None, decoder_lifetime=None, encoder_binding=None, parent=None):
+                 runtime_binding=None, decoder_lifetime=None, encoder_binding=None,
+                 copy_frame_for_organizer=False, parent=None):
         super().__init__(parent)
         if (not isinstance(asset, VideoSourceAsset) or not isinstance(request, VideoGenerationRequest)
                 or not asset.timing.frame_pts or not callable(verified_source)):
@@ -39,6 +40,7 @@ class VideoFinishingDialog(QDialog):
         self.verified_source, self.settings = verified_source, settings
         self.runtime_binding, self.decoder_lifetime = runtime_binding, decoder_lifetime
         self.encoder_binding = encoder_binding
+        self._copy_frame_for_organizer = copy_frame_for_organizer
         self._task = None
         self._preview = None
         self._closing = False
@@ -99,7 +101,8 @@ class VideoFinishingDialog(QDialog):
             actions.addWidget(button)
         layout.addLayout(actions)
         next_actions = QHBoxLayout()
-        self.frame_ingest_button = QPushButton("Keep Extracted Frame in Ingest…")
+        self.frame_ingest_button = QPushButton("Copy Frame Path for Organizer" if copy_frame_for_organizer
+                                               else "Keep Extracted Frame in Ingest…")
         self.remix_button = QPushButton("Remix Extracted Frame…")
         self.animate_button = QPushButton("Animate Extracted Frame…")
         self.ingest_button = QPushButton("Review Trimmed Clip in Ingest…")
@@ -412,6 +415,11 @@ class VideoFinishingDialog(QDialog):
             return prepare_frame_ingest(result, descriptor(), self.request,
                 runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime)
         def complete(prepared):
+            if self._copy_frame_for_organizer:
+                from PySide6.QtGui import QGuiApplication
+                QGuiApplication.clipboard().setText(str(prepared.output_path))
+                self.status.setText("Frame path copied. In Media Organizer, choose Add Images and Copy to Ingest. The frame and its video lineage are saved together.")
+                return
             self.frame_ingest_requested.emit({
                 "path": prepared.output_path,
                 "expected_image_sha256": prepared.image_sha256,
