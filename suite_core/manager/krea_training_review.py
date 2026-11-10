@@ -226,6 +226,7 @@ class KreaTrainingReviewDialog(QDialog):
                 or self._cancel.is_set() or not self._anima_review_allowed()):
             return
         self._checking_anima_setup = True
+        self.sections[0].setPlainText(self._anima_registration_overview)
         self.anima_setup_button.setEnabled(False)
         self.anima_button.setEnabled(False)
         self.folder_button.setEnabled(False)
@@ -388,7 +389,6 @@ class KreaTrainingReviewDialog(QDialog):
                 self._invalidate_package_review(
                     "The Anima package changed or could not be rechecked. Return to Applications and review it again.")
             except _StaleAnimaInventory:
-                self.sections[0].clear()
                 self.status.setText("Trainer files changed during preflight. Recheck Trainer Setup, then check Anima readiness again.")
             except _StaleAnimaSetup:
                 self.status.setText("Settings, trainer setup or model registrations changed. Check Anima Readiness again.")
@@ -407,7 +407,7 @@ class KreaTrainingReviewDialog(QDialog):
                     reasons = "\n".join(ISSUE_MESSAGES.get(issue, issue.replace("_", " "))
                                         for issue in preview.issues)
                     self.status.setText("Anima preflight is held. See Readiness for details.")
-                    self.sections[0].setPlainText(reasons)
+                    self.sections[0].appendPlainText("\nReadiness checks to resolve\n" + reasons)
                     self.tabs.setCurrentIndex(0)
             return
         if self._checking_handoff:
@@ -507,6 +507,7 @@ class KreaTrainingReviewDialog(QDialog):
                         and self._anima_review_allowed is not None):
                     self._verification = verification
                     self._anima_base_id = BASE_ID
+                    self._anima_registration_overview = self.sections[0].toPlainText()
                     self.anima_button.show()
                     self.anima_setup_button.show()
             if (self._registry_path is not None and self._preview_jobs is not None
