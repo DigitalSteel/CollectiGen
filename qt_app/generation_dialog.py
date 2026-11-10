@@ -3257,13 +3257,11 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._update_actions()
 
     def _selected_job_needs_open(self) -> bool:
-        """A cached history row never grants another receipt's result actions."""
+        """Result actions require the exact receipt displayed by the queue."""
         selected = self.history_choice.currentData()
         if not isinstance(selected, dict):
             return False
-        selected_id = str(selected.get("job_id") or "")
-        opened_id = str((self.receipt or {}).get("job_id") or "")
-        return bool(selected_id and selected_id != opened_id)
+        return bool(selected.get("job_id") and selected != self.receipt)
 
     def _opened_result_name(self) -> str:
         receipt = self.receipt or {}
