@@ -2250,8 +2250,8 @@
       "size_bytes": 35371
     },
     "qt_app/history_domain_panel.py": {
-      "sha256": "7e734a64ef87bc82519a4dd0ff6ade5bec964fddaec5597594e36407aa6677c0",
-      "size_bytes": 14522
+      "sha256": "2cde43d61bf21a1bccae85bde40f3b8352f88b8d67d7c1c72918cfc1683d571b",
+      "size_bytes": 16044
     },
     "qt_app/history_task_lifetime.py": {
       "sha256": "b81b77917dda0784294b1654682bb6216d1a8081a3dd895d660ccb302823ec74",

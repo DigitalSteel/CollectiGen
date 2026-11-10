@@ -162,7 +162,7 @@ class OrganizationHistoryPanel(HistoryDomainPanel):
         self.clear.clicked.connect(self.clear_selection)
         self.compare_button = QPushButton("Compare Selected Operations")
         self.compare_button.clicked.connect(self.compare)
-        self.apply_button = QPushButton("Apply Reviewed Locations" if browser.domain_key == "recycle" else "Restore Selected Locations")
+        self.apply_button = QPushButton()
         self.apply_button.setProperty("primary", True)
         self.apply_button.clicked.connect(self.apply)
         close = QPushButton("Close")
@@ -256,6 +256,7 @@ class OrganizationHistoryPanel(HistoryDomainPanel):
 
     def compared(self, comparison):
         self._comparison = comparison
+        undo_copies = self.undoing_copies()
         self.table.setRowCount(sum(len(preview.family) for preview in comparison.previews))
         details = []
         index = 0
@@ -263,7 +264,12 @@ class OrganizationHistoryPanel(HistoryDomainPanel):
             details.append("Operation: " + row.operation_id)
             details.extend(preview.held)
             if preview.boundary_decision:
-                details.append(f"{preview.source_role} → {preview.destination_role}: {preview.boundary_decision.message}")
+                message = preview.boundary_decision.message
+                if (undo_copies and not preview.held and preview.boundary_decision.requires_explicit_confirmation
+                        and "unclassified" in (preview.source_role, preview.destination_role)):
+                    message = ("An unclassified location is involved. Its folder path does not establish Local Only storage. "
+                               "Review the copied family and its Recycle destination before confirming.")
+                details.append(f"{preview.source_role} → {preview.destination_role}: {message}")
             for member in preview.family:
                 values = (member.current_path.name, str(row.original_path), str(member.current_path),
                     str(member.proposed_path), "Later saved data preserved" if member.newer_data else "Recorded family bytes preserved")
@@ -276,8 +282,17 @@ class OrganizationHistoryPanel(HistoryDomainPanel):
         self.detail.setPlainText("\n".join(details)[:24000])
         self.confirm.setChecked(False)
         self.confirm.setVisible(comparison.needs_confirmation)
-        self.status.setText("Review every complete family and its destination before applying."
-            if comparison.ready else "Some selected operations are held. Review the reasons; no restoration is enabled.")
+        if not comparison.ready:
+            self.status.setText("Some selected operations are held. Review the reasons before applying.")
+        elif undo_copies:
+            self.status.setText("Review the copied files and their Recycle destinations. The originals stay in place.")
+        else:
+            self.status.setText("Review every complete family and its destination before applying.")
+
+    def undoing_copies(self):
+        return (self.browser.domain_key == "organization" and self._comparison is not None
+                and bool(self._comparison.selections)
+                and all(row.operation_kind == "copy" for row in self._comparison.selections))
 
     def apply(self):
         if self._comparison is None or not self._comparison.ready:
@@ -304,6 +319,16 @@ class OrganizationHistoryPanel(HistoryDomainPanel):
         self.more.setEnabled(idle and self._cursor is not None and len(self._rows) < 2000)
         self.compare_button.setEnabled(idle and bool(self._selected))
         self.confirm.setEnabled(idle)
+        copy_recovery = self.browser.domain_key != "recycle" and self.undoing_copies()
+        self.confirm.setText("I confirm moving these copies to Recycle and the shown privacy boundary"
+                             if copy_recovery else
+                             "I confirm the displayed complete families, destination roles and privacy boundary")
+        if self.browser.domain_key == "recycle":
+            self.apply_button.setText("Apply Reviewed Locations")
+        elif copy_recovery:
+            self.apply_button.setText("Move Copies to Recycle")
+        else:
+            self.apply_button.setText("Restore Selected Locations")
         self.apply_button.setEnabled(idle and self._comparison is not None and self._comparison.ready
             and (not self._comparison.needs_confirmation or self.confirm.isChecked()))
         self.cancel.setVisible(not idle and not self._closing)
