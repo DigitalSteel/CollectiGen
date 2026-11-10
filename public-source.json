@@ -3230,8 +3230,8 @@
       "size_bytes": 3128
     },
     "suite_core/manager/krea_training_review.py": {
-      "sha256": "daa02f3610e52a44d0f603c6377d7faa42023644318aced70ef6685b2bf4e40b",
-      "size_bytes": 60189
+      "sha256": "692d530ab3c485712699d6c35a9694733ea2b07a906d7f33885faebb6413847f",
+      "size_bytes": 60983
     },
     "suite_core/manager/launcher_main.py": {
       "sha256": "33adf7ee200a23dd52062074697fc2a5a62c5ef611572c38308dada16d9b13e5",

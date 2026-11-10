@@ -758,10 +758,15 @@ class KreaTrainingReviewDialog(QDialog):
                 or self._handoff_folder is None or self._checking_dataset or self._checking_handoff
                 or self._adapter_preview is not None or self._cancel.is_set()):
             return
+        session_ready = self._anima_review_allowed
+        if session_ready is not None and not session_ready():
+            self._invalidate_package_review("The Manager session ended. Reopen the package from Applications.")
+            return
         try:
-            self._future = self._executor.submit(
+            self._future = self._executor.submit(partial(
                 self._verify_handoff_folder, self._handoff_folder, self._handoff_fingerprint,
-            )
+                should_cancel=lambda: self._cancel.is_set() or (session_ready is not None and not session_ready()),
+            ))
         except (RuntimeError, ValueError):
             self.status.setText("Package recheck could not start. Return to Applications and review it again.")
             return
@@ -796,10 +801,18 @@ class KreaTrainingReviewDialog(QDialog):
 
     def _finish_package_handoff(self):
         self._checking_handoff = False
+        session_ready = self._anima_review_allowed
         try:
+            if session_ready is not None and not session_ready():
+                raise InterruptedError
             directory = self._future.result()
             if self._handoff_directory_state(self._handoff_folder) != directory:
                 raise ValueError("Package identity changed")
+            if session_ready is not None and not session_ready():
+                raise InterruptedError
+        except InterruptedError:
+            self._invalidate_package_review("The Manager session ended. Reopen the package from Applications.")
+            return
         except (OSError, RuntimeError, ValueError):
             self._invalidate_package_review(
                 "Package changed or could not be rechecked. Return to Applications and review it again."
