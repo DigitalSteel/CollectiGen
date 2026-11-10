@@ -17,7 +17,7 @@ from .workers import CoordinatedCallTask
 from shiboken6 import isValid
 
 
-def choose_video_generation_draft(parent):
+def choose_video_generation_draft(parent, *, selection_allowed=None):
     """Select and read one explicit saved file before adding a video workspace."""
     host = _host(parent)
     scoped = getattr(host.state, "generation_data_root", None) is not None
@@ -26,7 +26,7 @@ def choose_video_generation_draft(parent):
         parent, "Open video draft", str(directory),
         "Video draft (*.json)",
     )
-    if not path:
+    if not path or (selection_allowed is not None and not selection_allowed()):
         return None
     try:
         target = scoped_video_draft_path(directory, path) if scoped else Path(path).absolute()

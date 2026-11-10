@@ -1459,7 +1459,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 )
 
         def open_video_plan(self, *, reopen=False):
-            if self.generation_state() is None or self._video_draft_picker_open:
+            state = self.generation_state()
+            if state is None or self._video_draft_picker_open:
                 return
             from qt_app.video_generation_workflow import (
                 choose_video_generation_draft, open_video_generation_workspace,
@@ -1480,7 +1481,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if reopen:
                 self._video_draft_picker_open = True
                 try:
-                    video = choose_video_generation_draft(self)
+                    video = choose_video_generation_draft(
+                        self, selection_allowed=lambda: self.generation_state() is state,
+                    )
                 finally:
                     self._video_draft_picker_open = False
                     self.clear_video_picker_close_notice()
