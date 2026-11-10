@@ -3564,9 +3564,12 @@ class GenerationDialog(FeedbackEnabledDialog):
                     and self._checked_connection_provider() == self._checked_connection
                     and self.endpoint.text() == self._checked_connection[0]):
                 return True
-            self.adapter = self.binding = self.prepared = None
-            self.status.setText("The saved generator connection changed. Reopen the image plan after reviewing it.")
-            self._update_actions()
+            if callable(self._review_generator_connection):
+                self._clear_checked_connection()
+            else:
+                self.adapter = self.binding = self.prepared = None
+                self.status.setText("The saved generator connection changed. Reopen the image plan after reviewing it.")
+                self._update_actions()
             return False
         self.status.setText("This workspace supports planning and export. Generator access is unavailable here.")
         return False
@@ -3903,7 +3906,9 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._refresh_from_plan("Validated neutral JSON edits were applied with a new audit diff. Bind and prepare again before submitting.")
 
     def _check_submission_authority(self):
-        if self._checked_connection_provider() != self._checked_connection:
+        if self._checked_connection is None or self._checked_connection_provider() != self._checked_connection:
+            if callable(self._review_generator_connection):
+                raise ValueError("The saved generator connection changed. Choose Review Generator Connection and check it again.")
             raise ValueError("The saved generator connection changed. Reopen Generate after reviewing it.")
 
     def submit_reviewed(self) -> None:
@@ -4421,23 +4426,28 @@ class GenerationDialog(FeedbackEnabledDialog):
         connection = provider()
         if connection == self._checked_connection:
             return
-        if connection is not None:
-            from core.generation_transport import local_endpoint
-            local_endpoint(connection[0])
+        if connection is None:
+            self._clear_checked_connection()
+            return
+        from core.generation_transport import local_endpoint
+        endpoint = local_endpoint(connection[0])
         self._checked_connection = connection
-        self._checked_image_submission = bool(connection and self._checked_submission_supported)
+        self._checked_image_submission = bool(self._checked_submission_supported)
         self._image_submission_allowed = self.runtime_allowed or self._checked_image_submission
-        self.tabs.setTabVisible(self._readiness_tab_index, connection is not None)
-        if connection is not None:
-            self.endpoint.setReadOnly(True)
-            self.resume_from_setup(connection[0])
-        else:
-            self.adapter = self.binding = self.prepared = None
-            self._generation += 1
-            self.connection_issue = "The checked generator is unavailable. Review the connection again."
-            self.connection_detail.clear()
-            self.status.setText(self.connection_issue)
-            self._update_actions()
+        self.tabs.setTabVisible(self._readiness_tab_index, True)
+        self.endpoint.setReadOnly(True)
+        self.resume_from_setup(endpoint)
+
+    def _clear_checked_connection(self):
+        self._checked_connection = None
+        self._checked_image_submission = False
+        self._image_submission_allowed = self.runtime_allowed
+        self.adapter = self.binding = self.prepared = None
+        self.tabs.setTabVisible(self._readiness_tab_index, self.runtime_allowed)
+        self.connection_issue = "The saved generator connection changed. Choose Review Generator Connection and check it again."
+        self.connection_detail.clear()
+        self.status.setText(self.connection_issue)
+        self._update_actions()
 
     def resume_from_setup(self, endpoint: str = "", connection_issue: str = "") -> None:
         """Reuse the exact draft and source guard, with fresh execution review."""
