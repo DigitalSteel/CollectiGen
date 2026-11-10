@@ -5,7 +5,9 @@ from pathlib import Path
 from uuid import uuid4
 
 from .trainer_environment import TrainerEnvironmentService, TrainerProfile, _read_json
-from .training_setup_selection import TrainingSetupSelectionService, TrainingSetupSelectionError
+from .training_setup_selection import (
+    TrainingSetupSelectionService, TrainingSetupSelectionError, _require_disjoint_protected_paths,
+)
 
 RUNTIME_PROFILE = Path(__file__).absolute().parents[1] / 'tools/trainer_runtime_profile.json'
 
@@ -16,9 +18,10 @@ class SavedTrainingSetupResolver:
         self.selection = TrainingSetupSelectionService(selection_path)
         self.profile_path = Path(profile_path).absolute()
 
-    def __call__(self, *, should_cancel=None, progress=None):
+    def __call__(self, *, should_cancel=None, progress=None, protected_roots=()):
         if should_cancel and should_cancel():
             raise InterruptedError('Loading saved training setup was cancelled.')
+        _require_disjoint_protected_paths((self.selection.path, self.profile_path), protected_roots)
         try:
             profile = TrainerProfile.from_dict(_read_json(self.profile_path))
         except (OSError, ValueError, RuntimeError) as exc:
@@ -31,4 +34,5 @@ class SavedTrainingSetupResolver:
         managed = (TrainerEnvironmentService(selected.managed.root, profile)
                    if selected.mode == 'managed' else None)
         return self.selection.resolve(profile, 'sdxl-lora-' + uuid4().hex[:8],
-            managed_environment=managed, should_cancel=should_cancel, progress=progress).request()
+            managed_environment=managed, should_cancel=should_cancel, progress=progress,
+            protected_roots=protected_roots).request()

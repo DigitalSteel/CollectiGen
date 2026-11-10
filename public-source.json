@@ -1574,8 +1574,12 @@
       "size_bytes": 25799
     },
     "core/training_anima.py": {
-      "sha256": "4368627fccab95e9d5d3bc38ad1fea4ddbbdc5d82483bf7e70f7c19c3040894d",
-      "size_bytes": 79078
+      "sha256": "1ffa73b70234cc1723ec84ec5c5dabbaf6e0b5e63ddec0ebf050a49460de4024",
+      "size_bytes": 79518
+    },
+    "core/training_anima_worker.py": {
+      "sha256": "b93e018d3b2168bb4ef9f23044ea5d00e39a8f9439c145e7c01c408300504db8",
+      "size_bytes": 11169
     },
     "core/training_appcontainer.py": {
       "sha256": "92c752292d63c084affc7a4bc3240bc05f6ec2bf26dc0d5936a9cba4f8cbf46e",
@@ -1822,12 +1826,12 @@
       "size_bytes": 10312
     },
     "core/training_setup_resources.py": {
-      "sha256": "f5ca26dd761e704b2c24ef17471bae453d3a7914d5a1a0b49a54569d509512ab",
-      "size_bytes": 1777
+      "sha256": "6840c977906030eaa32e0da5b6eeb6d3a2d1d9cc0fafda09fc03184b37b4a850",
+      "size_bytes": 1986
     },
     "core/training_setup_selection.py": {
-      "sha256": "a93f609958aee518d862b53d0c31815696b26a20247877acbb80e99a56dc09a8",
-      "size_bytes": 35479
+      "sha256": "58626df508ec715032b80f98c8c597dbe71ba3e792d2929b1b194a1aec5661bc",
+      "size_bytes": 36628
     },
     "core/training_source_io.py": {
       "sha256": "61ce3b30374c7b454c7bf7f7f3b4093f2ece708a5e45ff6dc5c6162e18f69bf5",
@@ -3976,6 +3980,10 @@
     "tools/test_suites.py": {
       "sha256": "f7161af6f6ae0d02bd14671f0926e2615bb4be791138fd80ecf5b213d5e03162",
       "size_bytes": 62717
+    },
+    "tools/trainer_runtime_profile.json": {
+      "sha256": "895dc409c144e0adc756f233a5998b7197c7bf1cf8872d839e24aee7bf85bc18",
+      "size_bytes": 8035262
     },
     "tools/training_dataset_package.json": {
       "sha256": "b4f8e7a7c3bc2d82189ea8e3b2e77bcbabab9f67c7404863549b24bf20d610eb",

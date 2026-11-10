@@ -310,6 +310,25 @@ def _qualification_code_hashes(should_cancel=None) -> dict[str, str]:
         for name, path in QUALIFICATION_CODE.items()}
 
 
+def validate_anima_trainer_request(request):
+    """Return the exact local Anima interpreter and its selected paths."""
+    if type(request) is not dict or not {"source_root", "environment_root",
+            "python_base_root", "python", "output_root"} <= request.keys():
+        raise AnimaError("Choose a saved or explicit local trainer setup.")
+    values = {key: Path(request[key]) for key in ("source_root", "environment_root",
+        "python_base_root", "python", "output_root")}
+    if (any(not path.is_absolute() for path in values.values())
+            or values["python"] != values["environment_root"] / "Scripts/python.exe"):
+        raise AnimaError("The selected Anima interpreter does not match its exact environment.")
+    return values
+
+
+def inspect_anima_runtime(source, environment, *, should_cancel=None):
+    """Check the canonical Anima source and environment metadata without running it."""
+    return TrainingRuntimeQualificationService().inspect(
+        source, environment, profile="kohya-uv-45088f04", should_cancel=should_cancel)
+
+
 class AnimaTrainingService:
     """No ambient resource discovery; all roots, records and jobs are injected."""
 
@@ -552,14 +571,7 @@ class AnimaTrainingService:
     @staticmethod
     def prepare_selection(package_path, request: dict, receipt_root, *, should_cancel=None) -> AnimaSelection:
         """Capture Setup-selected inventories off-thread; never ask for JSON paths."""
-        if type(request) is not dict or not {"source_root", "environment_root",
-                "python_base_root", "python", "output_root"} <= request.keys():
-            raise AnimaError("Choose a saved or explicit local trainer setup.")
-        values = {key: Path(request[key]) for key in ("source_root", "environment_root",
-            "python_base_root", "python", "output_root")}
-        if (any(not path.is_absolute() for path in values.values())
-                or values["python"] != values["environment_root"] / "Scripts/python.exe"):
-            raise AnimaError("The selected Anima interpreter does not match its exact environment.")
+        values = validate_anima_trainer_request(request)
         package_path = Path(package_path)
         receipt_root = Path(receipt_root)
         if (not package_path.is_absolute() or not receipt_root.is_absolute()
@@ -605,7 +617,8 @@ class AnimaTrainingService:
             target = config.get("target", {})
             image = config.get("image_preparation", {})
             if (str(target.get("model_family", "")).casefold() != "anima"
-                    or str(target.get("model_version", "")).casefold() not in {"base v1.0", "base-1.0", "1.0"}
+                    or str(target.get("model_version", "")).casefold() not in {
+                        "base v1.0", "base-v1.0", "base-1.0", "1.0"}
                     or target.get("base_model_id") != BASE_ID
                     or config.get("expected_output", {}).get("kind") != "lora"
                     or image.get("target_resolution") != settings.resolution):
@@ -630,8 +643,7 @@ class AnimaTrainingService:
                 issues.append("package_optimizer_steps_mismatch")
         runtime = None
         try:
-            runtime = TrainingRuntimeQualificationService().inspect(selection.source_path,
-                selection.environment_root, profile="kohya-uv-45088f04",
+            runtime = inspect_anima_runtime(selection.source_path, selection.environment_root,
                 should_cancel=should_cancel)
             if not runtime.probe_ready:
                 issues.append("trainer_runtime_prerequisites_unavailable")

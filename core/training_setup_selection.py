@@ -55,6 +55,16 @@ def _path(value: str, label: str) -> Path:
     return Path(value).absolute()
 
 
+def _require_disjoint_protected_paths(paths, protected_roots):
+    roots = tuple(Path(os.path.abspath(root)) for root in protected_roots)
+    for value in paths:
+        path = Path(os.path.abspath(value))
+        if any(path == root or path in root.parents or root in path.parents for root in roots):
+            raise TrainingSetupSelectionError(
+                "Choose trainer files and folders outside protected libraries and backups."
+            )
+
+
 def _sha(value: str, label: str) -> None:
     if type(value) is not str or SHA.fullmatch(value) is None:
         raise TrainingSetupSelectionError(f"The selected {label} identity is invalid.")
@@ -619,10 +629,23 @@ class TrainingSetupSelectionService:
         return result
 
     def resolve(self, profile: TrainerProfile, run_name: str, *, managed_environment=None,
-                checkpoint_interval: int = 0, should_cancel=None, progress=None) -> ResolvedTrainingSetup:
+                checkpoint_interval: int = 0, should_cancel=None, progress=None,
+                protected_roots=()) -> ResolvedTrainingSetup:
+        _require_disjoint_protected_paths((self.path,), protected_roots)
         selection, revision = self.snapshot()
         if selection is None:
             raise TrainingSetupSelectionError("Choose a trainer environment and local resources in Setup.")
+        if protected_roots:
+            paths = [selection.tokenizers_root, selection.output_root]
+            if selection.managed is not None:
+                paths.append(selection.managed.root)
+            else:
+                existing = selection.existing
+                assert existing is not None
+                paths.append(existing.python)
+                for binding in (existing.source, existing.environment, existing.python_base):
+                    paths.extend((binding.root, binding.manifest))
+            _require_disjoint_protected_paths(paths, protected_roots)
         profile = _verified_profile(profile)
         if profile.sha256 != selection.profile_sha256:
             raise TrainingSetupSelectionError("The selected trainer profile changed. Review Setup again.")
