@@ -3637,6 +3637,10 @@
       "sha256": "f885fdb4a9d9ac64e9b52a65b0d4e68c9d6f41a638b2120b5dcf98c926194e2e",
       "size_bytes": 7709
     },
+    "suite_core/tests/test_manager_anima_package_review.py": {
+      "sha256": "cbe6546b5200cf8d5ccec4824d1be8567f9858e9187fc42be04481f1549ce949",
+      "size_bytes": 1697
+    },
     "suite_core/tests/test_media_examples.py": {
       "sha256": "e2e51c3e501b92ccab7053e7d06efa20884707cc93a43e5ae9d731d265388e05",
       "size_bytes": 13756
