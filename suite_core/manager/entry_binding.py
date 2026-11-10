@@ -196,6 +196,7 @@ def _bind_training_worker(admitted, signed_worker, *, prepare_workspace=False):
 def _bind_manager_video_runtime(session, verifier, signed_worker):
     """Bind Video to the exact packaged worker already admitted by this session."""
     import json
+    import shutil
 
     from core.dependencies import DependencyService
     from core.paths import PROGRAM_ROOT
@@ -243,17 +244,51 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
         check()
         return decoder, encoder
 
-    def stage(*, check_interrupt=None):
-        check, pins = checked_worker(check_interrupt)
+    def setup_review(check, pins):
+        check()
         wheel = pins["pip_wheel"]
         if rows.get(wheel["filename"], {}).get("sha256") != wheel["sha256"]:
             raise RuntimeError("The reviewed Manager package does not include the Video setup wheel.")
-        return DependencyService.stage_manager_video_store(
+        python_version = pins["python"]["version"]
+        store = manager_root / "optional-components"
+        backup = store.with_name("optional-components.previous")
+        DependencyService._safe_component_directory(backup)
+        if backup.exists():
+            raise RuntimeError("Recover the previous Video setup before installing again.")
+        current_pin = DependencyService._video_store_inventory_pin(
+            store, python_version=python_version, check_interrupt=check,
+        )
+        profile_ids = (DependencyService.VIDEO_PROFILE_ID, "manager-video-encoder-windows")
+        profiles, _ = DependencyService._profile_union(profile_ids)
+        profile_pins = tuple(DependencyService._profile_sha256(profiles[name]) for name in profile_ids)
+        return python_version, wheel["sha256"], current_pin, profile_pins
+
+    def review(*, check_interrupt=None):
+        return setup_review(*checked_worker(check_interrupt))
+
+    def install(expected_review, *, check_interrupt=None):
+        check, pins = checked_worker(check_interrupt)
+        current = setup_review(check, pins)
+        if current != expected_review:
+            raise RuntimeError("Video setup changed. Review it again before installing.")
+        python_version, _, current_pin, _ = current
+        stage, stage_pin = DependencyService.stage_manager_video_store(
             manager_root, worker_root=Path(inventory.root), interpreter=interpreter,
             interpreter_sha256=interpreter_sha256, check_interrupt=check,
         )
+        try:
+            if setup_review(check, pins) != current:
+                raise RuntimeError("Video setup changed during staging. Review it again.")
+            return DependencyService.commit_manager_video_store(
+                manager_root, stage, python_version=python_version,
+                expected_stage_sha256=stage_pin, expected_current_sha256=current_pin,
+                check_interrupt=check,
+            )
+        finally:
+            if stage.is_dir() and not stage.is_symlink() and not stage.is_junction():
+                shutil.rmtree(stage, ignore_errors=True)
 
-    return admit, stage
+    return admit, review, install
 
 
 def launch_manager(*, normal_entry_session=None, argv=None, executable=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None, signed_training_worker=None):
@@ -294,7 +329,8 @@ def launch_manager(*, normal_entry_session=None, argv=None, executable=None, man
         options["dataset_verifier"] = verifier
         if verifier is not None:
             (normal_entry_session.admit_manager_video_runtime,
-             normal_entry_session.stage_manager_video_store) = _bind_manager_video_runtime(
+             normal_entry_session.review_manager_video_setup,
+             normal_entry_session.install_manager_video_setup) = _bind_manager_video_runtime(
                 normal_entry_session, verifier, signed_training_worker,
             )
     direct=selected_direct_runtime(admitted)
