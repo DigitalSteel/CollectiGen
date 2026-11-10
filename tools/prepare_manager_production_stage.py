@@ -109,6 +109,8 @@ _PUBLIC_TRAINING_INPUTS = frozenset({
     'tools/training_dataset_package.json',
     'tools/training_dataset_profile_worker.py',
     'tools/trainer_runtime_health_worker.py',
+    'tools/training_execution_readiness_worker.py',
+    'tools/training_sdxl_layout.json',
     'tools/training_execution_worker.py',
     'tools/training_preflight_worker.py',
     'tools/training_runtime_probe.py',

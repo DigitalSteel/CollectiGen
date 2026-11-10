@@ -1773,6 +1773,10 @@
       "sha256": "a7af158df7a0872b96271bf3de40071501b5086f356b19d41838477b7c1c761e",
       "size_bytes": 5621
     },
+    "core/training_reference_loading.py": {
+      "sha256": "ddda42a5d7f309aa2f27f62dc0edde99f0fbe89e3485b3449f09d374876c6370",
+      "size_bytes": 1848
+    },
     "core/training_reference_tokenizers.py": {
       "sha256": "16092a54c0d91e1f18d7c3faf37554dc9869de9850484c1486d5d0751901acb5",
       "size_bytes": 8213
@@ -3094,8 +3098,8 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "c5f6894bde6badc977cbfe0dc0ec4a16f42c0b6591d351c4185456fba4e709a1",
-      "size_bytes": 35037
+      "sha256": "72db299c5687fdeac251754e27b3e3cab0744d967dc7fe170ae3ab2f7ba388ae",
+      "size_bytes": 35170
     },
     "suite_core/manager/README.md": {
       "sha256": "c1e2868bced18b4b10646f0e55c707bbaafb036459cf22324149cdbb739c681f",
@@ -3950,8 +3954,8 @@
       "size_bytes": 17252
     },
     "tools/prepare_manager_production_stage.py": {
-      "sha256": "6608ed45179c1f277113beb969716f41b23f0658387d5eda07cf8320b2c2502b",
-      "size_bytes": 27343
+      "sha256": "3f1d493c7ecb707ec18e673a1b67d7f34360f8d21dc6df8775d443c3a69d2507",
+      "size_bytes": 27436
     },
     "tools/public-source-manifest.json": {
       "sha256": "c7cba83f59e7395364a749cbe86fe8341037b8cf442807b9906c82cf1a61deb6",
@@ -4005,6 +4009,10 @@
       "sha256": "0668f30b8dad24c28d4424fb3c95e0eab4fff53f3819a7277f2b565ec1e0eac1",
       "size_bytes": 4346
     },
+    "tools/training_execution_readiness_worker.py": {
+      "sha256": "3b25df8af31fa94778fec5cb2cea33fcd2dc48fdbe2ad19f06835fa848aa8b6e",
+      "size_bytes": 7518
+    },
     "tools/training_execution_worker.py": {
       "sha256": "5386562a8dd487a813abf61b973de9a3569cc5adc66acf68f6b500fe728e6eb6",
       "size_bytes": 25693
@@ -4020,6 +4028,10 @@
     "tools/training_runtime_sources.json": {
       "sha256": "93895f4aed34e4e81b42951348f241346b07e3beb10c5fcdc56a2318082bb750",
       "size_bytes": 21202
+    },
+    "tools/training_sdxl_layout.json": {
+      "sha256": "3d8df5797c4fe2cde8efcd18fe4402ff2375b22a459733c5d631b0271d390c59",
+      "size_bytes": 207205
     },
     "tools/training_verification_worker.py": {
       "sha256": "347399a0512db30103e59562c46d98590e629a3740396c5492f11b3e989cef63",
