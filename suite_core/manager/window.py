@@ -585,12 +585,18 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 button.setVisible(not view.synthetic and normal_entry_session is not None)
                 button.clicked.connect(action)
                 generation_actions.addWidget(button)
+            self._video_setup_cancel = None
+            self.video_setup_button = compact_action(QPushButton("Set Up Video Components…"))
+            self.video_setup_button.setVisible(not view.synthetic and callable(
+                getattr(normal_entry_session, "review_manager_video_setup", None)))
+            self.video_setup_button.clicked.connect(self.setup_video_components)
             generation_actions.addStretch()
             generation_panel = self.generation_panel = QWidget()
             generation_layout = QVBoxLayout(generation_panel)
             generation_layout.setContentsMargins(0, 0, 0, 0)
             generation_layout.addWidget(QLabel("Generate · Plan offline or submit with a checked generator"))
             generation_layout.addLayout(generation_actions)
+            generation_layout.addWidget(self.video_setup_button, 0, Qt.AlignLeft)
             generation_history = compact_action(QPushButton("Review Generation Jobs…"))
             generation_history.clicked.connect(self.review_generation_jobs)
             generation_layout.addWidget(generation_history, 0, Qt.AlignLeft)
@@ -1474,9 +1480,78 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     source_result_allowed=lambda: self.generation_state() is state,
                 )
 
+        def setup_video_components(self):
+            if self._video_setup_cancel is not None:
+                self._video_setup_cancel.set()
+                self.statusBar().showMessage("Stopping Video setup. Waiting for the current step to finish…")
+                return
+            state = self.generation_state()
+            review = getattr(normal_entry_session, "review_manager_video_setup", None)
+            install = getattr(normal_entry_session, "install_manager_video_setup", None)
+            if state is None or not callable(review) or not callable(install):
+                return
+            if (self._video_draft_picker_open or getattr(self, "_video_generation_dialog", None) is not None
+                    or getattr(self, "_video_runtime_admission_task", None) is not None):
+                self.statusBar().showMessage("Close the Video draft before setting up Video components.")
+                return
+            from threading import Event
+            from PySide6.QtWidgets import QMessageBox
+            from qt_app.workers import CoordinatedCallTask
+
+            lifetime = state.video_decoder_lifetime
+            if not lifetime.begin_mutation():
+                lifetime.end_mutation()
+                self.statusBar().showMessage("Wait for Video work to finish before starting Setup.")
+                return
+            cancelled = self._video_setup_cancel = Event()
+            self.video_setup_button.setText("Cancel Video Setup")
+
+            def finish(message):
+                self._video_setup_task = None
+                self._video_setup_cancel = None
+                lifetime.end_mutation()
+                self.video_setup_button.setText("Set Up Video Components…")
+                self.statusBar().showMessage(message)
+
+            def start(label, operation, complete):
+                self.statusBar().showMessage(label + "…")
+
+                def work(job):
+                    def check():
+                        if cancelled.is_set() or not job.checkpoint():
+                            raise InterruptedError("Video setup cancelled.")
+                    check()
+                    return operation(check)
+
+                task = CoordinatedCallTask(state.jobs, label, work, resource="io")
+                self._video_setup_task = task
+                task.signals.complete.connect(complete)
+                task.signals.failed.connect(lambda message: finish(message))
+                task.signals.cancelled.connect(lambda: finish("Video setup cancelled."))
+                try:
+                    task.start()
+                except (RuntimeError, ValueError) as exc:
+                    finish(str(exc))
+
+            def reviewed(plan):
+                if cancelled.is_set() or self.generation_state() is not state:
+                    finish("Video setup cancelled.")
+                    return
+                choice = QMessageBox.question(self, "Set Up Video Components",
+                    "Download and install the reviewed Video decoder and encoder for Suite Manager?",
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if choice != QMessageBox.Yes or cancelled.is_set() or self.generation_state() is not state:
+                    finish("Video setup cancelled.")
+                    return
+                start("Installing Video components", lambda check: install(plan, check_interrupt=check),
+                      lambda cleanup: finish("Video components installed. Open a Video draft to check them."
+                          if not cleanup else "Video components installed. Previous files still need cleanup."))
+
+            start("Reviewing Video setup", lambda check: review(check_interrupt=check), reviewed)
+
         def open_video_plan(self, *, reopen=False):
             state = self.generation_state()
-            if (state is None or self._video_draft_picker_open
+            if (state is None or self._video_draft_picker_open or self._video_setup_cancel is not None
                     or getattr(self, "_video_runtime_admission_task", None) is not None):
                 return
             from qt_app.video_generation_workflow import (
@@ -3068,6 +3143,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 event.ignore()
                 return
             if dialog is not None and not dialog.close():
+                event.ignore()
+                return
+            if self._video_setup_cancel is not None:
+                self._video_setup_cancel.set()
+                self.statusBar().showMessage("Stopping Video setup. Close Manager again after it finishes.")
                 event.ignore()
                 return
             video = getattr(self, "_video_generation_dialog", None)
