@@ -808,6 +808,7 @@
     "suite_core/shared_backend_routing_candidate.py",
     "suite_core/version.py",
     "tools/optional-ai-profiles.json",
+    "tools/runtime-pins.json",
     "tools/training_dataset_package.json",
     "tools/training_dataset_profile_worker.py",
     "tools/trainer_runtime_health_worker.py",

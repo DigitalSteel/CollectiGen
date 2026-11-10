@@ -668,6 +668,22 @@ class DependencyService:
                                      interpreter: Path, interpreter_sha256: str, python_version: str,
                                      check_interrupt=None, include_encoder: bool = False) -> VideoInstallPlan:
         """Review an installed Manager store using a caller-pinned worker, without launching it."""
+        interpreter = cls._review_manager_video_worker(worker_root, interpreter, interpreter_sha256,
+                                                       check_interrupt=check_interrupt)
+        profile = cls._reviewed_video_profile(cls.VIDEO_PROFILE_ID)
+        store, inventory = cls.review_manager_video_store(
+            manager_data_root, python_version=python_version, check_interrupt=check_interrupt,
+            include_encoder=include_encoder,
+        )
+        cls._review_manager_video_worker(worker_root, interpreter, interpreter_sha256,
+                                         check_interrupt=check_interrupt)
+        return VideoInstallPlan(
+            cls.VIDEO_PROFILE_ID, cls._profile_sha256(profile), store / "python", store,
+            inventory, interpreter, interpreter_sha256, python_version,
+        )
+
+    @classmethod
+    def _review_manager_video_worker(cls, worker_root, interpreter, interpreter_sha256, *, check_interrupt=None):
         worker_root, interpreter = Path(worker_root), Path(interpreter)
         if not worker_root.is_absolute() or not interpreter.is_absolute() or ".." in (*worker_root.parts, *interpreter.parts):
             raise ValueError("Absolute Manager worker paths are required.")
@@ -678,17 +694,7 @@ class DependencyService:
         interpreter = cls._safe_component_file(interpreter, worker_root)
         if cls._sha256_file(interpreter, check_interrupt=check_interrupt) != interpreter_sha256:
             raise RuntimeError("The reviewed Manager worker interpreter changed.")
-        profile = cls._reviewed_video_profile(cls.VIDEO_PROFILE_ID)
-        store, inventory = cls.review_manager_video_store(
-            manager_data_root, python_version=python_version, check_interrupt=check_interrupt,
-            include_encoder=include_encoder,
-        )
-        if cls._sha256_file(cls._safe_component_file(interpreter, worker_root), check_interrupt=check_interrupt) != interpreter_sha256:
-            raise RuntimeError("The reviewed Manager worker interpreter changed during Video review.")
-        return VideoInstallPlan(
-            cls.VIDEO_PROFILE_ID, cls._profile_sha256(profile), store / "python", store,
-            inventory, interpreter, interpreter_sha256, python_version,
-        )
+        return interpreter
 
     @classmethod
     def review_manager_video_store(cls, manager_data_root: Path, *, python_version: str,
@@ -737,6 +743,57 @@ class DependencyService:
                 if sorted(current_profiles) not in ([cls.VIDEO_PROFILE_ID], sorted(profiles)):
                     raise RuntimeError("The Manager Video store contains other components. Review it before replacing it.")
             return cls._commit_optional_stage(stage, target_root=root)
+
+    @classmethod
+    def stage_manager_video_store(cls, manager_data_root: Path, *, worker_root: Path,
+                                  interpreter: Path, interpreter_sha256: str) -> tuple[Path, str]:
+        """Acquire the reviewed video wheels using the packaged pip wheel and worker."""
+        from .training_source_io import read_stable_training_source
+
+        root = Path(manager_data_root)
+        if not root.is_absolute() or ".." in root.parts:
+            raise ValueError("An absolute Manager data root is required.")
+        cls._safe_component_directory(root)
+        interpreter = cls._review_manager_video_worker(worker_root, interpreter, interpreter_sha256)
+        pins_raw, _ = read_stable_training_source(PROGRAM_ROOT / "tools/runtime-pins.json", max_bytes=64 * 1024)
+        pins = json.loads(pins_raw)
+        python_version = pins["python"]["version"]
+        wheel = pins["pip_wheel"]
+        if pins.get("schema_version") != 2 or not re.fullmatch(r"pip-[\d.]+-py3-none-any\.whl", wheel["filename"]):
+            raise RuntimeError("The packaged pip wheel pin is invalid.")
+        wheel_path = cls._safe_component_file(Path(worker_root) / wheel["filename"], Path(worker_root))
+        wheel_bytes, _ = read_stable_training_source(wheel_path, max_bytes=8 * 1024**2)
+        if hashlib.sha256(wheel_bytes).hexdigest() != wheel["sha256"]:
+            raise RuntimeError("The packaged pip wheel changed.")
+        profile_ids = (cls.VIDEO_PROFILE_ID, "manager-video-encoder-windows")
+        profiles, packages = cls._profile_union(profile_ids)
+        stage = root / f".optional-components-install-{uuid.uuid4().hex}"
+        site = stage / "python"
+        stage.mkdir(parents=True)
+        try:
+            site.mkdir()
+            pinned_wheel = stage / wheel_path.name
+            with pinned_wheel.open("xb") as target:
+                target.write(wheel_bytes)
+            bootstrap = (
+                "import runpy,sys; "
+                "assert sys.version.split()[0] == sys.argv.pop(1), 'Reviewed Python version changed'; "
+                "sys.path.insert(0, sys.argv.pop(1)); runpy.run_module('pip', run_name='__main__')"
+            )
+            cls._acquire_optional_packages(packages, site, stage, pip_command=[
+                str(interpreter), "-I", "-B", "-c", bootstrap, python_version, str(pinned_wheel),
+            ])
+            pinned_wheel.unlink()
+            cls._review_manager_video_worker(worker_root, interpreter, interpreter_sha256)
+            for distribution in metadata.distributions(path=[str(site)]):
+                cls._normalize_staged_distribution_record(distribution, site)
+            cls._write_installed_component_inventory(profile_ids, profiles, component_site=site,
+                                                       target_root=stage, python_version=python_version)
+            pin = cls._video_store_inventory_pin(stage, python_version=python_version, expected_profiles=profile_ids)
+            return stage, pin
+        except Exception:
+            shutil.rmtree(stage, ignore_errors=True)
+            raise
 
     @classmethod
     def recover_manager_video_store(cls, manager_data_root: Path) -> bool:
@@ -2060,7 +2117,7 @@ print(json.dumps({"version":av.__version__}))
     @classmethod
     def _write_installed_component_inventory(
         cls,profile_ids: tuple[str,...],profiles: dict[str,dict],*,
-        component_site: Path,target_root: Path,
+        component_site: Path,target_root: Path,python_version=None,
     ) -> None:
         distributions=[]
         inventory_root=cls._safe_component_directory(component_site)
@@ -2112,7 +2169,7 @@ print(json.dumps({"version":av.__version__}))
             "schema_version":2,
             "storage_layout":"durable-optional-python-v1",
             "verified_install_files":verified_files,
-            "python_version":sys.version.split()[0],
+            "python_version":python_version if python_version is not None else sys.version.split()[0],
             "requested_requirements":list(dict.fromkeys(str(value) for value in requested)),
             "profile_ids":list(profile_ids),
             "profiles":profile_records,
@@ -2156,7 +2213,7 @@ print(json.dumps({"version":av.__version__}))
         return groups
 
     @classmethod
-    def _acquire_optional_packages(cls,packages: list[dict],site: Path,stage: Path) -> None:
+    def _acquire_optional_packages(cls,packages: list[dict],site: Path,stage: Path,*,pip_command=None) -> None:
         # Disable global/user/site configuration as well as inherited PIP_* options.
         # Separate invocations prevent a retained AI extra index from sourcing Video.
         groups=cls._optional_acquisition_groups(packages)
@@ -2170,7 +2227,8 @@ print(json.dumps({"version":av.__version__}))
                           for p in locked)+"\n",encoding="utf-8",
             )
             command=[
-                sys.executable,"-I","-m","pip","--isolated","install",
+                *(pip_command if pip_command is not None else [sys.executable,"-I","-m","pip"]),
+                "--isolated","install",
                 "--disable-pip-version-check","--no-cache-dir","--require-hashes",
                 "--only-binary=:all:","--no-deps","--index-url",source,
                 "--target",str(site),"--requirement",str(lock),
