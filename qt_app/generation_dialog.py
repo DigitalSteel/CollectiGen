@@ -680,17 +680,21 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.reference_cards_layout.addWidget(card)
 
     def reconnect_sources(self):
-        if self._reconnect_picker_open or self._pending or self._execution_active(): return
+        if self._reconnect_picker_open or self._planning_file_picker_open or self._pending or self._execution_active():
+            return
         expected = self.plan.source_identity
         if expected.get("derived_frame"):
             self.status.setText("Reopen this extracted frame from its verified video result, then Open Draft to restore the request and frame lineage.")
             return
         self._reconnect_picker_open = True
         try:
-            files, _ = QFileDialog.getOpenFileNames(self, "Reconnect Exact Original Images", "", "Images (*.png *.jpg *.jpeg *.webp)")
+            files = self._choose_plan_file(
+                QFileDialog.getOpenFileNames, "Reconnect Exact Original Images", "", "Images (*.png *.jpg *.jpeg *.webp)")
         finally:
             self._reconnect_picker_open = False
-        if not files: return
+            self._notify_background_work_finished()
+        if not files:
+            return
         collection = expected.get("collection", [])
         if not 1 <= len(collection) <= 4 or len(files) != len(collection):
             self.status.setText(f"Choose all {len(collection)} exact original source images together.")
