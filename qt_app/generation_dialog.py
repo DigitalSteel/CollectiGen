@@ -112,6 +112,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         checked_connection=None,
         checked_connection_provider=None,
         checked_image_submission=False,
+        review_generator_connection=None,
         offline_alternatives=False,
         file_selection_allowed=None,
         parent=None,
@@ -136,6 +137,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._alternatives_allowed = runtime_allowed or offline_alternatives
         self._save_verified_result_draft = offline_alternatives and review_verified_results and not runtime_allowed
         self._checked_connection = checked_connection
+        self._review_generator_connection = review_generator_connection
+        self._checked_submission_supported = checked_image_submission
         self._checked_connection_provider = checked_connection_provider
         self._checked_image_submission = bool(checked_image_submission and checked_connection
                                               and callable(checked_connection_provider))
@@ -222,6 +225,10 @@ class GenerationDialog(FeedbackEnabledDialog):
         layout.addWidget(heading)
         self.workflow_context = WorkflowContextSummary()
         layout.addWidget(self.workflow_context)
+        self.review_connection_button = QPushButton("Review Generator Connection…")
+        self.review_connection_button.setVisible(callable(self._review_generator_connection))
+        self.review_connection_button.clicked.connect(self._open_checked_connection_review)
+        layout.addWidget(self.review_connection_button, 0, Qt.AlignLeft)
         self.status = QLabel(self.connection_issue or "You can save or export this request without a generator connection.")
         self.status.setWordWrap(True); self.status.setTextFormat(Qt.PlainText)
         layout.addWidget(self.status)
@@ -3324,7 +3331,9 @@ class GenerationDialog(FeedbackEnabledDialog):
                          else input_issue or "Review your request, then save the draft or export the request.")
             self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
                 result="A saved draft or exported request.",
-                readiness=("Planning only. To generate, save this draft and return to Applications. "
+                readiness=("Planning only. Use Review Generator Connection to check an existing local generator."
+                           if callable(self._review_generator_connection) else
+                           "Planning only. To generate, save this draft and return to Applications. "
                            "Choose Review Generator Connection, then reopen the draft after saving a checked connection."
                            if self._review_verified_results and self._offline_job_recovery else
                            "Planning only. Generator access is unavailable here."), next_step=next_step)
@@ -4393,6 +4402,42 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.status.setText("Plan saved. Return from Setup to check and prepare this request again.")
             self.setup_requested.emit()
         self._run("save-for-setup", lambda: self._save_path(path, snapshot), saved)
+
+    def _open_checked_connection_review(self):
+        review = self._review_generator_connection
+        provider = self._checked_connection_provider
+        allowed = self._file_selection_allowed
+        if (not callable(review) or not callable(provider) or self._closed or self._shutdown_requested
+                or self._pending or self._execution_active() or (allowed is not None and not allowed())):
+            return
+        self.review_connection_button.setEnabled(False)
+        try:
+            review()
+        finally:
+            if not self._closed:
+                self.review_connection_button.setEnabled(True)
+        if self._closed or self._shutdown_requested or (allowed is not None and not allowed()):
+            return
+        connection = provider()
+        if connection == self._checked_connection:
+            return
+        if connection is not None:
+            from core.generation_transport import local_endpoint
+            local_endpoint(connection[0])
+        self._checked_connection = connection
+        self._checked_image_submission = bool(connection and self._checked_submission_supported)
+        self._image_submission_allowed = self.runtime_allowed or self._checked_image_submission
+        self.tabs.setTabVisible(self._readiness_tab_index, connection is not None)
+        if connection is not None:
+            self.endpoint.setReadOnly(True)
+            self.resume_from_setup(connection[0])
+        else:
+            self.adapter = self.binding = self.prepared = None
+            self._generation += 1
+            self.connection_issue = "The checked generator is unavailable. Review the connection again."
+            self.connection_detail.clear()
+            self.status.setText(self.connection_issue)
+            self._update_actions()
 
     def resume_from_setup(self, endpoint: str = "", connection_issue: str = "") -> None:
         """Reuse the exact draft and source guard, with fresh execution review."""

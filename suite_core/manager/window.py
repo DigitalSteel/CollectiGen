@@ -1371,6 +1371,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     video_draft_session_state=self.generation_state,
                     generation_session_state=self.generation_state,
                     checked_image_connection=self.checked_image_connection,
+                    review_generator_connection=self.review_generator_connection,
                     checked_image_submission=True,
                     offline_generation_alternatives=True,
                     retain_verified_result_remix=self.retain_verified_result_remix,

@@ -573,6 +573,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             checked_connection=checked_connection, checked_connection_provider=provider,
             review_verified_results=getattr(state, "review_verified_generation_results", False),
             checked_image_submission=getattr(state, "checked_image_submission", False),
+            review_generator_connection=getattr(state, "review_generator_connection", None),
             offline_alternatives=getattr(state, "offline_generation_alternatives", False),
             file_selection_allowed=(lambda: session_state() is state) if callable(session_state) else None,
             parent=host)
