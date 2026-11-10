@@ -133,6 +133,7 @@ def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_op
         state.settings, data_root / "video_generation", parent=host,
         scoped_drafts=scoped, runtime_allowed=getattr(state, "generation_runtime_allowed", True),
         draft_load_allowed=(lambda: session_state() is state) if session_state else None,
+        copy_receipt_for_organizer=getattr(state, "review_verified_generation_results", False),
         **runtime_options)
     if initial_request is not None:
         if source_path is not None:

@@ -11,7 +11,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QGuiApplication, QImage, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QFileDialog, QFormLayout, QGroupBox,
     QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPlainTextEdit, QPushButton, QScrollArea,
@@ -112,12 +112,13 @@ class VideoGenerationDialog(QDialog):
     def __init__(self, jobs, registry, settings, storage_root, parent=None, *,
                  adapter_factory=None, verify_output=None, pinned_wan_resource_id="",
                  runtime_binding=None, decoder_lifetime=None, scoped_drafts=False, runtime_allowed=True,
-                 encoder_binding=None, draft_load_allowed=None):
+                 encoder_binding=None, draft_load_allowed=None, copy_receipt_for_organizer=False):
         super().__init__(parent)
         self.jobs, self.registry, self.settings = jobs, registry, settings
         self.storage_root = Path(storage_root).absolute()
         self.scoped_drafts = scoped_drafts
         self._draft_load_allowed = draft_load_allowed
+        self._copy_receipt_for_organizer = copy_receipt_for_organizer
         self.runtime_allowed = runtime_allowed
         self.adapter_factory = adapter_factory
         self.pinned_wan_resource_id = pinned_wan_resource_id
@@ -539,7 +540,10 @@ class VideoGenerationDialog(QDialog):
         )
         self.preview_video_button = QPushButton("Preview Video…")
         self.finish_video_button = QPushButton("Finish Video…")
-        self.ingest_button = QPushButton("Send Verified Video to Ingest")
+        self.ingest_button = QPushButton("Copy Video Receipt Path" if copy_receipt_for_organizer
+                                         else "Send Verified Video to Ingest")
+        if copy_receipt_for_organizer:
+            self.ingest_button.setToolTip("Use the path in Organizer under Import > Review Manager Result.")
         self.stop_button = QPushButton("Stop Runtime")
         self.close_button = QPushButton("Close Workspace")
         self.cancel_step_button = QPushButton("Cancel Current Step")
@@ -1750,14 +1754,29 @@ class VideoGenerationDialog(QDialog):
             return
         if self._verified_receipt is None:
             return
+        receipt = deepcopy(self._verified_receipt)
+        if self._copy_receipt_for_organizer:
+            def copy_receipt(outputs):
+                if (self._shutdown_requested or self._verified_receipt != receipt
+                        or (self._draft_load_allowed is not None and not self._draft_load_allowed())):
+                    self._set_status("The video receipt path was not copied. Reopen the verified result and try again.")
+                    return
+                QGuiApplication.clipboard().setText(outputs[0]["output_receipt"]["path"])
+                self._set_status("Video receipt path copied. In Organizer, choose Import > Review Manager Result and select this receipt.")
+
+            self._run("Recheck verified video for Organizer",
+                      lambda: self.service.verified_video_outputs(receipt, allow_resize_recovery=False),
+                      copy_receipt, cancelable=False)
+            return
+
         def complete(outputs):
             output = outputs[0]
             self.ingest_requested.emit({"receipt_path": output["output_receipt"]["path"],
                 "source_path": output["path"], "service": self.service,
-                "receipt": deepcopy(self._verified_receipt)})
+                "receipt": receipt})
             self._set_status("Verified video opened in Ingest for explicit review and copy.")
         self._run("Recheck verified video for Ingest",
-                  lambda: self.service.verified_video_outputs(self._verified_receipt),
+                  lambda: self.service.verified_video_outputs(receipt),
                   complete, cancelable=False)
 
     def stop_runtime(self):
