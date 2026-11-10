@@ -142,7 +142,10 @@ class TrainingMergeDialog(FeedbackEnabledDialog):
         context = self._context()
         chosen, _filter = QFileDialog.getOpenFileNames(self, "Choose Merge Input Files", "",
                                                        "Safetensors files (*.safetensors)")
-        if not chosen or not self._admit(context): return
+        from shiboken6 import isValid
+
+        if not chosen or not isValid(self) or not self.isVisible() or not self._admit(context):
+            return
         paths = tuple(dict.fromkeys((*self._paths, *(str(Path(p).absolute()) for p in chosen))))
         if len(paths) > 4:
             self.status.setText("Choose at most four files. Remove a selected file before adding more; the current selection was kept.")

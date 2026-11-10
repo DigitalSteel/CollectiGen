@@ -2710,8 +2710,8 @@
       "size_bytes": 40478
     },
     "qt_app/training_merge_dialog.py": {
-      "sha256": "1d0da81e220bc1512d2dd5eb6e9cf5f8a5e1f16a7ffebac88726fb55fa5d2c78",
-      "size_bytes": 15386
+      "sha256": "3cf6ab8f49a053f49a22f9019e44ff1847eca022009af5e770dfe7ea0ddfcabe",
+      "size_bytes": 15485
     },
     "qt_app/training_metrics_widget.py": {
       "sha256": "9fe51256d3ee85961965c65d930a6c00444523ec047a0f17c0f5e34e954b773a",
