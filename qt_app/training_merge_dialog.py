@@ -38,8 +38,9 @@ class TrainingMergeDialog(FeedbackEnabledDialog):
     background_work_finished = Signal()
     feedback_workflow = "Inspect Merge Inputs"
 
-    def __init__(self, jobs, parent=None):
+    def __init__(self, jobs, parent=None, *, inspection_allowed=None):
         super().__init__(parent)
+        self._inspection_allowed = inspection_allowed
         self.jobs = jobs
         self._task = None
         self._pending = None
@@ -127,8 +128,12 @@ class TrainingMergeDialog(FeedbackEnabledDialog):
         return self._paths, self.operation.currentData()
 
     def _admit(self, expected=None):
+        if self._inspection_allowed is not None and not self._inspection_allowed():
+            self.status.setText("The Manager session ended. Close this inspection and reopen it from Manager.")
+            return False
         ready = settle_learning_action(self, self._context, expected_context=expected,
-                                       is_current=lambda: self._task is None)
+                                       is_current=lambda: self._task is None and (
+                                           self._inspection_allowed is None or self._inspection_allowed()))
         if ready: clear_learning_action_notice(self)
         return ready
 
@@ -214,6 +219,8 @@ class TrainingMergeDialog(FeedbackEnabledDialog):
         self._drain_timer.stop()
         if self._cancel_requested or pending.get("cancelled"):
             self.status.setText("Inspection stopped. Originals are unchanged. Choose Inspect to retry or Close; nothing restarts automatically.")
+        elif self._inspection_allowed is not None and not self._inspection_allowed():
+            self.status.setText("The Manager session ended. Inspection results were discarded. Close this inspection.")
         elif pending.get("error") or not isinstance(pending.get("value"), MergeInputReview):
             self.status.setText("Inspection could not finish. A file may have changed, be unreadable or use an unsupported format. Review the selection and choose Inspect again. No output was created.")
         else:

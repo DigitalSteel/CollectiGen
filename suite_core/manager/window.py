@@ -2168,7 +2168,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from qt_app.training_merge_dialog import TrainingMergeDialog
             jobs = BackgroundJobManager()
             try:
-                dialog = TrainingMergeDialog(jobs, self)
+                dialog = TrainingMergeDialog(
+                    jobs, self, inspection_allowed=lambda: (
+                        normal_entry_session.state == "ready" and not self.close_policy.pending),
+                )
                 self._training_merge_dialog = dialog
                 dialog.exec()
             finally:
