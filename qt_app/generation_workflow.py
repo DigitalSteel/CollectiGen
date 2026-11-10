@@ -781,10 +781,10 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             show(result)
     def failed(error):
         host._generation_source_task = None
-        QMessageBox.information(parent, "Generation planning unavailable", error)
+        if source_result_allowed is None or source_result_allowed():
+            QMessageBox.information(parent, "Generation planning unavailable", error)
     def cancelled():
-        host._generation_source_task = None
-        QMessageBox.information(parent, "Generation planning unavailable", "Source preparation was cancelled. Choose the source again when ready.")
+        failed("Source preparation was cancelled. Choose the source again when ready.")
     task.signals.complete.connect(completed)
     task.signals.failed.connect(failed)
     task.signals.cancelled.connect(cancelled)
