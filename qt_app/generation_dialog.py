@@ -376,11 +376,14 @@ class GenerationDialog(FeedbackEnabledDialog):
         from .generation_saved_work_dialog import SavedGenerationWorkDialog
         if self._pending or not self.confirm_draft_loss(after_saved=self.resume_saved_draft):
             return
-        browser = SavedGenerationWorkDialog(self.jobs, self.storage_root, "drafts", parent=self)
+        browser = SavedGenerationWorkDialog(
+            self.jobs, self.storage_root, "drafts", parent=self,
+            file_transfer_allowed=self._file_selection_allowed,
+        )
         self._saved_work_dialog = browser
         accepted = browser.exec() == QDialog.Accepted
         if not browser.has_active_background_work(): self._saved_work_dialog = None
-        if accepted and browser.selected_path:
+        if accepted and browser.selected_path and self._saved_work_selection_current():
             target = Path(browser.selected_path)
             self._run("load", lambda: load_plan_with_digest(target),
                       lambda value: self._apply_loaded_plan(value[0], target, value[1]))
@@ -3015,12 +3018,13 @@ class GenerationDialog(FeedbackEnabledDialog):
                 self.jobs, self.storage_root, "recipes", parent=self,
                 registry=self.registry, settings=self.settings,
                 protected_model_roots=self.protected_model_roots,
+                file_transfer_allowed=self._file_selection_allowed,
             )
             self._saved_work_dialog = browser
             browser.background_work_finished.connect(self._notify_background_work_finished)
             accepted = browser.exec() == QDialog.Accepted
             self._saved_work_dialog = None
-            if not accepted or self._shutdown_requested or not browser.selected_path: return
+            if not accepted or not browser.selected_path or not self._saved_work_selection_current(): return
             path = browser.selected_path
             selected_digest = browser.selected_digest
         else:
@@ -4423,6 +4427,14 @@ class GenerationDialog(FeedbackEnabledDialog):
                 self.draft_status.setText("Draft saved to your chosen file · reopen it with Open Draft.")
                 self.status.setText("Draft saved with a read-back check.")
             self._run("save", lambda: self._save_path(path, snapshot), saved)
+    def _saved_work_selection_current(self):
+        if self._closed or self._shutdown_requested:
+            return False
+        if self._file_selection_allowed is not None and not self._file_selection_allowed():
+            self.status.setText("The Manager session ended. Reopen Generate to choose saved work.")
+            return False
+        return True
+
     def _choose_plan_file(self, picker, *args, **kwargs):
         if self._planning_file_picker_open:
             return ""

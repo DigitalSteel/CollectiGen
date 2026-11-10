@@ -377,6 +377,7 @@ def choose_generation_draft(parent, *, allow_draft_transfer=False, selection_all
     browser = SavedGenerationWorkDialog(
         host.state.jobs, _generation_data_root(host) / "generation", "drafts",
         parent=parent, selection_only=True, allow_draft_transfer=allow_draft_transfer,
+        file_transfer_allowed=selection_allowed,
     )
     try:
         if browser.exec() != QDialog.Accepted:
