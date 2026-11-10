@@ -46,7 +46,8 @@ def anima_service_for_owner(registry, owner=None):
     return AnimaTrainingService(registry, protected_roots=protected, managed_roots=managed)
 
 
-def _package_defaults(package):
+def anima_package_settings(package):
+    """Derive the Anima adapter proposal from a verified package."""
     if not getattr(package, "valid", False) or type(getattr(package, "manifest", None)) is not dict:
         raise ValueError("Choose a current verified Anima package.")
     manifest = package.manifest
@@ -109,7 +110,7 @@ class AnimaTrainingDialog(FeedbackEnabledDialog):
         self._generation = 0
         self._stop_event = Event()
         try:
-            defaults, explanation = _package_defaults(package)
+            defaults, explanation = anima_package_settings(package)
             self._package_issue = ""
         except (TypeError, ValueError) as exc:
             defaults, explanation, self._package_issue = AnimaSettings(), str(exc), str(exc)
@@ -580,7 +581,7 @@ class AnimaTrainingDialog(FeedbackEnabledDialog):
             package = self.service.packages.verify(resources.selection.package_path,
                 should_cancel=lambda: job.cancel_requested)
             if not package.valid: raise ValueError("The preparation's original package is unavailable or changed.")
-            defaults, explanation = _package_defaults(package)
+            defaults, explanation = anima_package_settings(package)
             preview = (self.service.preview(resources.selection, resources.settings,
                 qualification_path=self.qualification_path, should_cancel=lambda: job.cancel_requested)
                 if resources.status == "ready" else None)
@@ -672,7 +673,7 @@ class AnimaTrainingDialog(FeedbackEnabledDialog):
                 if (not verification.valid or verification.package_fingerprint !=
                         prepared.preview.package_fingerprint):
                     raise ValueError("The retained run's original package is unavailable or changed.")
-                _defaults, explanation = _package_defaults(verification)
+                _defaults, explanation = anima_package_settings(verification)
             receipt = getattr(prepared.preview.selection, "execution_receipt", "")
             resources = self.service.open_resources(receipt, should_cancel=lambda: job.cancel_requested) if receipt else None
             return prepared, outcome, qualification, verification, explanation, resources

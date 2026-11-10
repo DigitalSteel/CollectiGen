@@ -2658,8 +2658,8 @@
       "size_bytes": 33774
     },
     "qt_app/training_anima_dialog.py": {
-      "sha256": "1af9da78575c58c0cb96db38f37a693582d8b2c9fec14b709a45c86fca51bab2",
-      "size_bytes": 56357
+      "sha256": "acb2eeda40d86645b05b3090320ecf2593417d709859abdf022c098891e4c97e",
+      "size_bytes": 56446
     },
     "qt_app/training_candidate_plan_dialog.py": {
       "sha256": "397f3ff73af5118d8a797bbb50440505d3fa5c1d3860d526d982e372070249d3",
@@ -3222,8 +3222,8 @@
       "size_bytes": 3128
     },
     "suite_core/manager/krea_training_review.py": {
-      "sha256": "c9e805e87a5cabd070fcf165a8d0916eab2f39a506a9925f3fee227e516fab93",
-      "size_bytes": 40137
+      "sha256": "f7523a4c0cbf7b159177c26970cbacb1726a22e8c1b53939fa7169db35636bf0",
+      "size_bytes": 40573
     },
     "suite_core/manager/launcher_main.py": {
       "sha256": "33adf7ee200a23dd52062074697fc2a5a62c5ef611572c38308dada16d9b13e5",

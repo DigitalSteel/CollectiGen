@@ -234,7 +234,8 @@ class KreaTrainingReviewDialog(QDialog):
                          f"\nCandidate plan: {binding['candidate_plan_fingerprint']}")
         if report is None:
             status = "Package verified for manual handoff. Trainer readiness is unverified."
-            if configuration.target_model_family.casefold() == "anima" and configuration.output_kind == "lora":
+            anima = configuration.target_model_family.casefold() == "anima" and configuration.output_kind == "lora"
+            if anima:
                 status = "Anima package verified for manual handoff. Use the verified package in an external trainer."
             if self._krea_package:
                 status = "Package verified for manual handoff. Krea 2 compatibility review needs an admitted model registry."
@@ -302,6 +303,14 @@ class KreaTrainingReviewDialog(QDialog):
                 f"Regularization policy: {configuration.regularization_policy}\n"
                 f"Validation policy: {configuration.validation_policy}\n\n"
                 "Verify these settings in your Trainer before starting a run.")
+            if anima:
+                from qt_app.training_anima_dialog import anima_package_settings
+
+                try:
+                    _, explanation = anima_package_settings(verification)
+                except ValueError as exc:
+                    explanation = f"Anima adapter preview unavailable. {exc}"
+                self.sections[1].appendPlainText("\nAnima adapter preview\n" + explanation)
             self._append_companions(verification.manifest)
             self.sections[2].setPlainText(self._dataset_text(verification.manifest))
             captions = QPlainTextEdit()
