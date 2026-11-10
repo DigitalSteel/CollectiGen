@@ -27,7 +27,7 @@ class _StaleAnimaSetup(ValueError):
 
 class KreaTrainingReviewDialog(QDialog):
     def __init__(self, package_path, registry_path, parent, *, dataset_verifier=None, preview_jobs=None,
-                 anima_settings_path=None, anima_review_allowed=None):
+                 anima_settings_path=None, anima_review_allowed=None, anima_history_root=None):
         super().__init__(parent)
         self.setWindowTitle("Training Package Review")
         self.resize(850, 630)
@@ -49,6 +49,8 @@ class KreaTrainingReviewDialog(QDialog):
         self._registry_path = registry_path
         self._anima_settings_path = anima_settings_path
         self._anima_review_allowed = anima_review_allowed
+        self._anima_history_root = anima_history_root
+        self._anima_preflight = None
         self._anima_base_id = None
         self._anima_review = None
         self._checking_anima_setup = False
@@ -103,6 +105,10 @@ class KreaTrainingReviewDialog(QDialog):
         self.anima_setup_button.hide()
         self.anima_setup_button.clicked.connect(self._check_anima_setup)
         layout.addWidget(self.anima_setup_button, 0, Qt.AlignLeft)
+        self.anima_prepare_button = QPushButton("Prepare Anima Run")
+        self.anima_prepare_button.hide()
+        self.anima_prepare_button.clicked.connect(self._prepare_anima)
+        layout.addWidget(self.anima_prepare_button, 0, Qt.AlignLeft)
         layout.addWidget(self.tabs, 1)
         actions = QHBoxLayout()
         self.folder_button = QPushButton("Open Package Folder")
@@ -222,23 +228,35 @@ class KreaTrainingReviewDialog(QDialog):
         return "\n".join(lines)
 
     def _check_anima_setup(self):
+        self._start_anima_check()
+
+    def _prepare_anima(self):
+        if self._anima_preflight is not None and self._anima_history_root is not None:
+            self._start_anima_check(self._anima_preflight)
+
+    def _start_anima_check(self, reviewed=None):
         if (self._checking_anima_setup or self._anima_base_id is None or self._anima_review is not None
                 or self._cancel.is_set() or not self._anima_review_allowed()):
             return
         self._checking_anima_setup = True
+        self._anima_preflight = None
+        self.anima_prepare_button.hide()
         self.sections[0].setPlainText(self._anima_registration_overview)
         self.anima_setup_button.setEnabled(False)
         self.anima_button.setEnabled(False)
         self.folder_button.setEnabled(False)
-        self.return_button.setText("Cancel Check and Return")
-        self.status.setText("Checking the Anima package, trainer setup and model files…")
-        self._future = self._executor.submit(self._review_anima_setup)
+        self.return_button.setText("Cancel and Return")
+        self.status.setText("Preparing the reviewed Anima run…" if reviewed is not None
+                            else "Checking the Anima package, trainer setup and model files…")
+        self._future = self._executor.submit(partial(self._review_anima_setup, reviewed))
         self._timer.start(50)
 
-    def _review_anima_setup(self):
+    def _review_anima_setup(self, reviewed=None):
+        from contextlib import nullcontext
+        from hashlib import sha256
         from core.model_selection import protected_model_roots
         from core.settings import AppSettings
-        from tempfile import TemporaryDirectory
+        from tempfile import TemporaryDirectory, mkdtemp
 
         from core.model_resource_registry import ModelResourceRegistry
         from core.training_anima import AnimaTrainingService
@@ -247,7 +265,7 @@ class KreaTrainingReviewDialog(QDialog):
         from qt_app.training_anima_dialog import anima_package_settings
         from core.training_setup_resources import SavedTrainingSetupResolver
         from core.training_setup_selection import _require_disjoint_protected_paths
-        from core.training_source_io import read_stable_training_source
+        from core.training_source_io import _assert_unredirected, read_stable_training_source
 
         def cancelled():
             return self._cancel.is_set() or not self._anima_review_allowed()
@@ -278,9 +296,23 @@ class KreaTrainingReviewDialog(QDialog):
         require_current()
         package = self._verification
         run_settings, _ = anima_package_settings(package)
+        authority = (sha256(raw).hexdigest(), revision, model_revision)
+        if reviewed is not None and authority != reviewed[3:]:
+            raise _StaleAnimaSetup
         service = AnimaTrainingService(registry, protected_roots=protected, managed_roots=managed)
-        with TemporaryDirectory(prefix="collectigen-anima-review-") as temporary:
-            output = Path(temporary)
+        context = TemporaryDirectory(prefix="collectigen-anima-review-") if reviewed is None else nullcontext()
+        with context as temporary:
+            if reviewed is None:
+                output = Path(temporary)
+            else:
+                history_root = Path(self._anima_history_root)
+                _require_disjoint_protected_paths((history_root,), (*protected, package.destination,
+                    setup["source_root"], setup["environment_root"], setup["python_base_root"]))
+                _assert_unredirected(history_root)
+                require_current()
+                history_root.mkdir(parents=True, exist_ok=True)
+                _assert_unredirected(history_root)
+                output = Path(mkdtemp(prefix="anima-run-", dir=history_root))
             selection = service.prepare_selection(
                 package.destination, {**setup, "output_root": str(output)}, output / ".anima-selection-review",
                 should_cancel=cancelled)
@@ -316,7 +348,26 @@ class KreaTrainingReviewDialog(QDialog):
                 if verified != fingerprints:
                     raise _StaleAnimaInventory
             require_current()
-        return preview, directory
+            current = (preview.fingerprint, fingerprints, directory, *authority)
+            if reviewed is None:
+                return preview, directory, current, None
+            if current[1] != reviewed[1]:
+                raise _StaleAnimaInventory
+            if not preview.ready or current != reviewed:
+                raise _StaleAnimaSetup
+            prepared = service.prepare(preview, output, "anima", should_cancel=cancelled)
+            review_path = prepared.preparation_root / "anima-review.json"
+            from core.training_retained_history import upsert_retained_review
+            from core.training_run_index import TrainingRunIndex
+
+            require_current()
+            _assert_unredirected(history_root)
+            try:
+                upsert_retained_review(TrainingRunIndex(history_root / "training-runs.json"), "anima",
+                    {"prepared": prepared, "outcome": None, "registered": False})
+            except (OSError, RuntimeError, ValueError):
+                return preview, directory, current, (review_path, False)
+            return preview, directory, current, (review_path, True)
 
     def _open_anima_verification(self):
         if (self._anima_review is not None or self._cancel.is_set()
@@ -384,7 +435,7 @@ class KreaTrainingReviewDialog(QDialog):
                 self.status.setText("The Manager session ended. Reopen package review to check the trainer setup again.")
                 return
             try:
-                preview, directory = self._future.result()
+                preview, directory, preflight, prepared = self._future.result()
                 try:
                     if self._handoff_directory_state(self._handoff_folder) != directory:
                         raise _StaleAnimaPackage
@@ -406,8 +457,18 @@ class KreaTrainingReviewDialog(QDialog):
             except (OSError, RuntimeError, ValueError, TypeError):
                 self.status.setText("Saved trainer setup could not be verified. Review your trainer setup or use the package in an external trainer.")
             else:
-                if preview.ready:
-                    self.status.setText("Anima preflight passed. This review cannot prepare or start training.")
+                if prepared is not None:
+                    path, indexed = prepared
+                    self.sections[0].appendPlainText(f"\nRetained review: {path}")
+                    self.status.setText("Anima run prepared. Review Saved Training Runs to reopen it. Training did not start."
+                                        if indexed else "Anima preparation was retained, but Training History could not save it. "
+                                        "Keep the retained review shown below. Training did not start.")
+                elif preview.ready:
+                    self._anima_preflight = preflight
+                    self.anima_prepare_button.setVisible(self._anima_history_root is not None)
+                    self.status.setText("Anima preflight passed. Prepare the run to save a review in Manager Training History."
+                                        if self._anima_history_root is not None else
+                                        "Anima preflight passed. This review cannot prepare or start training.")
                 else:
                     from qt_app.training_anima_dialog import ISSUE_MESSAGES
 
