@@ -4,20 +4,20 @@ CollectiGen is a developing suite for collecting, identifying and organizing med
 
 ## Downloads
 
-Choose the component you need. These are separate Windows x64 alpha downloads;
-a complete installable suite is not yet published. Each release page contains
-its matching source, checksums, notes and qualification limits.
+For organizing images, [start with Media Organizer](#media-organizer). For
+looking up tags, [install Tag Encyclopedia Reader through Suite Manager](#install-tag-encyclopedia-reader-with-suite-manager).
+The applications are separate Windows x64 alpha downloads. Each release page
+contains its matching source, checksums, and supported scope.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.5.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.5.1-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.5.1-alpha.1/SuiteManager-0.5.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.5.1-alpha.1/SuiteManager-0.5.1-alpha.1-windows-x64.zip.sha256). Windows app for installing and opening CollectiGen components. This release supports a fresh install of Tag Encyclopedia Reader. Get Media Organizer from its own download link below. |
+| **Suite Manager** | [a.0.5.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.5.1-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.5.1-alpha.1/SuiteManager-0.5.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.5.1-alpha.1/SuiteManager-0.5.1-alpha.1-windows-x64.zip.sha256). Install and open Tag Encyclopedia Reader on Windows. For Media Organizer, use the standalone download in the next row. |
 | **Media Organizer** | [a.0.4.23](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.4.23-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.4.23-alpha.1/MediaOrganizer-a.0.4.23-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.4.23-alpha.1/MediaOrganizer-a.0.4.23-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars. |
 | **Tag Encyclopedia Reader** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). Component package installed and launched through Suite Manager. |
 | **Optional Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Experimental catalog data for a new, empty test catalog; no application or model is included. |
 
-Source/source-notices ZIPs are for development and licensing, not runnable apps.
-Use the exact source companions described on each release, including Organizer's
-unchanged native-library source companion. [All releases](https://github.com/DigitalSteel/CollectiGen/releases) remain available.
+Use the application ZIPs above to run the apps. Source and notices ZIPs are
+listed on each release page. [Browse all releases](https://github.com/DigitalSteel/CollectiGen/releases).
 
 ## Download and run
 
@@ -30,7 +30,7 @@ Retain your previous package and separate profile/image/catalog backups.
 
 1. Extract the Manager ZIP and start **CollectiGen.exe**.
 2. For a fresh installation, choose **Applications > Tag Encyclopedia > Find reader**.
-3. Review Reader **a.0.3.1**, choose **Install** and confirm deliberately.
+3. Review Reader **a.0.3.1**, choose **Install**, and confirm.
 4. Close Manager normally and reopen it before the first **Launch** of Reader.
 
 Manager a.0.5.1 has checksum sidecars but no signed Manager self-update envelope
