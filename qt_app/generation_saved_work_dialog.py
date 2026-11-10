@@ -546,7 +546,9 @@ class SavedGenerationWorkDialog(QDialog):
             buttons = QHBoxLayout(); reconcile = QPushButton("Reconcile Selected Save"); close = QPushButton("Close")
             buttons.addWidget(reconcile); buttons.addWidget(close); layout.addLayout(buttons)
             child.reconcile_button = reconcile
+            recovery_task = None
             def apply():
+                nonlocal recovery_task
                 selected = choices.currentItem()
                 if self._task is not None or selected is None: return
                 operation = selected.data(Qt.UserRole)
@@ -555,7 +557,12 @@ class SavedGenerationWorkDialog(QDialog):
                     child.accept(); self.refresh()
                 self._run("Reconcile selected preset save", lambda cancelled: collection.recover(
                     operation, confirmed=True, cancelled=cancelled), complete)
+                recovery_task = self._task
+            def cancel_recovery():
+                if recovery_task is not None and self._task is recovery_task:
+                    self.cancel_loading()
             reconcile.clicked.connect(apply); close.clicked.connect(child.reject)
+            child.rejected.connect(cancel_recovery)
             child.finished.connect(lambda *_: setattr(self, "_recovery_dialog", None))
             child.setWindowModality(Qt.WindowModal); child.show()
         self._run("Read retained preset recovery", lambda cancelled: collection.pending_operations(item_id), show)
