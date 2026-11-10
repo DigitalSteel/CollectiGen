@@ -796,16 +796,19 @@ class DependencyService:
         plan = review()
         if plan.reviewed_profile_sha256 != profile_sha256:
             raise RuntimeError("The Manager Video profile changed before admission.")
-        cls._probe_video_runtime(plan, check_interrupt=check_interrupt)
+        cls._probe_video_runtime(plan, check_interrupt=check_interrupt, require_python_version=True)
         if plan != review():
             raise RuntimeError("The Manager Video runtime changed during admission.")
         return VideoRuntimeBinding(**vars(plan), version="18.1.0")
 
     @staticmethod
-    def _probe_video_runtime(plan: VideoInstallPlan, *, check_interrupt=None) -> None:
+    def _probe_video_runtime(plan: VideoInstallPlan, *, check_interrupt=None,
+                             require_python_version: bool = False) -> None:
         probe=r"""
 import importlib.machinery,json,sys
 from pathlib import Path
+if len(sys.argv) == 3 and sys.version.split()[0] != sys.argv[2]:
+    raise RuntimeError("Video worker Python version differs from the reviewed version")
 site=Path(sys.argv[1]).resolve(strict=True)
 sys.path.insert(0,str(site))
 import av
@@ -822,8 +825,11 @@ print(json.dumps({"version":av.__version__}))
 """
         if check_interrupt is not None: check_interrupt()
         try:
+            arguments = [str(plan.interpreter_path), "-I", "-B", "-c", probe, str(plan.component_site)]
+            if require_python_version:
+                arguments.append(plan.python_version)
             result=subprocess.run(
-                [str(plan.interpreter_path),"-I","-B","-c",probe,str(plan.component_site)],
+                arguments,
                 check=True,capture_output=True,text=True,timeout=20,**_NO_CONSOLE,
             )
             if result.returncode!=0 or json.loads(result.stdout).get("version")!="18.1.0":
