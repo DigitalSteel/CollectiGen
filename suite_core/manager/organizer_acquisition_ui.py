@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QLabel, QPushButton, QMessageBox, QSizePolicy
 from PySide6.QtCore import Qt
 from threading import Event
 from time import monotonic
+from core.organizer_installation import OrganizerLaunchCancelled
 from .encyclopedia_acquisition_ui import EncyclopediaAcquisitionPanel, _primary_action
 from .ui_cards import compact_action
 
@@ -136,7 +137,13 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
             except Exception as error:
                 self.status.setText('Organizer status could not be checked. Keep Manager open and review Details for recovery.')
                 self.details.setPlainText(str(error))
+        future = self.future
+        cancelled_open = (self.operation == 'Opening Organizer' and future is not None
+                          and future.done() and not future.cancelled()
+                          and isinstance(future.exception(), OrganizerLaunchCancelled))
         super().poll()
+        if cancelled_open and self.future is None:
+            self.status.setText('Opening Organizer was cancelled. Choose Open Organizer to try again.')
         self.status.setText(self._organizer_text(self.status.text()))
 
     @property

@@ -22,6 +22,10 @@ from suite_core.discovery.component_staging import (
 )
 
 
+class OrganizerLaunchCancelled(InterruptedError):
+    """The request stopped before reaching the native launch owner."""
+
+
 @dataclass(frozen=True)
 class ManagedOrganizerSelection:
     directory: Path
@@ -138,7 +142,11 @@ class OrganizerInstallation(EncyclopediaInstallation):
 
     def launch(self, *, confirmed=False, should_cancel=None):
         require(confirmed is True,'explicit_organizer_launch_required')
-        self._cancel(should_cancel)
+        def check_cancel():
+            if should_cancel is not None and should_cancel():
+                raise OrganizerLaunchCancelled("Opening Organizer was cancelled before launch.")
+
+        check_cancel()
         require(self.native_owner is not None,'original_organizer_native_owner_required')
         with self._scope() as (root,base,owner,check):
             installed=self._observe(root,base,owner)
@@ -150,7 +158,7 @@ class OrganizerInstallation(EncyclopediaInstallation):
             check()
         # Release staging exclusion before creation; original native capability
         # independently re-admits its exact selected program and root generation.
-        self._cancel(should_cancel)
+        check_cancel()
         return self.native_owner.launch(selected)
 
     @property
