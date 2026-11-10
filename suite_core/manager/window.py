@@ -2014,8 +2014,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                             return
 
                         def work(job):
-                            record = history.save_unlisted_anima(current, confirmed=True,
-                                session_ready=lambda: not job.cancel_requested and self.generation_state() is state)
+                            try:
+                                record = history.save_unlisted_anima(current, confirmed=True,
+                                    session_ready=lambda: not job.cancel_requested and self.generation_state() is state)
+                            except OSError:
+                                return None, None
                             rows, _ = history.snapshot()
                             position = next((i for i, row in enumerate(rows) if row.run_id == record.run_id), None)
                             return record, None if position is None else position // PAGE_SIZE * PAGE_SIZE
@@ -2046,6 +2049,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                             dialog.set_retained_index_status(message)
                         elif save:
                             record, offset = result
+                            if record is None:
+                                anima_review = current
+                                save_anima.show()
+                                dialog.set_retained_index_status(
+                                    "Training History could not save the preparation. Choose Add Reviewed Preparation to History to retry.")
+                                return
                             if offset is None:
                                 dialog.set_retained_index_status("Training History changed. Refresh to find the saved preparation.")
                                 return
