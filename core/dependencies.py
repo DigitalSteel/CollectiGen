@@ -771,6 +771,38 @@ class DependencyService:
             issues.append("The reviewed Video profile is not installed in durable storage.")
         if issues:
             raise RuntimeError("Video component admission refused: "+"; ".join(dict.fromkeys(issues)))
+        self._probe_video_runtime(plan, check_interrupt=check_interrupt)
+        if plan != self.preview_video_install(check_interrupt=check_interrupt) or self._optional_environment_issues(root, check_interrupt=check_interrupt):
+            raise RuntimeError("The Video runtime changed during admission.")
+        return VideoRuntimeBinding(**vars(plan), version="18.1.0")
+
+    @classmethod
+    def admit_manager_video_runtime(cls, manager_data_root: Path, *, worker_root: Path,
+                                    interpreter: Path, interpreter_sha256: str, python_version: str,
+                                    check_interrupt=None) -> VideoRuntimeBinding:
+        """Admit a qualified decoder for an explicitly reviewed Manager worker."""
+        profile = cls._reviewed_video_profile(cls.VIDEO_PROFILE_ID)
+        if profile.get("support") != "supported":
+            raise RuntimeError(f"The {cls.VIDEO_PROFILE_ID} profile has not passed compatibility verification.")
+        profile_sha256 = cls._profile_sha256(profile)
+
+        def review():
+            return cls.review_manager_video_runtime(
+                manager_data_root, worker_root=worker_root, interpreter=interpreter,
+                interpreter_sha256=interpreter_sha256, python_version=python_version,
+                check_interrupt=check_interrupt,
+            )
+
+        plan = review()
+        if plan.reviewed_profile_sha256 != profile_sha256:
+            raise RuntimeError("The Manager Video profile changed before admission.")
+        cls._probe_video_runtime(plan, check_interrupt=check_interrupt)
+        if plan != review():
+            raise RuntimeError("The Manager Video runtime changed during admission.")
+        return VideoRuntimeBinding(**vars(plan), version="18.1.0")
+
+    @staticmethod
+    def _probe_video_runtime(plan: VideoInstallPlan, *, check_interrupt=None) -> None:
         probe=r"""
 import importlib.machinery,json,sys
 from pathlib import Path
@@ -794,14 +826,12 @@ print(json.dumps({"version":av.__version__}))
                 [str(plan.interpreter_path),"-I","-B","-c",probe,str(plan.component_site)],
                 check=True,capture_output=True,text=True,timeout=20,**_NO_CONSOLE,
             )
-            if check_interrupt is not None: check_interrupt()
             if result.returncode!=0 or json.loads(result.stdout).get("version")!="18.1.0":
                 raise ValueError("Unexpected Video native probe version")
-            if plan!=self.preview_video_install(check_interrupt=check_interrupt) or self._optional_environment_issues(root,check_interrupt=check_interrupt):
-                raise RuntimeError("The Video runtime changed during admission.")
         except (OSError,ValueError,subprocess.SubprocessError) as exc:
             raise RuntimeError("The isolated Video native load failed.") from exc
-        return VideoRuntimeBinding(**vars(plan),version="18.1.0")
+        if check_interrupt is not None:
+            check_interrupt()
 
     @classmethod
     def admit_manager_video_encoder(cls, decoder_binding, *, check_interrupt=None) -> VideoEncoderRuntimeBinding:
