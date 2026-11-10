@@ -138,6 +138,10 @@ class KreaTrainingReviewDialog(QDialog):
         self._timer.timeout.connect(self._settle)
         self._timer.start(50)
 
+    def _package_review_cancelled(self):
+        return self._cancel.is_set() or (self._anima_review_allowed is not None
+                                         and not self._anima_review_allowed())
+
     def _review(self, package_path, registry_path):
         from core.krea_training_compatibility import KreaTrainingCompatibilityService
         from core.model_resource_registry import ModelResourceError, ModelResourceRegistry
@@ -146,8 +150,8 @@ class KreaTrainingReviewDialog(QDialog):
 
         limits = TrainingPackageVerificationLimits()
         verification = TrainingPackageService().verify(
-            package_path, should_cancel=self._cancel.is_set, limits=limits)
-        if self._cancel.is_set():
+            package_path, should_cancel=self._package_review_cancelled, limits=limits)
+        if self._package_review_cancelled():
             raise InterruptedError("Training package review was cancelled.")
         if verification.inspection_limited:
             raise ValueError("The package exceeds the review limits. Choose a smaller package.")
@@ -178,11 +182,11 @@ class KreaTrainingReviewDialog(QDialog):
             return verification, configuration, None
         try:
             report = KreaTrainingCompatibilityService().report(
-                verification, ModelResourceRegistry(registry_path), should_cancel=self._cancel.is_set, limits=limits,
+                verification, ModelResourceRegistry(registry_path), should_cancel=self._package_review_cancelled, limits=limits,
             )
         except ModelResourceError:
             current = TrainingPackageService().verify(
-                package_path, should_cancel=self._cancel.is_set, limits=limits,
+                package_path, should_cancel=self._package_review_cancelled, limits=limits,
                 expected_package_fingerprint=verification.package_fingerprint,
             )
             if (not current.valid or current.inspection_limited
@@ -552,6 +556,9 @@ class KreaTrainingReviewDialog(QDialog):
             self.adapter_button.setEnabled(True)
             self.folder_button.setEnabled(True)
             self._show_dataset_receipt()
+            return
+        if self._package_review_cancelled():
+            self.status.setText("The Manager session ended. Return to Applications to reopen the package.")
             return
         try:
             verification, configuration, report = self._future.result()
