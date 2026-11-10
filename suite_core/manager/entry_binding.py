@@ -193,6 +193,54 @@ def _bind_training_worker(admitted, signed_worker, *, prepare_workspace=False):
     return plan.provision_training_worker(proof, code_root=code, data_root=data)
 
 
+def _bind_manager_video_runtime(session, verifier, signed_worker):
+    """Bind Video to the exact packaged worker already admitted by this session."""
+    import json
+
+    from core.dependencies import DependencyService
+    from core.paths import PROGRAM_ROOT
+    from core.training_file_inventory import SoftwareInventoryService
+    from core.training_source_io import read_stable_training_source
+
+    inventory = verifier.inventory
+    admitted = session.admitted
+    manager_root = admitted.layout.data_root / "Manager"
+    plan, proof = signed_worker
+    rows = plan.training_worker_file_rows(proof)
+    interpreter = Path(inventory.root) / verifier.python_relative
+    interpreter_sha256 = rows[verifier.python_relative]["sha256"]
+
+    def admit(*, check_interrupt=None):
+        def check():
+            if check_interrupt is not None:
+                check_interrupt()
+            if session.state != "ready" or session.admitted is not admitted:
+                raise InterruptedError("The Manager Video session ended.")
+
+        check()
+        DependencyService._profile_union((DependencyService.VIDEO_PROFILE_ID, "manager-video-encoder-windows"))
+        raw, _ = read_stable_training_source(PROGRAM_ROOT / "tools/runtime-pins.json", max_bytes=64 * 1024)
+        python_version = json.loads(raw)["python"]["version"]
+        def should_cancel():
+            check()
+            return False
+
+        summary = SoftwareInventoryService().verify(
+            inventory.root, inventory.manifest_path, should_cancel=should_cancel)
+        if (summary["inventory_sha256"] != inventory.manifest_sha256
+                or summary["files"] != inventory.file_count or summary["bytes"] != inventory.byte_count):
+            raise RuntimeError("The reviewed Manager Video worker changed.")
+        decoder = DependencyService.admit_manager_video_runtime(manager_root,
+            worker_root=Path(inventory.root), interpreter=interpreter,
+            interpreter_sha256=interpreter_sha256, python_version=python_version,
+            check_interrupt=check, include_encoder=True)
+        encoder = DependencyService.admit_manager_video_encoder(decoder, check_interrupt=check)
+        check()
+        return decoder, encoder
+
+    return admit
+
+
 def launch_manager(*, normal_entry_session=None, argv=None, executable=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None, signed_training_worker=None):
     """Enter managed normal UI only with the already native-qualified session."""
     from .bootstrap_entry import EntryHold, NormalEntrySession
@@ -227,7 +275,12 @@ def launch_manager(*, normal_entry_session=None, argv=None, executable=None, man
     if tag_database_controller is not None:
         options.update(tag_database_controller=tag_database_controller,tag_encyclopedia=tag_encyclopedia)
     if signed_training_worker is not None:
-        options["dataset_verifier"] = _bind_training_worker(admitted, signed_training_worker, prepare_workspace=True)
+        verifier = _bind_training_worker(admitted, signed_training_worker, prepare_workspace=True)
+        options["dataset_verifier"] = verifier
+        if verifier is not None:
+            normal_entry_session.admit_manager_video_runtime = _bind_manager_video_runtime(
+                normal_entry_session, verifier, signed_training_worker,
+            )
     direct=selected_direct_runtime(admitted)
     if direct is not None:options['direct_runtime_selection']=direct
     from .encyclopedia_acquisition_binding import factory_for_session
