@@ -1971,6 +1971,94 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
             open_prepared.clicked.connect(open_saved_workspace)
             plan_result.clicked.connect(plan_with_result)
+            if not preparations:
+                from PySide6.QtWidgets import QFileDialog
+
+                find_anima = QPushButton("Review Unlisted Anima Preparation…", dialog)
+                save_anima = QPushButton("Add Reviewed Preparation to History", dialog)
+                for button in (find_anima, save_anima):
+                    button.setAutoDefault(False)
+                    dialog.layout().addWidget(button)
+                save_anima.hide()
+                anima_review = None
+                restored_run = None
+
+                def select_restored_run():
+                    nonlocal restored_run
+                    if restored_run is None:
+                        return
+                    for index in range(dialog.runs.topLevelItemCount()):
+                        item = dialog.runs.topLevelItem(index)
+                        if item.data(0, Qt.UserRole)[0] == restored_run:
+                            restored_run = None
+                            dialog.runs.setCurrentItem(item)
+                            dialog.set_retained_index_status("Anima preparation is in Training History.")
+                            break
+
+                dialog.runs.model().rowsInserted.connect(lambda *_: QTimer.singleShot(0, select_restored_run))
+
+                def recover_anima(*, save=False):
+                    nonlocal task, anima_review
+                    if task is not None or closing_review or self.generation_state() is not state:
+                        return
+                    current = anima_review
+                    save_anima.hide()
+                    anima_review = None
+                    if save:
+                        if current is None:
+                            return
+                        work = lambda job: history.save_unlisted_anima(current, confirmed=True,
+                            session_ready=lambda: not job.cancel_requested and self.generation_state() is state)
+                    else:
+                        path, _ = QFileDialog.getOpenFileName(dialog, "Select the retained Anima receipt",
+                            str(state.generation_data_root / "training"), "Anima receipt (anima-review.json)")
+                        if (not path or self._training_history_dialog is not dialog or not dialog.isVisible()
+                                or self.generation_state() is not state or task is not None):
+                            return
+                        work = lambda _job: history.review_unlisted_anima(path)
+
+                    find_anima.setEnabled(False)
+                    dialog.set_retained_index_status("Saving the reviewed preparation…" if save else
+                                                     "Checking the retained Anima receipt…")
+                    task = CoordinatedCallTask(state.jobs, "Recover Anima preparation", work, resource="io")
+
+                    def finish(message="", result=None):
+                        nonlocal task, anima_review, restored_run
+                        task = None
+                        if closing_review:
+                            dialog.reject()
+                            return
+                        if self.generation_state() is not state:
+                            dialog.set_retained_index_status("Manager session ended. Reopen Training History to retry.")
+                            return
+                        find_anima.setEnabled(True)
+                        if result is None:
+                            dialog.set_retained_index_status(message)
+                        elif save:
+                            restored_run = result.run_id
+                            dialog.refresh()
+                            dialog.set_retained_index_status("Anima preparation saved. Refreshing Training History…")
+                        else:
+                            anima_review = result
+                            _, settings = result
+                            dialog.set_retained_index_status(
+                                f"Retained Anima preparation: {settings.max_steps} steps, {settings.resolution} px, "
+                                f"LoRA rank {settings.rank}, seed {settings.seed}, learning rate {settings.learning_rate:g}, "
+                                f"time limit {settings.timeout_seconds} seconds, batch size {settings.batch_size}, "
+                                f"gradient accumulation {settings.gradient_accumulation}, repeats {settings.repeats}. "
+                                "Add this preparation to History to find it again. Training will not start.")
+                            save_anima.show()
+
+                    task.signals.complete.connect(lambda result: finish(result=result))
+                    task.signals.failed.connect(finish)
+                    task.signals.cancelled.connect(lambda: finish("Anima preparation recovery cancelled."))
+                    try:
+                        task.start()
+                    except (RuntimeError, ValueError) as exc:
+                        finish(str(exc))
+
+                find_anima.clicked.connect(lambda: recover_anima())
+                save_anima.clicked.connect(lambda: recover_anima(save=True))
             dialog.runs.itemSelectionChanged.connect(selection_changed)
             dialog.openRunRequested.connect(verify)
             try:

@@ -665,11 +665,15 @@ class ScopedTrainingHistory:
 
     def review_anima_settings(self, record, revision):
         """Read saved Anima settings without opening linked training inputs."""
-        from .training_anima import AnimaSettings
-
         if record.kind != "anima":
             raise TrainingRunIndexError("Choose a saved Anima run.")
         plan, value = self._preparation(record, revision)
+        return self._anima_settings(plan, value)
+
+    @staticmethod
+    def _anima_settings(plan, value):
+        from .training_anima import AnimaSettings
+
         saved = value.get("settings")
         if type(saved) is not dict or set(saved) != {field.name for field in fields(AnimaSettings)}:
             raise TrainingRunIndexError("This receipt does not contain a complete set of saved Anima settings.")
@@ -681,6 +685,71 @@ class ScopedTrainingHistory:
         if settings.timeout_seconds != plan.timeout_seconds:
             raise TrainingRunIndexError("The saved Anima settings do not match the run's time limit.")
         return settings
+
+    def review_unlisted_anima(self, receipt):
+        """Review one Manager-owned preparation without following its linked inputs."""
+        from .training_run_recovery import _plan
+
+        receipt = Path(receipt)
+        self._check_read_path(receipt)
+        parts = receipt.relative_to(self._root).parts
+        if (len(parts) != 3 or not parts[0].startswith("anima-run-")
+                or parts[1:] != (".anima.anima-preparation", "anima-review.json")
+                or any(part in {".", ".."} for part in parts)):
+            raise TrainingRunIndexError("Choose a retained Anima preparation from this Manager's Training folder.")
+        run_root = receipt.parent.parent
+        destination = run_root / "anima"
+        self._check_read_path(destination)
+        if destination.exists():
+            raise TrainingRunIndexError("This Anima run already has execution files. Use its existing recovery path.")
+        raw = _read_optional(receipt, limit=256 * 1024)
+        if raw is None:
+            raise TrainingRunIndexError("The selected Anima preparation is unavailable.")
+        try:
+            value = _decode(raw)
+            if (type(value) is not dict or type(value.get("schema_version")) is not int
+                    or value["schema_version"] != 1 or value.get("kind") != "collectigen_anima_retained_review"):
+                raise ValueError("Unexpected receipt format")
+            plan = _plan(value["plan"])
+            contract = receipt.with_name("anima-contract.json")
+            if (plan.destination != destination or Path(value["preparation_root"]) != receipt.parent
+                    or Path(value["contract_path"]) != contract):
+                raise ValueError("Unexpected preparation layout")
+            settings = self._anima_settings(plan, value)
+            contract_raw = _read_optional(contract, limit=64 * 1024)
+            if contract_raw is None or hashlib.sha256(contract_raw).hexdigest() != plan.preview_fingerprint:
+                raise ValueError("The preparation contract changed")
+            contract_value = _decode(contract_raw)
+            if (type(contract_value) is not dict or contract_value.get("kind") != "collectigen_anima_dit_lora"
+                    or contract_value.get("settings") != settings.payload()):
+                raise ValueError("The preparation contract does not match the saved settings")
+        except (KeyError, TypeError, ValueError, RuntimeError) as exc:
+            raise TrainingRunIndexError("The selected Anima preparation is invalid or changed.") from exc
+        record = TrainingRunRecord(plan.run_id, "anima", str(receipt), hashlib.sha256(raw).hexdigest(),
+                                   plan.fingerprint, str(destination), phase="prepared")
+        record.validate()
+        return record, settings
+
+    def save_unlisted_anima(self, reviewed, *, confirmed, session_ready):
+        """Add the exact reviewed preparation to History after fresh confirmation."""
+        if confirmed is not True or not session_ready():
+            raise TrainingRunIndexError("An active Manager session and confirmation are required.")
+        record, _ = reviewed
+        if self.review_unlisted_anima(record.review_path) != reviewed:
+            raise TrainingRunIndexError("The Anima preparation changed. Review it again before saving.")
+        rows, revision = self.snapshot()
+        existing = next((row for row in rows if row.run_id == record.run_id), None)
+        if not session_ready():
+            raise TrainingRunIndexError("The Manager session ended before saving the preparation.")
+        if existing is not None:
+            if replace(existing, sequence=0) != record:
+                raise TrainingRunIndexError("Training History already has a different record for this run.")
+            return existing
+        self._index.register(record, revision)
+        saved = next((row for row in self.snapshot()[0] if row.run_id == record.run_id), None)
+        if saved is None or replace(saved, sequence=0) != record:
+            raise TrainingRunIndexError("The saved Anima preparation could not be read back. Refresh Training History.")
+        return saved
 
     def _review_sdxl_plan(self, record, revision):
         from .training_run_recovery import restore_indexed_review
