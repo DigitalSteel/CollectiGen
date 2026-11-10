@@ -211,13 +211,15 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
     interpreter = Path(inventory.root) / verifier.python_relative
     interpreter_sha256 = rows[verifier.python_relative]["sha256"]
 
+    def check_session(check_interrupt):
+        if check_interrupt is not None:
+            check_interrupt()
+        if session.state != "ready" or session.admitted is not admitted:
+            raise InterruptedError("The Manager Video session ended.")
+
     def checked_worker(check_interrupt):
         def check():
-            if check_interrupt is not None:
-                check_interrupt()
-            if session.state != "ready" or session.admitted is not admitted:
-                raise InterruptedError("The Manager Video session ended.")
-
+            check_session(check_interrupt)
         check()
         DependencyService._profile_union((DependencyService.VIDEO_PROFILE_ID, "manager-video-encoder-windows"))
         raw, _ = read_stable_training_source(PROGRAM_ROOT / "tools/runtime-pins.json", max_bytes=64 * 1024)
@@ -288,7 +290,16 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
             if stage.is_dir() and not stage.is_symlink() and not stage.is_junction():
                 shutil.rmtree(stage, ignore_errors=True)
 
-    return admit, review, install
+    def recover(*, check_interrupt=None):
+        check_session(check_interrupt)
+        restored = DependencyService.recover_manager_video_store(manager_root)
+        backup = manager_root / "optional-components.previous"
+        DependencyService._safe_component_directory(backup)
+        if backup.exists():
+            raise RuntimeError("Video setup recovery is incomplete. The previous files are still retained.")
+        return restored
+
+    return admit, review, install, recover
 
 
 def launch_manager(*, normal_entry_session=None, argv=None, executable=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None, signed_training_worker=None):
@@ -330,7 +341,8 @@ def launch_manager(*, normal_entry_session=None, argv=None, executable=None, man
         if verifier is not None:
             (normal_entry_session.admit_manager_video_runtime,
              normal_entry_session.review_manager_video_setup,
-             normal_entry_session.install_manager_video_setup) = _bind_manager_video_runtime(
+             normal_entry_session.install_manager_video_setup,
+             normal_entry_session.recover_manager_video_setup) = _bind_manager_video_runtime(
                 normal_entry_session, verifier, signed_training_worker,
             )
     direct=selected_direct_runtime(admitted)

@@ -3222,8 +3222,8 @@
       "size_bytes": 9718
     },
     "suite_core/manager/entry_binding.py": {
-      "sha256": "87cd96b4b2d9409dc5cbe0956c499b8d507d0895a8312cc7a5eb0b707d6a22d8",
-      "size_bytes": 17946
+      "sha256": "1712763d5987d7a6c3a41710adeaaa40a17c9cb717f74cb06a37feeb7e6ca422",
+      "size_bytes": 18530
     },
     "suite_core/manager/frozen_entry.py": {
       "sha256": "c447401010acdb969d8e188ecf71c29cf4d451db8b4605fee43192ad5541e3d4",
@@ -3394,8 +3394,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "4aff2060b4994d1b2d401a8c58c3e2f17ee5247a77c02d449c1f84de13e05669",
-      "size_bytes": 249221
+      "sha256": "bb402523aaeed0c433baaa366f456f12739b91680f77874fe1cb27b87b13b236",
+      "size_bytes": 250736
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",

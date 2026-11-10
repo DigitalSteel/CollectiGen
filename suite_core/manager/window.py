@@ -590,6 +590,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.video_setup_button.setVisible(not view.synthetic and callable(
                 getattr(normal_entry_session, "review_manager_video_setup", None)))
             self.video_setup_button.clicked.connect(self.setup_video_components)
+            self.video_recovery_button = compact_action(QPushButton("Recover Video Setup…"))
+            self.video_recovery_button.setVisible(not view.synthetic and callable(
+                getattr(normal_entry_session, "recover_manager_video_setup", None)))
+            self.video_recovery_button.clicked.connect(lambda: self.setup_video_components(recover=True))
             generation_actions.addStretch()
             generation_panel = self.generation_panel = QWidget()
             generation_layout = QVBoxLayout(generation_panel)
@@ -597,6 +601,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             generation_layout.addWidget(QLabel("Generate · Plan offline or submit with a checked generator"))
             generation_layout.addLayout(generation_actions)
             generation_layout.addWidget(self.video_setup_button, 0, Qt.AlignLeft)
+            generation_layout.addWidget(self.video_recovery_button, 0, Qt.AlignLeft)
             generation_history = compact_action(QPushButton("Review Generation Jobs…"))
             generation_history.clicked.connect(self.review_generation_jobs)
             generation_layout.addWidget(generation_history, 0, Qt.AlignLeft)
@@ -1480,7 +1485,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     source_result_allowed=lambda: self.generation_state() is state,
                 )
 
-        def setup_video_components(self):
+        def setup_video_components(self, *, recover=False):
             if self._video_setup_cancel is not None:
                 self._video_setup_cancel.set()
                 self.statusBar().showMessage("Stopping Video setup. Waiting for the current step to finish…")
@@ -1488,7 +1493,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             state = self.generation_state()
             review = getattr(normal_entry_session, "review_manager_video_setup", None)
             install = getattr(normal_entry_session, "install_manager_video_setup", None)
-            if state is None or not callable(review) or not callable(install):
+            recovery = getattr(normal_entry_session, "recover_manager_video_setup", None)
+            if state is None or (recover and not callable(recovery)):
+                return
+            if not recover and (not callable(review) or not callable(install)):
                 return
             if (self._video_draft_picker_open or getattr(self, "_video_generation_dialog", None) is not None
                     or getattr(self, "_video_runtime_admission_task", None) is not None):
@@ -1505,12 +1513,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 return
             cancelled = self._video_setup_cancel = Event()
             self.video_setup_button.setText("Cancel Video Setup")
+            self.video_recovery_button.setEnabled(False)
 
             def finish(message):
                 self._video_setup_task = None
                 self._video_setup_cancel = None
                 lifetime.end_mutation()
                 self.video_setup_button.setText("Set Up Video Components…")
+                self.video_recovery_button.setEnabled(True)
                 self.statusBar().showMessage(message)
 
             def start(label, operation, complete):
@@ -1547,7 +1557,18 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                       lambda cleanup: finish("Video components installed. Open a Video draft to check them."
                           if not cleanup else "Video components installed. Previous files still need cleanup."))
 
-            start("Reviewing Video setup", lambda check: review(check_interrupt=check), reviewed)
+            if recover:
+                choice = QMessageBox.question(self, "Recover Video Setup",
+                    "Recover the interrupted Video setup and remove its temporary files?",
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if choice != QMessageBox.Yes or cancelled.is_set() or self.generation_state() is not state:
+                    finish("Video setup recovery cancelled.")
+                    return
+                start("Recovering Video setup", lambda check: recovery(check_interrupt=check),
+                      lambda restored: finish("Previous Video components restored."
+                          if restored else "Video setup recovery check finished."))
+            else:
+                start("Reviewing Video setup", lambda check: review(check_interrupt=check), reviewed)
 
         def open_video_plan(self, *, reopen=False):
             state = self.generation_state()
