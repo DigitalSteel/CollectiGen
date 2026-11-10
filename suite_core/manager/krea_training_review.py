@@ -543,7 +543,12 @@ class KreaTrainingReviewDialog(QDialog):
                     self.retry_history_button.setEnabled(True)
                     self.retry_history_button.show()
             except Exception:
-                self.status.setText("Preparation did not finish. Check the selected folders, then choose Prepare SDXL Dataset to retry.")
+                if self._package_review_cancelled():
+                    self.prepare_button.setEnabled(False)
+                    self._invalidate_package_review(
+                        "The Manager session ended before preparation completed. Return to Applications to reopen the package.")
+                else:
+                    self.status.setText("Preparation did not finish. Check the selected folders, then choose Prepare SDXL Dataset to retry.")
             else:
                 if plan is None:
                     self.status.setText("The selected trainer software is not ready for dataset preparation. Choose Prepare SDXL Dataset to review the folders.")
@@ -748,7 +753,8 @@ class KreaTrainingReviewDialog(QDialog):
     def _retry_preparation_history(self):
         if self._retry_history_save is None or self._executor.close_held or self._cancel.is_set():
             return
-        if self._anima_base_id is not None and not self._anima_review_allowed():
+        if self._package_review_cancelled():
+            self.retry_history_button.setEnabled(False)
             self.status.setText("The Manager session ended. The preparation is still retained at the path shown below.")
             return
         try:
