@@ -7,7 +7,7 @@ the referenced review and journal.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field, fields, replace
 import hashlib
 import json
 import os
@@ -670,10 +670,13 @@ class ScopedTrainingHistory:
         if record.kind != "anima":
             raise TrainingRunIndexError("Choose a saved Anima run.")
         plan, value = self._preparation(record, revision)
+        saved = value.get("settings")
+        if type(saved) is not dict or set(saved) != {field.name for field in fields(AnimaSettings)}:
+            raise TrainingRunIndexError("This receipt does not contain a complete set of saved Anima settings.")
         try:
-            settings = AnimaSettings(**value["settings"])
+            settings = AnimaSettings(**saved)
             settings.validate()
-        except (KeyError, TypeError, ValueError) as exc:
+        except ValueError as exc:
             raise TrainingRunIndexError("The saved Anima settings are invalid.") from exc
         if settings.timeout_seconds != plan.timeout_seconds:
             raise TrainingRunIndexError("The saved Anima settings do not match the run's time limit.")
