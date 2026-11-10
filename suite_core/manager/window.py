@@ -2017,10 +2017,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     if task is not None or closing_review or self.generation_state() is not state:
                         return
                     current = pending_review if pending else anima_review
-                    save_anima.hide()
-                    finish_pending.hide()
-                    anima_review = None
-                    pending_review = None
                     if save:
                         if current is None:
                             return
@@ -2047,6 +2043,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                                 or self.generation_state() is not state or task is not None):
                             return
                         work = lambda _job: history.review_unlisted_anima(path)
+
+                    save_anima.hide()
+                    finish_pending.hide()
+                    anima_review = None
+                    pending_review = None
 
                     find_anima.setEnabled(False)
                     review_pending.setEnabled(False)
