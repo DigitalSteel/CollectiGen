@@ -41,7 +41,7 @@ class KreaTrainingReviewDialog(QDialog):
         heading = QLabel("Review a training package")
         heading.setObjectName("sectionTitle")
         layout.addWidget(heading)
-        guidance = ["Review a verified SDXL LoRA, Krea 2 LoRA, or collection-bound package for manual handoff."]
+        guidance = ["Review a verified SDXL LoRA, Krea 2 LoRA, Anima LoRA, or collection-bound package for manual handoff."]
         if registry_path is not None:
             guidance.append("Krea 2 LoRA packages also get a registered-base check.")
         else:
@@ -125,13 +125,13 @@ class KreaTrainingReviewDialog(QDialog):
             )
         configuration = TrainingConfiguration.from_dict(verification.manifest["training_configuration"])
         if configuration.target_model_family.casefold() not in {"krea 2", "krea2"} or configuration.output_kind != "lora":
-            sdxl_review = (configuration.target_model_family.casefold() == "sdxl"
+            lora_review = (configuration.target_model_family.casefold() in {"sdxl", "anima"}
                            and configuration.output_kind == "lora")
-            if "collection_version" not in verification.manifest and not sdxl_review:
+            if "collection_version" not in verification.manifest and not lora_review:
                 available = ["a collection-bound package"]
                 if registry_path is not None:
                     available.append("a Krea 2 LoRA package")
-                available.append("an SDXL LoRA package")
+                available.extend(("an SDXL LoRA package", "an Anima LoRA package"))
                 raise ValueError("Return to Applications and choose " + " or ".join(available) + ".")
             return verification, configuration, None
         if registry_path is None:
@@ -234,6 +234,8 @@ class KreaTrainingReviewDialog(QDialog):
                          f"\nCandidate plan: {binding['candidate_plan_fingerprint']}")
         if report is None:
             status = "Package verified for manual handoff. Trainer readiness is unverified."
+            if configuration.target_model_family.casefold() == "anima" and configuration.output_kind == "lora":
+                status = "Anima package verified for manual handoff. Use the verified package in an external trainer."
             if self._krea_package:
                 status = "Package verified for manual handoff. Krea 2 compatibility review needs an admitted model registry."
                 if self._registry_path is not None:
