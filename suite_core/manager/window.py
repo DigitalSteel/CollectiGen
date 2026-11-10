@@ -1973,6 +1973,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             plan_result.clicked.connect(plan_with_result)
             if not preparations:
                 from PySide6.QtWidgets import QFileDialog
+                from qt_app.training_history_dialog import PAGE_SIZE
 
                 find_anima = QPushButton("Review Unlisted Anima Preparation…", dialog)
                 save_anima = QPushButton("Add Reviewed Preparation to History", dialog)
@@ -2007,8 +2008,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     if save:
                         if current is None:
                             return
-                        work = lambda job: history.save_unlisted_anima(current, confirmed=True,
-                            session_ready=lambda: not job.cancel_requested and self.generation_state() is state)
+
+                        def work(job):
+                            record = history.save_unlisted_anima(current, confirmed=True,
+                                session_ready=lambda: not job.cancel_requested and self.generation_state() is state)
+                            rows, _ = history.snapshot()
+                            position = next((i for i, row in enumerate(rows) if row.run_id == record.run_id), None)
+                            return record, None if position is None else position // PAGE_SIZE * PAGE_SIZE
                     else:
                         path, _ = QFileDialog.getOpenFileName(dialog, "Select the retained Anima receipt",
                             str(state.generation_data_root / "training"), "Anima receipt (anima-review.json)")
@@ -2035,9 +2041,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         if result is None:
                             dialog.set_retained_index_status(message)
                         elif save:
-                            restored_run = result.run_id
-                            dialog.refresh()
-                            dialog.set_retained_index_status("Anima preparation saved. Refreshing Training History…")
+                            record, offset = result
+                            if offset is None:
+                                dialog.set_retained_index_status("Training History changed. Refresh to find the saved preparation.")
+                                return
+                            restored_run = record.run_id
+                            dialog._request_page(offset)
+                            dialog.set_retained_index_status("Anima preparation saved. Reading its Training History page…")
                         else:
                             anima_review = result
                             _, settings = result
