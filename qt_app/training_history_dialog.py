@@ -95,6 +95,10 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         self.page_summary = self._label("Training history has not loaded yet.")
         layout.addLayout(top)
         layout.addWidget(self.page_summary)
+        self.page_error = self._label("", "trainingHistoryPageError")
+        self.page_error.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.page_error.hide()
+        layout.addWidget(self.page_error)
 
         self.runs = QTreeWidget()
         self.runs.setHeaderLabels(["Run", "Kind", "Phase", "Destination"])
@@ -454,7 +458,12 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         elif self._cancel_requested and delivery.action == "page":
             self._invalidate_page("History check cancelled. Refresh when you are ready.")
         elif delivery.error:
-            self.status.setText(delivery.error)
+            if delivery.action == "page":
+                self.status.setText("Training History could not be read.")
+                self.page_error.setText(delivery.error)
+                self.page_error.show()
+            else:
+                self.status.setText(delivery.error)
         elif delivery.action == "page":
             self._loaded(delivery.payload)
         elif delivery.action == "forget":
@@ -537,6 +546,8 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
             previous = record.sequence
 
     def _invalidate_page(self, message):
+        self.page_error.clear()
+        self.page_error.hide()
         self._revision = ""; self._records = (); self._next_offset = None
         self.runs.clear(); self.detail.setText("No saved review is selected.")
         self.empty_state.hide(); self.runs.show()
