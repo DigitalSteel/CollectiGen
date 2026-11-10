@@ -22,7 +22,7 @@ import re
 
 from PIL import Image
 
-from .training_source_io import _assert_unredirected
+from .training_source_io import _assert_unredirected, read_stable_training_source
 from .video_decoder import MAX_VIDEO_BYTES, VideoVerification, iter_video_preview_frames, verify_video_output
 from .video_generation import DerivedFrameReference, VideoGenerationRequest, VideoSourceAsset
 from .video_output_processing import (
@@ -337,6 +337,33 @@ def verified_trimmed_output(
         "output_receipt": {"path": str(receipt), "sha256": hashlib.sha256(raw).hexdigest()}}
     VideoAssetRecord.from_descriptor(descriptor)
     return descriptor
+
+
+def verified_manager_trim_from_receipt(receipt_path, original_descriptor, *, should_cancel=None):
+    """Verify a selected trim against a separately verified Manager video job."""
+    receipt = Path(receipt_path)
+    original = Path(original_descriptor["output_receipt"]["path"])
+    jobs = original.parent.parent
+    if (not original.is_absolute() or original.name != "receipt.json"
+            or ".." in (*original.parts, *receipt.parts)
+            or jobs.parts[-3:] != ("Manager", "video_generation", "jobs")
+            or Path(original_descriptor["path"]) != original.with_name("result.mp4")
+            or not receipt.is_absolute() or receipt.parent != jobs.with_name("finishing")):
+        raise VideoOutputProcessingError("Choose a trim receipt and its original Manager video job.")
+    source_asset = VideoSourceAsset.from_dict(original_descriptor["source_asset"])
+    pattern = rf"\.(trim-{source_asset.sha256[:12]}-[0-9]+-[0-9]+-[0-9a-f]{{12}}\.mp4)\.collectigen-finishing\.json"
+    match = re.fullmatch(pattern, receipt.name)
+    if match is None:
+        raise VideoOutputProcessingError("The selected trim receipt does not belong to that Manager video.")
+    if should_cancel is not None and should_cancel():
+        raise InterruptedError("Trim receipt verification cancelled.")
+    raw, _ = read_stable_training_source(receipt, max_bytes=128 * 1024)
+    value = json.loads(raw)
+    lineage = DerivedClipMapping.from_dict(value["lineage"])
+    output = receipt.with_name(match.group(1))
+    trimmed = TrimmedVideo(output, receipt, VideoVerification(lineage.output_asset, {}), lineage)
+    request = VideoGenerationRequest.from_dict(original_descriptor["generation"]["request"])
+    return verified_trimmed_output(trimmed, original_descriptor, request, should_cancel=should_cancel)
 
 
 def verify_extracted_frame(

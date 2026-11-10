@@ -998,11 +998,13 @@ class IngestPage(QWidget):
             return
         selected, _ = QFileDialog.getOpenFileName(
             self, "Choose a Manager generation receipt", self._add_images_start_folder(),
-            "Generation receipt (receipt.json)",
+            "Manager receipts (receipt.json *.collectigen-finishing.json)",
         )
         if not selected or getattr(self, "_shutdown_requested", False):
             return
         receipt = Path(selected)
+        if receipt.name.startswith(".trim-") and receipt.name.endswith(".mp4.collectigen-finishing.json"):
+            return self._choose_manager_trim_source(receipt)
         jobs = receipt.parent.parent
         if (receipt.is_absolute() and receipt.name == "receipt.json"
                 and jobs.parts[-3:] == ("Manager", "video_generation", "jobs")):
@@ -1024,6 +1026,38 @@ class IngestPage(QWidget):
             "files", [result.output], preserve_source=True, verified_versions=(result,),
             ordinary_user_selection=True,
         )
+
+    def _choose_manager_trim_source(self, receipt):
+        from core.video_finishing import verified_manager_trim_from_receipt
+        from core.video_generation_execution import VideoExecutionService
+
+        if (not receipt.is_absolute()
+                or receipt.parent.parts[-3:] != ("Manager", "video_generation", "finishing")):
+            QMessageBox.information(self, "Manager trim unavailable",
+                                    "Choose a trim receipt from Manager's Video finishing folder.")
+            return
+        selected, _ = QFileDialog.getOpenFileName(
+            self, "Choose the original Manager video job receipt", str(receipt.parent.with_name("jobs")),
+            "Original video job receipt (receipt.json)",
+        )
+        if not selected or self._batch_task is not None or getattr(self, "_shutdown_requested", False):
+            return
+        original = Path(selected)
+        jobs = receipt.parent.with_name("jobs")
+        if not original.is_absolute() or original.parent.parent != jobs or original.name != "receipt.json":
+            QMessageBox.information(self, "Original Manager video unavailable",
+                                    "Choose receipt.json for the original video in the same Manager workspace.")
+            return
+        service = VideoExecutionService(jobs, self.state.jobs, verify_output=None)
+        source = receipt.with_name(receipt.name[1:].removesuffix(".collectigen-finishing.json"))
+
+        def verified_outputs(selected_receipt):
+            if Path(selected_receipt) != receipt:
+                raise ValueError("Choose the exact reviewed trim receipt.")
+            original_output, = service.verified_video_outputs_from_receipt(original)
+            return [verified_manager_trim_from_receipt(receipt, original_output)]
+
+        return self._start_video_ingest_preview(receipt, source, verified_outputs)
 
     def _hold_ingest_import_selection(self,source_kind,paths,preserve_source,reason,*,
                                       location_required=False,verified_versions=(),
