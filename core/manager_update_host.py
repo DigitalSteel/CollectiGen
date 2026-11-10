@@ -267,7 +267,8 @@ class CompiledManagerUpdateProfile:
 
     def _release(self, root, source):
         release=json.loads(json.dumps(source))
-        require(set(release)=={'version','channel','platform','files'} and release['channel']==self.channel,
+        require(type(release) is dict and set(release)=={'version','channel','platform','files'}
+            and release['channel']==self.channel,
             'compiled_prior_release_required')
         require(set(release['files'])=={'archive','manifest','signature','trust','proof','inventory','executable'}
             and release['platform']==dict(os='windows',architecture='x86_64'),'compiled_prior_release_scope_required')
