@@ -908,6 +908,9 @@ class KreaTrainingReviewDialog(QDialog):
                 or self._adapter_preview is not None or self._cancel.is_set()
                 or self._verification is None or self._preparation_setup is not None):
             return
+        if self._package_review_cancelled():
+            self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+            return
         dialog = QDialog(self)
         dialog.setWindowTitle("Prepare SDXL Dataset")
         layout = QVBoxLayout(dialog)
@@ -953,11 +956,14 @@ class KreaTrainingReviewDialog(QDialog):
             dialog.deleteLater()
             if self._cancel.is_set():
                 self.reject()
+        if self._package_review_cancelled():
+            self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+            return
         try:
             self._future = self._executor.submit(partial(
                 self._dataset_verifier.prepare, self._verification, source=source,
                 environment=environment, python_base=python_base, jobs=self._preview_jobs,
-                should_cancel=self._cancel.is_set,
+                should_cancel=self._package_review_cancelled,
             ))
         except (RuntimeError, ValueError):
             self.status.setText("Preparation could not start. Choose Prepare SDXL Dataset to retry.")
