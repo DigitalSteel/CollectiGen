@@ -1901,7 +1901,7 @@ class TrainingPackageService:
 
     @staticmethod
     def _read_recovery_receipt(
-        receipt: Path,
+        receipt: Path,*,should_cancel: CancelCallback|None=None,
     ) -> tuple[dict[str,object],Path,Path]:
         parent=receipt.parent
         if (
@@ -1909,7 +1909,8 @@ class TrainingPackageService:
             or _has_redirected_component(parent)
         ):
             raise ValueError("The recovery receipt is unavailable or redirected.")
-        payload=json.loads(receipt.read_text(encoding="utf-8"))
+        raw,_=_inspection_read(receipt,64*1024,should_cancel or (lambda:False))
+        payload=json.loads(raw.decode("utf-8"))
         _require_fields(payload,RECOVERY_FIELDS,"The recovery receipt")
         operation_id=str(payload.get("operation_id") or "")
         status=str(payload.get("status") or "")
@@ -2001,8 +2002,9 @@ class TrainingPackageService:
         if cancel():
             raise InterruptedError("Training package recovery preview was cancelled.")
         receipt=Path(receipt_path).expanduser().absolute()
+        limits=TrainingPackageVerificationLimits()
         try:
-            payload,destination,stage=self._read_recovery_receipt(receipt)
+            payload,destination,stage=self._read_recovery_receipt(receipt,should_cancel=cancel)
             if cancel():
                 raise InterruptedError("Training package recovery preview was cancelled.")
             if _directory_state(receipt.parent)!=payload["destination_parent_state"]:
@@ -2019,11 +2021,12 @@ class TrainingPackageService:
                     raise ValueError("The promoted manifest is redirected.")
                 verification=self.verify(
                     destination,expected_intent=str(payload["intent_fingerprint"]),
-                    should_cancel=cancel,
+                    should_cancel=cancel,limits=limits,
                 )
                 if not verification.valid:
                     raise ValueError("The promoted package does not verify: "+" ".join(verification.issues))
-                manifest_sha=hashlib.sha256((destination/MANIFEST_NAME).read_bytes()).hexdigest()
+                manifest_bytes,_=_inspection_read(destination/MANIFEST_NAME,limits.manifest_bytes,cancel)
+                manifest_sha=hashlib.sha256(manifest_bytes).hexdigest()
                 if manifest_sha!=payload["manifest_sha256"]:
                     raise ValueError("The promoted manifest differs from the recovery receipt.")
                 consequence="Recovery can reconcile the verified published package and finalize its receipt."
@@ -2036,11 +2039,12 @@ class TrainingPackageService:
                     raise ValueError("The staged manifest is redirected.")
                 verification=self.verify(
                     stage,expected_intent=str(payload["intent_fingerprint"]),
-                    should_cancel=cancel,
+                    should_cancel=cancel,limits=limits,
                 )
                 if not verification.valid:
                     raise ValueError("The staged package does not verify: "+" ".join(verification.issues))
-                manifest_sha=hashlib.sha256((stage/MANIFEST_NAME).read_bytes()).hexdigest()
+                manifest_bytes,_=_inspection_read(stage/MANIFEST_NAME,limits.manifest_bytes,cancel)
+                manifest_sha=hashlib.sha256(manifest_bytes).hexdigest()
                 if manifest_sha!=payload["manifest_sha256"]:
                     raise ValueError("The staged manifest differs from the recovery receipt.")
                 consequence=(
