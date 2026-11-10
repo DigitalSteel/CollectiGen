@@ -28,7 +28,7 @@ class _StaleAnimaSetup(ValueError):
 class KreaTrainingReviewDialog(QDialog):
     def __init__(self, package_path, registry_path, parent, *, dataset_verifier=None, preview_jobs=None,
                  anima_settings_path=None, anima_review_allowed=None, anima_history_root=None,
-                 expected_package_fingerprint=None):
+                 expected_package_fingerprint=None, open_trainer_setup=None):
         super().__init__(parent)
         self.setWindowTitle("Training Package Review")
         self.resize(850, 630)
@@ -37,6 +37,7 @@ class KreaTrainingReviewDialog(QDialog):
         self._dataset_verifier = dataset_verifier
         self._verification = None
         self._expected_package_fingerprint = expected_package_fingerprint
+        self._open_trainer_setup = open_trainer_setup
         self._handoff_folder = None
         self._checking_dataset = False
         self._preparing_dataset = False
@@ -970,6 +971,9 @@ class KreaTrainingReviewDialog(QDialog):
         load = QPushButton("Load Saved Trainer")
         load.setVisible(self._anima_settings_path is not None)
         layout.addWidget(load, 0, Qt.AlignLeft)
+        setup = QPushButton("Review Existing Trainer…")
+        setup.hide()
+        layout.addWidget(setup, 0, Qt.AlignLeft)
         load_status = QLabel()
         load_status.setTextFormat(Qt.PlainText)
         load_status.setWordWrap(True)
@@ -1037,6 +1041,7 @@ class KreaTrainingReviewDialog(QDialog):
             try:
                 locations = future.result()
             except (OSError, RuntimeError, ValueError) as exc:
+                setup.setVisible(callable(self._open_trainer_setup))
                 load_status.setText(f"Saved trainer unavailable. Use Browse or review Trainer Setup. {exc}")
                 return
             for field, location in zip(fields, locations, strict=True):
@@ -1050,12 +1055,20 @@ class KreaTrainingReviewDialog(QDialog):
             if load_future is not None or cancelled():
                 return
             loaded_at_revision = edit_revision
+            setup.hide()
             load_future = self._executor.submit(self._resolve_saved_sdxl_setup, cancelled)
             load.setEnabled(False)
             update_prepare()
             load_status.setText("Checking the saved trainer setup…")
             load_timer.start(50)
 
+        def review_setup():
+            if cancelled() or load_future is not None or not callable(self._open_trainer_setup):
+                return
+            if self._open_trainer_setup() and not cancelled():
+                load_status.setText("Trainer Setup saved. Choose Load Saved Trainer to review the saved folders.")
+
+        setup.clicked.connect(review_setup)
         load.clicked.connect(load_saved)
         load_timer.timeout.connect(finish_load)
         buttons.accepted.connect(dialog.accept)

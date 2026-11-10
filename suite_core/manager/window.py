@@ -2320,6 +2320,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     try:
                         if resources.exec() == QDialog.Accepted:
                             self.statusBar().showMessage("Trainer Setup saved. Use Load Saved Trainer when preparing an SDXL dataset.")
+                            return True
                     finally:
                         resources.deleteLater()
             finally:
@@ -2354,6 +2355,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 dialog = KreaTrainingReviewDialog(destination, registry_path, self,
                                                     dataset_verifier=dataset_verifier, preview_jobs=preview_jobs,
                                                     expected_package_fingerprint=expected_package_fingerprint,
+                                                    open_trainer_setup=self.open_existing_trainer_setup,
                                                     anima_settings_path=training_draft_settings_path,
                                                     anima_history_root=self.generation_state().generation_data_root / "training",
                                                     anima_review_allowed=lambda: (
