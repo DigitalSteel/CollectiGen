@@ -143,7 +143,7 @@ def payload(root, reference, component, platform=None, *, payload_policy=None):
     return directory
 
 
-def verify_directory(directory, expected_hash, component, version, *, payload_policy=None):
+def verify_directory(directory, expected_hash, component, version, *, payload_policy=None, checkpoint=None):
     policy = require_payload_policy(payload_policy, component)
     profile_path = directory / INVENTORY
     guard(profile_path)
@@ -163,7 +163,15 @@ def verify_directory(directory, expected_hash, component, version, *, payload_po
     total = len(raw)
     require(type(files) is list and 0 < len(files) <= policy.max_inventory_members, "inventory_files")
     wanted = {INVENTORY.casefold()}
+
+    def check_hash_progress():
+        checkpoint()
+        return False
+
+    should_cancel = check_hash_progress if checkpoint is not None else None
     for entry in files:
+        if checkpoint is not None:
+            checkpoint()
         require(type(entry) is dict and set(entry) == {"path", "size_bytes", "sha256"}, "inventory_file")
         parts = payload_relative(entry["path"], payload_policy=policy)
         require(len(entry["path"]) <= policy.max_relative_path_characters, "payload_path_bounds")
@@ -178,9 +186,12 @@ def verify_directory(directory, expected_hash, component, version, *, payload_po
         total += entry["size_bytes"]
         if policy.runtime_kind == "interpreter-portable":
             require(total <= policy.max_unpacked_bytes, "payload_bounds")
-        require(type(entry["sha256"]) is str and sha256_file(file) == entry["sha256"], "payload_hash")
+        require(type(entry["sha256"]) is str
+                and sha256_file(file, should_cancel=should_cancel) == entry["sha256"], "payload_hash")
     actual = set()
     for count, path in enumerate(directory.rglob("*"), 1):
+        if checkpoint is not None:
+            checkpoint()
         if policy.max_assembly_tree_entries is not None:
             require(count <= policy.max_assembly_tree_entries, "payload_tree_bounds")
             require(len(path.relative_to(directory).as_posix()) <= policy.max_relative_path_characters, "payload_path_bounds")
@@ -411,13 +422,18 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         failpoint("staging_created")
         extract_component_archive(archive_path, staging,
             member_extracted=lambda: failpoint("member_extracted"), payload_policy=policy, copy_checkpoint=copy_checkpoint)
-        profile = verify_directory(staging, target["inventory_sha256"], component, version, payload_policy=policy)
+        failpoint("verifying_staged_files")
+        profile = verify_directory(staging, target["inventory_sha256"], component, version,
+                                   payload_policy=policy, checkpoint=copy_checkpoint)
         require(profile["platform"] == {"os": os_name, "architecture": architecture}, "inventory_platform")
         verify_artifact(archive_path, verified.artifact)
         journal["phase"] = "activation_pending"
         atomic(pending_path, journal)
         failpoint("before_version_publish")
-        verify_directory(staging, target["inventory_sha256"], component, version, payload_policy=policy)
+        verify_directory(staging, target["inventory_sha256"], component, version,
+                         payload_policy=policy, checkpoint=copy_checkpoint)
+        if copy_checkpoint is not None:
+            copy_checkpoint()
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_handoff")
         if previous_bytes is not None:
             require(journal_path.exists() and journal_path.read_bytes() == previous_bytes, "current_journal_changed")

@@ -174,10 +174,11 @@ class EncyclopediaInstallation:
             if phase_progress is not None:
                 message = {'staging_created': 'Preparing reader files',
                     'member_extracted': 'Installing reader files',
-                    'before_version_publish': 'Finishing reader installation'}.get(phase)
+                    'verifying_staged_files': 'Checking installed reader files',
+                    'before_version_publish': 'Rechecking reader files before activation'}.get(phase)
                 if message is not None:
                     phase_progress(message)
-            if phase in ("staging_created", "member_extracted", "before_version_publish"):
+            if phase in ("staging_created", "member_extracted", "verifying_staged_files", "before_version_publish"):
                 self._cancel(should_cancel)
             # After version publication the transaction settles even if Stop was
             # clicked. The retained UI worker reports that settlement truthfully.
