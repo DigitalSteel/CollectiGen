@@ -67,6 +67,7 @@ WINDOWS_RESERVED_FILE_STEMS = {
     "con","prn","aux","nul",*(f"com{value}" for value in range(1,10)),*(f"lpt{value}" for value in range(1,10)),
 }
 _EXIFTOOL_JUNCTION_LOCK = threading.Lock()
+_MANAGER_VIDEO_STORE_LOCK = threading.Lock()
 _EXIFTOOL_JUNCTION_ROOT: Path | None = None
 _EXIFTOOL_JUNCTION_SOURCE: Path | None = None
 
@@ -708,6 +709,45 @@ class DependencyService:
         return store, pin
 
     @classmethod
+    def commit_manager_video_store(cls, manager_data_root: Path, stage: Path, *,
+                                   python_version: str, expected_stage_sha256: str,
+                                   expected_current_sha256: str) -> bool:
+        """Swap a reviewed combined Video stage into the Manager-owned store."""
+        manager_data_root, stage = Path(manager_data_root), Path(stage)
+        if not manager_data_root.is_absolute() or ".." in manager_data_root.parts:
+            raise ValueError("An absolute Manager data root is required.")
+        if not isinstance(python_version, str) or re.fullmatch(r"3\.\d+\.\d+", python_version) is None:
+            raise ValueError("An exact reviewed worker Python version is required.")
+        root = manager_data_root / "optional-components"
+        if stage.parent != manager_data_root or not re.fullmatch(r"\.optional-components-install-[a-f0-9]{32}", stage.name):
+            raise ValueError("Use the reviewed sibling Manager Video stage.")
+        profiles = (cls.VIDEO_PROFILE_ID, "manager-video-encoder-windows")
+        cls._profile_union(profiles)
+        with _MANAGER_VIDEO_STORE_LOCK:
+            staged_pin = cls._video_store_inventory_pin(
+                stage, python_version=python_version, expected_profiles=profiles,
+            )
+            if staged_pin != expected_stage_sha256:
+                raise RuntimeError("The Manager Video stage changed. Review the installation again.")
+            current_pin = cls._video_store_inventory_pin(root, python_version=python_version)
+            if current_pin != expected_current_sha256:
+                raise RuntimeError("The Manager Video store changed. Review the installation again.")
+            if current_pin:
+                current_profiles = cls._read_optional_inventory(root).get("profile_ids", [])
+                if sorted(current_profiles) not in ([cls.VIDEO_PROFILE_ID], sorted(profiles)):
+                    raise RuntimeError("The Manager Video store contains other components. Review it before replacing it.")
+            return cls._commit_optional_stage(stage, target_root=root)
+
+    @classmethod
+    def recover_manager_video_store(cls, manager_data_root: Path) -> bool:
+        """Restore an interrupted Manager Video swap before starting a fresh review."""
+        root = Path(manager_data_root)
+        if not root.is_absolute() or ".." in root.parts:
+            raise ValueError("An absolute Manager data root is required.")
+        with _MANAGER_VIDEO_STORE_LOCK:
+            return cls._recover_interrupted_optional_install(target_root=root / "optional-components")
+
+    @classmethod
     def _video_store_inventory_pin(cls, root, *, check_interrupt=None, python_version=None, expected_profiles=()):
         if check_interrupt is not None:
             check_interrupt()
@@ -1310,8 +1350,8 @@ print(json.dumps({"version":av.__version__}))
         return not cls._optional_environment_issues(root)
 
     @classmethod
-    def _recover_interrupted_optional_install(cls) -> bool:
-        root=OPTIONAL_COMPONENT_ROOT
+    def _recover_interrupted_optional_install(cls, *, target_root=None) -> bool:
+        root = OPTIONAL_COMPONENT_ROOT if target_root is None else target_root
         parent=root.parent
         backup=root.with_name(root.name+".previous")
         try:
@@ -1332,12 +1372,14 @@ print(json.dumps({"version":av.__version__}))
                     # a multi-gigabyte verification and can block the UI thread.
                     shutil.rmtree(backup)
             for stage in parent.glob(f".{root.name}-install-*"):
+                if target_root is not None and not re.fullmatch(r"\.optional-components-install-[a-f0-9]{32}", stage.name):
+                    continue
                 if stage.is_dir():
                     cls._safe_component_directory(stage)
                     shutil.rmtree(stage)
         except (OSError,RuntimeError):
             pass
-        if root.is_dir():
+        if target_root is None and root.is_dir():
             _activate_optional_component_site()
             importlib.invalidate_caches()
         return recovered
@@ -2245,8 +2287,8 @@ print(json.dumps({"version":av.__version__}))
             raise
 
     @classmethod
-    def _commit_optional_stage(cls,stage: Path) -> bool:
-        root=OPTIONAL_COMPONENT_ROOT
+    def _commit_optional_stage(cls, stage: Path, *, target_root=None) -> bool:
+        root = OPTIONAL_COMPONENT_ROOT if target_root is None else target_root
         backup=root.with_name(root.name+".previous")
         cls._safe_component_directory(root)
         cls._safe_component_directory(backup)
@@ -2268,8 +2310,9 @@ print(json.dumps({"version":av.__version__}))
                 shutil.rmtree(backup)
             except OSError:
                 cleanup_pending=backup.exists()
-        _activate_optional_component_site()
-        importlib.invalidate_caches()
+        if target_root is None:
+            _activate_optional_component_site()
+            importlib.invalidate_caches()
         return cleanup_pending
 
     def install_profile(
