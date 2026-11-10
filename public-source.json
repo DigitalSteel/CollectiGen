@@ -386,8 +386,8 @@
       "size_bytes": 10120
     },
     "core/dependencies.py": {
-      "sha256": "7253f1bc0ae853cc7e8d265d7be0a7c137fd45cbffa9bdf591fb8b65ed018e05",
-      "size_bytes": 149929
+      "sha256": "520a23eb5f61b44a2e34e38d4f1502849554bbdb19a32dbc5542911e2b033f56",
+      "size_bytes": 150069
     },
     "core/derived_refresh.py": {
       "sha256": "759874a2ebd75a62001a50c1d6a27e1ceb13be7e7829a930e9a70344f00a0530",

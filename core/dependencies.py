@@ -665,7 +665,7 @@ class DependencyService:
     @classmethod
     def review_manager_video_runtime(cls, manager_data_root: Path, *, worker_root: Path,
                                      interpreter: Path, interpreter_sha256: str, python_version: str,
-                                     check_interrupt=None) -> VideoInstallPlan:
+                                     check_interrupt=None, include_encoder: bool = False) -> VideoInstallPlan:
         """Review an installed Manager store using a caller-pinned worker, without launching it."""
         worker_root, interpreter = Path(worker_root), Path(interpreter)
         if not worker_root.is_absolute() or not interpreter.is_absolute() or ".." in (*worker_root.parts, *interpreter.parts):
@@ -680,6 +680,7 @@ class DependencyService:
         profile = cls._reviewed_video_profile(cls.VIDEO_PROFILE_ID)
         store, inventory = cls.review_manager_video_store(
             manager_data_root, python_version=python_version, check_interrupt=check_interrupt,
+            include_encoder=include_encoder,
         )
         if cls._sha256_file(cls._safe_component_file(interpreter, worker_root), check_interrupt=check_interrupt) != interpreter_sha256:
             raise RuntimeError("The reviewed Manager worker interpreter changed during Video review.")
@@ -779,7 +780,7 @@ class DependencyService:
     @classmethod
     def admit_manager_video_runtime(cls, manager_data_root: Path, *, worker_root: Path,
                                     interpreter: Path, interpreter_sha256: str, python_version: str,
-                                    check_interrupt=None) -> VideoRuntimeBinding:
+                                    check_interrupt=None, include_encoder: bool = False) -> VideoRuntimeBinding:
         """Admit a qualified decoder for an explicitly reviewed Manager worker."""
         profile = cls._reviewed_video_profile(cls.VIDEO_PROFILE_ID)
         if profile.get("support") != "supported":
@@ -790,7 +791,7 @@ class DependencyService:
             return cls.review_manager_video_runtime(
                 manager_data_root, worker_root=worker_root, interpreter=interpreter,
                 interpreter_sha256=interpreter_sha256, python_version=python_version,
-                check_interrupt=check_interrupt,
+                check_interrupt=check_interrupt, include_encoder=include_encoder,
             )
 
         plan = review()
