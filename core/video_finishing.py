@@ -352,7 +352,7 @@ def verified_trimmed_output(
 def verify_extracted_frame(
     extracted: ExtractedFrame, original_descriptor: dict,
     source_request: VideoGenerationRequest,
-    *, should_cancel: Callable[[], bool] | None = None,
+    *, should_cancel: Callable[[], bool] | None = None, runtime_binding=None, decoder_lifetime=None,
 ) -> DerivedFrameReference:
     """Recheck the exact PNG, receipt, and original clip before reuse."""
     source = extracted.source
@@ -362,7 +362,8 @@ def verify_extracted_frame(
         raise VideoOutputProcessingError("The original verified video differs from the extracted frame.")
     source_path = Path(original_descriptor.get("path", "")).absolute()
     deadline = monotonic() + 120
-    _source_check(source_path, source, source_request, should_cancel, deadline)
+    _source_check(source_path, source, source_request, should_cancel, deadline,
+                  runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     target, receipt = extracted.output_path.absolute(), extracted.receipt_path.absolute()
     if receipt != target.with_name(f".{target.name}.collectigen-finishing.json"):
         raise VideoOutputProcessingError("The exact frame receipt path changed.")
@@ -408,10 +409,11 @@ def verify_extracted_frame(
 
 def prepare_frame_ingest(
     extracted: ExtractedFrame, original_descriptor: dict,
-    source_request: VideoGenerationRequest,
+    source_request: VideoGenerationRequest, *, runtime_binding=None, decoder_lifetime=None,
 ) -> PreparedFrameIngest:
     """No-clobber Image Knowledge sidecar for a selected observed frame."""
-    reference = verify_extracted_frame(extracted, original_descriptor, source_request)
+    reference = verify_extracted_frame(extracted, original_descriptor, source_request,
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     from .annotation import ImageAnnotation
     from .image_record import _atomic_create_text
     target = extracted.output_path.absolute()
@@ -449,13 +451,15 @@ def prepare_frame_ingest(
             raise VideoOutputProcessingError("The extracted frame gained Image Knowledge during preparation.") from exc
     prepared = PreparedFrameIngest(target, sidecar, reference.output_sha256,
                                   hashlib.sha256(raw).hexdigest(), reference)
-    verify_prepared_frame_ingest(prepared, extracted, original_descriptor, source_request)
+    verify_prepared_frame_ingest(prepared, extracted, original_descriptor, source_request,
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     return prepared
 
 
 def verify_prepared_frame_ingest(
     prepared: PreparedFrameIngest, extracted: ExtractedFrame,
-    original_descriptor: dict, source_request: VideoGenerationRequest,
+    original_descriptor: dict, source_request: VideoGenerationRequest, *,
+    runtime_binding=None, decoder_lifetime=None,
 ) -> PreparedFrameIngest:
     """Recheck source clip, frame receipt, PNG and sidecar before normal Ingest."""
     if (not isinstance(prepared, PreparedFrameIngest)
@@ -463,7 +467,8 @@ def verify_prepared_frame_ingest(
             or prepared.sidecar_path != prepared.output_path.with_suffix(".tags.json")
             or prepared.reference != extracted.reference):
         raise VideoOutputProcessingError("The frame Ingest family differs from exact reviewed work.")
-    reference = verify_extracted_frame(extracted, original_descriptor, source_request)
+    reference = verify_extracted_frame(extracted, original_descriptor, source_request,
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     if prepared.image_sha256 != reference.output_sha256:
         raise VideoOutputProcessingError("The frame Ingest PNG identity changed.")
     _assert_unredirected(prepared.sidecar_path)
@@ -546,7 +551,8 @@ def discover_finished_video(
                 reference = DerivedFrameReference.from_dict(value["frame"])
                 result = ExtractedFrame(path, receipt, source_asset, reference)
                 verify_extracted_frame(result, original_descriptor, source_request,
-                                       should_cancel=should_cancel)
+                    should_cancel=should_cancel, runtime_binding=runtime_binding,
+                    decoder_lifetime=decoder_lifetime)
                 frames.append(result)
             elif path.suffix == ".mp4" and value.get("operation") == "trim":
                 lineage = DerivedClipMapping.from_dict(value["lineage"])

@@ -384,13 +384,15 @@ class VideoFinishingDialog(QDialog):
             return
         source_path, asset, request = self.path, self.asset, self.request
         verified_source = self.verified_source
+        runtime_binding, decoder_lifetime = self.runtime_binding, self.decoder_lifetime
         def provenance_provider():
             matches = [value for value in verified_source()
                        if Path(value.get("path", "")) == source_path
                        and value.get("sha256") == asset.sha256]
             if len(matches) != 1:
                 raise ValueError("The generated source is no longer one exact verified output.")
-            return verify_extracted_frame(result, matches[0], request)
+            return verify_extracted_frame(result, matches[0], request,
+                runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
         def work(_job):
             provenance_provider()
             return {"path": result.output_path,
@@ -404,9 +406,11 @@ class VideoFinishingDialog(QDialog):
         def descriptor():
             return self._source_descriptor()
         def verify_handoff(prepared):
-            return verify_prepared_frame_ingest(prepared, result, descriptor(), self.request)
+            return verify_prepared_frame_ingest(prepared, result, descriptor(), self.request,
+                runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime)
         def work(_job):
-            return prepare_frame_ingest(result, descriptor(), self.request)
+            return prepare_frame_ingest(result, descriptor(), self.request,
+                runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime)
         def complete(prepared):
             self.frame_ingest_requested.emit({
                 "path": prepared.output_path,
