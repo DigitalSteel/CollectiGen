@@ -204,7 +204,7 @@ def _launch_worker(runtime_binding=None, *, check=None):
     if runtime_binding is None and getattr(sys, "frozen", False):
         raise VideoDecodeError("This installed app needs an admitted Video decoder runtime.")
     script = Path(__file__).with_name("video_decoder_worker.py")
-    arguments = [sys.executable, "-I", "-u", str(script)]
+    arguments = [sys.executable, "-I", "-B", "-u", str(script)]
     if runtime_binding is not None:
         payload = _runtime_payload(runtime_binding, check=check)
         if check is not None:
@@ -213,7 +213,6 @@ def _launch_worker(runtime_binding=None, *, check=None):
         if len(encoded) > 16384:
             raise VideoDecodeError("Video runtime binding exceeds its bound.")
         arguments[0] = payload["interpreter_path"]
-        arguments.insert(2, "-B")  # Do not mutate the admitted software site.
         arguments += ["--runtime-binding", encoded]
     return subprocess.Popen(arguments,
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,

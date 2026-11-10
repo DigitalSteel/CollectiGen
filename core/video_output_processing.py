@@ -97,7 +97,7 @@ def _launch_worker(encoder_binding=None, *, check=None):
     if encoder_binding is None and getattr(sys, "frozen", False):
         raise VideoOutputProcessingError("Video output processing needs an admitted worker interpreter in this installed app.")
     script = Path(__file__).with_name("video_output_processing_worker.py")
-    arguments = [sys.executable, "-I", "-u", str(script)]
+    arguments = [sys.executable, "-I", "-B", "-u", str(script)]
     if encoder_binding is not None:
         from .video_decoder import _runtime_payload
         payload = _runtime_payload(encoder_binding, check=check, encoder=True)
@@ -303,6 +303,7 @@ def resize_verified_video(
     runtime_binding=None,
     decoder_lifetime=None,
     encoder_binding=None,
+    allow_recovery: bool = True,
 ) -> VideoResizeResult:
     """Fit without cropping, black-pad and publish one separate verified derivative.
 
@@ -330,6 +331,8 @@ def resize_verified_video(
             or source.resolve(strict=True) == target.resolve(strict=False)):
         raise VideoOutputProcessingError("Choose a new MP4 destination inside the allowed output root.")
     receipt = _receipt_path(target)
+    if not allow_recovery and (not target.is_file() or not receipt.is_file()):
+        raise VideoOutputProcessingError("Reopen this incomplete resize in its original Generate workspace.")
     if os.path.lexists(target) and not os.path.lexists(receipt):
         raise VideoOutputProcessingError("Choose a new MP4 destination inside the allowed output root.")
     if should_cancel is not None and should_cancel():
@@ -352,6 +355,8 @@ def resize_verified_video(
         payload, receipt_state = _read_receipt(receipt, target, source_asset, recipe)
         old_stage = target.with_name(payload["stage_name"])
         candidate = target if os.path.lexists(target) else old_stage
+        if not allow_recovery and candidate != target:
+            raise VideoOutputProcessingError("The completed resize disappeared. Reopen it in Generate.")
         if os.path.lexists(candidate):
             if candidate == old_stage:
                 _assert_unredirected(old_stage)
@@ -371,11 +376,13 @@ def resize_verified_video(
                 os.link(old_stage, target)
                 _after_publish(target)
             _hash_source(target, verified.asset, should_cancel, deadline)
-            if (os.path.lexists(old_stage)
+            if (allow_recovery and os.path.lexists(old_stage)
                     and old_stage.stat(follow_symlinks=False).st_ino == payload["stage_id"]
                     and stat.S_ISREG(old_stage.stat(follow_symlinks=False).st_mode)):
                 old_stage.unlink()
             return result
+        if not allow_recovery:
+            raise VideoOutputProcessingError("The completed resize is unavailable. Reopen it in Generate.")
         # An owned prepublication receipt with no output or stage proves no
         # derivative was published. Retire only this exact receipt and retry.
         current_receipt = receipt.stat(follow_symlinks=False)
