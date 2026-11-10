@@ -13,7 +13,9 @@ from uuid import uuid4
 
 from .generation_experiments import MAX_BYTES as GROUP_MAX_BYTES, load_experiment, validate_experiment
 from .generation_recipes import MAX_BYTES as RECIPE_MAX_BYTES, _validate as _validate_recipe, load_recipe, recipe_storage_digest, save_recipe
-from .generation_planning import MAX_PLAN_BYTES, _plan_writer, export_plan, load_plan, load_plan_with_digest
+from .generation_planning import (
+    MAX_PLAN_BYTES, GenerationPlanValidationError, _plan_writer, export_plan, load_plan, load_plan_with_digest,
+)
 from .training_source_io import _assert_unredirected
 from .image_record import _atomic_create_text
 from .external_write_transaction import atomic_verified_bytes
@@ -275,7 +277,10 @@ def import_selected_saved_work(storage_root, kind, source_path, *, cancelled=Non
         raise InterruptedError("Saved-work import was cancelled.")
     try:
         value = _load(kind, source)
-    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError) as exc:
+    except (ValueError, GenerationPlanValidationError, RecursionError) as exc:
+        parse_errors = (json.JSONDecodeError, UnicodeDecodeError, RecursionError)
+        if not isinstance(exc, parse_errors) and not isinstance(exc.__cause__, parse_errors):
+            raise
         raise ValueError(
             "The selected file is not readable as saved JSON. Choose another CollectiGen file or export it again."
         ) from exc
