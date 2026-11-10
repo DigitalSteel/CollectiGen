@@ -431,6 +431,8 @@ class TrainingRunDialog(FeedbackEnabledDialog):
             self.failure_help.setText(FIXES['runtime_failed'] if needs_recovery or self._restored else
                 'Review the trainer setup and run locations, then prepare a new training review.')
         else:
+            previous_resource = (self._outcome.resource_id
+                                 if self._outcome is not None and self._outcome.status == 'completed' else '')
             self._outcome = delivery.outcome
             self._trial_limits = delivery.trial_limits
             self._state = self._outcome.status
@@ -457,7 +459,8 @@ class TrainingRunDialog(FeedbackEnabledDialog):
             self.checkpoint_count.setText(f'{len(delivery.checkpoints):,} verified checkpoints available · Showing all')
             if self._state == 'completed':
                 self.heading.setText('LoRA Verified and Registered')
-                self.resourceRegistered.emit(self._outcome.resource_id)
+                if self._outcome.resource_id != previous_resource:
+                    self.resourceRegistered.emit(self._outcome.resource_id)
             elif self._state in TRIAL_STATES:
                 self.heading.setText('Measured Trial Review')
             if self._outcome.metrics is not None:
