@@ -28,7 +28,8 @@ class VideoFinishingDialog(QDialog):
 
     def __init__(self, jobs, path: str | Path, asset: VideoSourceAsset,
                  request: VideoGenerationRequest, *, allowed_root: str | Path,
-                 storage_root: str | Path, verified_source, settings=None, parent=None):
+                 storage_root: str | Path, verified_source, settings=None,
+                 runtime_binding=None, decoder_lifetime=None, parent=None):
         super().__init__(parent)
         if (not isinstance(asset, VideoSourceAsset) or not isinstance(request, VideoGenerationRequest)
                 or not asset.timing.frame_pts or not callable(verified_source)):
@@ -36,6 +37,7 @@ class VideoFinishingDialog(QDialog):
         self.jobs, self.path, self.asset, self.request = jobs, Path(path), asset, request
         self.allowed_root, self.storage_root = Path(allowed_root), Path(storage_root)
         self.verified_source, self.settings = verified_source, settings
+        self.runtime_binding, self.decoder_lifetime = runtime_binding, decoder_lifetime
         self._task = None
         self._preview = None
         self._closing = False
@@ -331,7 +333,8 @@ class VideoFinishingDialog(QDialog):
     def preview_clip(self):
         from .video_preview_dialog import VideoPreviewDialog
         player = VideoPreviewDialog(self.path, self.asset, allowed_root=self.allowed_root,
-                                    settings=self.settings, parent=self)
+                                    settings=self.settings, runtime_binding=self.runtime_binding,
+                                    decoder_lifetime=self.decoder_lifetime, parent=self)
         self._preview = player
         player.selected_frame_changed.connect(lambda index: self.frame_index.setValue(index + 1))
         player.background_work_finished.connect(self._advance_close)
@@ -347,7 +350,8 @@ class VideoFinishingDialog(QDialog):
             root = self._finishing_root()
             destination = root / f"frame-{self.asset.sha256[:12]}-{index + 1}-{uuid4().hex[:12]}.png"
             return extract_verified_frame(self.path, self.asset, self.request, index,
-                destination, allowed_root=root, should_cancel=lambda: job.cancel_requested)
+                destination, allowed_root=root, should_cancel=lambda: job.cancel_requested,
+                runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime)
         def complete(result):
             self._frame_result = result
             self._saved_frames.append(result)

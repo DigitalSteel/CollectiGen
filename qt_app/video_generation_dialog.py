@@ -1722,7 +1722,8 @@ class VideoGenerationDialog(QDialog):
             VideoSourceAsset.from_dict(output["source_asset"]), request,
             allowed_root=self.storage_root / "jobs", storage_root=self.storage_root,
             verified_source=lambda: self.service.verified_video_outputs(self._verified_receipt),
-            settings=self.settings, parent=self)
+            settings=self.settings, runtime_binding=self.runtime_binding,
+            decoder_lifetime=self.decoder_lifetime, parent=self)
         self._finishing_dialog = dialog
         dialog.background_work_finished.connect(self._advance_shutdown)
         dialog.ingest_requested.connect(self.ingest_requested.emit)

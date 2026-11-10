@@ -91,10 +91,11 @@ def _destination(destination, allowed_root, suffix: str) -> tuple[Path, Path]:
 
 
 def _source_check(path: Path, asset: VideoSourceAsset, request: VideoGenerationRequest,
-                  cancel, deadline: float) -> None:
+                  cancel, deadline: float, *, runtime_binding=None, decoder_lifetime=None) -> None:
     _hash_source(path, asset, cancel, deadline)
     observed = verify_video_output(path, _request_for_asset(request, asset),
-        allowed_root=path.parent, should_cancel=cancel, max_seconds=_remaining(deadline))
+        allowed_root=path.parent, should_cancel=cancel, max_seconds=_remaining(deadline),
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     if (observed.asset.sha256, observed.asset.byte_length, observed.asset.stream_id,
             observed.asset.timing) != (asset.sha256, asset.byte_length, asset.stream_id, asset.timing):
         raise VideoOutputProcessingError("The reviewed video source or timeline changed.")
@@ -129,6 +130,7 @@ def extract_verified_frame(
     source_request: VideoGenerationRequest, frame_index: int,
     destination: str | Path, *, allowed_root: str | Path,
     should_cancel: Callable[[], bool] | None = None, timeout_seconds: float = 120,
+    runtime_binding=None, decoder_lifetime=None,
 ) -> ExtractedFrame:
     """Full-check and extract one observed frame to a new PNG with exact lineage."""
     if (type(frame_index) is not int or not 0 <= frame_index < source_asset.timing.frame_count
@@ -137,10 +139,12 @@ def extract_verified_frame(
     target, receipt = _destination(destination, allowed_root, ".png")
     source = Path(source_path).absolute()
     deadline = monotonic() + timeout_seconds
-    _source_check(source, source_asset, source_request, should_cancel, deadline)
+    _source_check(source, source_asset, source_request, should_cancel, deadline,
+                  runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     pts = source_asset.timing.frame_pts[frame_index]
     frames = iter_video_preview_frames(source, source_asset, allowed_root=source.parent,
-        start_pts=pts, should_cancel=should_cancel, max_seconds=_remaining(deadline))
+        start_pts=pts, should_cancel=should_cancel, max_seconds=_remaining(deadline),
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     try:
         frame = next(frames)
     finally:

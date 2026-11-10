@@ -1926,8 +1926,8 @@
       "size_bytes": 20227
     },
     "core/video_finishing.py": {
-      "sha256": "1118d1798ddcbc3ecf6148c0bf81daf01da87e31cd5f330418c5d041c89d45e8",
-      "size_bytes": 31693
+      "sha256": "8f5e90cab8874ae2af61ef576d8e9de435e1410c58282c8ee1302d904c043555",
+      "size_bytes": 32028
     },
     "core/video_generation.py": {
       "sha256": "b10007977d045621d6e9a7042cdc6194b21368a22442390c526d1b2178dd49e7",
@@ -2774,12 +2774,12 @@
       "size_bytes": 25369
     },
     "qt_app/video_finishing_dialog.py": {
-      "sha256": "4cc64e445e6fc01e360c7e725029dca8d8ced423078f6b7a4be208d555ad524b",
-      "size_bytes": 23806
+      "sha256": "35b80c8575a9e448c6f21a53566b72730e58715efeffd2f26d9496f6ff389daf",
+      "size_bytes": 24164
     },
     "qt_app/video_generation_dialog.py": {
-      "sha256": "0a0e1131e4b9bede08b9273f37d3be1cf334db1f88835fe7adbdaeeedec51586",
-      "size_bytes": 143533
+      "sha256": "47167ca19aa4c6de4249a2973ba1b05b84c8f050d0f76f3f1267754c23301da1",
+      "size_bytes": 143623
     },
     "qt_app/video_generation_workflow.py": {
       "sha256": "81a64f21d57169e24629c092c6f088bb63a966bd8a12313f057711025fb43262",
