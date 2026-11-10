@@ -4163,6 +4163,13 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.set_ingest_identity({"path": path})
             self.status.setText("Selected a result to check. Record Outcome Review verifies its Ingest transfer, lineage and bytes.")
 
+    @staticmethod
+    def _history_label(receipt):
+        plan = receipt.get("prepared", {}).get("plan", {})
+        request = plan.get("request", {})
+        title = str(plan.get("goal") or request.get("positive_prompt") or "Image generation").replace("\n", " ")[:70]
+        return f"{title} · {receipt.get('state', 'unknown').replace('_', ' ')}"
+
     def load_history(self, *, on_open: bool = False, keep_current_tab: bool = False) -> None:
         from core.generation_execution import GenerationExecutionService
         service = GenerationExecutionService(self.storage_root, self.jobs)
@@ -4174,10 +4181,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             opened_id = str((self.receipt or {}).get("job_id") or "")
             self.history_choice.clear()
             for receipt in receipts:
-                request = receipt.get("prepared", {}).get("plan", {}).get("request", {})
-                plan = receipt.get("prepared", {}).get("plan", {})
-                title = str(plan.get("goal") or request.get("positive_prompt") or "Image generation").replace("\n", " ")[:70]
-                self.history_choice.addItem(f"{title} · {receipt.get('state', 'unknown').replace('_', ' ')}", receipt)
+                self.history_choice.addItem(self._history_label(receipt), receipt)
             if receipts:
                 for preferred_id in (previous_id, opened_id):
                     index = next((index for index in range(self.history_choice.count())
@@ -4221,6 +4225,13 @@ class GenerationDialog(FeedbackEnabledDialog):
             if str(_mapping(current).get("job_id") or "") != expected_id:
                 self.status.setText("Recovery returned a different job. Select and open the intended job again.")
                 return
+            if digest(current) != expected_digest:
+                for index in range(self.history_choice.count()):
+                    listed = self.history_choice.itemData(index)
+                    if isinstance(listed, dict) and listed.get("job_id") == expected_id and digest(listed) == expected_digest:
+                        self.history_choice.setItemData(index, current)
+                        self.history_choice.setItemText(index, self._history_label(current))
+                        break
             self.receive_receipt(current)
             if offline_recovery and current.get("state") == "outcome_unknown":
                 self.status.setText("No completed result could be verified from the saved files. "
