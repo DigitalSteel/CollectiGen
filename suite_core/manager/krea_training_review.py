@@ -911,6 +911,36 @@ class KreaTrainingReviewDialog(QDialog):
             if self._cancel.is_set():
                 self.reject()
 
+    def _resolve_saved_sdxl_setup(self, should_cancel):
+        from core.model_selection import protected_model_roots
+        from core.model_resource_registry import ModelResourceRegistry
+        from core.settings import AppSettings
+        from core.training_setup_resources import SavedTrainingSetupResolver
+        from core.training_setup_selection import _require_disjoint_protected_paths
+        from core.training_source_io import read_stable_training_source
+        from qt_app.model_companion_workflow import resource_boundaries
+
+        path = Path(self._anima_settings_path)
+        if should_cancel() or Path(self._registry_path) != path.parent / "model_resources.json":
+            raise InterruptedError("The Manager review session ended.")
+        raw, _ = read_stable_training_source(path, max_bytes=16 * 1024 * 1024)
+        settings = AppSettings._from_bytes(raw)
+        registry = ModelResourceRegistry(self._registry_path)
+        _require_disjoint_protected_paths((registry.path,), protected_model_roots(settings))
+        models, model_revision = registry.snapshot()
+        protected, _ = resource_boundaries(models, settings)
+        resolver = SavedTrainingSetupResolver(path.parent / "training-setup.json")
+        _require_disjoint_protected_paths((resolver.selection.path, resolver.profile_path), protected)
+        _, revision = resolver.selection.snapshot()
+        result = resolver(should_cancel=should_cancel, protected_roots=protected)
+        if should_cancel():
+            raise InterruptedError("Saved Trainer Setup loading was cancelled.")
+        current, _ = read_stable_training_source(path, max_bytes=16 * 1024 * 1024)
+        if (current != raw or registry.snapshot()[1] != model_revision
+                or resolver.selection.snapshot()[1] != revision):
+            raise ValueError("Trainer Setup or profile settings changed. Load Saved Trainer again.")
+        return tuple(result[key] for key in ("source_root", "environment_root", "python_base_root"))
+
     def _prepare_dataset(self):
         if (not self.prepare_button.isVisible() or not self.prepare_button.isEnabled()
                 or self._checking_dataset or self._checking_handoff or self._preparing_dataset
@@ -920,15 +950,44 @@ class KreaTrainingReviewDialog(QDialog):
         if self._package_review_cancelled():
             self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
             return
-        dialog = QDialog(self)
+        stop_load = Event()
+        load_future = None
+
+        class PreparationDialog(QDialog):
+            def reject(dialog):
+                if load_future is not None:
+                    stop_load.set()
+                    load_status.setText("Stopping the saved trainer check…")
+                    return
+                super().reject()
+
+        dialog = PreparationDialog(self)
         dialog.setWindowTitle("Prepare SDXL Dataset")
         layout = QVBoxLayout(dialog)
         note = QLabel("Select your existing SDXL trainer source, its Python environment, and the base Python directory. This prepares a separate dataset copy.")
         note.setWordWrap(True)
         layout.addWidget(note)
+        load = QPushButton("Load Saved Trainer")
+        load.setVisible(self._anima_settings_path is not None)
+        layout.addWidget(load, 0, Qt.AlignLeft)
+        load_status = QLabel()
+        load_status.setTextFormat(Qt.PlainText)
+        load_status.setWordWrap(True)
+        layout.addWidget(load_status)
         form = QFormLayout()
         layout.addLayout(form)
         fields = []
+        edit_revision = 0
+
+        def update_prepare():
+            prepare.setEnabled(load_future is None and len(fields) == 3
+                                and all(Path(field.text().strip()).is_absolute() for field in fields))
+
+        def edited():
+            nonlocal edit_revision
+            edit_revision += 1
+            update_prepare()
+
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         prepare = buttons.button(QDialogButtonBox.Ok)
         prepare.setText("Prepare Dataset")
@@ -950,11 +1009,55 @@ class KreaTrainingReviewDialog(QDialog):
                     field.setText(folder)
             browse.clicked.connect(choose)
             fields.append(field)
-            field.textChanged.connect(lambda: prepare.setEnabled(
-                len(fields) == 3 and all(Path(item.text().strip()).is_absolute() for item in fields)))
+            field.textChanged.connect(edited)
             row_layout.addWidget(field)
             row_layout.addWidget(browse)
             form.addRow(label, row)
+        load_timer = QTimer(dialog)
+
+        def cancelled():
+            return stop_load.is_set() or self._package_review_cancelled()
+
+        def finish_load():
+            nonlocal load_future
+            if not load_future.done() or self._executor.close_held:
+                return
+            load_timer.stop()
+            future, load_future = load_future, None
+            load.setEnabled(True)
+            update_prepare()
+            if self._package_review_cancelled() and not self._cancel.is_set():
+                self.status.setText("The Manager session ended. Return to Applications to reopen the package.")
+            if stop_load.is_set() or self._package_review_cancelled():
+                dialog.reject()
+                return
+            if edit_revision != loaded_at_revision:
+                load_status.setText("Folder choices changed while loading. Your choices were kept.")
+                return
+            try:
+                locations = future.result()
+            except (OSError, RuntimeError, ValueError) as exc:
+                load_status.setText(f"Saved trainer unavailable. Use Browse or review Trainer Setup. {exc}")
+                return
+            for field, location in zip(fields, locations, strict=True):
+                field.setText(location)
+            load_status.setText("Saved trainer loaded. Review these folders, then choose Prepare Dataset.")
+
+        loaded_at_revision = 0
+
+        def load_saved():
+            nonlocal load_future, loaded_at_revision
+            if load_future is not None or cancelled():
+                return
+            loaded_at_revision = edit_revision
+            load_future = self._executor.submit(self._resolve_saved_sdxl_setup, cancelled)
+            load.setEnabled(False)
+            update_prepare()
+            load_status.setText("Checking the saved trainer setup…")
+            load_timer.start(50)
+
+        load.clicked.connect(load_saved)
+        load_timer.timeout.connect(finish_load)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
