@@ -308,7 +308,10 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
             self._read_failed(task, str(exc) or "The file read could not start.")
 
     def _read_complete(self, task, review):
-        if self._source_task is not task or self._closing:
+        if self._source_task is not task:
+            return
+        if self._closing:
+            self._read_failed(task, "Reading stopped.")
             return
         self._source_task = None
         self._source_review = review
@@ -352,9 +355,12 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         self.stop_file_button.hide()
 
     def _read_failed(self, task, error):
-        if self._source_task is not task or self._closing:
+        if self._source_task is not task:
             return
         self._source_task = None
+        if self._closing:
+            super().reject()
+            return
         self.file_status.setText(
             f"No new source review was completed: {error} Authored setup text remains."
         )
@@ -367,7 +373,7 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
         self._refresh_composition()
 
     def stop_reading(self):
-        if self._source_task is not None and self._source_task.job_id:
+        if self._source_task is not None and self._source_task.job_id and self.stop_file_button.isEnabled():
             self.stop_file_button.setEnabled(False)
             self.file_status.setText("Stopping the selected file read…")
             # Keep the observer so the terminal callback restores the controls.
@@ -1031,7 +1037,15 @@ class SwarmSetupFileDialog(ManualGenerationSetupDialog):
                 self.status.setText(f"{exc} Match the source LoRAs again or leave them unmatched.")
 
     def reject(self):
-        self._closing = True
         if self._source_task is not None:
-            self._source_task.cancel()
+            self._closing = True
+            self.stop_reading()
+            return
         super().reject()
+
+    def closeEvent(self, event):
+        if self._source_task is not None:
+            self.reject()
+            event.ignore()
+            return
+        super().closeEvent(event)
