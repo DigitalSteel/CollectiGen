@@ -640,7 +640,18 @@ class DependencyService:
             raise RuntimeError("Video setup needs an explicitly admitted Python interpreter in this installed app.")
         if check_interrupt is not None: check_interrupt()
         profile_id=self.optional_profile_id("video")
-        profile=self._optional_profile_contract(validate_runtime=False).get("profiles",{}).get(profile_id)
+        profile = self._reviewed_video_profile(profile_id)
+        root=OPTIONAL_COMPONENT_ROOT
+        pin = self._video_store_inventory_pin(root, check_interrupt=check_interrupt)
+        interpreter=Path(sys.executable).resolve(strict=True)
+        return VideoInstallPlan(
+            profile_id,self._profile_sha256(profile),(root/"python").resolve(),root.resolve(),
+            pin,interpreter,self._sha256_file(interpreter,check_interrupt=check_interrupt),sys.version.split()[0],
+        )
+
+    @classmethod
+    def _reviewed_video_profile(cls, profile_id: str) -> dict:
+        profile=cls._optional_profile_contract(validate_runtime=False).get("profiles",{}).get(profile_id)
         if not isinstance(profile,dict):
             raise RuntimeError("The reviewed Video profile is unavailable.")
         packages=profile.get("packages",[])
@@ -648,13 +659,33 @@ class DependencyService:
             or packages[0].get("version")!="18.1.0"
             or packages[0].get("filename")!="av-18.1.0-cp311-abi3-win_amd64.whl"):
             raise RuntimeError("The finite Video profile has an unsupported package closure.")
-        self._optional_acquisition_groups(packages)
-        root=OPTIONAL_COMPONENT_ROOT
-        pin = self._video_store_inventory_pin(root, check_interrupt=check_interrupt)
-        interpreter=Path(sys.executable).resolve(strict=True)
+        cls._optional_acquisition_groups(packages)
+        return profile
+
+    @classmethod
+    def review_manager_video_runtime(cls, manager_data_root: Path, *, worker_root: Path,
+                                     interpreter: Path, interpreter_sha256: str, python_version: str,
+                                     check_interrupt=None) -> VideoInstallPlan:
+        """Review an installed Manager store using a caller-pinned worker, without launching it."""
+        worker_root, interpreter = Path(worker_root), Path(interpreter)
+        if not worker_root.is_absolute() or not interpreter.is_absolute() or ".." in (*worker_root.parts, *interpreter.parts):
+            raise ValueError("Absolute Manager worker paths are required.")
+        if not interpreter.is_relative_to(worker_root) or interpreter.suffix.casefold() != ".exe":
+            raise ValueError("The Python interpreter must be inside the admitted Manager worker root.")
+        if check_interrupt is not None:
+            check_interrupt()
+        interpreter = cls._safe_component_file(interpreter, worker_root)
+        if cls._sha256_file(interpreter, check_interrupt=check_interrupt) != interpreter_sha256:
+            raise RuntimeError("The reviewed Manager worker interpreter changed.")
+        profile = cls._reviewed_video_profile(cls.VIDEO_PROFILE_ID)
+        store, inventory = cls.review_manager_video_store(
+            manager_data_root, python_version=python_version, check_interrupt=check_interrupt,
+        )
+        if cls._sha256_file(cls._safe_component_file(interpreter, worker_root), check_interrupt=check_interrupt) != interpreter_sha256:
+            raise RuntimeError("The reviewed Manager worker interpreter changed during Video review.")
         return VideoInstallPlan(
-            profile_id,self._profile_sha256(profile),(root/"python").resolve(),root.resolve(),
-            pin,interpreter,self._sha256_file(interpreter,check_interrupt=check_interrupt),sys.version.split()[0],
+            cls.VIDEO_PROFILE_ID, cls._profile_sha256(profile), store / "python", store,
+            inventory, interpreter, interpreter_sha256, python_version,
         )
 
     @classmethod
