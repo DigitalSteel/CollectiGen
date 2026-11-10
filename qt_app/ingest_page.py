@@ -1000,8 +1000,18 @@ class IngestPage(QWidget):
             self, "Choose a Manager generation receipt", self._add_images_start_folder(),
             "Generation receipt (receipt.json)",
         )
-        if not selected:
+        if not selected or getattr(self, "_shutdown_requested", False):
             return
+        receipt = Path(selected)
+        jobs = receipt.parent.parent
+        if (receipt.is_absolute() and receipt.name == "receipt.json"
+                and jobs.parts[-3:] == ("Manager", "video_generation", "jobs")):
+            from core.video_generation_execution import VideoExecutionService
+
+            service = VideoExecutionService(jobs, self.state.jobs, verify_output=None)
+            return self._start_video_ingest_preview(
+                receipt, receipt.with_name("result.mp4"), service.verified_video_outputs_from_receipt,
+            )
         from core.generation_execution import GenerationIngestHandoff
 
         try:
