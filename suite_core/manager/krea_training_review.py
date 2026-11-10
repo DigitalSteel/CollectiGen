@@ -27,7 +27,8 @@ class _StaleAnimaSetup(ValueError):
 
 class KreaTrainingReviewDialog(QDialog):
     def __init__(self, package_path, registry_path, parent, *, dataset_verifier=None, preview_jobs=None,
-                 anima_settings_path=None, anima_review_allowed=None, anima_history_root=None):
+                 anima_settings_path=None, anima_review_allowed=None, anima_history_root=None,
+                 expected_package_fingerprint=None):
         super().__init__(parent)
         self.setWindowTitle("Training Package Review")
         self.resize(850, 630)
@@ -35,6 +36,7 @@ class KreaTrainingReviewDialog(QDialog):
         self._cancel = Event()
         self._dataset_verifier = dataset_verifier
         self._verification = None
+        self._expected_package_fingerprint = expected_package_fingerprint
         self._handoff_folder = None
         self._checking_dataset = False
         self._preparing_dataset = False
@@ -155,6 +157,9 @@ class KreaTrainingReviewDialog(QDialog):
                 "export a fresh package from Training. Then return to Applications and select "
                 "the package folder again."
             )
+        if (self._expected_package_fingerprint is not None
+                and verification.package_fingerprint != self._expected_package_fingerprint):
+            raise ValueError("The published package changed. Review its recovery receipt again.")
         configuration = TrainingConfiguration.from_dict(verification.manifest["training_configuration"])
         if configuration.target_model_family.casefold() not in {"krea 2", "krea2"} or configuration.output_kind != "lora":
             lora_review = (configuration.target_model_family.casefold() in {"sdxl", "anima"}

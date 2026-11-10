@@ -2199,7 +2199,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 details = "\n".join(result.issues)
                 if result.recovery_phase:
                     details = f"Destination: {result.destination}\n\n{details}"
-                    next_step = ("Use Review a Training Package to check the published folder. "
+                    next_step = ("Choose Review Published Package to check the published folder. "
                                  "Use the original package workspace to finalize its receipt."
                                  if result.recovery_phase == "promoted" else
                                  "Return to the original package workspace to review recovery.")
@@ -2208,8 +2208,16 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 box.setWindowTitle("Interrupted Training Package")
                 box.setTextFormat(Qt.PlainText)
                 box.setText(details + "\n\nManager did not change any package files.")
+                open_package = None
+                if result.recovery_phase == "promoted" and result.verification is not None:
+                    box.setStandardButtons(QMessageBox.Close)
+                    open_package = box.addButton("Review Published Package", QMessageBox.ActionRole)
                 box.exec()
+                confirmed = open_package is not None and box.clickedButton() is open_package
                 box.deleteLater()
+                if confirmed and self.generation_state() is state:
+                    self.open_krea_training_review(destination=result.destination,
+                        expected_package_fingerprint=result.verification.package_fingerprint)
 
             task.signals.complete.connect(settle)
             task.signals.failed.connect(lambda _error: settle())
@@ -2219,7 +2227,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             except (RuntimeError, ValueError):
                 settle()
 
-        def open_krea_training_review(self):
+        def open_krea_training_review(self, *, destination=None, expected_package_fingerprint=None):
             registry_path = krea_registry_path
             if (self.view.synthetic or getattr(normal_entry_session, "state", None) != "ready"
                     or self.close_policy.pending or self._training_package_picker_open
@@ -2228,13 +2236,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 return
             from PySide6.QtWidgets import QFileDialog
             from .krea_training_review import KreaTrainingReviewDialog
-            self._training_package_picker_open = True
-            try:
-                destination = QFileDialog.getExistingDirectory(self, "Select the training package")
-            finally:
-                self._training_package_picker_open = False
-                if self.statusBar().currentMessage() == self._TRAINING_PICKER_CLOSE_NOTICE:
-                    self.statusBar().clearMessage()
+            if destination is None:
+                self._training_package_picker_open = True
+                try:
+                    destination = QFileDialog.getExistingDirectory(self, "Select the training package")
+                finally:
+                    self._training_package_picker_open = False
+                    if self.statusBar().currentMessage() == self._TRAINING_PICKER_CLOSE_NOTICE:
+                        self.statusBar().clearMessage()
             if (not destination or self.close_policy.pending
                     or getattr(normal_entry_session, "state", None) != "ready"):
                 return
@@ -2243,6 +2252,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             try:
                 dialog = KreaTrainingReviewDialog(destination, registry_path, self,
                                                     dataset_verifier=dataset_verifier, preview_jobs=preview_jobs,
+                                                    expected_package_fingerprint=expected_package_fingerprint,
                                                     anima_settings_path=training_draft_settings_path,
                                                     anima_history_root=self.generation_state().generation_data_root / "training",
                                                     anima_review_allowed=lambda: (
