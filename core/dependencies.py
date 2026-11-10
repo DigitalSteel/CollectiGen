@@ -717,7 +717,7 @@ class DependencyService:
     @classmethod
     def commit_manager_video_store(cls, manager_data_root: Path, stage: Path, *,
                                    python_version: str, expected_stage_sha256: str,
-                                   expected_current_sha256: str) -> bool:
+                                   expected_current_sha256: str, check_interrupt=None) -> bool:
         """Swap a reviewed combined Video stage into the Manager-owned store."""
         manager_data_root, stage = Path(manager_data_root), Path(stage)
         if not manager_data_root.is_absolute() or ".." in manager_data_root.parts:
@@ -731,22 +731,26 @@ class DependencyService:
         cls._profile_union(profiles)
         with _MANAGER_VIDEO_STORE_LOCK:
             staged_pin = cls._video_store_inventory_pin(
-                stage, python_version=python_version, expected_profiles=profiles,
+                stage, python_version=python_version, expected_profiles=profiles, check_interrupt=check_interrupt,
             )
             if staged_pin != expected_stage_sha256:
                 raise RuntimeError("The Manager Video stage changed. Review the installation again.")
-            current_pin = cls._video_store_inventory_pin(root, python_version=python_version)
+            current_pin = cls._video_store_inventory_pin(
+                root, python_version=python_version, check_interrupt=check_interrupt)
             if current_pin != expected_current_sha256:
                 raise RuntimeError("The Manager Video store changed. Review the installation again.")
             if current_pin:
                 current_profiles = cls._read_optional_inventory(root).get("profile_ids", [])
                 if sorted(current_profiles) not in ([cls.VIDEO_PROFILE_ID], sorted(profiles)):
                     raise RuntimeError("The Manager Video store contains other components. Review it before replacing it.")
+            if check_interrupt is not None:
+                check_interrupt()
             return cls._commit_optional_stage(stage, target_root=root)
 
     @classmethod
     def stage_manager_video_store(cls, manager_data_root: Path, *, worker_root: Path,
-                                  interpreter: Path, interpreter_sha256: str) -> tuple[Path, str]:
+                                  interpreter: Path, interpreter_sha256: str,
+                                  check_interrupt=None) -> tuple[Path, str]:
         """Acquire the reviewed video wheels using the packaged pip wheel and worker."""
         from .training_source_io import read_stable_training_source
 
@@ -754,7 +758,8 @@ class DependencyService:
         if not root.is_absolute() or ".." in root.parts:
             raise ValueError("An absolute Manager data root is required.")
         cls._safe_component_directory(root)
-        interpreter = cls._review_manager_video_worker(worker_root, interpreter, interpreter_sha256)
+        interpreter = cls._review_manager_video_worker(
+            worker_root, interpreter, interpreter_sha256, check_interrupt=check_interrupt)
         pins_raw, _ = read_stable_training_source(PROGRAM_ROOT / "tools/runtime-pins.json", max_bytes=64 * 1024)
         pins = json.loads(pins_raw)
         python_version = pins["python"]["version"]
@@ -780,16 +785,22 @@ class DependencyService:
                 "assert sys.version.split()[0] == sys.argv.pop(1), 'Reviewed Python version changed'; "
                 "sys.path.insert(0, sys.argv.pop(1)); runpy.run_module('pip', run_name='__main__')"
             )
+            if check_interrupt is not None:
+                check_interrupt()
             cls._acquire_optional_packages(packages, site, stage, pip_command=[
                 str(interpreter), "-I", "-B", "-c", bootstrap, python_version, str(pinned_wheel),
             ])
             pinned_wheel.unlink()
-            cls._review_manager_video_worker(worker_root, interpreter, interpreter_sha256)
+            cls._review_manager_video_worker(
+                worker_root, interpreter, interpreter_sha256, check_interrupt=check_interrupt)
             for distribution in metadata.distributions(path=[str(site)]):
+                if check_interrupt is not None:
+                    check_interrupt()
                 cls._normalize_staged_distribution_record(distribution, site)
             cls._write_installed_component_inventory(profile_ids, profiles, component_site=site,
                                                        target_root=stage, python_version=python_version)
-            pin = cls._video_store_inventory_pin(stage, python_version=python_version, expected_profiles=profile_ids)
+            pin = cls._video_store_inventory_pin(
+                stage, python_version=python_version, expected_profiles=profile_ids, check_interrupt=check_interrupt)
             return stage, pin
         except Exception:
             shutil.rmtree(stage, ignore_errors=True)
