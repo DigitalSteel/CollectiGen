@@ -199,12 +199,15 @@ class TrainingRunRecord:
         _sha(self.validation_report_sha256, "validation report", optional=True)
         if self.validation_report_sha256 and self.kind != "validation":
             raise TrainingRunIndexError("Only validation pointers can bind a measurement report.")
-        if self.registered_result is not None:
-            if self.kind != "execution" or type(self.registered_result) is not RegisteredTrainingResult:
-                raise TrainingRunIndexError("Only execution pointers can bind a registered result.")
-            self.registered_result.validate()
         if type(self.phase) is not str or self.phase not in PHASES:
             raise TrainingRunIndexError("The training run phase is unsupported.")
+        if self.registered_result is not None:
+            if (type(self.registered_result) is not RegisteredTrainingResult
+                    or self.kind != "execution" or self.phase != "completed"):
+                raise TrainingRunIndexError("Only completed execution pointers can bind registered results.")
+            self.registered_result.validate()
+            if self.registered_result.journal_tip != self.latest_journal_tip:
+                raise TrainingRunIndexError("The registered training result journal changed.")
         if type(self.sequence) is not int or self.sequence < (1 if stored else 0):
             raise TrainingRunIndexError("The training run sequence is invalid.")
         if not isinstance(self.annotation, TrainingRunAnnotation):
@@ -244,9 +247,12 @@ class TrainingRunRecord:
         result = None
         if _REGISTERED_RESULT_FIELD in value:
             saved = value[_REGISTERED_RESULT_FIELD]
-            if type(saved) is not dict or set(saved) != {"resource_id", "receipt_sha256", "journal_tip"}:
+            if type(saved) is dict and set(saved) == {"resource_id", "receipt_sha256", "journal_tip"}:
+                result = RegisteredTrainingResult(**saved)
+            elif type(saved) is list and len(saved) == 2:
+                result = RegisteredTrainingResult(saved[1], saved[0], value["latest_journal_tip"])
+            else:
                 raise TrainingRunIndexError("The saved training result is invalid.")
-            result = RegisteredTrainingResult(**saved)
         record = cls(**{name: value[name] for name in _RECORD_FIELDS},
             annotation=TrainingRunAnnotation.from_dict(value.get(_ANNOTATION_FIELD, {})),
             _forward=_unknown(value, _RECORD_FIELDS | {_ANNOTATION_FIELD, _VALIDATION_REPORT_FIELD, _REGISTERED_RESULT_FIELD}),
@@ -331,6 +337,11 @@ def _state(raw: bytes | None) -> _State:
             or (records and value["next_sequence"] <= max(sequences))):
         raise TrainingRunIndexError("The training run index repeats or misorders a pointer.")
     result = _State(records, value["next_sequence"], _unknown(value, _INDEX_FIELDS))
+    if any(type(row.get(_REGISTERED_RESULT_FIELD)) is list for row in value["records"]):
+        for saved, record in zip(value["records"], records):
+            if type(saved.get(_REGISTERED_RESULT_FIELD)) is list:
+                saved[_REGISTERED_RESULT_FIELD] = record.payload()[_REGISTERED_RESULT_FIELD]
+        raw = _canonical(value)
     if _canonical(result.payload()) != raw:
         raise TrainingRunIndexError("The training run index has an invalid canonical structure.")
     return result
