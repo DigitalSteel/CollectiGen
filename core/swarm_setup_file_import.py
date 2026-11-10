@@ -192,6 +192,13 @@ def _reject_constant(_value):
     raise ValueError("SwarmUI preset JSON must contain finite standard JSON values.")
 
 
+def _parse_integer(value):
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ValueError("A SwarmUI preset number is too large. Correct it in SwarmUI and export the preset again.") from exc
+
+
 def _bounded_tree(value):
     pending = [(value, 0)]
     count = 0
@@ -329,7 +336,7 @@ def read_swarm_setup_file(path: str | Path, *, should_cancel: Callable[[], bool]
     source, raw, identity = _read_source(path, should_cancel)
     try:
         payload = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=_unique_object,
-                             parse_constant=_reject_constant)
+                             parse_constant=_reject_constant, parse_int=_parse_integer)
     except (UnicodeError, RecursionError, json.JSONDecodeError) as exc:
         raise ValueError("Choose a bounded UTF-8 SwarmUI title-keyed JSON export.") from exc
     _bounded_tree(payload)

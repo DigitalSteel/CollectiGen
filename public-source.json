@@ -1406,8 +1406,8 @@
       "size_bytes": 65967
     },
     "core/swarm_setup_file_import.py": {
-      "sha256": "f459ffd7eaf9bd576e8bf7a94aad5f66cca7e684d83233247f50e70476284874",
-      "size_bytes": 41700
+      "sha256": "15f8154c52f7df7ff4968da5b234fe967ec65be9dbbf0451f7eb3d644f7b877a",
+      "size_bytes": 41946
     },
     "core/swarm_source_inventory.py": {
       "sha256": "0af5a61582d7a55350624c37ec5a1f8c4dee60fd4cb25b1229b1584ada21de64",
