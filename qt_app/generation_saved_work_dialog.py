@@ -590,7 +590,7 @@ class SavedGenerationWorkDialog(QDialog):
             self._imported)
 
     def import_swarm_setup(self):
-        if self._closing or self.kind != "recipes" or self._task is not None:
+        if self.kind != "recipes" or self._task is not None or not self._can_transfer_file():
             return
         from .swarm_setup_file_dialog import SwarmSetupFileDialog
         dialog = SwarmSetupFileDialog(
@@ -598,7 +598,7 @@ class SavedGenerationWorkDialog(QDialog):
             settings=self.settings, protected_model_roots=self.protected_model_roots,
             parent=self,
         )
-        if dialog.exec() != QDialog.Accepted or self._closing or dialog.saved_path is None:
+        if dialog.exec() != QDialog.Accepted or not self._can_transfer_file() or dialog.saved_path is None:
             return
         choice = QMessageBox(self)
         choice.setWindowTitle("Generation Setup saved")
@@ -615,7 +615,7 @@ class SavedGenerationWorkDialog(QDialog):
         later = choice.addButton("Keep for Later", QMessageBox.RejectRole)
         choice.setDefaultButton(later)
         choice.exec()
-        if self._closing:
+        if not self._can_transfer_file():
             return
         if choice.clickedButton() is review:
             if self._allow_setup_transfer:
