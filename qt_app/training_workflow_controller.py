@@ -347,7 +347,8 @@ class TrainingWorkflowController(QObject):
         from .training_workspace import open_training_workspace
         open_training_workspace(self.parent(), draft=draft)
 
-    def evaluation(self, run_id='', required_resource='', *, on_return=None, batch_review_only=False):
+    def evaluation(self, run_id='', required_resource='', *, on_return=None, batch_review_only=False,
+                   generation_allowed=None):
         if self._closing: return None
         from core.generation_execution import GenerationExecutionService
         from .training_evaluation_dialog import TrainingEvaluationDialog
@@ -463,22 +464,32 @@ class TrainingWorkflowController(QObject):
                 'No settings are adopted until you choose Use Reviewed Generate Settings.'
             )
 
+        def handoff_allowed():
+            if generation_allowed is None or generation_allowed():
+                return True
+            dialog.status.setText('The Manager session ended. Reopen Training Comparison to continue.')
+            return False
+
         def open_template():
+            if not handoff_allowed(): return
             linked['started'] = True
-            open_generation_workspace(self.parent(), on_opened=opened)
+            open_generation_workspace(self.parent(), on_opened=opened, source_result_allowed=generation_allowed)
 
         dialog.templateRequested.connect(open_template)
         dialog.finished.connect(lambda *_: detach_generation())
         def open_sample(plan):
+            if not handoff_allowed(): return
             if batch_review_only and self._comparison_generate_busy():
                 dialog.status.setText(
                     'Close the open Generate draft after saving any changes, then open this sample again.'
                 )
                 return
-            open_generation_workspace(self.parent(), force_new=True, initial_plan=plan)
+            open_generation_workspace(self.parent(), force_new=True, initial_plan=plan,
+                                      source_result_allowed=generation_allowed)
 
         dialog.generationRequested.connect(open_sample)
-        dialog.batchRequested.connect(lambda selection: self._open_evaluation_batch(dialog, selection))
+        dialog.batchRequested.connect(lambda selection: self._open_evaluation_batch(
+            dialog, selection, handoff_allowed=handoff_allowed, generation_allowed=generation_allowed))
         return self._show(dialog)
 
     def _comparison_generate_busy(self):
@@ -488,11 +499,12 @@ class TrainingWorkflowController(QObject):
         current = getattr(host, '_generation_dialog', None)
         return current is not None and not current._closed
 
-    def _open_evaluation_batch(self, source, selection):
+    def _open_evaluation_batch(self, source, selection, *, handoff_allowed=None, generation_allowed=None):
         """Reopen one exact saved comparison group in a fresh Generate plan."""
         if self._closing or source not in self.dialogs or self._batch_task is not None:
             return
         from pathlib import Path
+        if handoff_allowed is not None and not handoff_allowed(): return
         from core.generation_experiments import load_experiment
         from core.generation_planning import GenerationPlan
         from .generation_workflow import open_generation_workspace
@@ -520,6 +532,7 @@ class TrainingWorkflowController(QObject):
                 self._check_shutdown(); return
             if error:
                 source.status.setText(str(error)[:2000]); return
+            if handoff_allowed is not None and not handoff_allowed(): return
             if source.batch_review_only and self._comparison_generate_busy():
                 source.status.setText(
                     'Comparison batch saved. Close the open Generate draft after saving any changes, then reopen the saved comparison batch.'
@@ -542,7 +555,7 @@ class TrainingWorkflowController(QObject):
                 if not experiment.open_exact_group(selected, digest, group_id):
                     source.status.setText('Generate is busy. Reopen the saved comparison group there after current work finishes.')
             open_generation_workspace(self.parent(), force_new=True,
-                initial_plan=plan, on_opened=opened)
+                initial_plan=plan, on_opened=opened, source_result_allowed=generation_allowed)
         task.signals.complete.connect(lambda plan: finish(plan))
         task.signals.failed.connect(lambda error: finish(error=error))
         task.signals.cancelled.connect(lambda: finish(error='Comparison group opening was cancelled.'))

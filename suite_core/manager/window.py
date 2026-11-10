@@ -2153,7 +2153,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self._training_comparison_controller = controller
             controller.evaluation(
                 on_return=lambda: self.navigation.setCurrentRow(self.page_rows["Applications"]),
-                batch_review_only=True,
+                batch_review_only=True, generation_allowed=lambda: self.generation_state() is state,
             )
 
         def review_interrupted_training_package(self):
