@@ -3191,8 +3191,9 @@ class GenerationDialog(FeedbackEnabledDialog):
                 return
             QApplication.clipboard().setText(path)
             self.status.setText(
-                "Receipt path copied. In Organizer, open Ingest, choose Import → Review Manager Result, "
-                "and paste the path to review a copy."
+                "Receipt path copied. If Organizer shows Ingest → Import → Review Manager Result, "
+                "paste the path there to review a copy. If the action is missing, keep the receipt and "
+                "result together until you have an Organizer version that supports this handoff."
             )
 
         self._run("copy_receipt_path", verify, copy_path)
