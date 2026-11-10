@@ -210,6 +210,10 @@ class TrainingWorkflowController(QObject):
     def _open_trainer_setup_for(self, dialog):
         """Keep the current preparation review while the canonical Setup opens."""
         shell = self.parent()
+        manager_setup = getattr(shell, 'open_existing_trainer_setup', None)
+        if callable(manager_setup):
+            manager_setup()
+            return
         setup_page = getattr(shell, 'setup_page', None)
         if setup_page is None and hasattr(shell, 'navigation'):
             # Main-window sections are lazy. A run started directly from

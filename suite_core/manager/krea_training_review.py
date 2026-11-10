@@ -28,7 +28,7 @@ class _StaleAnimaSetup(ValueError):
 class KreaTrainingReviewDialog(QDialog):
     def __init__(self, package_path, registry_path, parent, *, dataset_verifier=None, preview_jobs=None,
                  anima_settings_path=None, anima_review_allowed=None, anima_history_root=None,
-                 expected_package_fingerprint=None, open_trainer_setup=None):
+                 expected_package_fingerprint=None, open_trainer_setup=None, open_sdxl_preparation=None):
         super().__init__(parent)
         self.setWindowTitle("Training Package Review")
         self.resize(850, 630)
@@ -38,6 +38,7 @@ class KreaTrainingReviewDialog(QDialog):
         self._verification = None
         self._expected_package_fingerprint = expected_package_fingerprint
         self._open_trainer_setup = open_trainer_setup
+        self._open_sdxl_preparation = open_sdxl_preparation
         self._handoff_folder = None
         self._checking_dataset = False
         self._preparing_dataset = False
@@ -895,17 +896,22 @@ class KreaTrainingReviewDialog(QDialog):
         from core.model_resource_registry import ModelResourceRegistry
         from core.training_adapter_preview import SdScriptsSdxlLoraPreviewService
         from core.training_package import TrainingPackageVerificationLimits
+        from core.training_workflow import _assets
         from qt_app.training_adapter_preview_dialog import TrainingAdapterPreviewDialog
 
         preview = TrainingAdapterPreviewDialog(
             self._verification, ModelResourceRegistry(self._registry_path),
             self._preview_jobs, self,
             service=SdScriptsSdxlLoraPreviewService(package_limits=TrainingPackageVerificationLimits()),
-            availability=lambda _package, _recipe: False,
+            availability=_assets if self._open_sdxl_preparation is not None else lambda _package, _recipe: False,
         )
         self._adapter_preview = preview
         try:
             preview.exec()
+            if (preview.action == "local_training" and self._open_sdxl_preparation is not None
+                    and not self._package_review_cancelled()):
+                if self._open_sdxl_preparation(self._verification, preview.registry, preview.selected_recipe):
+                    self.accept()
         finally:
             self._adapter_preview = None
             preview.deleteLater()

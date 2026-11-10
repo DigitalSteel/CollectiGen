@@ -2334,6 +2334,36 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if self._trainer_setup_close_requested:
                     QTimer.singleShot(0, self.close)
 
+        def open_sdxl_preparation(self, package, registry, recipe):
+            state = self.generation_state()
+            if state is None:
+                return False
+            from core.training_run_index import TrainingRunIndex
+            from core.training_source_io import _assert_unredirected
+            from qt_app.training_workflow_controller import TrainingWorkflowController
+
+            root = state.generation_data_root / "training"
+            runs = root / "runs"
+            controller = getattr(self, "_sdxl_preparation_controller", None)
+            if controller is None:
+                try:
+                    _assert_unredirected(runs)
+                    runs.mkdir(parents=True, exist_ok=True)
+                except (OSError, RuntimeError) as exc:
+                    from PySide6.QtWidgets import QMessageBox
+                    QMessageBox.warning(self, "Training folder unavailable", str(exc))
+                    return False
+                controller = TrainingWorkflowController(
+                    state.jobs, self, run_index=TrainingRunIndex(root / "training-runs.json"),
+                    preparation_root=root / "preparation", run_output_scope=runs,
+                    session_allowed=lambda: normal_entry_session.state == "ready" and not self.close_policy.pending,
+                )
+                controller.packageReviewRequested.connect(
+                    lambda selected: self.open_krea_training_review(destination=selected.destination,
+                        expected_package_fingerprint=selected.package_fingerprint))
+                self._sdxl_preparation_controller = controller
+            return controller.prepare(package, registry, recipe) is not None
+
         def open_krea_training_review(self, *, destination=None, expected_package_fingerprint=None):
             registry_path = krea_registry_path
             if (self.view.synthetic or getattr(normal_entry_session, "state", None) != "ready"
@@ -2361,6 +2391,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                                                     dataset_verifier=dataset_verifier, preview_jobs=preview_jobs,
                                                     expected_package_fingerprint=expected_package_fingerprint,
                                                     open_trainer_setup=self.open_existing_trainer_setup,
+                                                    open_sdxl_preparation=self.open_sdxl_preparation,
                                                     anima_settings_path=training_draft_settings_path,
                                                     anima_history_root=self.generation_state().generation_data_root / "training",
                                                     anima_review_allowed=lambda: (
@@ -2972,13 +3003,16 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.statusBar().showMessage("Close the Training History review before closing Manager.")
                 event.ignore()
                 return
-            comparison = getattr(self, "_training_comparison_controller", None)
-            if comparison is not None:
-                if not comparison.has_active_background_work():
-                    for review in tuple(comparison.dialogs):
-                        review.request_shell_close()
-                if comparison.dialogs or comparison.has_active_background_work():
-                    self.statusBar().showMessage("Close held: finish or close Training comparison, then close Manager again.")
+            for name in ("_training_comparison_controller", "_sdxl_preparation_controller"):
+                controller = getattr(self, name, None)
+                if controller is None:
+                    continue
+                if not controller.has_active_background_work():
+                    for review in tuple(controller.dialogs):
+                        close_review = getattr(review, "request_shell_close", review.close)
+                        close_review()
+                if controller.dialogs or controller.has_active_background_work():
+                    self.statusBar().showMessage("Close held: finish or close the Training review, then close Manager again.")
                     event.ignore()
                     return
             if getattr(self, "_generation_source_task", None) is not None:
