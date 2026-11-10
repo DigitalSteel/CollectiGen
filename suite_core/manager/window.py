@@ -550,6 +550,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self._krea_review_dialog = None
             self._training_package_picker_open = False
             self._training_package_recovery_task = None
+            self._training_package_recovery_dialog = None
             self._close_after_krea_review = False
             self.krea_training_review_button = compact_action(QPushButton("Review Training Package…"))
             self.krea_training_review_button.setVisible(
@@ -2158,7 +2159,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
         def review_interrupted_training_package(self):
             state = self.generation_state()
             if (state is None or self._training_package_picker_open
-                    or self._training_package_recovery_task is not None or self._krea_review_dialog is not None):
+                    or self._training_package_recovery_task is not None
+                    or self._training_package_recovery_dialog is not None or self._krea_review_dialog is not None):
                 return
             from PySide6.QtWidgets import QFileDialog, QMessageBox
             from threading import Event
@@ -2215,9 +2217,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if result.recovery_phase == "promoted" and result.verification is not None:
                     box.setStandardButtons(QMessageBox.Close)
                     open_package = box.addButton("Review Published Package", QMessageBox.ActionRole)
-                box.exec()
-                confirmed = open_package is not None and box.clickedButton() is open_package
-                box.deleteLater()
+                self._training_package_recovery_dialog = box
+                try:
+                    box.exec()
+                    confirmed = open_package is not None and box.clickedButton() is open_package
+                finally:
+                    self._training_package_recovery_dialog = None
+                    box.deleteLater()
                 if confirmed and self.generation_state() is state:
                     self.open_krea_training_review(destination=result.destination,
                         expected_package_fingerprint=result.verification.package_fingerprint)
@@ -2886,6 +2892,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 return
             if self._training_package_picker_open:
                 self.statusBar().showMessage(self._TRAINING_PICKER_CLOSE_NOTICE)
+                event.ignore()
+                return
+            if self._training_package_recovery_dialog is not None:
+                self._training_package_recovery_dialog.reject()
+                self.statusBar().showMessage("Training package review closed. Close Manager again to exit.")
                 event.ignore()
                 return
             if self._training_package_recovery_task is not None:
