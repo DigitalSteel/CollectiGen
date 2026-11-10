@@ -3324,7 +3324,10 @@ class GenerationDialog(FeedbackEnabledDialog):
                          else input_issue or "Review your request, then save the draft or export the request.")
             self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
                 result="A saved draft or exported request.",
-                readiness="Planning only. Generator access is unavailable here.", next_step=next_step)
+                readiness=("Planning only. To generate, save this draft and return to Applications. "
+                           "Choose Review Generator Connection, then reopen the draft after saving a checked connection."
+                           if self._review_verified_results and self._offline_job_recovery else
+                           "Planning only. Generator access is unavailable here."), next_step=next_step)
             self._next_step_tab = 0 if not self.plan.request.positive_prompt or input_issue else 1
             return
         result = "New images; originals unchanged. Verified results go to Ingest as unreviewed."
