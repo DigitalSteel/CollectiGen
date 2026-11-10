@@ -214,6 +214,9 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
                 or self.executor.close_held or self.closing):return
         identity=owner.native.helper_accounting_identity;snapshot=self.installed
         self.cancel=Event();self.operation='Checking startup recovery';self.started_at=monotonic()
+        self.status.setText('Checking Organizer startup recovery. Please wait.')
+        self.activity.setRange(0, 0)
+        self.elapsed.setText('Elapsed: 0 seconds')
         def work():
             from core.encyclopedia_installation import InstallationResult
             owner.reconcile_startup(identity,cancelled=self.cancel.is_set)
