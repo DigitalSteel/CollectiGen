@@ -569,8 +569,6 @@ class VideoExecutionService:
         if bool(native) != bool(goal):
             raise ValueError("The final-video recipe differs from the reviewed request.")
         if native:
-            if not allow_resize_recovery:
-                raise ValueError("Review this resized video in its original Generate workspace before importing it.")
             expected_native = self._directory(current["job_id"]) / "native-result.mp4"
             if Path(native["path"]).absolute() != expected_native or expected_native.stat().st_size > MAX_RESULT_BYTES:
                 raise ValueError("The retained native clip is outside its bounded job.")
@@ -582,7 +580,8 @@ class VideoExecutionService:
             original_asset = VideoSourceAsset.from_dict(native["source_asset"])
             mapping = DerivedClipMapping.from_dict(native["timeline"])
             checked = resize_verified_video(expected_native, original_asset, request, Path(output["path"]),
-                allowed_root=self.root, width=goal["final_width"], height=goal["final_height"])
+                allowed_root=self.root, width=goal["final_width"], height=goal["final_height"],
+                allow_recovery=allow_resize_recovery)
             if (checked.source_sha256 != native["sha256"] or checked.output_sha256 != output["sha256"]
                     or checked.recipe != native["recipe"] or checked.lineage.to_dict() != mapping.to_dict()
                     or checked.verification.asset.to_dict() != output["source_asset"]):

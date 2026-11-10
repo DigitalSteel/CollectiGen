@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 881,
+  "allowlisted_source_file_count": 883,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -1714,8 +1714,12 @@
       "size_bytes": 12079
     },
     "core/video_decoder.py": {
-      "sha256": "88738f6270335db6bb7f46362ef5df3b8d5ea0d6ac38ddc9b6aeee32d30e70c7",
-      "size_bytes": 29957
+      "sha256": "4d794e91b7aa3b85b5de49083c3c1dc647a8d6912bcf3f98761476ff717fa65e",
+      "size_bytes": 29883
+    },
+    "core/video_decoder_worker.py": {
+      "sha256": "a0cc23b29ba40648d3d000a0795de0da0ed32ebfe336707e86908dc965e955f4",
+      "size_bytes": 10051
     },
     "core/video_dependency_pack.py": {
       "sha256": "4dab9e9b46bd39edbd11920942e7f5557541deeded1442da0404499dff1b9886",
@@ -1738,8 +1742,8 @@
       "size_bytes": 6627
     },
     "core/video_generation_execution.py": {
-      "sha256": "a762209ccfb7315b42cbc1bcaa99d3ddb3e218664611ce0e8f70046e4ee42b3e",
-      "size_bytes": 37515
+      "sha256": "65d70c0c34d9b2edee7bbee279870b4f8d43403447f3e7f4da946cbc5923dd58",
+      "size_bytes": 37409
     },
     "core/video_generation_graph.py": {
       "sha256": "c1f68f8a41aebe20c043ab9b5aaeef4749c24cfad4aa21757d685b81ebe7a858",
@@ -1754,8 +1758,12 @@
       "size_bytes": 1388
     },
     "core/video_output_processing.py": {
-      "sha256": "df667659ab261a66cfb04eb058009e8282d8e8f5a2931e5071ff928c2a9b6ebc",
-      "size_bytes": 21260
+      "sha256": "f51ab572c980d7683d5d3667f9688d9ce5d9ca092289bbf6392e51dd375171d7",
+      "size_bytes": 21806
+    },
+    "core/video_output_processing_worker.py": {
+      "sha256": "da2e7c671f6506dbfa0ae0ea451f05e0c75f87523236b63b72a875aca5855e1e",
+      "size_bytes": 7526
     },
     "core/video_runtime_preferences.py": {
       "sha256": "cd39a7a72bc124e54dea23d9c1048509ee01c0c5368df004ff2a985ae81d2319",
