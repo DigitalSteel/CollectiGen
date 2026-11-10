@@ -210,7 +210,7 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
     interpreter = Path(inventory.root) / verifier.python_relative
     interpreter_sha256 = rows[verifier.python_relative]["sha256"]
 
-    def admit(*, check_interrupt=None):
+    def checked_worker(check_interrupt):
         def check():
             if check_interrupt is not None:
                 check_interrupt()
@@ -220,7 +220,8 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
         check()
         DependencyService._profile_union((DependencyService.VIDEO_PROFILE_ID, "manager-video-encoder-windows"))
         raw, _ = read_stable_training_source(PROGRAM_ROOT / "tools/runtime-pins.json", max_bytes=64 * 1024)
-        python_version = json.loads(raw)["python"]["version"]
+        pins = json.loads(raw)
+
         def should_cancel():
             check()
             return False
@@ -230,15 +231,29 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
         if (summary["inventory_sha256"] != inventory.manifest_sha256
                 or summary["files"] != inventory.file_count or summary["bytes"] != inventory.byte_count):
             raise RuntimeError("The reviewed Manager Video worker changed.")
+        return check, pins
+
+    def admit(*, check_interrupt=None):
+        check, pins = checked_worker(check_interrupt)
         decoder = DependencyService.admit_manager_video_runtime(manager_root,
             worker_root=Path(inventory.root), interpreter=interpreter,
-            interpreter_sha256=interpreter_sha256, python_version=python_version,
+            interpreter_sha256=interpreter_sha256, python_version=pins["python"]["version"],
             check_interrupt=check, include_encoder=True)
         encoder = DependencyService.admit_manager_video_encoder(decoder, check_interrupt=check)
         check()
         return decoder, encoder
 
-    return admit
+    def stage(*, check_interrupt=None):
+        check, pins = checked_worker(check_interrupt)
+        wheel = pins["pip_wheel"]
+        if rows.get(wheel["filename"], {}).get("sha256") != wheel["sha256"]:
+            raise RuntimeError("The reviewed Manager package does not include the Video setup wheel.")
+        return DependencyService.stage_manager_video_store(
+            manager_root, worker_root=Path(inventory.root), interpreter=interpreter,
+            interpreter_sha256=interpreter_sha256, check_interrupt=check,
+        )
+
+    return admit, stage
 
 
 def launch_manager(*, normal_entry_session=None, argv=None, executable=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None, signed_training_worker=None):
@@ -278,7 +293,8 @@ def launch_manager(*, normal_entry_session=None, argv=None, executable=None, man
         verifier = _bind_training_worker(admitted, signed_training_worker, prepare_workspace=True)
         options["dataset_verifier"] = verifier
         if verifier is not None:
-            normal_entry_session.admit_manager_video_runtime = _bind_manager_video_runtime(
+            (normal_entry_session.admit_manager_video_runtime,
+             normal_entry_session.stage_manager_video_store) = _bind_manager_video_runtime(
                 normal_entry_session, verifier, signed_training_worker,
             )
     direct=selected_direct_runtime(admitted)
