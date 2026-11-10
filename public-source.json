@@ -146,8 +146,8 @@
       "size_bytes": 11582
     },
     "core/catalog_admission.py": {
-      "sha256": "18da458a79a2ec5c7b7373b0d01eb0067a2c33e64ce61717b135b65ecc0b3ef4",
-      "size_bytes": 26671
+      "sha256": "7d68f453bd7cd34b12d32cef9e3ca8ea8abc4e418d6cfa97a1791f7906f40f58",
+      "size_bytes": 26806
     },
     "core/catalog_identity_codec.py": {
       "sha256": "6f75f8e5b3ffe07052e7ad768b74aaee6ec8265e70dcefde779395ec588d1159",
@@ -2970,8 +2970,8 @@
       "size_bytes": 38158
     },
     "suite_core/encyclopedia/catalog_ui.py": {
-      "sha256": "cf7f53a3189cb666c9e98e6499795be799b54e2b63c36904abc46983bd5296a8",
-      "size_bytes": 79683
+      "sha256": "2af72705c7ccdee0b38314155fa11e94a432c1bf3d7e31c102f37a27490e4589",
+      "size_bytes": 80136
     },
     "suite_core/encyclopedia/control_entry.py": {
       "sha256": "5c05175606f6797964067db6a4d1829fa76c3fb9fee68c908076f7e44d69fe22",

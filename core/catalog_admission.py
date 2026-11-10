@@ -54,6 +54,10 @@ def _intent_seal(value):
     return sha256(json.dumps(stable, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
 
 
+class PendingCatalogOperation(RuntimeError):
+    """Native admission requires recovery of a pending catalog operation."""
+
+
 class CatalogAdmissionState:
     def __init__(self, root, native):
         self.root, self.native = root, native
@@ -98,7 +102,7 @@ class CatalogAdmissionState:
                 require_inverse_catalog(self.native._recovery_bytes(self.root / HEADER)[0], value.get("catalog_identity_binding"))
             if value["status"] == "pending":
                 if ordinary or path != self.owned_receipt:
-                    raise RuntimeError("Pending catalog operation holds native admission")
+                    raise PendingCatalogOperation("Pending catalog operation holds native admission")
                 require_inverse_catalog(self.native._recovery_bytes(self.root / HEADER)[0], value.get("catalog_identity_binding"))
         if self.owned_published and not own_seen:
             raise RuntimeError("Native operation receipt disappeared")

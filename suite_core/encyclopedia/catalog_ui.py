@@ -1158,7 +1158,14 @@ class EncyclopediaCatalogHost(QObject):
                     if self._closing:self.service.view = None
                     elif self.accepted_source is self._opening_source:
                         self.service.view = self._before_view
-                    self.window.status.setText("Tag Database could not be opened. Previous view is retained. " + str(error))
+                    from core.catalog_admission import PendingCatalogOperation
+
+                    if isinstance(error, PendingCatalogOperation):
+                        self.window.status.setText(
+                            "Tag Database has a pending operation. In the catalog review, choose Open saved connection "
+                            "and then Recover selected import. The previous view is retained.")
+                    else:
+                        self.window.status.setText("Tag Database could not be opened. Previous view is retained. " + str(error))
         if self._closing and not self.busy:
             self.window.close()
         elif self._editor_refresh_needed and not self.busy and self.editing_bridge is not None and self.editing_bridge.close_ready():
