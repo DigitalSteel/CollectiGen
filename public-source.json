@@ -590,8 +590,8 @@
       "size_bytes": 16219
     },
     "core/generation_recipes.py": {
-      "sha256": "f1b1cf7095e3f185b8594ec47d6374f05344cce0c316074c41849e81fe189847",
-      "size_bytes": 41396
+      "sha256": "bb0ca0f42accff7b4ff1ad84d3ac9c4ec87c527a6ee77d83f3fa7eb79db6f2d4",
+      "size_bytes": 42095
     },
     "core/generation_reference_inputs.py": {
       "sha256": "b95fa9240cd9517b80f891afc2643e848adbfa565abb1443148bb0f0e4afa611",
@@ -2242,8 +2242,8 @@
       "size_bytes": 44616
     },
     "qt_app/generation_recipe_dialog.py": {
-      "sha256": "f1ca1fd59b3ff6f26b83736a9b7b42e73f67311343e625068193d38fd6fa795c",
-      "size_bytes": 12534
+      "sha256": "b449d7be0027caa9c1fa72525973c003ced40903406456f53e4c3a4a10663272",
+      "size_bytes": 12875
     },
     "qt_app/generation_regions_dialog.py": {
       "sha256": "fcca7f91a417b379a43bdf7224767315c885c7b73613cb37805d34765c9e64ba",

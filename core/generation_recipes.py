@@ -263,6 +263,14 @@ def make_recipe(name, plan, *, include_prompts=False, include_model=True,
     return _validate(recipe)[0]
 
 
+def _require_distinct_setup_loras(resources):
+    loras = [row for row in resources if row["role"] == "lora"]
+    if (len({row["id"] for row in loras}) != len(loras)
+            or len({_hash(row["hashes"]["sha256"]) for row in loras}) != len(loras)):
+        raise GenerationRecipeApplyError("This setup selects the same LoRA more than once. "
+                                         "Choose each LoRA once in Create Setup.")
+
+
 def make_manual_recipe(name, prompt_parts, *, negative_prompt=None, settings=None,
                        resources=(), finishing=None):
     """Create a source-free setup from explicitly authored choices only."""
@@ -282,7 +290,9 @@ def make_manual_recipe(name, prompt_parts, *, negative_prompt=None, settings=Non
     if not (recipe["prompt_parts"] or negative_prompt is not None or recipe["settings"]
             or resources or finishing):
         raise ValueError("Choose prompt text, an exact resource, or a setting to save.")
-    return _validate(recipe)[0]
+    validated = _validate(recipe)[0]
+    _require_distinct_setup_loras(validated.get("resources", ()))
+    return validated
 
 
 def make_image_inspired_recipe(name, record, *, selected_text=(),
@@ -527,6 +537,10 @@ def make_image_inspired_recipe(name, record, *, selected_text=(),
     return recipe, tuple(dict.fromkeys(notes))
 
 
+class GenerationRecipeApplyError(ValueError):
+    """The saved setup is readable but cannot be applied without editing."""
+
+
 def preview_recipe(recipe, current, *, include_prompts=False):
     if type(include_prompts) is not bool:
         raise ValueError("Choose explicitly whether to include prompt text.")
@@ -540,6 +554,7 @@ def preview_recipe(recipe, current, *, include_prompts=False):
         selected = [{key: value for key, value in row.items() if key != "display_label"}
                     for row in recipe_resources]
         if recipe["schema_version"] == 3:
+            _require_distinct_setup_loras(selected)
             merged = deepcopy(request["resources"])
             for row in selected:
                 digest = row["hashes"]["sha256"].removeprefix("sha256:")

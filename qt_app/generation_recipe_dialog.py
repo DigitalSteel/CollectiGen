@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDialogButtonBox, QLabel, QPushButton, QTextEdit, QVBoxLayout
 from .components import DisclosureButton
 from .modal_feedback import FeedbackEnabledDialog
-from core.generation_recipes import _display_label, preview_recipe
+from core.generation_recipes import GenerationRecipeApplyError, _display_label, preview_recipe
 
 
 class GenerationRecipeDialog(FeedbackEnabledDialog):
@@ -115,13 +115,19 @@ class GenerationRecipeDialog(FeedbackEnabledDialog):
         self.location_boundary.show()
 
     def set_location_rechecking(self, active):
-        self.apply_button.setEnabled(not active)
+        self.apply_button.setEnabled(not active and self.selected_plan is not None)
         self.locate_exact_button.setEnabled(not active)
         if active:
             self.resource_notes.setText("Rechecking the saved setup's exact model location…")
 
     def refresh(self):
-        result = preview_recipe(self.recipe, self.current, include_prompts=self.prompts.isChecked())
+        try:
+            result = preview_recipe(self.recipe, self.current, include_prompts=self.prompts.isChecked())
+        except GenerationRecipeApplyError as error:
+            self.selected_plan = None
+            self.preview.setPlainText(str(error))
+            self.apply_button.setEnabled(False)
+            return
         self.selected_plan = result["plan"]
         lines = ["Review these changes before applying:"]
         exact_lines = ["Saved resource identities (readiness checks these again):"]
@@ -203,4 +209,6 @@ class GenerationRecipeDialog(FeedbackEnabledDialog):
         self.resize(self.width(), height)
 
     def apply(self):
-        self.refresh(); self.accept()
+        self.refresh()
+        if self.selected_plan is not None:
+            self.accept()
