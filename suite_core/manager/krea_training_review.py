@@ -732,9 +732,19 @@ class KreaTrainingReviewDialog(QDialog):
         if self._prepared_folder is None or self._executor.close_held or self._cancel.is_set():
             return
         folder, identity = self._prepared_folder
+        session_ready = self._anima_review_allowed
         try:
+            if session_ready is not None and not session_ready():
+                raise InterruptedError
             if self._handoff_directory_state(folder) != identity:
                 raise ValueError("Preparation workspace changed")
+            if session_ready is not None and not session_ready():
+                raise InterruptedError
+        except InterruptedError:
+            self._prepared_folder = None
+            self.prepared_folder_button.hide()
+            self.status.setText("The Manager session ended. Reopen the saved preparation from Training History.")
+            return
         except (OSError, RuntimeError, ValueError):
             self._prepared_folder = None
             self.prepared_folder_button.hide()
