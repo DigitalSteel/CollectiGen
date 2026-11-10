@@ -2827,6 +2827,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 event.ignore(); return
             if self.organizer_acquisition_panel is not None and not self.organizer_acquisition_panel.close_ready():
                 self.statusBar().showMessage('Organizer setup is settling. Keep Manager open until its original worker drains.')
+                self._show_close_decision(self.close_decision())
                 event.ignore();return
             if self.acquisition_panel is not None and not self.acquisition_panel.close_ready():
                 self.statusBar().showMessage('Acquisition cancellation or transaction settlement is pending. Keep Manager open until its original worker drains.')
