@@ -2742,8 +2742,8 @@
       "size_bytes": 12552
     },
     "qt_app/training_setup_resources_dialog.py": {
-      "sha256": "978e2c7092da1eaa45aaba300c6afe4b3d303143092145fb358d17c3fd90c845",
-      "size_bytes": 6222
+      "sha256": "5b3c9dfc158bed68be06fb500a8ee3e1ea002aa03a148bf61839ca11b4e5a3f4",
+      "size_bytes": 6536
     },
     "qt_app/training_txt_export_dialog.py": {
       "sha256": "9ce542016074e10dea002d143f5539c70db398d93d98bdfb47195b3f04c0a694",

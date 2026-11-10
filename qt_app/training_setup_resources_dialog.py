@@ -33,6 +33,8 @@ class TrainingSetupResourcesDialog(FeedbackEnabledDialog):
         buttons=QDialogButtonBox(QDialogButtonBox.Save|QDialogButtonBox.Cancel);layout.addWidget(buttons)
         self.save_button=buttons.button(QDialogButtonBox.Save);self.save_button.setText('Verify and Save Setup')
         buttons.accepted.connect(self._save);buttons.rejected.connect(self.reject)
+        for field in self.fields.values():
+            field.textChanged.connect(self._update_save)
         def load(job):
             if self.validate_paths is not None:
                 self.validate_paths(self.selection_path)
@@ -59,20 +61,24 @@ class TrainingSetupResourcesDialog(FeedbackEnabledDialog):
         self._task=None
         if self._closing:super().reject();return
         complete(result)
-        self.save_button.setEnabled(self._revision is not None)
+        self._update_save()
         for field in (*self.fields.values(),*self.choose_buttons):field.setEnabled(True)
+
+    def _update_save(self):
+        ready = all(Path(field.text().strip()).is_absolute() for field in self.fields.values())
+        self.save_button.setEnabled(ready and self._task is None and self._revision is not None and not self._closing)
 
     def _loaded(self,result):
         selected,self._revision=result
         if selected is not None:
             self.fields['tokenizers'].setText(selected.tokenizers_root)
             self.fields['output'].setText(selected.output_root)
-        self.status.setText('Review these folders, then save this verified trainer for future training runs.')
+        self.status.setText('Choose both folders or review the saved locations, then verify and save this trainer for future runs.')
 
     def _failed(self,error):self.status.setText(str(error)[:2000])
 
     def _save(self):
-        if self._task is not None or self._revision is None:return
+        if not self.save_button.isEnabled():return
         tokens=self.fields['tokenizers'].text().strip();output=self.fields['output'].text().strip();revision=self._revision
         def work(job):
             if not tokens or not output or not Path(tokens).is_absolute() or not Path(output).is_absolute():
