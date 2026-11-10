@@ -217,7 +217,8 @@ class IngestImportPreviewDialog(FeedbackEnabledDialog):
         action = self.action()
         copy = action == "copy"
         self.action_explanation.setText(
-            "Original files stay in place. Undo removes only unchanged imported copies while the originals still match."
+            "Original files stay in place. Undo requires Ingest History and Recycle to be configured before copying. "
+            "It is available only while the imported copies and originals remain unchanged."
             if copy else
             "Original files are removed only after every destination family member passes read-back verification."
         )
