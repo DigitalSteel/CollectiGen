@@ -17,7 +17,7 @@ from .workers import CoordinatedCallTask
 from shiboken6 import isValid
 
 
-def choose_video_generation_draft(parent, *, selection_allowed=None):
+def choose_video_generation_draft(parent, *, selection_allowed=None, on_opened=None):
     """Select and read one explicit saved file before adding a video workspace."""
     host = _host(parent)
     scoped = getattr(host.state, "generation_data_root", None) is not None
@@ -32,7 +32,7 @@ def choose_video_generation_draft(parent, *, selection_allowed=None):
         target = scoped_video_draft_path(directory, path) if scoped else Path(path).absolute()
         request = load_video_draft(target)
         dialog = open_video_generation_workspace(
-            parent, initial_request=request, draft_label=Path(path).name,
+            parent, initial_request=request, draft_label=Path(path).name, on_opened=on_opened,
         )
     except (OSError, RuntimeError, ValueError, TypeError, KeyError, OverflowError) as exc:
         QMessageBox.information(
@@ -59,50 +59,75 @@ def open_video_generation_workspace(parent, *, source_path=None, on_opened=None,
     host=_host(parent);state=host.state
     factory=getattr(state,"dependency_service_factory",None)
     lifetime=getattr(state,"video_decoder_lifetime",None)
+    manager_admit = getattr(state, "admit_manager_video_runtime", None)
+    session_state = getattr(state, "video_draft_session_state", None)
     options=dict(source_path=source_path,on_opened=on_opened,
                  frame_reference_provider=frame_reference_provider,
                  initial_request=initial_request,draft_label=draft_label)
-    if factory is None or not getattr(state, "generation_runtime_allowed", True):
+    if not callable(manager_admit) and (factory is None or not getattr(state, "generation_runtime_allowed", True)):
         return _open_prepared_video_generation_workspace(parent,decoder_lifetime=lifetime,**options)
     if getattr(host,"_video_runtime_admission_task",None) is not None:
         return None
     options["initial_request"]=deepcopy(initial_request)
-    admit=getattr(state,"admit_video_runtime",None)
+    admit = manager_admit if callable(manager_admit) else getattr(state, "admit_video_runtime", None)
     if not callable(admit) or lifetime is None:
         QMessageBox.information(host,"Video components need attention","This host has no admitted Video runtime/lifetime. Review Components in Setup.")
         return None
     was_visible=host.isVisible()
+    def same_context():
+        return (getattr(state, "dependency_service_factory", None) is factory
+                and getattr(state, "video_decoder_lifetime", None) is lifetime
+                and getattr(state, "admit_manager_video_runtime", None) is manager_admit)
+
     def prepare(job):
         def check_interrupt():
-            if not job.checkpoint():raise InterruptedError("Video opening cancelled")
+            if not job.checkpoint() or (session_state is not None and session_state() is not state):
+                raise InterruptedError("Video opening cancelled")
         check_interrupt()
-        if state.dependency_service_factory is not factory or state.video_decoder_lifetime is not lifetime:
+        if not same_context():
             raise RuntimeError("Video runtime context changed. Open the request again.")
         binding=admit(check_interrupt=check_interrupt)
         check_interrupt()
-        return binding
+        return binding if callable(manager_admit) else (binding, None)
     task=CoordinatedCallTask(state.jobs,"Check Video runtime before opening",prepare,resource="io")
     host._video_runtime_admission_task=task
     def current():
-        return (isValid(host) and host.state is state and not state.jobs.shutting_down
+        return (isValid(host) and getattr(host, "state", None) is state and not state.jobs.shutting_down
                 and (not was_visible or host.isVisible())
+                and (session_state is None or session_state() is state)
                 and getattr(host,"_video_runtime_admission_task",None) is task)
     def clear():
         if isValid(host) and getattr(host,"_video_runtime_admission_task",None) is task:
             host._video_runtime_admission_task=None
-    def complete(binding):
+    def complete(bindings):
         accepted=current();clear()
         if not accepted:return
-        if state.dependency_service_factory is not factory or state.video_decoder_lifetime is not lifetime:
-            failed("Video runtime context changed. Open the request again.");return
+        if not same_context():
+            report_failure("Video runtime context changed. Open the request again.");return
         try:
-            _open_prepared_video_generation_workspace(parent,runtime_binding=binding,decoder_lifetime=lifetime,**options)
+            decoder, encoder = bindings
+            if callable(manager_admit):
+                from core.dependencies import VideoEncoderRuntimeBinding, VideoRuntimeBinding
+                if type(decoder) is not VideoRuntimeBinding or type(encoder) is not VideoEncoderRuntimeBinding:
+                    raise RuntimeError("Manager Video requires its admitted decoder and encoder bindings.")
+            _open_prepared_video_generation_workspace(parent, runtime_binding=decoder, encoder_binding=encoder,
+                decoder_lifetime=lifetime, runtime_allowed=True, **options)
         except Exception as exc:
-            failed(str(exc))
+            report_failure(str(exc))
+    def report_failure(message):
+        if callable(manager_admit):
+            try:
+                dialog = _open_prepared_video_generation_workspace(parent, decoder_lifetime=lifetime,
+                                                                    runtime_allowed=False, **options)
+                dialog.status.setText("Video runtime is unavailable. You can still edit and save the draft. " + message)
+                return
+            except (OSError, ValueError, RuntimeError) as exc:
+                message = str(exc)
+        QMessageBox.information(host,"Video components need attention",str(message)+"\nReview Video Components in Setup; the request and source remain unchanged.")
     def failed(message):
-        visible=isValid(host) and (not was_visible or host.isVisible());clear()
-        if visible:
-            QMessageBox.information(host,"Video components need attention",str(message)+"\nReview Video Components in Setup; the request and source remain unchanged.")
+        accepted=current();clear()
+        if accepted:
+            report_failure(message)
     task.signals.complete.connect(complete)
     task.signals.failed.connect(failed)
     task.signals.cancelled.connect(lambda:clear())
@@ -115,15 +140,17 @@ def open_video_generation_workspace(parent, *, source_path=None, on_opened=None,
 def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_opened=None,
                                     frame_reference_provider=None, initial_request=None,
                                     draft_label=None,runtime_binding=None,decoder_lifetime=None,
-                                    encoder_binding=None):
+                                    encoder_binding=None, runtime_allowed=None):
     """Open a fresh retained draft; an explicit still attaches asynchronously."""
     host = _host(parent)
     window = _setup_window(host)
     state = host.state
+    if runtime_allowed is None:
+        runtime_allowed = getattr(state, "generation_runtime_allowed", True)
     runtime_options={}
     if runtime_binding is not None:runtime_options["runtime_binding"]=runtime_binding
     if decoder_lifetime is not None:runtime_options["decoder_lifetime"]=decoder_lifetime
-    if encoder_binding is not None and getattr(state, "generation_runtime_allowed", True):
+    if encoder_binding is not None and runtime_allowed:
         runtime_options["encoder_binding"] = encoder_binding
     scoped = getattr(state, "generation_data_root", None) is not None
     data_root = _generation_data_root(host) if scoped else USER_DATA_DIR
@@ -131,7 +158,7 @@ def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_op
     session_state = getattr(state, "video_draft_session_state", None)
     dialog = VideoGenerationDialog(state.jobs, ModelResourceRegistry(registry_path),
         state.settings, data_root / "video_generation", parent=host,
-        scoped_drafts=scoped, runtime_allowed=getattr(state, "generation_runtime_allowed", True),
+        scoped_drafts=scoped, runtime_allowed=runtime_allowed,
         draft_load_allowed=(lambda: session_state() is state) if session_state else None,
         copy_receipt_for_organizer=getattr(state, "review_verified_generation_results", False),
         **runtime_options)

@@ -1368,6 +1368,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.state = SimpleNamespace(
                     jobs=BackgroundJobManager(), settings=None, generation_data_root=root,
                     generation_runtime_allowed=False, video_decoder_lifetime=VideoDecoderLifetime(),
+                    admit_manager_video_runtime=getattr(session, "admit_manager_video_runtime", None),
                     video_draft_session_state=self.generation_state,
                     generation_session_state=self.generation_state,
                     checked_image_connection=self.checked_image_connection,
@@ -1475,7 +1476,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         def open_video_plan(self, *, reopen=False):
             state = self.generation_state()
-            if state is None or self._video_draft_picker_open:
+            if (state is None or self._video_draft_picker_open
+                    or getattr(self, "_video_runtime_admission_task", None) is not None):
                 return
             from qt_app.video_generation_workflow import (
                 choose_video_generation_draft, open_video_generation_workspace,
@@ -1493,21 +1495,23 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         self._video_draft_picker_open = False
                         self.clear_video_picker_close_notice()
                 return
+            def connect_close_notices(video):
+                video.offline_draft_work_settled.connect(self.clear_video_close_notice)
+                video.offline_draft_work_settled.connect(self.clear_video_picker_close_notice)
+                video.workspace_closed.connect(self.clear_video_close_notice)
+
             if reopen:
                 self._video_draft_picker_open = True
                 try:
-                    video = choose_video_generation_draft(
+                    choose_video_generation_draft(
                         self, selection_allowed=lambda: self.generation_state() is state,
+                        on_opened=connect_close_notices,
                     )
                 finally:
                     self._video_draft_picker_open = False
                     self.clear_video_picker_close_notice()
             else:
-                video = open_video_generation_workspace(self)
-            if video is not None:
-                video.offline_draft_work_settled.connect(self.clear_video_close_notice)
-                video.offline_draft_work_settled.connect(self.clear_video_picker_close_notice)
-                video.workspace_closed.connect(self.clear_video_close_notice)
+                open_video_generation_workspace(self, on_opened=connect_close_notices)
 
         _VIDEO_PICKER_CLOSE_NOTICE = "Close held. Finish or close the video draft chooser, then close Manager again."
 
