@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 826,
+  "allowlisted_source_file_count": 827,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -2022,8 +2022,8 @@
       "size_bytes": 18258
     },
     "qt_app/dataset_page.py": {
-      "sha256": "9ce66e1ab21001b9cf1f21ab20faf35c8fe87f8231d47bf1cf8297a6e4a54265",
-      "size_bytes": 500539
+      "sha256": "1b509235f20020eae86400606ee03e5393cd68ec998411ca19356df2c171c149",
+      "size_bytes": 502233
     },
     "qt_app/dataset_preparation_queue.py": {
       "sha256": "0978e5838b13bf1872a93b671af7021183a4ce79db32ea554d299c0c9ca4afff",
@@ -2662,8 +2662,8 @@
       "size_bytes": 1751
     },
     "qt_app/workspace_commands.py": {
-      "sha256": "426cf7cd8ff96bcfb59909eff44598bd75b0977727299246dfecafdf3a773469",
-      "size_bytes": 18518
+      "sha256": "11d3efff1581dfbd02c01e6ed7ff97699c031888a9ea2891058224a30666ca92",
+      "size_bytes": 18735
     },
     "qt_main.py": {
       "sha256": "f8f196d57f96b09777e757082b4ce8a1f9663ccf209a70d204b51c0a4fa1abb8",
@@ -3298,16 +3298,20 @@
       "size_bytes": 1895
     },
     "docs/TRN08_EXPERIMENTS.md": {
-      "sha256": "5f3e8e327935c228b6b497366fee14a53918d1046f8489e52ad6f0bb6c6a22ea",
-      "size_bytes": 1524
+      "sha256": "0e0a67a741ad27674040d51c72872d0007c8e049f42c60cbaff99046473b0cc9",
+      "size_bytes": 2653
     },
     "qt_app/training_draft_transfer_dialog.py": {
-      "sha256": "d58e6ed952948d35367e8f7f75a94824ccbfd5b491e1dd0430b2cf9557e99aa9",
-      "size_bytes": 6142
+      "sha256": "0b4bc777a0595f0ce7bb53fdce6e97c590f15239f7e01a9a940436be6a65b5db",
+      "size_bytes": 7484
     },
     "tests/test_training_draft_transfer.py": {
-      "sha256": "646ae5c52a7c13e266c00a76ea21f16dd00bc857241c895407b216ebaff6f302",
-      "size_bytes": 8689
+      "sha256": "c6dea12127b9e4ec6ce8c9b1bb9d736c138bd207f6f9d10901e87ac0c32f5bc8",
+      "size_bytes": 10355
+    },
+    "tests/test_organizer_experiment_handoff_ui.py": {
+      "sha256": "d50e4bf382e5fb807dddc585ffbbf24b47b9b75bf327e5c08fb64f309bd56f03",
+      "size_bytes": 13511
     }
   },
   "fresh_history_required": true,

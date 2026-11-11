@@ -88,7 +88,10 @@ class WorkspaceCommandController(QObject):
             for number,action in enumerate(library.menu().actions()):
                 if action.isSeparator():continue
                 label=action.text()
-                group="Import" if action is page.import_external_evidence_action else "Organize"
+                draft_actions=(getattr(page,"import_training_draft_action",None),
+                    getattr(page,"resume_training_plan_action",None))
+                group=("Training" if action in draft_actions else
+                    "Import" if action is page.import_external_evidence_action else "Organize")
                 keywords=("duplicates","duplicate","similarity","similar") if action is page.find_duplicates_action else ()
                 if action is page.import_external_evidence_action:keywords=("metadata","txt","sidecar","evidence")
                 title={"Find Duplicate and Similar Images…":"Find Duplicates…",

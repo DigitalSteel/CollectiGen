@@ -9,18 +9,21 @@ from core.training_plan_drafts import TrainingPlanDraftStore
 
 
 class TrainingDraftTransferDialog(FeedbackEnabledDialog):
-    def __init__(self, jobs, store_path, parent=None, *, importing=False, selected=None):
+    def __init__(self, jobs, store_path, parent=None, *, importing=False, selected=None, can_transfer=None):
         super().__init__(parent)
         self.jobs, self.store_path = jobs, Path(store_path)
         self.importing, self.imported_draft = importing, None
         self._task, self._closing = None, False
         self._drafts = ()
+        self._can_transfer = can_transfer
+        self._waiting = False
+        self._availability_timer = None
         self._selected = selected
         self.setWindowTitle("Import Training Draft" if importing else "Edit a Cloned Training Draft")
         self.resize(620, 260)
         layout = QVBoxLayout(self)
         intro = QLabel("Import a draft exported by Suite Manager, then review and edit it with your current Dataset libraries. A fresh saved copy preserves the original."
-            if importing else "Export this saved draft, then open Organizer → Dataset → Library Actions → Import Training Draft. Review its images and edit its settings there; the original experiment is preserved.")
+            if importing else "Export this saved draft, then open Organizer → Dataset → Dataset Plans → Import Training Draft. Review its images and edit its settings there; the original experiment is preserved.")
         intro.setWordWrap(True); layout.addWidget(intro)
         self.choice = QComboBox(); self.choice.setAccessibleName("Saved Training draft")
         self.choice.setVisible(not importing); layout.addWidget(self.choice)
@@ -33,8 +36,29 @@ class TrainingDraftTransferDialog(FeedbackEnabledDialog):
         self.transfer_button.setEnabled(importing)
         buttons.addButton(self.transfer_button, QDialogButtonBox.ActionRole)
         layout.addWidget(buttons)
+        if can_transfer is not None:
+            self._availability_timer = QTimer(self)
+            self._availability_timer.setInterval(200)
+            self._availability_timer.timeout.connect(self._refresh_availability)
+            self.finished.connect(self._stop_availability)
+            self._availability_timer.start()
+            self._refresh_availability()
         if not importing:
             QTimer.singleShot(0, self._load)
+
+    def _stop_availability(self):
+        if self._availability_timer is not None: self._availability_timer.stop()
+
+    def _refresh_availability(self):
+        if self._task is not None or self._closing: return
+        ready = self._can_transfer is None or self._can_transfer()
+        self.transfer_button.setEnabled(ready and (self.importing or bool(self._drafts)))
+        if not ready:
+            self._waiting = True
+            self.status.setText("Finish the current Dataset task before importing. If you changed libraries, close this window and reopen Import.")
+        elif self._waiting:
+            self._waiting = False
+            self.status.setText("Choose a draft file.")
 
     def _load(self):
         def read(job):
@@ -45,6 +69,9 @@ class TrainingDraftTransferDialog(FeedbackEnabledDialog):
 
     def _transfer(self):
         if self._task is not None or self._closing: return
+        if self._can_transfer is not None and not self._can_transfer():
+            self._refresh_availability()
+            return
         if self.importing:
             path, _ = QFileDialog.getOpenFileName(self, "Import Training Draft", "", "Training draft (*.json)")
             if path:
@@ -94,9 +121,10 @@ class TrainingDraftTransferDialog(FeedbackEnabledDialog):
             self.accept(); return
         else:
             self.status.setText("Draft exported to " + str(value) + ". Import it in Organizer to edit its settings.")
-        self.transfer_button.setEnabled(self.importing or bool(self._drafts))
+        self._refresh_availability()
 
     def reject(self):
+        self._stop_availability()
         if self._task is not None:
             self._closing = True
             if self._task.job_id: self.jobs.cancel(self._task.job_id)

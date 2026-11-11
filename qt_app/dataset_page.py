@@ -3490,6 +3490,13 @@ class DatasetPage(QWidget):
     def _start_workflow_filter_scan(
         self,paths,*,automatic: bool=False,defer_if_busy: bool=False,
     ):
+        if (getattr(self,"_training_draft_transfer_dialog",None) is not None
+                or getattr(self,"_training_draft_picker_open",False)):
+            return False
+        collection_review=getattr(self,"_concept_group_dialog",None)
+        if (collection_review is not None and not collection_review._closed
+                and getattr(collection_review,"_training_draft",None) is not None):
+            return False
         if self._filter_state_task is not None:
             if defer_if_busy:
                 self.header.set_status("Checking image status for these filters…")
@@ -4477,11 +4484,15 @@ class DatasetPage(QWidget):
                 bool(self.filtered) and self.dataset is not None
                 and not self.batch_mode and not busy
             )
+        import_training=getattr(self,"import_training_draft_action",None)
+        if import_training is not None:
+            import_training.setEnabled(not self.batch_mode and not busy and self.dataset is not None)
         resume_training=getattr(self,"resume_training_plan_action",None)
         if resume_training is not None:
             resume_training.setEnabled(
                 not self.batch_mode and not busy
                 and self.dataset is not None
+                and getattr(self,"_filter_state_task",None) is None
                 and bool(self.training_plan_drafts.all_drafts())
             )
         if hasattr(self,"training_goal_scope"):
@@ -4629,6 +4640,10 @@ class DatasetPage(QWidget):
         dialog._dataset_scope_generation=generation
         dialog._training_draft=training_draft
         if training_draft is not None:
+            dialog.finished.connect(lambda _result: QTimer.singleShot(0,self.resume_visible_background_work))
+            draft_context=QLabel(f'Saved draft: {training_draft.name}. Choose a Collection to recheck its current images with the saved goal and training settings.',dialog)
+            draft_context.setWordWrap(True); draft_context.setTextFormat(Qt.PlainText)
+            dialog.layout().insertWidget(1,draft_context)
             dialog.status.setText("Choose and review the current Collection. Its images will use the saved draft's goal and settings.")
         self._concept_group_dialog=dialog
         dialog.show()
@@ -4809,9 +4824,12 @@ class DatasetPage(QWidget):
         if getattr(self,"_training_draft_transfer_dialog",None) is not None:
             return
         dataset=self.dataset; generation=getattr(self,"_dataset_scope_generation",0)
-        dialog=TrainingDraftTransferDialog(self.state.jobs,self.training_plan_drafts.path,self,importing=True)
+        dialog=TrainingDraftTransferDialog(self.state.jobs,self.training_plan_drafts.path,self,importing=True,
+            can_transfer=lambda: not getattr(self.state,"_operation_gate",{}).get("dataset")
+                and self.dataset is dataset and getattr(self,"_dataset_scope_generation",0)==generation
+                and not getattr(self,"_shutdown_requested",False))
         self._training_draft_transfer_dialog=dialog
-        dialog.finished.connect(self._notify_background_work_finished)
+        dialog.finished.connect(lambda _result: QTimer.singleShot(0,self._notify_background_work_finished))
         try:
             accepted=dialog.exec()==QDialog.Accepted
         finally:
@@ -4844,7 +4862,13 @@ class DatasetPage(QWidget):
                 QMessageBox.information(self,"No training draft available",detail)
                 return
             picker=TrainingPlanDraftPickerDialog(drafts,self)
-            if picker.exec()!=QDialog.Accepted:
+            self._training_draft_picker_open=True
+            try:
+                accepted=picker.exec()==QDialog.Accepted
+            finally:
+                self._training_draft_picker_open=False
+                QTimer.singleShot(0,self.resume_visible_background_work)
+            if not accepted:
                 return
             draft=picker.selected_draft()
         if draft is None:
