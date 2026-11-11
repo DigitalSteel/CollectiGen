@@ -1,3 +1,9 @@
+## Unreleased source after the a.0.6.0 package candidate
+
+- Training comparisons can open their saved batch in Generate's normal queue.
+  Review the candidates and explicitly Start through the checked local generator.
+  Open drafts are preserved and every queued image rechecks the connection.
+
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
 - Find and review the published Reader and Organizer packages from Manager,

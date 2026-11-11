@@ -607,6 +607,11 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             rows[index], rows[other] = rows[other], rows[index]
             self._run("Save candidate order", self._persist, self._saved)
 
+    def _check_execution_authority(self):
+        check = getattr(self.owner, '_check_alternatives_submission_authority', None)
+        if callable(check):
+            check()
+
     def prepare_group(self):
         if self.planning_only: return
         if self.busy() or not self.experiment or not self.owner.adapter or not self.owner.binding or not self.safety_review.isChecked(): return
@@ -617,6 +622,7 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
         def work():
             result = {}
             for row in pending:
+                self._check_execution_authority()
                 if self._cancel_requested:
                     raise InterruptedError("Candidate checks cancelled; no generation was submitted.")
                 plan = GenerationPlan.from_dict(row["plan"])
@@ -689,13 +695,20 @@ class GenerationExperimentDialog(FeedbackEnabledDialog):
             self.refresh_actions(); return
         if row["id"] not in self.prepared or self.review_identity != self._identity():
             self._failed("The reviewed setup changed. Check the remaining candidates again."); return
+        try:
+            self._check_execution_authority()
+        except ValueError as exc:
+            self._failed(str(exc))
+            return
         self._row_id = row["id"]; row["state"] = "submitting"
         self._terminal_payload = None
         prepared = deepcopy(self.prepared[row["id"]]); adapter = self.owner.adapter
         def submit():
             digest = self._persist()
             self.digest = digest
-            job = self.service.submit(adapter, prepared, confirmed=True,
+            authority = ({'check_authority': self._check_execution_authority}
+                         if not getattr(self.owner, 'runtime_allowed', True) else {})
+            job = self.service.submit(adapter, prepared, confirmed=True, **authority,
                 listener=lambda job: self._terminal_signal.emit({"id": row["id"], "receipt": getattr(job, "result", None),
                     "error": str(getattr(job, "error", "")), "state": str(getattr(job, "state", ""))}))
             return digest, job

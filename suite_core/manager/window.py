@@ -628,7 +628,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.training_package_recovery_button.clicked.connect(self.review_interrupted_training_package)
             training_layout.addWidget(self.training_package_recovery_button, 0, Qt.AlignLeft)
             self.training_comparison_button = compact_action(QPushButton("Compare Training Samples…"))
-            self.training_comparison_button.setToolTip("Plan comparisons and review saved samples. Generator access is unavailable.")
+            self.training_comparison_button.setToolTip("Compare saved samples or review a generation queue using your checked generator.")
             self.training_comparison_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.training_comparison_button.clicked.connect(self.open_training_comparison)
             training_layout.addWidget(self.training_comparison_button, 0, Qt.AlignLeft)
@@ -2325,7 +2325,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self._training_comparison_controller = controller
             controller.evaluation(
                 on_return=lambda: self.navigation.setCurrentRow(self.page_rows["Applications"]),
-                batch_review_only=True, generation_allowed=lambda: self.generation_state() is state,
+                batch_review_only=False, protect_existing_draft=True,
+                generation_allowed=lambda: self.generation_state() is state,
             )
 
         def review_interrupted_training_package(self):

@@ -2603,13 +2603,13 @@
     },
     {
       "path": "qt_app/generation_dialog.py",
-      "bytes": 284707,
-      "sha256": "75c17067ed63db02c550de58af4c24e7b00ce071da3212cac9b23fcab3f4b410"
+      "bytes": 285501,
+      "sha256": "9ec74cde442248e415780e79c2ed029584cf8f6817789f63cb963bf2cd2915ce"
     },
     {
       "path": "qt_app/generation_experiment_dialog.py",
-      "bytes": 55395,
-      "sha256": "a72464d14ed9942150100d8c55cbdf8061c728cfae7f6d002c363fce16d77186"
+      "bytes": 55946,
+      "sha256": "efd99ae269514581d1e215f68b7818d861685ffbe64b49d06c8f14c92ae1da6b"
     },
     {
       "path": "qt_app/generation_finishing_dialog.py",
@@ -3258,8 +3258,8 @@
     },
     {
       "path": "qt_app/training_workflow_controller.py",
-      "bytes": 45938,
-      "sha256": "507cced2194446e4dfd0952d1241fa5453ca7426162cab2b36cf8f1182d72c06"
+      "bytes": 46313,
+      "sha256": "c4687245b0e9566dc573e3fb6170b8fe7e11733fe8378a42eeb74ff7ff657724"
     },
     {
       "path": "qt_app/training_workspace.py",
@@ -3973,8 +3973,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 254598,
-      "sha256": "42227bc97a299685f21f15b4e0f4cd3ddf4e686826136f0152913d32416285e8"
+      "bytes": 254649,
+      "sha256": "e3736943c48690e10180473950c3fd11400a06f6e3b0123c8049534773451463"
     },
     {
       "path": "suite_core/media_examples.py",

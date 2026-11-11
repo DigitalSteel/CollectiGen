@@ -1,10 +1,14 @@
 {
-  "allowlisted_source_file_count": 1147,
+  "allowlisted_source_file_count": 1148,
   "component_ids": [
     "collectigen.suite-manager"
   ],
   "export_scope": "component-source",
   "files": {
+    "tests/test_manager_comparison_queue.py": {
+      "sha256": "54bc7f2a7180e6af3987e86c4f40ea7be72aa8bac57fddc479bf9d73363c3917",
+      "size_bytes": 12757
+    },
     "tests/test_manager_payload_count.py": {
       "sha256": "8a64dbc51a49a459f8da31345042a9527aa25c205f128b60a6bfaa2a84ba64f0",
       "size_bytes": 1953
@@ -2242,12 +2246,12 @@
       "size_bytes": 79634
     },
     "qt_app/generation_dialog.py": {
-      "sha256": "75c17067ed63db02c550de58af4c24e7b00ce071da3212cac9b23fcab3f4b410",
-      "size_bytes": 284707
+      "sha256": "9ec74cde442248e415780e79c2ed029584cf8f6817789f63cb963bf2cd2915ce",
+      "size_bytes": 285501
     },
     "qt_app/generation_experiment_dialog.py": {
-      "sha256": "a72464d14ed9942150100d8c55cbdf8061c728cfae7f6d002c363fce16d77186",
-      "size_bytes": 55395
+      "sha256": "efd99ae269514581d1e215f68b7818d861685ffbe64b49d06c8f14c92ae1da6b",
+      "size_bytes": 55946
     },
     "qt_app/generation_finishing_dialog.py": {
       "sha256": "27622ee5278666e5656c16aee290867388d9098250bd6a4e294856a95d89ffb2",
@@ -2778,8 +2782,8 @@
       "size_bytes": 17728
     },
     "qt_app/training_workflow_controller.py": {
-      "sha256": "507cced2194446e4dfd0952d1241fa5453ca7426162cab2b36cf8f1182d72c06",
-      "size_bytes": 45938
+      "sha256": "c4687245b0e9566dc573e3fb6170b8fe7e11733fe8378a42eeb74ff7ff657724",
+      "size_bytes": 46313
     },
     "qt_app/training_workspace.py": {
       "sha256": "588ad7cdc02f6d7efc4a96f63fc6a71125f358648977036c62037e5b5e029e5c",
@@ -3142,8 +3146,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "5ccb06e582f5b5d1a178cfb95f0a4ab686ba87f7d0a7179cb1767ade6ea4fab7",
-      "size_bytes": 20144
+      "sha256": "cadc58809ed3a4fc4abcfdadaa286ab86cb09daaccda279b698de0503235970d",
+      "size_bytes": 20439
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3414,8 +3418,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "42227bc97a299685f21f15b4e0f4cd3ddf4e686826136f0152913d32416285e8",
-      "size_bytes": 254598
+      "sha256": "e3736943c48690e10180473950c3fd11400a06f6e3b0123c8049534773451463",
+      "size_bytes": 254649
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3951,7 +3955,7 @@
     },
     "tools/manager_build/source-manifest.json": {
       "size_bytes": 162601,
-      "sha256": "2cf5aecfc6091551db746df2521ebbab2c89893f31ab8412befdec5ad2de972d"
+      "sha256": "d4ec4f101d86c3d0b91939d2c7a1ad30be698abe47a69e7241c78e773b4b94cb"
     },
     "tools/manager_build/tool-inputs.json": {
       "size_bytes": 4057,

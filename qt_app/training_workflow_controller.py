@@ -355,7 +355,7 @@ class TrainingWorkflowController(QObject):
         open_training_workspace(self.parent(), draft=draft)
 
     def evaluation(self, run_id='', required_resource='', *, on_return=None, batch_review_only=False,
-                   generation_allowed=None):
+                   generation_allowed=None, protect_existing_draft=False):
         if self._closing: return None
         from core.generation_execution import GenerationExecutionService
         from .training_evaluation_dialog import TrainingEvaluationDialog
@@ -486,7 +486,7 @@ class TrainingWorkflowController(QObject):
         dialog.finished.connect(lambda *_: detach_generation())
         def open_sample(plan):
             if not handoff_allowed(): return
-            if batch_review_only and self._comparison_generate_busy():
+            if (batch_review_only or protect_existing_draft) and self._comparison_generate_busy():
                 dialog.status.setText(
                     'Close the open Generate draft after saving any changes, then open this sample again.'
                 )
@@ -496,7 +496,8 @@ class TrainingWorkflowController(QObject):
 
         dialog.generationRequested.connect(open_sample)
         dialog.batchRequested.connect(lambda selection: self._open_evaluation_batch(
-            dialog, selection, handoff_allowed=handoff_allowed, generation_allowed=generation_allowed))
+            dialog, selection, handoff_allowed=handoff_allowed, generation_allowed=generation_allowed,
+            protect_existing_draft=protect_existing_draft, on_generation_opened=opened))
         return self._show(dialog)
 
     def _comparison_generate_busy(self):
@@ -506,7 +507,8 @@ class TrainingWorkflowController(QObject):
         current = getattr(host, '_generation_dialog', None)
         return current is not None and not current._closed
 
-    def _open_evaluation_batch(self, source, selection, *, handoff_allowed=None, generation_allowed=None):
+    def _open_evaluation_batch(self, source, selection, *, handoff_allowed=None, generation_allowed=None,
+                               protect_existing_draft=False, on_generation_opened=None):
         """Reopen one exact saved comparison group in a fresh Generate plan."""
         if self._closing or source not in self.dialogs or self._batch_task is not None:
             return
@@ -540,7 +542,7 @@ class TrainingWorkflowController(QObject):
             if error:
                 source.status.setText(str(error)[:2000]); return
             if handoff_allowed is not None and not handoff_allowed(): return
-            if source.batch_review_only and self._comparison_generate_busy():
+            if (source.batch_review_only or protect_existing_draft) and self._comparison_generate_busy():
                 source.status.setText(
                     'Comparison batch saved. Close the open Generate draft after saving any changes, then reopen the saved comparison batch.'
                 )
@@ -554,6 +556,8 @@ class TrainingWorkflowController(QObject):
                         'Batch submission is unavailable.'
                     )
                     return
+                if on_generation_opened is not None:
+                    on_generation_opened(generation_dialog)
                 generation_dialog.open_experiment()
                 experiment = getattr(generation_dialog, '_experiment_dialog', None)
                 if experiment is None or not callable(getattr(experiment, 'open_exact_group', None)):

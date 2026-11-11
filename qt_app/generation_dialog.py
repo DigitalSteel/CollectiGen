@@ -2827,13 +2827,14 @@ class GenerationDialog(FeedbackEnabledDialog):
         if self._experiment_dialog is None:
             if self._execution_active(): return
             from .generation_experiment_dialog import GenerationExperimentDialog
-            self._experiment_dialog = GenerationExperimentDialog(self, planning_only=not self.runtime_allowed)
+            self._experiment_dialog = GenerationExperimentDialog(self, planning_only=not self._image_submission_allowed)
+        self._experiment_dialog.planning_only = not self._image_submission_allowed
         self._experiment_dialog.refresh_actions()
         self.alternatives_return_button.hide()
         self._experiment_dialog.show(); self._experiment_dialog.raise_()
 
     def review_alternatives_readiness(self):
-        if not self.runtime_allowed:
+        if not (self.runtime_allowed or self._checked_submission_supported):
             return
         group = self._experiment_dialog
         if group is None or group.busy() or not group.experiment:
@@ -3904,6 +3905,18 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.prepared = None; self.binding = None
         self._sync_advanced_json_from_plan(force=True)
         self._refresh_from_plan("Validated neutral JSON edits were applied with a new audit diff. Bind and prepare again before submitting.")
+
+    def _check_alternatives_submission_authority(self):
+        """Use the same checked Manager connection for each queued image job."""
+        if self._closed or self._shutdown_requested:
+            raise ValueError("Generate is closing. Reopen the saved group to continue.")
+        if self.runtime_allowed:
+            return
+        allowed = self._file_selection_allowed
+        if (not self._checked_image_submission
+                or (allowed is not None and not allowed())):
+            raise ValueError("The Manager session or generator connection ended. Reopen the saved group after checking it again.")
+        self._check_submission_authority()
 
     def _check_submission_authority(self):
         if self._checked_connection is None or self._checked_connection_provider() != self._checked_connection:
