@@ -319,7 +319,14 @@ def verified_trimmed_output(
     observed = verify_video_output(target, output_request, allowed_root=target.parent,
         max_seconds=_remaining(deadline), should_cancel=should_cancel,
         runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
-    if observed.asset.to_dict() != output.to_dict():
+    current_asset = observed.asset.to_dict()
+    retained_asset = output.to_dict()
+    if runtime_binding is not None:
+        # Different admitted hosts can decode identical media with different
+        # local inventory receipts. Keep both receipts in their own roles.
+        current_asset["probe_provenance"].pop("component_inventory_sha256", None)
+        retained_asset["probe_provenance"].pop("component_inventory_sha256", None)
+    if current_asset != retained_asset:
         raise VideoOutputProcessingError("The finished clip differs from its exact receipt.")
     _hash_source(source_path, source, should_cancel, deadline)
     generation = deepcopy(original_descriptor["generation"])

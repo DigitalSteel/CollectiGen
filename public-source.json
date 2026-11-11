@@ -1730,8 +1730,8 @@
       "size_bytes": 20227
     },
     "core/video_finishing.py": {
-      "sha256": "277c1a9040e0245f4cb2ea7efa20fb70f5bc833f73872eac84628a2a4e3714a4",
-      "size_bytes": 34015
+      "sha256": "f637f5af10480fab943eca64ee0f7a9b15ee340ab7b4cfc412e6ec4cb780a928",
+      "size_bytes": 34438
     },
     "core/video_generation.py": {
       "sha256": "b10007977d045621d6e9a7042cdc6194b21368a22442390c526d1b2178dd49e7",
