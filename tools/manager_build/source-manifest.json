@@ -3638,8 +3638,8 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 43929,
-      "sha256": "27d4dcb43e15ac8ff76cdb8a4cb8dfb970b3cc83433acbcf92641c31e0c9cf81"
+      "bytes": 43969,
+      "sha256": "a6a7d066c9d6ff4b77c20f430e40087a7c4cd4fba17667bfdb1c595f7ca37ab0"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -4758,13 +4758,13 @@
     },
     {
       "path": "tools/training_validation_evidence.json",
-      "bytes": 2884,
-      "sha256": "8039b3df0fff263a9e6e9fef2d8628577648af1e1bfab54ef1ed0c53ba1757de"
+      "bytes": 2986,
+      "sha256": "59282951cd37c6d6de7fffe515e7ead3048247bfa7d52243ff4d17d9643cb0a7"
     },
     {
       "path": "tools/training_validation_profile.json",
       "bytes": 382,
-      "sha256": "926522886f121e93de36543be945503de21017cd623b8987e66226e593e96f9b"
+      "sha256": "714b0a03b1b0c1350c3334acb30d761e855252504a94e88c0f1fb1ec856e7d1d"
     },
     {
       "path": "tools/training_verification_worker.py",
