@@ -1,11 +1,11 @@
-## Unreleased source after the a.0.6.0 package candidate
+# What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
 - Training comparisons can open their saved batch in Generate's normal queue.
   Review the candidates and explicitly Start through the checked local generator.
   Open drafts are preserved and every queued image rechecks the connection.
-
-# What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
-
+- Training Experiments keeps run names, notes and favorites, compares retained
+  runs, and clones a run into a new draft. Export the draft for editing through
+  Organizer's Dataset Plans workflow; the updated Organizer package is required.
 - Find and review the published Reader and Organizer packages from Manager,
   then confirm installation in the component workspace.
 - Use the Tag Database workspace to review available content, preview changes
