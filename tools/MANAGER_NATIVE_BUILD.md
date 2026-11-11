@@ -8,12 +8,18 @@ native acceptance, UI acceptance, deployment trust, or release readiness.
 
 ## Accepted inputs
 
+The current Manager candidate includes the matched SDXL Training execution
+profile, runtime catalogs, tokenizers and stock trainer sources. Vendored trainer
+Python files are packaged as data for the separate training runtime; the Manager
+freezer does not import them or pull its GPU dependencies into the desktop app.
+This source/package change does not establish a published update.
+
 First obtain an accepted public export with its `public-source.json` inventory.
 The finite frozen subset is independent of the runtime manifest's full catalog:
 only explicitly reviewed rows are staged. Python rows must also be runtime
 declared. Generated root code is separate from this source subset.
 
-`manager_build/source-manifest.json` now contains 443 finite public source/resource
+`manager_build/source-manifest.json` now contains 953 finite public source/resource
 rows for the connected Manager and original Tag workspace candidate. The prior
 320-row descriptor contained 300 Python files and 20 supporting files.
 The 2026-10-14 closure reuses the already bounded Manager/Tag subsets and adds

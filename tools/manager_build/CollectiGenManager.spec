@@ -10,7 +10,7 @@ for row in rows:
     if path.is_symlink() or not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != row['sha256']:
         raise ValueError('staged source drift: '+row['path'])
 datas = [(str(source/r['path']), str(Path(r['path']).parent)) for r in rows]
-allowed = {r['path'][:-3].replace('/', '.').removesuffix('.__init__') for r in rows if r['path'].endswith('.py')}
+allowed = {r['path'][:-3].replace('/', '.').removesuffix('.__init__') for r in rows if r['path'].endswith('.py') and not r['path'].startswith('tools/trainer-sources/')}
 allowed |= {'.'.join(n.split('.')[:i]) for n in tuple(allowed) for i in range(1,len(n.split('.')))}
 local_top_level = {module.partition('.')[0] for module in allowed} | {'runtime_contract'}
 hidden = sorted(allowed | {'PySide6.QtCore','PySide6.QtGui','PySide6.QtWidgets','shiboken6','velopack','velopack.velopack'})

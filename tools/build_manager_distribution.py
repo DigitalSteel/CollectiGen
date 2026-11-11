@@ -265,7 +265,7 @@ def verify_freeze(output, name, contents, config):
     report = decode(read(output / (name + '_ANALYSIS_CLOSURE.json')))
     require(report.get('status') == 'ANALYSIS_MODULE_BOUND_PASSED' and not report.get('missing_local_modules')
             and report.get('source_rows') == len(config['source_rows']), 'frozen_closure_not_proven')
-    allowed = {r['path'][:-3].replace('/', '.').removesuffix('.__init__') for r in config['source_rows'] if r['path'].endswith('.py')}
+    allowed = {r['path'][:-3].replace('/', '.').removesuffix('.__init__') for r in config['source_rows'] if r['path'].endswith('.py') and not r['path'].startswith('tools/trainer-sources/')}
     allowed |= {'.'.join(n.split('.')[:i]) for n in tuple(allowed) for i in range(1, len(n.split('.')))}
     tops = {n.partition('.')[0] for n in allowed}
     actual = set(report.get('actual_pure_modules', []))

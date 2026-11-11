@@ -128,7 +128,15 @@ def safe_source(workspace,name, *, public_export_inputs=False):
         raise ValueError('private_QA_source_excluded')
     if not (name.startswith(('core/','suite_core/','qt_app/','licenses/')) or
             name in {'LICENSE','LICENSES.md','THIRD_PARTY_NOTICES.md','release_contract.py','runtime_contract.py','version.py'} or
-            (public_export_inputs and name in (_PUBLIC_TRAINING_INPUTS | _PUBLIC_LEARNING_INPUTS))):
+            (public_export_inputs and (name in (_PUBLIC_TRAINING_INPUTS | _PUBLIC_LEARNING_INPUTS)
+                or name in {'tools/training_distribution_assets.json', 'tools/trainer_runtime_profile.json',
+                    'tools/trainer_runtime_catalog.json', 'tools/training_execution_profile.json',
+                    'tools/training_execution_qualification.json', 'tools/training_execution_tensor_specs.json',
+                    'tools/training_restricted_stage_worker.py', 'tools/training_restricted_loading_probe.py',
+                    'tools/training_tokenizer_profile_worker.py', 'tools/training_local_components_worker.py',
+                    'tools/training_anima_qualification.json', 'tools/training_anima_native_evidence.json',
+                    'tools/training_validation_profile.json', 'tools/training_validation_evidence.json'}
+                or name.startswith(('tools/trainer-sources/sd-scripts/', 'tools/trainer-tokenizers/'))))):
         raise ValueError('outside_stock_application_source_scope')
     target=workspace/relative
     if not target.is_file() or target.resolve()!=target.absolute() or any(p.is_symlink() or p.is_junction() for p in [target,*target.parents]):

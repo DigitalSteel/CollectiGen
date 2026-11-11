@@ -3098,8 +3098,8 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "8a48844b53ba76a22fe1f4b885f76358bcf66533eac7fa7d5c32c44a0783d377",
-      "size_bytes": 35201
+      "size_bytes": 43800,
+      "sha256": "176ee7091db25eb2d60c85e7c18a7734206af3192930d06374bca88c27c69767"
     },
     "suite_core/manager/README.md": {
       "sha256": "c1e2868bced18b4b10646f0e55c707bbaafb036459cf22324149cdbb739c681f",
@@ -3850,8 +3850,8 @@
       "size_bytes": 22164
     },
     "tools/MANAGER_NATIVE_BUILD.md": {
-      "sha256": "10ad249e946b5ae93e179f688cc9bd6647e682075edb8afa2f9764beaadba661",
-      "size_bytes": 8114
+      "size_bytes": 8505,
+      "sha256": "1375ae2e1ce5abe4fcc02abf20b7f26b9843dfe3ed3ea757b1197067ba60cafe"
     },
     "tools/Repair-PortableRuntime.ps1": {
       "sha256": "d8f7b4d29bbe52ad542ec14b649907dd6928c440a9fc091791c18ca725462f24",
@@ -3870,8 +3870,8 @@
       "size_bytes": 27445
     },
     "tools/build_manager_distribution.py": {
-      "sha256": "8f3db262a5871bb8ca9cad0cb17b62adf1d036ddf1dcde8c94f68b9f8caa8eff",
-      "size_bytes": 23268
+      "size_bytes": 23323,
+      "sha256": "042ec539a61738414511a801d2fb81939f77396d6b1bc13b3d540537c88325d7"
     },
     "tools/build_tag_database_pack.py": {
       "sha256": "19432b16b6c2a834fc4415de23a261b52d438d47d1eec327f6a9913f03cfd11d",
@@ -3910,12 +3910,12 @@
       "size_bytes": 69146
     },
     "tools/manager_build/CollectiGen.spec": {
-      "sha256": "ed6a783bc61d1ebc2fbfa37fe2a2f8ba0b6e550579747d25f4bd742596c5f81e",
-      "size_bytes": 5737
+      "size_bytes": 5792,
+      "sha256": "27a08252243425446bd5e4e09db69aeb957ed469b1de11311a26365c6d3e3899"
     },
     "tools/manager_build/CollectiGenManager.spec": {
-      "sha256": "c32c5832997d74153a7fe98ff9d3139e9c1b9897af9cf9f210938bab6eed69ca",
-      "size_bytes": 5778
+      "size_bytes": 5833,
+      "sha256": "bcde056af04308e91f6856b0a8188a3563f2d3ee281970298c619ae839460269"
     },
     "tools/manager_build/READER_TRANSPORT_QUALIFICATION.json": {
       "sha256": "23ba979384759d898a91351a2161365f59995c13160b8d9c9f500a0164362eed",
@@ -3930,12 +3930,12 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "26e010ee12ab7ee3aac4f2b4fda45653546bcd0bcbc2367d721c46a0b3ef14ee",
-      "size_bytes": 135845
+      "size_bytes": 162599,
+      "sha256": "d2581189ed70e28b636d8e0409e590e8cfcbd30e965f49e5fecca03930a12ef0"
     },
     "tools/manager_build/tool-inputs.json": {
-      "sha256": "15358dc8679e26f539267ca98dab0ab11493c82daa7bbbc6ef4b7146a5d20cce",
-      "size_bytes": 4057
+      "size_bytes": 4057,
+      "sha256": "e2c3f13d1cea4b42c2a65ae94379fd8d01658a38f81d1b4e869ce5d208c4480f"
     },
     "tools/manager_build/windows_build_isolation.py": {
       "sha256": "8b6aa2dbb6901c8590b04ba9e039cf597b122061b5c708d5315074e9983b2d95",
@@ -3954,8 +3954,8 @@
       "size_bytes": 17252
     },
     "tools/prepare_manager_production_stage.py": {
-      "sha256": "3f1d493c7ecb707ec18e673a1b67d7f34360f8d21dc6df8775d443c3a69d2507",
-      "size_bytes": 27436
+      "size_bytes": 28297,
+      "sha256": "7c073b75ba69920bd5ecbfa3a0e5f29f3d3c95bbf721184aef47b1085465757e"
     },
     "tools/public-source-manifest.json": {
       "sha256": "c7cba83f59e7395364a749cbe86fe8341037b8cf442807b9906c82cf1a61deb6",
