@@ -137,3 +137,30 @@ def test_transfer_close_drains_owned_task(tmp_path,monkeypatch):
     assert dialog.isVisible() and dialog._closing and cancellations==["owned"]
     task.signals.cancelled.emit();application.processEvents()
     assert dialog._task is None and not dialog.isVisible()
+
+
+def test_import_readiness_does_not_start_early_and_stops_refresh_on_close(tmp_path,monkeypatch):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QFileDialog
+    from core.background_jobs import BackgroundJobManager
+    from qt_app.training_draft_transfer_dialog import TrainingDraftTransferDialog
+    application=app();jobs=BackgroundJobManager();ready=[False]
+    plan,_=candidate(tmp_path)
+    original=TrainingPlanDraftStore(tmp_path/"original.json").save_plan(plan,"Saved experiment").draft
+    source=export_training_draft(original,tmp_path/"transfer.json")
+    monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a,**k:(str(source),""))
+    dialog=TrainingDraftTransferDialog(jobs,tmp_path/"destination.json",importing=True,can_transfer=lambda:ready[0])
+    try:
+        dialog.show();application.processEvents()
+        assert not dialog.transfer_button.isEnabled() and "current Dataset task" in dialog.status.text()
+        capture(dialog,"import-waiting-for-dataset.png",tmp_path)
+        QTest.mouseClick(dialog.transfer_button,Qt.LeftButton)
+        assert dialog._task is None and not Path(tmp_path/"destination.json").exists()
+        ready[0]=True;wait(lambda:dialog.transfer_button.isEnabled())
+        capture(dialog,"import-ready.png",tmp_path)
+        QTest.mouseClick(dialog.transfer_button,Qt.LeftButton)
+        wait(lambda:dialog.imported_draft is not None)
+        assert dialog.imported_draft.draft_id!=original.draft_id
+        assert not dialog._availability_timer.isActive()
+    finally:dialog.reject();jobs.shutdown();application.processEvents()

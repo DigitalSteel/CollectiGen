@@ -3183,8 +3183,8 @@
     },
     {
       "path": "qt_app/training_draft_transfer_dialog.py",
-      "bytes": 6142,
-      "sha256": "d58e6ed952948d35367e8f7f75a94824ccbfd5b491e1dd0430b2cf9557e99aa9"
+      "bytes": 7484,
+      "sha256": "0b4bc777a0595f0ce7bb53fdce6e97c590f15239f7e01a9a940436be6a65b5db"
     },
     {
       "path": "qt_app/training_duplicate_evidence_view.py",

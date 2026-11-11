@@ -3954,7 +3954,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "614912e3ea98f895afca768a51aaa4346e4eed3fdb4f8d958dce6a898a8ca9ad",
+      "sha256": "482531719d1e6a3b7364a02ea5b7ef1dec1012f5d65b6b32b84f8dbdf6ee7275",
       "size_bytes": 162942
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4602,20 +4602,20 @@
       "size_bytes": 7669
     },
     "tests/test_training_draft_transfer.py": {
-      "sha256": "5762e07f5fac4c5f6d2abecfb64e80e522679a79664821a08cfb315963fceb2d",
-      "size_bytes": 7341
+      "sha256": "cb0539ec11c679fbba059cfce4ea943006af4657188ffd5078d81ff5bb02acaf",
+      "size_bytes": 9007
     },
     "core/training_draft_transfer.py": {
       "sha256": "1334ae6ddcc820342b5a9b36030819753b74c2220089c535acfb5de637d7f908",
       "size_bytes": 1895
     },
     "docs/TRN08_EXPERIMENTS.md": {
-      "sha256": "5f3e8e327935c228b6b497366fee14a53918d1046f8489e52ad6f0bb6c6a22ea",
-      "size_bytes": 1524
+      "sha256": "31b24a8f881284422deac73ac301e47de3dadb3b382206b7763b714db65fe531",
+      "size_bytes": 2430
     },
     "qt_app/training_draft_transfer_dialog.py": {
-      "sha256": "d58e6ed952948d35367e8f7f75a94824ccbfd5b491e1dd0430b2cf9557e99aa9",
-      "size_bytes": 6142
+      "sha256": "0b4bc777a0595f0ce7bb53fdce6e97c590f15239f7e01a9a940436be6a65b5db",
+      "size_bytes": 7484
     }
   },
   "fresh_history_required": true,
