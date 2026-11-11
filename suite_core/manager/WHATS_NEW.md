@@ -1,9 +1,17 @@
-## Unreleased source - November 11, 2026
+# What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
-- Restore the reviewed signed Organizer a.0.4.23 download configuration in the
-  default Manager installer. Reuse the existing component installation flow;
-  installation still requires confirmation. This source change is not a new
-  published Manager binary.
+- Find and review the published Reader and Organizer packages from Manager,
+  then confirm installation in the component workspace.
+- Use the Tag Database workspace to review available content, preview changes
+  and apply them while preserving local corrections.
+- Prepare SDXL Training, run the reviewed local trainer and register the finished
+  LoRA. Reopen saved Training runs from History to review results and recovery.
+- Save and reopen Generate work, reconnect generation backends, and review
+  retained queue results and interrupted-work recovery.
+
+This is an unpublished alpha package candidate. It is not full all-in-one parity.
+The first managed baseline uses a new writable installation; migration from the
+older portable Manager and installed self-update remain separately qualified.
 
 # What's New - a.0.5.1 (embedded 0.5.1-alpha.1) - 2026-10-18
 

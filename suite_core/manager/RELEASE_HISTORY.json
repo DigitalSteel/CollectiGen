@@ -3,6 +3,13 @@
   "module_id": "collectigen.suite-manager",
   "releases": [
     {
+      "software_version": "0.6.0-alpha.1",
+      "date": "2026-11-11",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Unpublished Manager candidate: Reader and Organizer acquisition, Tag Database content workspace, Generate and SDXL Training with saved-run recovery. Signed package delivery in progress; full all-in-one parity is not claimed."
+},
+    {
       "software_version": "0.5.1-alpha.1",
       "date": "2026-10-18",
       "date_timezone": "Etc/UTC",

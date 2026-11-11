@@ -22,7 +22,8 @@ from suite_core.discovery.offline_component_producer import produce_inventory
 from hashlib import sha256
 
 MANAGER_MAX_ARCHIVE = 96 * 1024 * 1024
-MANAGER_MAX_PAYLOAD_MEMBERS = 1280
+# Current Manager includes the reviewed trainer sources and verification worker.
+MANAGER_MAX_PAYLOAD_MEMBERS = 1536
 MANAGER_MAX_PROOF_BYTES = 256 * 1024
 
 

@@ -1,6 +1,6 @@
 # CollectiGen Suite Manager
 
-Development source includes the unreleased Training and Generate workflows plus
+Development candidate **a.0.6.0** includes Training and Generate workflows plus
 Reader and Organizer setup. The published Manager download is still **a.0.5.1**;
 see the repository download table for the actual shipped package.
 
