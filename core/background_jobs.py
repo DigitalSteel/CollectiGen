@@ -43,6 +43,17 @@ class JobProgress:
         endpoint=self._first_started_at if self._first_started_at is not None else self._finished_at
         return max(0,(time.monotonic() if endpoint is None else endpoint)-self._queued_at)
 
+    # Notification diagnostics do not change operation identity or outcome.
+    notification_error: str = field(default="",repr=False,compare=False)
+    notification_failures: int = field(default=0,repr=False,compare=False)
+
+    @property
+    def admission_unconfirmed(self) -> bool:
+        """A launch error is unresolved until this exact worker enters."""
+        entered=getattr(self,"_thread_start_entered",None)
+        return bool(getattr(self,"_thread_start_error","")) and not (
+            entered is not None and entered.is_set())
+
     @property
     def percent(self) -> float:
         return (self.current/self.total*100) if self.total else 0.0
@@ -200,8 +211,19 @@ class BackgroundJobManager:
         return selected
 
     def _changed(self,job: JobProgress) -> None:
-        if self.on_change:
-            self.on_change(job)
+        try:
+            if self.on_change:
+                self.on_change(job)
+        except Exception as exc:
+            # Status delivery is diagnostic: it cannot replace the worker's
+            # result, suppress completion observers or strand scheduler cleanup.
+            try:
+                message=str(exc) or type(exc).__name__
+            except Exception:
+                message=type(exc).__name__
+            with self._condition:
+                job.notification_error=message
+                job.notification_failures+=1
 
     def _matching_locked(self,key: str) -> JobProgress|None:
         job_id=self._key_jobs.get(key) if key else None
@@ -282,9 +304,10 @@ class BackgroundJobManager:
             self._key_jobs.pop(job.key,None)
         self._condition.notify_all()
 
-    def _pump_locked(self) -> None:
+    def _pump_locked(self) -> list:
         """Admit bounded queued work without allocating one thread per request."""
-        if self._reader_handoff:return
+        if self._reader_handoff:return []
+        failures=[]
         self._resume_readers_locked()
         while self._pending and not self._shutting_down and not self._exclusive_id:
             queued=sorted(
@@ -307,25 +330,57 @@ class BackgroundJobManager:
                     selected=(job,work)
                     break
             if selected is None:
-                return
+                return failures
             job,work=selected
             self._pending.pop(job.id,None)
             self._start_locked(job,exclusive=work.exclusive)
-            thread=threading.Thread(
-                target=self._run_admitted,
-                args=(job,work.worker,work.reclaim_ai_runtime),daemon=True,
-            )
+            job._thread_start_error=""
+            try:
+                job._thread_start_entered=threading.Event()
+                thread=threading.Thread(
+                    target=self._run_admitted,
+                    args=(job,work.worker,work.reclaim_ai_runtime),daemon=True,
+                )
+            except Exception as exc:
+                # Stock Thread construction cannot execute the submitted worker.
+                self._finish_locked(job,"failed",f"Background thread creation failed: {exc}")
+                listeners=tuple(self._listeners.pop(job.id,{}).values())
+                self._progress_listeners.pop(job.id,None)
+                failures.append((job,listeners))
+                continue
             self._threads[job.id]=thread
             job._execution_thread=thread  # Scope retains identity after scheduler cleanup.
             self._counters["maximum_threads"]=max(
                 self._counters["maximum_threads"],len(self._threads),
             )
-            thread.start()
+            try:
+                thread.start()
+            except Exception as exc:
+                # A raised start() is not evidence that no thread can enter.
+                # Return the exact job/observer; retain its slot, key and thread.
+                job._thread_start_error=str(exc) or type(exc).__name__
+                if job.admission_unconfirmed:
+                    job.message="Background launch is unconfirmed; original job ownership is retained."
+        return failures
+
+    def _notify_start_failures(self,failures) -> None:
+        """Publish definite nonlaunch failures after the outer scheduler lock."""
+        for job,listeners in failures:
+            try:
+                self._changed(job)
+            except Exception:
+                # A diagnostic callback cannot hide another completion observer.
+                pass
+            self._notify_listeners(job,listeners)
+        if failures:
+            with self._condition:
+                self._prune_history_locked()
 
     def _run_admitted(
         self,job: JobProgress,worker: Callable[[JobProgress],object],
         reclaim_ai_runtime: bool=False,
     ) -> None:
+        job._thread_start_entered.set()
         self._changed(job)
         try:
             if reclaim_ai_runtime and job.resource=="gpu":
@@ -350,8 +405,9 @@ class BackgroundJobManager:
             job.result=None
             self._threads.pop(job.id,None)
             self._prune_history_locked()
-            self._pump_locked()
+            failures=self._pump_locked()
             self._condition.notify_all()
+        self._notify_start_failures(failures)
 
     @staticmethod
     def _notify_listeners(
@@ -385,7 +441,7 @@ class BackgroundJobManager:
         self,job_id: str,token: str,*,cancel_if_orphaned: bool=False,
     ) -> bool:
         """Detach one observer and optionally stop work nobody still needs."""
-        cancelled=None
+        cancelled=None; failures=[]
         with self._condition:
             listeners=self._listeners.get(job_id)
             progress_listeners=self._progress_listeners.get(job_id)
@@ -417,8 +473,9 @@ class BackgroundJobManager:
                         self._listeners.pop(job.id,None)
                         self._progress_listeners.pop(job.id,None)
                         cancelled=job
-                        self._pump_locked()
+                        failures=self._pump_locked()
                     self._condition.notify_all()
+        self._notify_start_failures(failures)
         if cancelled is not None:
             self._changed(cancelled)
             with self._condition:
@@ -483,7 +540,8 @@ class BackgroundJobManager:
             self._counters["maximum_pending"]=max(
                 self._counters["maximum_pending"],len(self._pending),
             )
-            self._pump_locked()
+            failures=self._pump_locked()
+        self._notify_start_failures(failures)
         return job,token
 
     def submit(
@@ -577,6 +635,7 @@ class BackgroundJobManager:
     def try_acquire_after_readers(self,name,*,resource="io",key="",timeout=2.0):
         """Temporarily yield registered readers, never writes or AI jobs."""
         resource=self._resource(resource)
+        failures=[]; admitted=None
         with self._condition:
             matching=self._matching_locked(str(key or ""))
             if matching is not None:
@@ -597,11 +656,15 @@ class BackgroundJobManager:
             if self._active_ids or self._shutting_down:
                 self._reader_yield_requests.difference_update(active)
                 self._resume_readers_locked()
-                self._pump_locked()
-                return self.try_acquire(name,resource=resource,key=key,exclusive=True)
-            job=self._new_locked(name,resource,key,external=True)
-            self._start_locked(job,exclusive=True)
-            self._foreground_readers[job.id]=active
+                failures=self._pump_locked()
+            else:
+                job=self._new_locked(name,resource,key,external=True)
+                self._start_locked(job,exclusive=True)
+                self._foreground_readers[job.id]=active
+                admitted=job
+        self._notify_start_failures(failures)
+        if admitted is None:
+            return self.try_acquire(name,resource=resource,key=key,exclusive=True)
         self._changed(job)
         return job,True
 
@@ -645,7 +708,7 @@ class BackgroundJobManager:
         selected=state if state in {"complete","cancelled","failed"} else "complete"
         with self._condition:
             job=self.jobs.get(job_id)
-            if job is None or job.state not in {"queued","running","paused"}:
+            if job is None or job.admission_unconfirmed or job.state not in {"queued","running","paused"}:
                 return
             if selected=="complete" and job.cancel_requested:
                 selected="cancelled"
@@ -653,7 +716,8 @@ class BackgroundJobManager:
             self._finish_locked(job,selected,error)
             listeners=tuple(self._listeners.pop(job.id,{}).values())
             self._progress_listeners.pop(job.id,None)
-            self._pump_locked()
+            failures=self._pump_locked()
+        self._notify_start_failures(failures)
         self._changed(job)
         self._notify_listeners(job,listeners)
         with self._condition:
@@ -677,7 +741,7 @@ class BackgroundJobManager:
         self._changed(job)
 
     def cancel(self,job_id: str) -> None:
-        listeners=(); queued=False
+        listeners=(); queued=False; failures=[]
         with self._condition:
             job=self.jobs[job_id]
             if job.state not in {"queued","running","paused"}:
@@ -689,8 +753,9 @@ class BackgroundJobManager:
                 listeners=tuple(self._listeners.pop(job.id,{}).values())
                 self._progress_listeners.pop(job.id,None)
                 queued=True
-                self._pump_locked()
+                failures=self._pump_locked()
             self._condition.notify_all()
+        self._notify_start_failures(failures)
         self._changed(job)
         if queued:
             self._notify_listeners(job,listeners)
@@ -759,18 +824,28 @@ class BackgroundJobManager:
             self._notify_listeners(job,listeners)
         with self._condition:
             self._prune_history_locked()
+        def unresolved():
+            with self._condition:
+                return any(job.admission_unconfirmed for job in self.jobs.values())
         if not wait:
-            return not any(thread.is_alive() for thread in threads)
+            return not unresolved() and not any(thread.is_alive() for thread in threads)
         deadline=time.monotonic()+max(0.0,float(timeout))
         current=threading.current_thread()
         for thread in threads:
             if thread is current:
                 continue
+            # Never join an object whose original worker entry is unconfirmed;
+            # a negative is_alive() observation cannot discharge that ownership.
+            with self._condition:
+                uncertain=any(job.admission_unconfirmed and self._threads.get(job.id) is thread
+                    for job in self.jobs.values())
+            if uncertain:
+                continue
             remaining=deadline-time.monotonic()
             if remaining<=0:
                 break
             thread.join(remaining)
-        return not any(thread.is_alive() for thread in threads)
+        return not unresolved() and not any(thread.is_alive() for thread in threads)
 
     def diagnostic_snapshot(self, limit: int = 30) -> list[dict[str, object]]:
         """Return bounded job state without paths, error text, results, or request keys."""
