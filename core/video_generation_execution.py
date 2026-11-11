@@ -535,14 +535,16 @@ class VideoExecutionService:
             return receipt  # Missing history never authorizes resubmission.
         return self._accept_history(receipt, history[receipt["prompt_id"]], adapter)
 
-    def verified_video_outputs_from_receipt(self, receipt_path):
+    def verified_video_outputs_from_receipt(self, receipt_path, *, runtime_binding=None, decoder_lifetime=None):
         """Verify one selected retained result without recovering the source job."""
         selected = Path(receipt_path)
         if not selected.is_absolute() or selected != self._directory(selected.parent.name) / "receipt.json":
             raise ValueError("Select a video receipt from the admitted result store.")
-        return self.verified_video_outputs(self._load(selected.parent.name), allow_resize_recovery=False)
+        return self.verified_video_outputs(self._load(selected.parent.name), allow_resize_recovery=False,
+            runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
 
-    def verified_video_outputs(self, expected_receipt, *, allow_resize_recovery=True):
+    def verified_video_outputs(self, expected_receipt, *, allow_resize_recovery=True,
+                               runtime_binding=None, decoder_lifetime=None):
         if not isinstance(expected_receipt, dict):
             raise ValueError("A retained verified video receipt is required.")
         current = self._load(expected_receipt["job_id"])
@@ -581,7 +583,8 @@ class VideoExecutionService:
             mapping = DerivedClipMapping.from_dict(native["timeline"])
             checked = resize_verified_video(expected_native, original_asset, request, Path(output["path"]),
                 allowed_root=self.root, width=goal["final_width"], height=goal["final_height"],
-                allow_recovery=allow_resize_recovery)
+                allow_recovery=allow_resize_recovery, runtime_binding=runtime_binding,
+                decoder_lifetime=decoder_lifetime)
             if (checked.source_sha256 != native["sha256"] or checked.output_sha256 != output["sha256"]
                     or checked.recipe != native["recipe"] or checked.lineage.to_dict() != mapping.to_dict()
                     or checked.verification.asset.to_dict() != output["source_asset"]):

@@ -1730,8 +1730,8 @@
       "size_bytes": 20227
     },
     "core/video_finishing.py": {
-      "sha256": "9ae6bbf14ecbc14a7d8aa11676fe993ea13d5cedcd6490437148fa7d0c468c27",
-      "size_bytes": 33524
+      "sha256": "277c1a9040e0245f4cb2ea7efa20fb70f5bc833f73872eac84628a2a4e3714a4",
+      "size_bytes": 34015
     },
     "core/video_generation.py": {
       "sha256": "b10007977d045621d6e9a7042cdc6194b21368a22442390c526d1b2178dd49e7",
@@ -1742,8 +1742,8 @@
       "size_bytes": 6627
     },
     "core/video_generation_execution.py": {
-      "sha256": "65d70c0c34d9b2edee7bbee279870b4f8d43403447f3e7f4da946cbc5923dd58",
-      "size_bytes": 37409
+      "sha256": "074b1e4463b138d7afeabd2a6240d2dbe51ebff414723a9fc9acab02eea1ce21",
+      "size_bytes": 37697
     },
     "core/video_generation_graph.py": {
       "sha256": "c1f68f8a41aebe20c043ab9b5aaeef4749c24cfad4aa21757d685b81ebe7a858",
@@ -1758,8 +1758,8 @@
       "size_bytes": 1388
     },
     "core/video_output_processing.py": {
-      "sha256": "f51ab572c980d7683d5d3667f9688d9ce5d9ca092289bbf6392e51dd375171d7",
-      "size_bytes": 21806
+      "sha256": "68b4522a10b2eb1f61beead0113ab8bce136763d3dd28ff426893284b1c7443f",
+      "size_bytes": 21999
     },
     "core/video_output_processing_worker.py": {
       "sha256": "da2e7c671f6506dbfa0ae0ea451f05e0c75f87523236b63b72a875aca5855e1e",
@@ -2314,8 +2314,8 @@
       "size_bytes": 15239
     },
     "qt_app/ingest_page.py": {
-      "sha256": "44cf4fc36706ee5991b1b10a0facda50ae1bf43820da2ce5e5b7eb29ab206ae0",
-      "size_bytes": 369901
+      "sha256": "1f7bae5da405d7a1aaf680d9d104c67e326f4e1177684eea424075a574babd3e",
+      "size_bytes": 370913
     },
     "qt_app/ingest_preparation_queue.py": {
       "sha256": "82870eaf359ff7108e51ca2d0bd91d95f422abb404d96c42f411f10cac2f6d6b",

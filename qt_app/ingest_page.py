@@ -1050,12 +1050,27 @@ class IngestPage(QWidget):
             return
         service = VideoExecutionService(jobs, self.state.jobs, verify_output=None)
         source = receipt.with_name(receipt.name[1:].removesuffix(".collectigen-finishing.json"))
+        state = self.state
+        factory = getattr(state, "dependency_service_factory", None)
+        lifetime = getattr(state, "video_decoder_lifetime", None)
 
         def verified_outputs(selected_receipt):
             if Path(selected_receipt) != receipt:
                 raise ValueError("Choose the exact reviewed trim receipt.")
-            original_output, = service.verified_video_outputs_from_receipt(original)
-            return [verified_manager_trim_from_receipt(receipt, original_output)]
+            def check_context():
+                if (getattr(state, "dependency_service_factory", None) is not factory
+                        or getattr(state, "video_decoder_lifetime", None) is not lifetime):
+                    raise RuntimeError("The Video runtime changed. Review the trim again.")
+            check_context()
+            admit = getattr(state, "admit_video_runtime", None)
+            if factory is not None and (not callable(admit) or lifetime is None):
+                raise RuntimeError("Trim verification needs Video Components. Review them in Setup.")
+            binding = admit(check_interrupt=check_context) if factory is not None else None
+            check_context()
+            original_output, = service.verified_video_outputs_from_receipt(original,
+                runtime_binding=binding, decoder_lifetime=lifetime)
+            return [verified_manager_trim_from_receipt(receipt, original_output,
+                runtime_binding=binding, decoder_lifetime=lifetime)]
 
         return self._start_video_ingest_preview(receipt, source, verified_outputs)
 

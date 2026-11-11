@@ -281,6 +281,7 @@ def resize_verified_video(
     should_cancel: Callable[[], bool] | None = None,
     timeout_seconds: float = 120,
     allow_recovery: bool = True,
+    runtime_binding=None, decoder_lifetime=None,
 ) -> VideoResizeResult:
     """Fit without cropping, black-pad and publish one separate verified derivative.
 
@@ -316,7 +317,8 @@ def resize_verified_video(
         raise InterruptedError("Video resize cancelled safely.")
     _hash_source(source, source_asset, should_cancel, deadline)
     observed = verify_video_output(source, source_request, allowed_root=source.parent,
-        should_cancel=should_cancel, max_seconds=_remaining(deadline))
+        should_cancel=should_cancel, max_seconds=_remaining(deadline),
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     if (observed.asset.sha256 != source_asset.sha256
             or observed.asset.byte_length != source_asset.byte_length
             or observed.asset.stream_id != source_asset.stream_id
@@ -340,7 +342,7 @@ def resize_verified_video(
                     raise VideoOutputProcessingError("The retained resize stage changed identity.")
             verified = verify_video_output(candidate, output_request, allowed_root=boundary,
                 should_cancel=should_cancel, max_seconds=_remaining(deadline),
-                max_bytes=output_limit)
+                max_bytes=output_limit, runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
             _matches_receipt(verified, payload)
             result = _lineage_result(target, receipt, source_asset, verified, recipe)
             _hash_source(source, source_asset, should_cancel, deadline)
