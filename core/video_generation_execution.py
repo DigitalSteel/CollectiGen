@@ -535,16 +535,17 @@ class VideoExecutionService:
             return receipt  # Missing history never authorizes resubmission.
         return self._accept_history(receipt, history[receipt["prompt_id"]], adapter)
 
-    def verified_video_outputs_from_receipt(self, receipt_path, *, runtime_binding=None, decoder_lifetime=None):
+    def verified_video_outputs_from_receipt(self, receipt_path, *, runtime_binding=None,
+                                            decoder_lifetime=None, admit_decoder=None):
         """Verify one selected retained result without recovering the source job."""
         selected = Path(receipt_path)
         if not selected.is_absolute() or selected != self._directory(selected.parent.name) / "receipt.json":
             raise ValueError("Select a video receipt from the admitted result store.")
         return self.verified_video_outputs(self._load(selected.parent.name), allow_resize_recovery=False,
-            runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
+            runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime, admit_decoder=admit_decoder)
 
     def verified_video_outputs(self, expected_receipt, *, allow_resize_recovery=True,
-                               runtime_binding=None, decoder_lifetime=None):
+                               runtime_binding=None, decoder_lifetime=None, admit_decoder=None):
         if not isinstance(expected_receipt, dict):
             raise ValueError("A retained verified video receipt is required.")
         current = self._load(expected_receipt["job_id"])
@@ -571,6 +572,8 @@ class VideoExecutionService:
         if bool(native) != bool(goal):
             raise ValueError("The final-video recipe differs from the reviewed request.")
         if native:
+            if admit_decoder is not None:
+                runtime_binding = admit_decoder()
             expected_native = self._directory(current["job_id"]) / "native-result.mp4"
             if Path(native["path"]).absolute() != expected_native or expected_native.stat().st_size > MAX_RESULT_BYTES:
                 raise ValueError("The retained native clip is outside its bounded job.")
@@ -585,9 +588,17 @@ class VideoExecutionService:
                 allowed_root=self.root, width=goal["final_width"], height=goal["final_height"],
                 allow_recovery=allow_resize_recovery, runtime_binding=runtime_binding,
                 decoder_lifetime=decoder_lifetime)
+            observed_mapping, retained_mapping = checked.lineage.to_dict(), mapping.to_dict()
+            observed_asset = checked.verification.asset.to_dict()
+            retained_asset = deepcopy(output["source_asset"])
+            if runtime_binding is not None and not allow_resize_recovery:
+                # Keep the producer's inventory evidence in the saved receipt.
+                for asset in (observed_asset, retained_asset, observed_mapping["output_asset"],
+                              retained_mapping["output_asset"]):
+                    asset["probe_provenance"].pop("component_inventory_sha256", None)
             if (checked.source_sha256 != native["sha256"] or checked.output_sha256 != output["sha256"]
-                    or checked.recipe != native["recipe"] or checked.lineage.to_dict() != mapping.to_dict()
-                    or checked.verification.asset.to_dict() != output["source_asset"]):
+                    or checked.recipe != native["recipe"] or observed_mapping != retained_mapping
+                    or observed_asset != retained_asset):
                 raise ValueError("The retained final-video timeline or recipe differs from its exact resize receipt.")
         receipt_path = self._directory(current["job_id"]) / "receipt.json"
         receipt_raw, _ = read_stable_training_source(receipt_path, max_bytes=_MAX_RECEIPT_BYTES)
