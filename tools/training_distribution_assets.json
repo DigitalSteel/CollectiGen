@@ -1,0 +1,1680 @@
+{
+  "schema_version": 1,
+  "kind": "reviewed_training_distribution_assets",
+  "base_model_included": false,
+  "runtime_profile_sha256": "895dc409c144e0adc756f233a5998b7197c7bf1cf8872d839e24aee7bf85bc18",
+  "runtime_catalog_sha256": "2da6d25b3ae2ded6b4b47aaba8901d09e51c8a2b037539a004f87bfbf0e00bc2",
+  "files": [
+    {
+      "path": "tools/trainer_runtime_profile.json",
+      "bytes": 8035262,
+      "sha256": "895dc409c144e0adc756f233a5998b7197c7bf1cf8872d839e24aee7bf85bc18",
+      "attribution": null
+    },
+    {
+      "path": "tools/trainer_runtime_catalog.json",
+      "bytes": 37194,
+      "sha256": "2da6d25b3ae2ded6b4b47aaba8901d09e51c8a2b037539a004f87bfbf0e00bc2",
+      "attribution": null
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/LICENSE.md",
+      "bytes": 11543,
+      "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/accelerator_setup.py",
+      "bytes": 7570,
+      "sha256": "6f6379201ca3e3bb94e854f735985e7551d32deecf0526d4edeccd4468236f69",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/adafactor_fused.py",
+      "bytes": 4514,
+      "sha256": "9af7dc687028407c83aaba9d9c5e4e163d5d8581c2f58b3d56c1ec57442df95b",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/anima_models.py",
+      "bytes": 67609,
+      "sha256": "a6627340e3d00b3fd6e3ea793249e155634025a367835f7179aaf8a8b4d931cb",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/anima_train_utils.py",
+      "bytes": 29330,
+      "sha256": "0593fd1414c7c6d8e70bf7a77930bfdc1ff4e2239257c2127770973e86865278",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/anima_utils.py",
+      "bytes": 12801,
+      "sha256": "89a163b0f1b1a5b09bff458603c502dc1baa685389ca370f95ac540f89215bd7",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/args.py",
+      "bytes": 60057,
+      "sha256": "b16ae25a0773ead49e91247830f575826e8304faa1d8e4b110a0e90d81d2e917",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/attention.py",
+      "bytes": 11677,
+      "sha256": "452224af3f504ef5c4bf22102623b26f54b305428513e93ba5d1723126272449",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/attention_processors.py",
+      "bytes": 7924,
+      "sha256": "cccb25811f0a2ee86d0abd2d61a560423dd4841e3ef59b5b2176a8904a3fd08d",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/caching.py",
+      "bytes": 7986,
+      "sha256": "7f4e8fc8edad33c795f0369a7cbb093768e7547284f852845d3530ab2ce108cc",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/checkpoint_io.py",
+      "bytes": 13368,
+      "sha256": "df230cfc6f14525305117faa58d9341bc63cad718c1fe9eef36bbf0153ea695c",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/chroma_models.py",
+      "bytes": 28861,
+      "sha256": "365a5fb231a0d7a5b358c19217d2c0a10c4c1bc09deeffb8a9ca0451314657e8",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/compile_utils.py",
+      "bytes": 5068,
+      "sha256": "21ffa1605dcea5d35d66361d86493344e72ec27252a4d51d5b73546db8a377aa",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/config_util.py",
+      "bytes": 29319,
+      "sha256": "88644d86437728cfde6bfaf55cca7c2bca81d5141867614f4488f542ccd4336f",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/controlnet_dataset.py",
+      "bytes": 9831,
+      "sha256": "b220541d264ac9d9b3c78bb3822db0cf632db1f7e514f8589f2f50cac0c1db63",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/custom_offloading_utils.py",
+      "bytes": 13645,
+      "sha256": "ed5c5955ad4266f0c882cb2c126cad8c87b7692e40e118d1621fac952eb54296",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/custom_train_functions.py",
+      "bytes": 22630,
+      "sha256": "1b465ca7f73f80a7fe19d4be376e116700074e6d6834630e9d213c01f06c923f",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/dataset.py",
+      "bytes": 69866,
+      "sha256": "d5c98f113f86233490195e3f68332a74043d012b0ed9cb15914e8d31f3074f5a",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/deepspeed_utils.py",
+      "bytes": 7107,
+      "sha256": "6c504aaac9f1a33a398ecb608787769ffb541143299f2bc4a29e7bec63f27fe8",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/device_utils.py",
+      "bytes": 2788,
+      "sha256": "7448b882dcf51f01358ab4531e925d5911e25f234506b1d49d1965a0a9c6cc73",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/dreambooth_dataset.py",
+      "bytes": 17851,
+      "sha256": "049e05a17b273ef25703498360d45eae085c5cdb958ed05327deacae98d42c44",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/finetuning_dataset.py",
+      "bytes": 11985,
+      "sha256": "faee0b2791f71e3f31bcb537fe7b94bc19a3d50c533c43f16ef2e3a7b8f67950",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/flux_models.py",
+      "bytes": 50674,
+      "sha256": "4d8a3b8aa8fe47c65dc3640214350e5bcbfe5caafd2cdf4e9c1896344f059c06",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/flux_train_utils.py",
+      "bytes": 32509,
+      "sha256": "49963571d52faa4fb5ba5928fc53144911b542f8ef4793c083565c4a86584937",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/flux_utils.py",
+      "bytes": 23527,
+      "sha256": "9c660ec69ec5d970ed99cce3ae41585a7973db84cadec858f1ca1e7bd91709ac",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/fp8_optimization_utils.py",
+      "bytes": 20561,
+      "sha256": "d64805990b74a3feaca813972b4092ca48af626a6d33c3d3311891a1f2e2f299",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/hidden_states.py",
+      "bytes": 9729,
+      "sha256": "cdbf77c0e8c35488dcbc9a14623bf7c73e512321864acd314d01feeac5b9af56",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/huggingface_util.py",
+      "bytes": 3182,
+      "sha256": "a5d59698828d1ea16ba6b95429148fda98452194f4910c978ada12878aa2afaa",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/hunyuan_image_models.py",
+      "bytes": 19798,
+      "sha256": "5ad56ea7c75aad0fdafb9e92549366db7018668a6d8ab24e45374799df8052a4",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/hunyuan_image_modules.py",
+      "bytes": 32340,
+      "sha256": "554d51b317fc940b303882d5a6e55e93b2720c38ec3888cc0159121dfedebf6f",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/hunyuan_image_text_encoder.py",
+      "bytes": 51234,
+      "sha256": "2d940f764c484b29904668ab5e3c52753737b62183db5dc244266e6de19e1ab5",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/hunyuan_image_utils.py",
+      "bytes": 17800,
+      "sha256": "aa268a55162de94b3cde09863ffcdad979a2eccb6359ccf13a15febeaac0f3e3",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/hunyuan_image_vae.py",
+      "bytes": 29529,
+      "sha256": "cb3703330090fe5f46c298c908c9a8433773aa1a4638663942ed3590f9ebdea4",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/hypernetwork.py",
+      "bytes": 6965,
+      "sha256": "fd6771795222d97f96bda91fecb1136469d4d077db208b4b5494cfd76bad753c",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/ipex/__init__.py",
+      "bytes": 11774,
+      "sha256": "d3a49e2764de86868353a55976686b7aecb8cec5d1db77897a61e2f85a136541",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/ipex/attention.py",
+      "bytes": 6483,
+      "sha256": "bca23921992b766f4c86c02b8e82fb3767c4401c1cba32a7a18f1085023cc8d7",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/ipex/diffusers.py",
+      "bytes": 5526,
+      "sha256": "0170dc7a3d42314842c9d64a7c8af838b530a631074fb693445866c729b07f76",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/ipex/hijacks.py",
+      "bytes": 21051,
+      "sha256": "d784e7329a0a6a796dfb7444911554a155b6ba335ae6513b8398acacf8b912b3",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/jpeg_xl_util.py",
+      "bytes": 6781,
+      "sha256": "970c8439b8fa710dfc2fd79815eb0097af48077ef99244880548366a6717dbf6",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/leco_train_util.py",
+      "bytes": 19686,
+      "sha256": "1ba4b5fc86b1b70bf0fe29efb1ba9714287fe38d6c5b20295bcfd818d4971d6e",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/logging_util.py",
+      "bytes": 2619,
+      "sha256": "fef115bc66db341dc75a29361f132e2e8bdd3d65b72617f1d4a9d4af40a53267",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/lora_utils.py",
+      "bytes": 13806,
+      "sha256": "98f70c7f4e5eae231e21b500391051158ce9ff798d3558e6f98019d748ed13e1",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/loss.py",
+      "bytes": 6064,
+      "sha256": "b0d43406b2a6d4798a7f363ffc026be6a0172d66e744738d6e7bafcafa07a0fc",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/lpw_stable_diffusion.py",
+      "bytes": 64752,
+      "sha256": "2fe93875e4e15bcdd7c8e1de1fce8aa44e5eaacc04f068ac8bdafe7bcf39340f",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/lumina_models.py",
+      "bytes": 49673,
+      "sha256": "2bcec1463bc6f9efe99d047999bf538472aa2ecbdbf36a885eb19bba41bf4551",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/lumina_train_util.py",
+      "bytes": 42725,
+      "sha256": "1727a6990922a89102038d7a32675cc16969af23e2d24dd2e77c9e74628f934e",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/lumina_util.py",
+      "bytes": 9966,
+      "sha256": "dbdcf5149af76ec405c6a3c7c42a44b1fc82146974c737bfc6626ecf6f7390bd",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/mask_generator.py",
+      "bytes": 13932,
+      "sha256": "5231f3ea82fe679236407a9ce7d41e2402477d45a6fab64b9b2beabf7e6130ea",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/model_io.py",
+      "bytes": 15929,
+      "sha256": "4250cd2d1a786afc529b1dc5e9660de005941cf9d7f068dfd6684802b88e88bc",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/model_util.py",
+      "bytes": 59955,
+      "sha256": "0166201f5e5f659c188908e6aa8d1e1a49aa6ffc2e29e29890ee5d0e7627fe13",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/optimizer.py",
+      "bytes": 30812,
+      "sha256": "1787bbbbe118197f34af72c5cae19d615fdceac012cb2db451d32903cf750093",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/original_unet.py",
+      "bytes": 72559,
+      "sha256": "ac76af96997761c500f159a2e44a9e7273a5b012bf180ca855c0900c371627a2",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/qwen_image_autoencoder_kl.py",
+      "bytes": 73175,
+      "sha256": "c441a903742e89fa28eac62b716bf691a648ad498714582313a06f188b35bbb4",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/qwen_image_autoencoder_kl_2d.py",
+      "bytes": 19625,
+      "sha256": "822232844adb767e799d84287ea5e11bbbbe766bfc0a01fedb2fb0f6e1e777f2",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/safetensors_utils.py",
+      "bytes": 20566,
+      "sha256": "817083e9283555e3bce64ea86f7256c904de5b6ec29e318d654d78733fc88d31",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sai_model_spec.py",
+      "bytes": 24294,
+      "sha256": "dfd43c6c50aaf00dcca1b1395cd4d703252002bc2233d0f3548ea0a10105d472",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sampling.py",
+      "bytes": 19910,
+      "sha256": "3edad1230d87b61678ab58463a9b42565319165e51b3ee2ccbb6fe89f0e8ed62",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sd3_models.py",
+      "bytes": 56071,
+      "sha256": "ee822e722f39491d345935270bd0d95167cada4d1c22da480c917ff2af7aa3c9",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sd3_train_utils.py",
+      "bytes": 38122,
+      "sha256": "6ae94f89d62422b1ba24725ac1b292a68375f191eadc48ad53da9c0d1ef41be9",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sd3_utils.py",
+      "bytes": 10933,
+      "sha256": "aa390ee5e40aa3dfa6d4ab80ce2a00abff0b31e06f68988df99657aa5131e0a6",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sdxl_lpw_stable_diffusion.py",
+      "bytes": 66847,
+      "sha256": "1808d72cca97289fdd6a56e7a2e0c4f212e16d76de8c97a11bdd0f689e03a18a",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sdxl_model_util.py",
+      "bytes": 23553,
+      "sha256": "624a1516b4126665ab2eaba4b69aca6b1d9d67486f0de73ae4ac1e6baace9c09",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sdxl_original_control_net.py",
+      "bytes": 10277,
+      "sha256": "c838b41b6dc005da1bccb5eedf5888196a45f31fcc28c84af8109bcffc7b3ddd",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sdxl_original_unet.py",
+      "bytes": 47076,
+      "sha256": "1b76a34f77477d9415e574dcda97228a1324c46618375e72bdaf86587b5fe86d",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/sdxl_train_util.py",
+      "bytes": 15475,
+      "sha256": "16af4d1cd01154ff4a31e9c94adf760f866177453c8838ad2c4da7687d5dab8a",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/slicing_vae.py",
+      "bytes": 25081,
+      "sha256": "63798a8698fc2c59f0af77d46f8aa7dcb7e8159ca8c9804beffffd9b733d650f",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/strategy_anima.py",
+      "bytes": 12444,
+      "sha256": "058b4c8714f51e8c6fead211eaafc201e7d930f6226b6f02d247b1faf0e1ce20",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/strategy_base.py",
+      "bytes": 26724,
+      "sha256": "44790a6c9f94c94e5c3f228dd617a42b1bcd87958fe0001f026049088ddd26dc",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/strategy_flux.py",
+      "bytes": 11645,
+      "sha256": "ca90686dc86dc70e08dbb553613c11480e0817103a80bb8d8342fb55a5c82532",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/strategy_hunyuan_image.py",
+      "bytes": 9570,
+      "sha256": "476a2070b77eff2316c6acf2878632ebddd5ae6c16e196b95c4363cb7ee87b56",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/strategy_lumina.py",
+      "bytes": 12857,
+      "sha256": "a505b18291c398709d37c5a3f94bba1f1a44cfaae870bbf4181b823179463f3e",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/strategy_sd.py",
+      "bytes": 8870,
+      "sha256": "1dd72fbf9bac0cabe9457272f2f3f0aba0784f2e92b82f99297fdf5dc3196c51",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/strategy_sd3.py",
+      "bytes": 19552,
+      "sha256": "fff42450b7c86ab8ceb5b0f660886f5bb34dce7deff364e6d7dafd56ce229755",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/strategy_sdxl.py",
+      "bytes": 14632,
+      "sha256": "2190d42198ecd4031ec3639dfaa6577c1289af1a7731527e9b3cb9f1fcad5edd",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/subset.py",
+      "bytes": 9695,
+      "sha256": "a83def532dda11797b065ec7d28b43faf17d1d4130e9816dcad242128b03174e",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/timestep_visualization.py",
+      "bytes": 5758,
+      "sha256": "1ce921663c1e492b4c341c7ae202b4e7a1bc3915671fafcfcd7d0d6eab03ecf1",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/train_util.py",
+      "bytes": 7296,
+      "sha256": "cdba704b226f8acbf3cbe44835dcc8d1112b6cda1c58d90184ae70ccf307effc",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/library/utils.py",
+      "bytes": 22193,
+      "sha256": "17241b7bdfe50868bddd2c4f75cfdbb7419507afaf24499f8b360aa783531721",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/check_lora_weights.py",
+      "bytes": 1536,
+      "sha256": "db5e6583e88f4f62d2650d3f4a9f514ddda54883f23291e053bc815166b50df4",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/control_net_lllite.py",
+      "bytes": 19611,
+      "sha256": "835622f879e9aafb2b5601e16298c241b65010068ea08831e8ec95192b2e1cda",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/control_net_lllite_anima.py",
+      "bytes": 44894,
+      "sha256": "31b7d3c0e64a6e8f6dcf1ec184085ef54253716d624745d6ca0435efaa14f845",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/control_net_lllite_for_train.py",
+      "bytes": 21435,
+      "sha256": "c40bfcc66222d2e848ac69e2d11523865642d6f6eec4bb9ac80c421221959cf1",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/convert_anima_lora_to_comfy.py",
+      "bytes": 7798,
+      "sha256": "102d2700710740d364532988acc839acea8982e85a315e0f9568bb02a1457bfb",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/convert_flux_lora.py",
+      "bytes": 20523,
+      "sha256": "c6687c730cdbf9b324888c4bec3f08f2160a58c51f051e2b9c339b79baa2953b",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/convert_hunyuan_image_lora_to_comfy.py",
+      "bytes": 2834,
+      "sha256": "43fd18c430e45d07c546c435de346dacc56cac16b912909f2c1c88f35b2f3f6d",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/dylora.py",
+      "bytes": 21847,
+      "sha256": "c5af9f474e27d1664f70c4a72d8d26deb1000d71665cd47bfcbb0a56157d334d",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/extract_lora_from_dylora.py",
+      "bytes": 4439,
+      "sha256": "90781d5ebac830742bd588058f049209f9b6048961728743a461fa9994867595",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/extract_lora_from_models.py",
+      "bytes": 14403,
+      "sha256": "bdacdef284ad840d6cbe9e35163bab2d9e027d0733ca3b25d6f357405e52c389",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/flux_extract_lora.py",
+      "bytes": 7793,
+      "sha256": "29f1223f15993801ae306eb30eb0f50568ce1d388d62be2cc158160167d0e8ba",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/flux_merge_lora.py",
+      "bytes": 34412,
+      "sha256": "81e055bed4352ce0825af22ee5ade09ec6010cee8c508c2ad11a99a874905f3c",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/loha.py",
+      "bytes": 24885,
+      "sha256": "6e4daa17979ad22e6afd894943eab0ed02c576f8744d516925fa0b9c0ce99deb",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lokr.py",
+      "bytes": 24499,
+      "sha256": "2e9aa984d2fdf1a87bac432d5b2ad7cd8dae3570a07f71151b104332f5a1dbd8",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lora.py",
+      "bytes": 60417,
+      "sha256": "6001008184bc843f32b9211145d1167cec01d322182a2a7c62024d4b39ea13cc",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lora_anima.py",
+      "bytes": 34747,
+      "sha256": "e275ff53a583e265ba4a41fa389c7b4f085123344c8c5f43fbc4bc00d5e3396e",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lora_diffusers.py",
+      "bytes": 26524,
+      "sha256": "7de55b9f6b84863fabf02275344318effb733f3d4e6da1d0d50fd791321e9b28",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lora_fa.py",
+      "bytes": 52084,
+      "sha256": "8b744d8eb58de5833b06b1ac5596ccde4bf77f1a40a69a415c0baa25c9eaf95b",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lora_flux.py",
+      "bytes": 62802,
+      "sha256": "a9776337cb2645da90dc5aaa5a5c561d7147a5e7fc4ac79ea337fb8ba9fb0949",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lora_hunyuan_image.py",
+      "bytes": 15134,
+      "sha256": "b61c7ceb66ea249a7351b09d7b9a7fa3597296173927623e017bf4e13977883d",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lora_interrogator.py",
+      "bytes": 6250,
+      "sha256": "9f7c4410f2fdc98abe5c8468c963f6cc82909aee5887f8eff32cb2c37c5006eb",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lora_lumina.py",
+      "bytes": 44942,
+      "sha256": "afd637693611c9c68170e26f2f2f58ee498945d472b297c6ab9ea39c9b5e8e6d",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/lora_sd3.py",
+      "bytes": 36582,
+      "sha256": "aa46c1e8de7f609d8ba97a52f97ea6b46bfce9576ec0741c4bc4576b6655e6d1",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/merge_lora.py",
+      "bytes": 15257,
+      "sha256": "334410e37b6a3624d61add7bdbc94ae1c2b4f58fe5f7bc21a8e799de3656df95",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/network_base.py",
+      "bytes": 24170,
+      "sha256": "9a4c816c8e75d6e563cadd24220e03b6fdcb5744a446a8dc8544caacc007f9e7",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/oft.py",
+      "bytes": 16758,
+      "sha256": "9f3c29840c79c49eaeb9ef401e178996414d2ecf373fb1d82489911393a78379",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/oft_flux.py",
+      "bytes": 17185,
+      "sha256": "b34100f6b7eda8a0a8a4b32ee8759ada14eff62e103c71dd7137066650f6bd67",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/resize_lora.py",
+      "bytes": 16502,
+      "sha256": "3530cede242bf5bb2c9b431a09c103661b63cd7c65e9d8f1b3f0e2c0090e1bf5",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/sdxl_merge_lora.py",
+      "bytes": 21458,
+      "sha256": "7d4cbce1b5455295b3720b2a1ab1db5f29f3b2fec8c7191e0706426baafeef99",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/networks/svd_merge_lora.py",
+      "bytes": 18269,
+      "sha256": "108a5c8818f1cbb39d5fbbce9707b1eb9eddeb717cd48493b96e73540ac7d018",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/sdxl_train_network.py",
+      "bytes": 7894,
+      "sha256": "a0e415533fd9e39ad41d3fafeecc76794f97f612143cc3d356b7c0f70e8466be",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "tools/trainer-sources/sd-scripts/train_network.py",
+      "bytes": 100308,
+      "sha256": "0ea59d6da63b67c84a7d3a929af1b19ffe8893629416b4b743b57b33c85d2ffe",
+      "attribution": {
+        "revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+        "license": {
+          "id": "Apache-2.0",
+          "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/6721028c79ee85a78b3a06dfd8954dae310a1cce/LICENSE.md"
+        }
+      }
+    },
+    {
+      "path": "licenses/sdxl-tokenizer-source-LICENSE.md",
+      "bytes": 14109,
+      "sha256": "19b6998b569b53ac1fc2158a8a3202c8699a9a4605b47075715d9c96be7fb6d0",
+      "attribution": {
+        "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/462165984030d82259a11f4367a4eed129e94a7b/LICENSE.md",
+        "repository_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+        "git_blob": "af7e355e31c0d976933aa0d06759611151ad8c39"
+      }
+    },
+    {
+      "path": "tools/trainer-tokenizers/sdxl/tokenizer/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "attribution": {
+        "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/462165984030d82259a11f4367a4eed129e94a7b/tokenizer/merges.txt",
+        "repository_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+        "git_blob": "76e821f1b6f0a9709293c3b6b51ed90980b3166b"
+      }
+    },
+    {
+      "path": "tools/trainer-tokenizers/sdxl/tokenizer/special_tokens_map.json",
+      "bytes": 472,
+      "sha256": "c4864a9376a8401918425bed71fc14fc0e81f9b59ec45c1cf96cccb2df508eac",
+      "attribution": {
+        "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/462165984030d82259a11f4367a4eed129e94a7b/tokenizer/special_tokens_map.json",
+        "repository_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+        "git_blob": "2c2130b544c0c5a72d5d00da071ba130a9800fb2"
+      }
+    },
+    {
+      "path": "tools/trainer-tokenizers/sdxl/tokenizer/tokenizer_config.json",
+      "bytes": 737,
+      "sha256": "19d7b034cb0cc3ce9766c2231373ab8aa8991fc72e2c8f76558bfaae3de0d563",
+      "attribution": {
+        "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/462165984030d82259a11f4367a4eed129e94a7b/tokenizer/tokenizer_config.json",
+        "repository_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+        "git_blob": "2e8612a429492973fe60635b3f44a28b065cfac0"
+      }
+    },
+    {
+      "path": "tools/trainer-tokenizers/sdxl/tokenizer/vocab.json",
+      "bytes": 1059962,
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "attribution": {
+        "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/462165984030d82259a11f4367a4eed129e94a7b/tokenizer/vocab.json",
+        "repository_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+        "git_blob": "469be27c5c010538f845f518c4f5e8574c78f7c8"
+      }
+    },
+    {
+      "path": "tools/trainer-tokenizers/sdxl/tokenizer_2/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "attribution": {
+        "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/462165984030d82259a11f4367a4eed129e94a7b/tokenizer_2/merges.txt",
+        "repository_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+        "git_blob": "76e821f1b6f0a9709293c3b6b51ed90980b3166b"
+      }
+    },
+    {
+      "path": "tools/trainer-tokenizers/sdxl/tokenizer_2/special_tokens_map.json",
+      "bytes": 460,
+      "sha256": "f118ab3a983206e4f32583448de6bd6aae4ee21869135cef1f5848a753cdaab6",
+      "attribution": {
+        "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/462165984030d82259a11f4367a4eed129e94a7b/tokenizer_2/special_tokens_map.json",
+        "repository_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+        "git_blob": "ae0c5be6f35217e51c4c000fd325d8de0294e99c"
+      }
+    },
+    {
+      "path": "tools/trainer-tokenizers/sdxl/tokenizer_2/tokenizer_config.json",
+      "bytes": 725,
+      "sha256": "c9d23941f76a41cbd50eda9290f57be7828f0a7a677939e9ef181f7e12bd1bdf",
+      "attribution": {
+        "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/462165984030d82259a11f4367a4eed129e94a7b/tokenizer_2/tokenizer_config.json",
+        "repository_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+        "git_blob": "a8438e020c4497a429240d6b89e0bf9a6e2ffa92"
+      }
+    },
+    {
+      "path": "tools/trainer-tokenizers/sdxl/tokenizer_2/vocab.json",
+      "bytes": 1059962,
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "attribution": {
+        "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/462165984030d82259a11f4367a4eed129e94a7b/tokenizer_2/vocab.json",
+        "repository_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+        "git_blob": "469be27c5c010538f845f518c4f5e8574c78f7c8"
+      }
+    },
+    {
+      "path": "tools/training_execution_qualification.json",
+      "bytes": 8888,
+      "sha256": "27c34852900f67b1593a1ad92ea2c6955f8a3d4f669a5f4ea0e091c911fbc485",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_execution_tensor_specs.json",
+      "bytes": 228876,
+      "sha256": "f985faf1932c4f57cc847127778692efbc8fa7d10a1c38c38d59647e47218df3",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_execution_profile.json",
+      "bytes": 5206,
+      "sha256": "5ca323713c348e2d463ddfcfbdddba0b5fdbf1da8e61a7a357ff0cceaca6e238",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_execution_worker.py",
+      "bytes": 25693,
+      "sha256": "5386562a8dd487a813abf61b973de9a3569cc5adc66acf68f6b500fe728e6eb6",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_runtime_sources.json",
+      "bytes": 21202,
+      "sha256": "93895f4aed34e4e81b42951348f241346b07e3beb10c5fcdc56a2318082bb750",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_sdxl_layout.json",
+      "bytes": 207205,
+      "sha256": "3d8df5797c4fe2cde8efcd18fe4402ff2375b22a459733c5d631b0271d390c59",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_dataset_package.json",
+      "bytes": 166397,
+      "sha256": "b4f8e7a7c3bc2d82189ea8e3b2e77bcbabab9f67c7404863549b24bf20d610eb",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_runtime_probe.py",
+      "bytes": 42561,
+      "sha256": "ac4b82610ed3afe39b9c216a620c0dcebe1a358c88d912b06fcb11cb5cc2e585",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_verification_worker.py",
+      "bytes": 4141,
+      "sha256": "347399a0512db30103e59562c46d98590e629a3740396c5492f11b3e989cef63",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_preflight_worker.py",
+      "bytes": 20448,
+      "sha256": "7f02943bf41d760739d68454742c13ca919a0ebf875eadd2560118d978b40958",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_restricted_stage_worker.py",
+      "bytes": 2594,
+      "sha256": "7355ac6fc81495ce05812f943d271455d730a52342e3519db438419174bcd9f3",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_restricted_loading_probe.py",
+      "bytes": 5247,
+      "sha256": "00fe70e7a648663a8ee4161a635911fbb23a7d7680317e12629454a12843869e",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_dataset_profile_worker.py",
+      "bytes": 4346,
+      "sha256": "0668f30b8dad24c28d4424fb3c95e0eab4fff53f3819a7277f2b565ec1e0eac1",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_tokenizer_profile_worker.py",
+      "bytes": 3064,
+      "sha256": "e144e545a244eb326c47af988a654b27cfad4ce0ff274d866236d1a56313b634",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_local_components_worker.py",
+      "bytes": 3770,
+      "sha256": "1e923a04660b89eec02778d06dcedd63415aa9a8838599fb710a73d0b31abaaa",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_execution_readiness_worker.py",
+      "bytes": 7518,
+      "sha256": "3b25df8af31fa94778fec5cb2cea33fcd2dc48fdbe2ad19f06835fa848aa8b6e",
+      "attribution": null
+    },
+    {
+      "path": "tools/trainer_runtime_health_worker.py",
+      "bytes": 9601,
+      "sha256": "fc7fc894387857150b7365d6343eb8bdda32082e3675ac8237da5db042e84620",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_anima_qualification.json",
+      "bytes": 1373,
+      "sha256": "3d179e00268f066f9923841f7f5eeab9f8c8762cd0857567c448566d770ea158",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_anima_native_evidence.json",
+      "bytes": 4289,
+      "sha256": "e3e3d0f6e873ef9df047fc56c04c649f93908ec2ef1a6aed053d0b2deeac2a75",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_validation_profile.json",
+      "bytes": 382,
+      "sha256": "926522886f121e93de36543be945503de21017cd623b8987e66226e593e96f9b",
+      "attribution": null
+    },
+    {
+      "path": "tools/training_validation_evidence.json",
+      "bytes": 2884,
+      "sha256": "8039b3df0fff263a9e6e9fef2d8628577648af1e1bfab54ef1ed0c53ba1757de",
+      "attribution": null
+    }
+  ]
+}

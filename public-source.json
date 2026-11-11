@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 989,
+  "allowlisted_source_file_count": 1141,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1614,8 +1614,8 @@
       "size_bytes": 34408
     },
     "core/training_continuation.py": {
-      "sha256": "c6a550ebe48f2e20d53babaf5656ec7f77764a73db2b63e0fb5533864d7765c5",
-      "size_bytes": 21311
+      "sha256": "3804dbdab302a17c062c51543f619b7c7c42416b87dc99c6ddda4c038bed9955",
+      "size_bytes": 21926
     },
     "core/training_continuation_execution.py": {
       "sha256": "091f62af9ed35f261bccf17f5eea19b900a8b197da4074644a2f7d4e5beaa188",
@@ -3993,6 +3993,486 @@
       "sha256": "f7161af6f6ae0d02bd14671f0926e2615bb4be791138fd80ecf5b213d5e03162",
       "size_bytes": 62717
     },
+    "tools/trainer-sources/sd-scripts/LICENSE.md": {
+      "sha256": "faeb63342ddf1231a3ed1abd8c64c98f5d9c24388ce9b931b081f8bb557d84d7",
+      "size_bytes": 11543
+    },
+    "tools/trainer-sources/sd-scripts/library/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    "tools/trainer-sources/sd-scripts/library/accelerator_setup.py": {
+      "sha256": "6f6379201ca3e3bb94e854f735985e7551d32deecf0526d4edeccd4468236f69",
+      "size_bytes": 7570
+    },
+    "tools/trainer-sources/sd-scripts/library/adafactor_fused.py": {
+      "sha256": "9af7dc687028407c83aaba9d9c5e4e163d5d8581c2f58b3d56c1ec57442df95b",
+      "size_bytes": 4514
+    },
+    "tools/trainer-sources/sd-scripts/library/anima_models.py": {
+      "sha256": "a6627340e3d00b3fd6e3ea793249e155634025a367835f7179aaf8a8b4d931cb",
+      "size_bytes": 67609
+    },
+    "tools/trainer-sources/sd-scripts/library/anima_train_utils.py": {
+      "sha256": "0593fd1414c7c6d8e70bf7a77930bfdc1ff4e2239257c2127770973e86865278",
+      "size_bytes": 29330
+    },
+    "tools/trainer-sources/sd-scripts/library/anima_utils.py": {
+      "sha256": "89a163b0f1b1a5b09bff458603c502dc1baa685389ca370f95ac540f89215bd7",
+      "size_bytes": 12801
+    },
+    "tools/trainer-sources/sd-scripts/library/args.py": {
+      "sha256": "b16ae25a0773ead49e91247830f575826e8304faa1d8e4b110a0e90d81d2e917",
+      "size_bytes": 60057
+    },
+    "tools/trainer-sources/sd-scripts/library/attention.py": {
+      "sha256": "452224af3f504ef5c4bf22102623b26f54b305428513e93ba5d1723126272449",
+      "size_bytes": 11677
+    },
+    "tools/trainer-sources/sd-scripts/library/attention_processors.py": {
+      "sha256": "cccb25811f0a2ee86d0abd2d61a560423dd4841e3ef59b5b2176a8904a3fd08d",
+      "size_bytes": 7924
+    },
+    "tools/trainer-sources/sd-scripts/library/caching.py": {
+      "sha256": "7f4e8fc8edad33c795f0369a7cbb093768e7547284f852845d3530ab2ce108cc",
+      "size_bytes": 7986
+    },
+    "tools/trainer-sources/sd-scripts/library/checkpoint_io.py": {
+      "sha256": "df230cfc6f14525305117faa58d9341bc63cad718c1fe9eef36bbf0153ea695c",
+      "size_bytes": 13368
+    },
+    "tools/trainer-sources/sd-scripts/library/chroma_models.py": {
+      "sha256": "365a5fb231a0d7a5b358c19217d2c0a10c4c1bc09deeffb8a9ca0451314657e8",
+      "size_bytes": 28861
+    },
+    "tools/trainer-sources/sd-scripts/library/compile_utils.py": {
+      "sha256": "21ffa1605dcea5d35d66361d86493344e72ec27252a4d51d5b73546db8a377aa",
+      "size_bytes": 5068
+    },
+    "tools/trainer-sources/sd-scripts/library/config_util.py": {
+      "sha256": "88644d86437728cfde6bfaf55cca7c2bca81d5141867614f4488f542ccd4336f",
+      "size_bytes": 29319
+    },
+    "tools/trainer-sources/sd-scripts/library/controlnet_dataset.py": {
+      "sha256": "b220541d264ac9d9b3c78bb3822db0cf632db1f7e514f8589f2f50cac0c1db63",
+      "size_bytes": 9831
+    },
+    "tools/trainer-sources/sd-scripts/library/custom_offloading_utils.py": {
+      "sha256": "ed5c5955ad4266f0c882cb2c126cad8c87b7692e40e118d1621fac952eb54296",
+      "size_bytes": 13645
+    },
+    "tools/trainer-sources/sd-scripts/library/custom_train_functions.py": {
+      "sha256": "1b465ca7f73f80a7fe19d4be376e116700074e6d6834630e9d213c01f06c923f",
+      "size_bytes": 22630
+    },
+    "tools/trainer-sources/sd-scripts/library/dataset.py": {
+      "sha256": "d5c98f113f86233490195e3f68332a74043d012b0ed9cb15914e8d31f3074f5a",
+      "size_bytes": 69866
+    },
+    "tools/trainer-sources/sd-scripts/library/deepspeed_utils.py": {
+      "sha256": "6c504aaac9f1a33a398ecb608787769ffb541143299f2bc4a29e7bec63f27fe8",
+      "size_bytes": 7107
+    },
+    "tools/trainer-sources/sd-scripts/library/device_utils.py": {
+      "sha256": "7448b882dcf51f01358ab4531e925d5911e25f234506b1d49d1965a0a9c6cc73",
+      "size_bytes": 2788
+    },
+    "tools/trainer-sources/sd-scripts/library/dreambooth_dataset.py": {
+      "sha256": "049e05a17b273ef25703498360d45eae085c5cdb958ed05327deacae98d42c44",
+      "size_bytes": 17851
+    },
+    "tools/trainer-sources/sd-scripts/library/finetuning_dataset.py": {
+      "sha256": "faee0b2791f71e3f31bcb537fe7b94bc19a3d50c533c43f16ef2e3a7b8f67950",
+      "size_bytes": 11985
+    },
+    "tools/trainer-sources/sd-scripts/library/flux_models.py": {
+      "sha256": "4d8a3b8aa8fe47c65dc3640214350e5bcbfe5caafd2cdf4e9c1896344f059c06",
+      "size_bytes": 50674
+    },
+    "tools/trainer-sources/sd-scripts/library/flux_train_utils.py": {
+      "sha256": "49963571d52faa4fb5ba5928fc53144911b542f8ef4793c083565c4a86584937",
+      "size_bytes": 32509
+    },
+    "tools/trainer-sources/sd-scripts/library/flux_utils.py": {
+      "sha256": "9c660ec69ec5d970ed99cce3ae41585a7973db84cadec858f1ca1e7bd91709ac",
+      "size_bytes": 23527
+    },
+    "tools/trainer-sources/sd-scripts/library/fp8_optimization_utils.py": {
+      "sha256": "d64805990b74a3feaca813972b4092ca48af626a6d33c3d3311891a1f2e2f299",
+      "size_bytes": 20561
+    },
+    "tools/trainer-sources/sd-scripts/library/hidden_states.py": {
+      "sha256": "cdbf77c0e8c35488dcbc9a14623bf7c73e512321864acd314d01feeac5b9af56",
+      "size_bytes": 9729
+    },
+    "tools/trainer-sources/sd-scripts/library/huggingface_util.py": {
+      "sha256": "a5d59698828d1ea16ba6b95429148fda98452194f4910c978ada12878aa2afaa",
+      "size_bytes": 3182
+    },
+    "tools/trainer-sources/sd-scripts/library/hunyuan_image_models.py": {
+      "sha256": "5ad56ea7c75aad0fdafb9e92549366db7018668a6d8ab24e45374799df8052a4",
+      "size_bytes": 19798
+    },
+    "tools/trainer-sources/sd-scripts/library/hunyuan_image_modules.py": {
+      "sha256": "554d51b317fc940b303882d5a6e55e93b2720c38ec3888cc0159121dfedebf6f",
+      "size_bytes": 32340
+    },
+    "tools/trainer-sources/sd-scripts/library/hunyuan_image_text_encoder.py": {
+      "sha256": "2d940f764c484b29904668ab5e3c52753737b62183db5dc244266e6de19e1ab5",
+      "size_bytes": 51234
+    },
+    "tools/trainer-sources/sd-scripts/library/hunyuan_image_utils.py": {
+      "sha256": "aa268a55162de94b3cde09863ffcdad979a2eccb6359ccf13a15febeaac0f3e3",
+      "size_bytes": 17800
+    },
+    "tools/trainer-sources/sd-scripts/library/hunyuan_image_vae.py": {
+      "sha256": "cb3703330090fe5f46c298c908c9a8433773aa1a4638663942ed3590f9ebdea4",
+      "size_bytes": 29529
+    },
+    "tools/trainer-sources/sd-scripts/library/hypernetwork.py": {
+      "sha256": "fd6771795222d97f96bda91fecb1136469d4d077db208b4b5494cfd76bad753c",
+      "size_bytes": 6965
+    },
+    "tools/trainer-sources/sd-scripts/library/ipex/__init__.py": {
+      "sha256": "d3a49e2764de86868353a55976686b7aecb8cec5d1db77897a61e2f85a136541",
+      "size_bytes": 11774
+    },
+    "tools/trainer-sources/sd-scripts/library/ipex/attention.py": {
+      "sha256": "bca23921992b766f4c86c02b8e82fb3767c4401c1cba32a7a18f1085023cc8d7",
+      "size_bytes": 6483
+    },
+    "tools/trainer-sources/sd-scripts/library/ipex/diffusers.py": {
+      "sha256": "0170dc7a3d42314842c9d64a7c8af838b530a631074fb693445866c729b07f76",
+      "size_bytes": 5526
+    },
+    "tools/trainer-sources/sd-scripts/library/ipex/hijacks.py": {
+      "sha256": "d784e7329a0a6a796dfb7444911554a155b6ba335ae6513b8398acacf8b912b3",
+      "size_bytes": 21051
+    },
+    "tools/trainer-sources/sd-scripts/library/jpeg_xl_util.py": {
+      "sha256": "970c8439b8fa710dfc2fd79815eb0097af48077ef99244880548366a6717dbf6",
+      "size_bytes": 6781
+    },
+    "tools/trainer-sources/sd-scripts/library/leco_train_util.py": {
+      "sha256": "1ba4b5fc86b1b70bf0fe29efb1ba9714287fe38d6c5b20295bcfd818d4971d6e",
+      "size_bytes": 19686
+    },
+    "tools/trainer-sources/sd-scripts/library/logging_util.py": {
+      "sha256": "fef115bc66db341dc75a29361f132e2e8bdd3d65b72617f1d4a9d4af40a53267",
+      "size_bytes": 2619
+    },
+    "tools/trainer-sources/sd-scripts/library/lora_utils.py": {
+      "sha256": "98f70c7f4e5eae231e21b500391051158ce9ff798d3558e6f98019d748ed13e1",
+      "size_bytes": 13806
+    },
+    "tools/trainer-sources/sd-scripts/library/loss.py": {
+      "sha256": "b0d43406b2a6d4798a7f363ffc026be6a0172d66e744738d6e7bafcafa07a0fc",
+      "size_bytes": 6064
+    },
+    "tools/trainer-sources/sd-scripts/library/lpw_stable_diffusion.py": {
+      "sha256": "2fe93875e4e15bcdd7c8e1de1fce8aa44e5eaacc04f068ac8bdafe7bcf39340f",
+      "size_bytes": 64752
+    },
+    "tools/trainer-sources/sd-scripts/library/lumina_models.py": {
+      "sha256": "2bcec1463bc6f9efe99d047999bf538472aa2ecbdbf36a885eb19bba41bf4551",
+      "size_bytes": 49673
+    },
+    "tools/trainer-sources/sd-scripts/library/lumina_train_util.py": {
+      "sha256": "1727a6990922a89102038d7a32675cc16969af23e2d24dd2e77c9e74628f934e",
+      "size_bytes": 42725
+    },
+    "tools/trainer-sources/sd-scripts/library/lumina_util.py": {
+      "sha256": "dbdcf5149af76ec405c6a3c7c42a44b1fc82146974c737bfc6626ecf6f7390bd",
+      "size_bytes": 9966
+    },
+    "tools/trainer-sources/sd-scripts/library/mask_generator.py": {
+      "sha256": "5231f3ea82fe679236407a9ce7d41e2402477d45a6fab64b9b2beabf7e6130ea",
+      "size_bytes": 13932
+    },
+    "tools/trainer-sources/sd-scripts/library/model_io.py": {
+      "sha256": "4250cd2d1a786afc529b1dc5e9660de005941cf9d7f068dfd6684802b88e88bc",
+      "size_bytes": 15929
+    },
+    "tools/trainer-sources/sd-scripts/library/model_util.py": {
+      "sha256": "0166201f5e5f659c188908e6aa8d1e1a49aa6ffc2e29e29890ee5d0e7627fe13",
+      "size_bytes": 59955
+    },
+    "tools/trainer-sources/sd-scripts/library/optimizer.py": {
+      "sha256": "1787bbbbe118197f34af72c5cae19d615fdceac012cb2db451d32903cf750093",
+      "size_bytes": 30812
+    },
+    "tools/trainer-sources/sd-scripts/library/original_unet.py": {
+      "sha256": "ac76af96997761c500f159a2e44a9e7273a5b012bf180ca855c0900c371627a2",
+      "size_bytes": 72559
+    },
+    "tools/trainer-sources/sd-scripts/library/qwen_image_autoencoder_kl.py": {
+      "sha256": "c441a903742e89fa28eac62b716bf691a648ad498714582313a06f188b35bbb4",
+      "size_bytes": 73175
+    },
+    "tools/trainer-sources/sd-scripts/library/qwen_image_autoencoder_kl_2d.py": {
+      "sha256": "822232844adb767e799d84287ea5e11bbbbe766bfc0a01fedb2fb0f6e1e777f2",
+      "size_bytes": 19625
+    },
+    "tools/trainer-sources/sd-scripts/library/safetensors_utils.py": {
+      "sha256": "817083e9283555e3bce64ea86f7256c904de5b6ec29e318d654d78733fc88d31",
+      "size_bytes": 20566
+    },
+    "tools/trainer-sources/sd-scripts/library/sai_model_spec.py": {
+      "sha256": "dfd43c6c50aaf00dcca1b1395cd4d703252002bc2233d0f3548ea0a10105d472",
+      "size_bytes": 24294
+    },
+    "tools/trainer-sources/sd-scripts/library/sampling.py": {
+      "sha256": "3edad1230d87b61678ab58463a9b42565319165e51b3ee2ccbb6fe89f0e8ed62",
+      "size_bytes": 19910
+    },
+    "tools/trainer-sources/sd-scripts/library/sd3_models.py": {
+      "sha256": "ee822e722f39491d345935270bd0d95167cada4d1c22da480c917ff2af7aa3c9",
+      "size_bytes": 56071
+    },
+    "tools/trainer-sources/sd-scripts/library/sd3_train_utils.py": {
+      "sha256": "6ae94f89d62422b1ba24725ac1b292a68375f191eadc48ad53da9c0d1ef41be9",
+      "size_bytes": 38122
+    },
+    "tools/trainer-sources/sd-scripts/library/sd3_utils.py": {
+      "sha256": "aa390ee5e40aa3dfa6d4ab80ce2a00abff0b31e06f68988df99657aa5131e0a6",
+      "size_bytes": 10933
+    },
+    "tools/trainer-sources/sd-scripts/library/sdxl_lpw_stable_diffusion.py": {
+      "sha256": "1808d72cca97289fdd6a56e7a2e0c4f212e16d76de8c97a11bdd0f689e03a18a",
+      "size_bytes": 66847
+    },
+    "tools/trainer-sources/sd-scripts/library/sdxl_model_util.py": {
+      "sha256": "624a1516b4126665ab2eaba4b69aca6b1d9d67486f0de73ae4ac1e6baace9c09",
+      "size_bytes": 23553
+    },
+    "tools/trainer-sources/sd-scripts/library/sdxl_original_control_net.py": {
+      "sha256": "c838b41b6dc005da1bccb5eedf5888196a45f31fcc28c84af8109bcffc7b3ddd",
+      "size_bytes": 10277
+    },
+    "tools/trainer-sources/sd-scripts/library/sdxl_original_unet.py": {
+      "sha256": "1b76a34f77477d9415e574dcda97228a1324c46618375e72bdaf86587b5fe86d",
+      "size_bytes": 47076
+    },
+    "tools/trainer-sources/sd-scripts/library/sdxl_train_util.py": {
+      "sha256": "16af4d1cd01154ff4a31e9c94adf760f866177453c8838ad2c4da7687d5dab8a",
+      "size_bytes": 15475
+    },
+    "tools/trainer-sources/sd-scripts/library/slicing_vae.py": {
+      "sha256": "63798a8698fc2c59f0af77d46f8aa7dcb7e8159ca8c9804beffffd9b733d650f",
+      "size_bytes": 25081
+    },
+    "tools/trainer-sources/sd-scripts/library/strategy_anima.py": {
+      "sha256": "058b4c8714f51e8c6fead211eaafc201e7d930f6226b6f02d247b1faf0e1ce20",
+      "size_bytes": 12444
+    },
+    "tools/trainer-sources/sd-scripts/library/strategy_base.py": {
+      "sha256": "44790a6c9f94c94e5c3f228dd617a42b1bcd87958fe0001f026049088ddd26dc",
+      "size_bytes": 26724
+    },
+    "tools/trainer-sources/sd-scripts/library/strategy_flux.py": {
+      "sha256": "ca90686dc86dc70e08dbb553613c11480e0817103a80bb8d8342fb55a5c82532",
+      "size_bytes": 11645
+    },
+    "tools/trainer-sources/sd-scripts/library/strategy_hunyuan_image.py": {
+      "sha256": "476a2070b77eff2316c6acf2878632ebddd5ae6c16e196b95c4363cb7ee87b56",
+      "size_bytes": 9570
+    },
+    "tools/trainer-sources/sd-scripts/library/strategy_lumina.py": {
+      "sha256": "a505b18291c398709d37c5a3f94bba1f1a44cfaae870bbf4181b823179463f3e",
+      "size_bytes": 12857
+    },
+    "tools/trainer-sources/sd-scripts/library/strategy_sd.py": {
+      "sha256": "1dd72fbf9bac0cabe9457272f2f3f0aba0784f2e92b82f99297fdf5dc3196c51",
+      "size_bytes": 8870
+    },
+    "tools/trainer-sources/sd-scripts/library/strategy_sd3.py": {
+      "sha256": "fff42450b7c86ab8ceb5b0f660886f5bb34dce7deff364e6d7dafd56ce229755",
+      "size_bytes": 19552
+    },
+    "tools/trainer-sources/sd-scripts/library/strategy_sdxl.py": {
+      "sha256": "2190d42198ecd4031ec3639dfaa6577c1289af1a7731527e9b3cb9f1fcad5edd",
+      "size_bytes": 14632
+    },
+    "tools/trainer-sources/sd-scripts/library/subset.py": {
+      "sha256": "a83def532dda11797b065ec7d28b43faf17d1d4130e9816dcad242128b03174e",
+      "size_bytes": 9695
+    },
+    "tools/trainer-sources/sd-scripts/library/timestep_visualization.py": {
+      "sha256": "1ce921663c1e492b4c341c7ae202b4e7a1bc3915671fafcfcd7d0d6eab03ecf1",
+      "size_bytes": 5758
+    },
+    "tools/trainer-sources/sd-scripts/library/train_util.py": {
+      "sha256": "cdba704b226f8acbf3cbe44835dcc8d1112b6cda1c58d90184ae70ccf307effc",
+      "size_bytes": 7296
+    },
+    "tools/trainer-sources/sd-scripts/library/utils.py": {
+      "sha256": "17241b7bdfe50868bddd2c4f75cfdbb7419507afaf24499f8b360aa783531721",
+      "size_bytes": 22193
+    },
+    "tools/trainer-sources/sd-scripts/networks/check_lora_weights.py": {
+      "sha256": "db5e6583e88f4f62d2650d3f4a9f514ddda54883f23291e053bc815166b50df4",
+      "size_bytes": 1536
+    },
+    "tools/trainer-sources/sd-scripts/networks/control_net_lllite.py": {
+      "sha256": "835622f879e9aafb2b5601e16298c241b65010068ea08831e8ec95192b2e1cda",
+      "size_bytes": 19611
+    },
+    "tools/trainer-sources/sd-scripts/networks/control_net_lllite_anima.py": {
+      "sha256": "31b7d3c0e64a6e8f6dcf1ec184085ef54253716d624745d6ca0435efaa14f845",
+      "size_bytes": 44894
+    },
+    "tools/trainer-sources/sd-scripts/networks/control_net_lllite_for_train.py": {
+      "sha256": "c40bfcc66222d2e848ac69e2d11523865642d6f6eec4bb9ac80c421221959cf1",
+      "size_bytes": 21435
+    },
+    "tools/trainer-sources/sd-scripts/networks/convert_anima_lora_to_comfy.py": {
+      "sha256": "102d2700710740d364532988acc839acea8982e85a315e0f9568bb02a1457bfb",
+      "size_bytes": 7798
+    },
+    "tools/trainer-sources/sd-scripts/networks/convert_flux_lora.py": {
+      "sha256": "c6687c730cdbf9b324888c4bec3f08f2160a58c51f051e2b9c339b79baa2953b",
+      "size_bytes": 20523
+    },
+    "tools/trainer-sources/sd-scripts/networks/convert_hunyuan_image_lora_to_comfy.py": {
+      "sha256": "43fd18c430e45d07c546c435de346dacc56cac16b912909f2c1c88f35b2f3f6d",
+      "size_bytes": 2834
+    },
+    "tools/trainer-sources/sd-scripts/networks/dylora.py": {
+      "sha256": "c5af9f474e27d1664f70c4a72d8d26deb1000d71665cd47bfcbb0a56157d334d",
+      "size_bytes": 21847
+    },
+    "tools/trainer-sources/sd-scripts/networks/extract_lora_from_dylora.py": {
+      "sha256": "90781d5ebac830742bd588058f049209f9b6048961728743a461fa9994867595",
+      "size_bytes": 4439
+    },
+    "tools/trainer-sources/sd-scripts/networks/extract_lora_from_models.py": {
+      "sha256": "bdacdef284ad840d6cbe9e35163bab2d9e027d0733ca3b25d6f357405e52c389",
+      "size_bytes": 14403
+    },
+    "tools/trainer-sources/sd-scripts/networks/flux_extract_lora.py": {
+      "sha256": "29f1223f15993801ae306eb30eb0f50568ce1d388d62be2cc158160167d0e8ba",
+      "size_bytes": 7793
+    },
+    "tools/trainer-sources/sd-scripts/networks/flux_merge_lora.py": {
+      "sha256": "81e055bed4352ce0825af22ee5ade09ec6010cee8c508c2ad11a99a874905f3c",
+      "size_bytes": 34412
+    },
+    "tools/trainer-sources/sd-scripts/networks/loha.py": {
+      "sha256": "6e4daa17979ad22e6afd894943eab0ed02c576f8744d516925fa0b9c0ce99deb",
+      "size_bytes": 24885
+    },
+    "tools/trainer-sources/sd-scripts/networks/lokr.py": {
+      "sha256": "2e9aa984d2fdf1a87bac432d5b2ad7cd8dae3570a07f71151b104332f5a1dbd8",
+      "size_bytes": 24499
+    },
+    "tools/trainer-sources/sd-scripts/networks/lora.py": {
+      "sha256": "6001008184bc843f32b9211145d1167cec01d322182a2a7c62024d4b39ea13cc",
+      "size_bytes": 60417
+    },
+    "tools/trainer-sources/sd-scripts/networks/lora_anima.py": {
+      "sha256": "e275ff53a583e265ba4a41fa389c7b4f085123344c8c5f43fbc4bc00d5e3396e",
+      "size_bytes": 34747
+    },
+    "tools/trainer-sources/sd-scripts/networks/lora_diffusers.py": {
+      "sha256": "7de55b9f6b84863fabf02275344318effb733f3d4e6da1d0d50fd791321e9b28",
+      "size_bytes": 26524
+    },
+    "tools/trainer-sources/sd-scripts/networks/lora_fa.py": {
+      "sha256": "8b744d8eb58de5833b06b1ac5596ccde4bf77f1a40a69a415c0baa25c9eaf95b",
+      "size_bytes": 52084
+    },
+    "tools/trainer-sources/sd-scripts/networks/lora_flux.py": {
+      "sha256": "a9776337cb2645da90dc5aaa5a5c561d7147a5e7fc4ac79ea337fb8ba9fb0949",
+      "size_bytes": 62802
+    },
+    "tools/trainer-sources/sd-scripts/networks/lora_hunyuan_image.py": {
+      "sha256": "b61c7ceb66ea249a7351b09d7b9a7fa3597296173927623e017bf4e13977883d",
+      "size_bytes": 15134
+    },
+    "tools/trainer-sources/sd-scripts/networks/lora_interrogator.py": {
+      "sha256": "9f7c4410f2fdc98abe5c8468c963f6cc82909aee5887f8eff32cb2c37c5006eb",
+      "size_bytes": 6250
+    },
+    "tools/trainer-sources/sd-scripts/networks/lora_lumina.py": {
+      "sha256": "afd637693611c9c68170e26f2f2f58ee498945d472b297c6ab9ea39c9b5e8e6d",
+      "size_bytes": 44942
+    },
+    "tools/trainer-sources/sd-scripts/networks/lora_sd3.py": {
+      "sha256": "aa46c1e8de7f609d8ba97a52f97ea6b46bfce9576ec0741c4bc4576b6655e6d1",
+      "size_bytes": 36582
+    },
+    "tools/trainer-sources/sd-scripts/networks/merge_lora.py": {
+      "sha256": "334410e37b6a3624d61add7bdbc94ae1c2b4f58fe5f7bc21a8e799de3656df95",
+      "size_bytes": 15257
+    },
+    "tools/trainer-sources/sd-scripts/networks/network_base.py": {
+      "sha256": "9a4c816c8e75d6e563cadd24220e03b6fdcb5744a446a8dc8544caacc007f9e7",
+      "size_bytes": 24170
+    },
+    "tools/trainer-sources/sd-scripts/networks/oft.py": {
+      "sha256": "9f3c29840c79c49eaeb9ef401e178996414d2ecf373fb1d82489911393a78379",
+      "size_bytes": 16758
+    },
+    "tools/trainer-sources/sd-scripts/networks/oft_flux.py": {
+      "sha256": "b34100f6b7eda8a0a8a4b32ee8759ada14eff62e103c71dd7137066650f6bd67",
+      "size_bytes": 17185
+    },
+    "tools/trainer-sources/sd-scripts/networks/resize_lora.py": {
+      "sha256": "3530cede242bf5bb2c9b431a09c103661b63cd7c65e9d8f1b3f0e2c0090e1bf5",
+      "size_bytes": 16502
+    },
+    "tools/trainer-sources/sd-scripts/networks/sdxl_merge_lora.py": {
+      "sha256": "7d4cbce1b5455295b3720b2a1ab1db5f29f3b2fec8c7191e0706426baafeef99",
+      "size_bytes": 21458
+    },
+    "tools/trainer-sources/sd-scripts/networks/svd_merge_lora.py": {
+      "sha256": "108a5c8818f1cbb39d5fbbce9707b1eb9eddeb717cd48493b96e73540ac7d018",
+      "size_bytes": 18269
+    },
+    "tools/trainer-sources/sd-scripts/sdxl_train_network.py": {
+      "sha256": "a0e415533fd9e39ad41d3fafeecc76794f97f612143cc3d356b7c0f70e8466be",
+      "size_bytes": 7894
+    },
+    "tools/trainer-sources/sd-scripts/train_network.py": {
+      "sha256": "0ea59d6da63b67c84a7d3a929af1b19ffe8893629416b4b743b57b33c85d2ffe",
+      "size_bytes": 100308
+    },
+    "tools/trainer-tokenizers/sdxl/tokenizer/merges.txt": {
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "size_bytes": 524619
+    },
+    "tools/trainer-tokenizers/sdxl/tokenizer/special_tokens_map.json": {
+      "sha256": "c4864a9376a8401918425bed71fc14fc0e81f9b59ec45c1cf96cccb2df508eac",
+      "size_bytes": 472
+    },
+    "tools/trainer-tokenizers/sdxl/tokenizer/tokenizer_config.json": {
+      "sha256": "19d7b034cb0cc3ce9766c2231373ab8aa8991fc72e2c8f76558bfaae3de0d563",
+      "size_bytes": 737
+    },
+    "tools/trainer-tokenizers/sdxl/tokenizer/vocab.json": {
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "size_bytes": 1059962
+    },
+    "tools/trainer-tokenizers/sdxl/tokenizer_2/merges.txt": {
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "size_bytes": 524619
+    },
+    "tools/trainer-tokenizers/sdxl/tokenizer_2/special_tokens_map.json": {
+      "sha256": "f118ab3a983206e4f32583448de6bd6aae4ee21869135cef1f5848a753cdaab6",
+      "size_bytes": 460
+    },
+    "tools/trainer-tokenizers/sdxl/tokenizer_2/tokenizer_config.json": {
+      "sha256": "c9d23941f76a41cbd50eda9290f57be7828f0a7a677939e9ef181f7e12bd1bdf",
+      "size_bytes": 725
+    },
+    "tools/trainer-tokenizers/sdxl/tokenizer_2/vocab.json": {
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "size_bytes": 1059962
+    },
+    "tools/trainer_runtime_catalog.json": {
+      "sha256": "2da6d25b3ae2ded6b4b47aaba8901d09e51c8a2b037539a004f87bfbf0e00bc2",
+      "size_bytes": 37194
+    },
     "tools/trainer_runtime_health_worker.py": {
       "sha256": "fc7fc894387857150b7365d6343eb8bdda32082e3675ac8237da5db042e84620",
       "size_bytes": 9601
@@ -4000,6 +4480,14 @@
     "tools/trainer_runtime_profile.json": {
       "sha256": "895dc409c144e0adc756f233a5998b7197c7bf1cf8872d839e24aee7bf85bc18",
       "size_bytes": 8035262
+    },
+    "tools/training_anima_native_evidence.json": {
+      "sha256": "e3e3d0f6e873ef9df047fc56c04c649f93908ec2ef1a6aed053d0b2deeac2a75",
+      "size_bytes": 4289
+    },
+    "tools/training_anima_qualification.json": {
+      "sha256": "3d179e00268f066f9923841f7f5eeab9f8c8762cd0857567c448566d770ea158",
+      "size_bytes": 1373
     },
     "tools/training_dataset_package.json": {
       "sha256": "b4f8e7a7c3bc2d82189ea8e3b2e77bcbabab9f67c7404863549b24bf20d610eb",
@@ -4009,17 +4497,45 @@
       "sha256": "0668f30b8dad24c28d4424fb3c95e0eab4fff53f3819a7277f2b565ec1e0eac1",
       "size_bytes": 4346
     },
+    "tools/training_distribution_assets.json": {
+      "sha256": "95acfcc1411f798983c11d5c2f19f4a2ee220c1c30ca74ea37f00c1156038c64",
+      "size_bytes": 71094
+    },
+    "tools/training_execution_profile.json": {
+      "sha256": "5ca323713c348e2d463ddfcfbdddba0b5fdbf1da8e61a7a357ff0cceaca6e238",
+      "size_bytes": 5206
+    },
+    "tools/training_execution_qualification.json": {
+      "sha256": "27c34852900f67b1593a1ad92ea2c6955f8a3d4f669a5f4ea0e091c911fbc485",
+      "size_bytes": 8888
+    },
     "tools/training_execution_readiness_worker.py": {
       "sha256": "3b25df8af31fa94778fec5cb2cea33fcd2dc48fdbe2ad19f06835fa848aa8b6e",
       "size_bytes": 7518
+    },
+    "tools/training_execution_tensor_specs.json": {
+      "sha256": "f985faf1932c4f57cc847127778692efbc8fa7d10a1c38c38d59647e47218df3",
+      "size_bytes": 228876
     },
     "tools/training_execution_worker.py": {
       "sha256": "5386562a8dd487a813abf61b973de9a3569cc5adc66acf68f6b500fe728e6eb6",
       "size_bytes": 25693
     },
+    "tools/training_local_components_worker.py": {
+      "sha256": "1e923a04660b89eec02778d06dcedd63415aa9a8838599fb710a73d0b31abaaa",
+      "size_bytes": 3770
+    },
     "tools/training_preflight_worker.py": {
       "sha256": "7f02943bf41d760739d68454742c13ca919a0ebf875eadd2560118d978b40958",
       "size_bytes": 20448
+    },
+    "tools/training_restricted_loading_probe.py": {
+      "sha256": "00fe70e7a648663a8ee4161a635911fbb23a7d7680317e12629454a12843869e",
+      "size_bytes": 5247
+    },
+    "tools/training_restricted_stage_worker.py": {
+      "sha256": "7355ac6fc81495ce05812f943d271455d730a52342e3519db438419174bcd9f3",
+      "size_bytes": 2594
     },
     "tools/training_runtime_probe.py": {
       "sha256": "ac4b82610ed3afe39b9c216a620c0dcebe1a358c88d912b06fcb11cb5cc2e585",
@@ -4032,6 +4548,18 @@
     "tools/training_sdxl_layout.json": {
       "sha256": "3d8df5797c4fe2cde8efcd18fe4402ff2375b22a459733c5d631b0271d390c59",
       "size_bytes": 207205
+    },
+    "tools/training_tokenizer_profile_worker.py": {
+      "sha256": "e144e545a244eb326c47af988a654b27cfad4ce0ff274d866236d1a56313b634",
+      "size_bytes": 3064
+    },
+    "tools/training_validation_evidence.json": {
+      "sha256": "8039b3df0fff263a9e6e9fef2d8628577648af1e1bfab54ef1ed0c53ba1757de",
+      "size_bytes": 2884
+    },
+    "tools/training_validation_profile.json": {
+      "sha256": "926522886f121e93de36543be945503de21017cd623b8987e66226e593e96f9b",
+      "size_bytes": 382
     },
     "tools/training_verification_worker.py": {
       "sha256": "347399a0512db30103e59562c46d98590e629a3740396c5492f11b3e989cef63",

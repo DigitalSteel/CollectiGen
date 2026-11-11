@@ -52,6 +52,7 @@ CODE_HASHES = {
         # Reviewed pack identities; existing single-file training resolution is retained.
         '217d3326812b396b2118d5149a28b599db038e3368c01ba27c5992c11247f49b',
         'bf538a1a4d935f72fb40cc7684b74c369c43f47c5dbe64bd99e44661bb02ad96',
+        'c5de7023bb45aa9cee458d4cd914a07446f08415d6f94bdc335d85ff1f38f2a9',
     ],
     'managed_model_identity.py': [
         '02e3144b1d6ac97050813b611825f5b2d231f763b9ca2a1ce192d9ea4e91cf24',
@@ -64,6 +65,7 @@ CODE_HASHES = {
 
         '2996955c98cdf6f94fdd96aae860f6343fa2fa04afb41ff7356043dabb262097',
         '8a7daf3d2e74e96359baec95bb587f92cf4d907ebb265cfb23e4c09cacaad4a9',
+        '61ce3b30374c7b454c7bf7f7f3b4093f2ece708a5e45ff6dc5c6162e18f69bf5',
     ],
     'training_restricted_loading_contract.py': [
         '0032817951aba8261def4981c91d2265176d2a266738ceb107180d772eb08801',
@@ -88,6 +90,7 @@ CODE_HASHES = {
     'training_dataset_preparation.py': [
         '75181cc40a5effc6b180573ad02fad696ec4f51dcb1667b37dbe8e55f1110601',
         '97156e9a0d793b1ca8c46ed0b3e0c8ad6f11f69642ef4e88777daabfa1cfb0ac',
+        '6008fbdabe3210b4a1ec1d2cb6cf981b17035050f14d7538b7c1176275c7c818',
     ],
     'training_configuration.py': [
         # BUG284 reviewed source; fresh native baseline and trial proof retained.
@@ -99,6 +102,7 @@ CODE_HASHES = {
         # Portable optional companion evidence; executable consumers hold unsupported sets.
         '3f62fd113429f7262882f0c1d3259a95cb351a8ea7b14d1a83633e9cb9959cc7',
         'eff659a6fcf78f0c77cf912e3e5ffb9521b8f354ff5d23e18fc4e88d1fa85f17',
+        '4c12f1d2c7deddaea80d853693f3fb9c416c3ef768467bcf0e01404e78defa05',
     ],
     'training_tokenizer_contract.py': [
         '66cb6e33648bde6e5308ca720cc485d3cd41230518c46be78a712bd823d3d6cc',
@@ -130,14 +134,17 @@ CODE_HASHES = {
         # Reviewed host-side AI memory release before native process creation.
         'de683de03a62b016356277f3e99437cff5acd061c8d11c0c9ab0ad0758de187a',
         '4dba3328a7621818c697028f6f0612708b50887601767a423a352deaeb084f93',
+        'c5114dde65edd582d8995a83130e2e913920ae3c652fb7654d430a887654102d',
     ],
     'training_process_windows.py': [
         '19827309ca86138f9af0e258575f6771a110362e2e9a6a365b0d7c1b6c51606e',
         '48b77ac43d6c7f71d8c3cf3f90126b73793f0d70f644101a83daf61f1bd7f9aa',
+        '6e57d93200d9c74bc4f4c68aa2f8f302f8db531ab708a3200f3f3473173425c6',
     ],
     'training_file_inventory.py': [
         'ac9ac04ba2acdf7c7df1312651d4b2d06abd50c064a9f7250db3a7c00dfa9593',
         '18e02adda84959e7ea6ce6141b179d8fab21139065cb77e9bbbeab9a7d1707b3',
+        'b312dabad88e489930690321bdfb2ab47bf88bd4babb6644a809647972777782',
     ],
     'training_verification.py': [
         '0b2d3563d3bb696f23fca80423a9ee43eb7d312575f859245d8dfe931bbca00a',
@@ -152,6 +159,7 @@ CODE_HASHES = {
         # Opt-in AI cleanup retains GPU admission and existing recovery ownership.
         '82dd27fb1961f04cec9c05e4c0d3dd1e0cf2e20d64ccf66e33a465feb153bd77',
         'e68b50a1e124c3606076045710966c28bfa6d2dc143b6cbde58ea7b169e083e1',
+        'fcd18eb3ef45a43703f5de1a47dc2fafa0e6cbf8434b2d55cce138f9e3198db1',
     ],
     'training_resume_adapter.py': [
         '2bbed799135641cb01a25903f8bf5749029368a196ea39e162985acf2a3e26a6',
