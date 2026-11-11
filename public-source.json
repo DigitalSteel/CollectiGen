@@ -2774,8 +2774,8 @@
       "size_bytes": 25369
     },
     "qt_app/video_finishing_dialog.py": {
-      "sha256": "16dae7d7cfea380bb7c85bd1b55e5b02f30ad22e4f299fda6007c8e4c408c241",
-      "size_bytes": 25531
+      "sha256": "f566172e14bed4a51bd79361d788129029e06f26170f20e2ac1251ae601c10de",
+      "size_bytes": 27073
     },
     "qt_app/video_generation_dialog.py": {
       "sha256": "bfdcd4f27f79efa51a3820f27c2bc8e296e3eb223873d735e6a8ffbffe39df78",

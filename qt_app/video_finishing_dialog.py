@@ -105,7 +105,8 @@ class VideoFinishingDialog(QDialog):
                                                else "Keep Extracted Frame in Ingest…")
         self.remix_button = QPushButton("Remix Extracted Frame…")
         self.animate_button = QPushButton("Animate Extracted Frame…")
-        self.ingest_button = QPushButton("Review Trimmed Clip in Ingest…")
+        self.ingest_button = QPushButton("Copy Trim Receipt Path" if copy_frame_for_organizer
+                                         else "Review Trimmed Clip in Ingest…")
         self.frame_ingest_button.clicked.connect(self.send_frame_to_ingest)
         self.remix_button.clicked.connect(lambda: self._emit_frame(self.remix_requested))
         self.animate_button.clicked.connect(lambda: self._emit_frame(self.animate_requested))
@@ -113,6 +114,10 @@ class VideoFinishingDialog(QDialog):
         for button in (self.frame_ingest_button, self.remix_button, self.animate_button, self.ingest_button):
             next_actions.addWidget(button)
         layout.addLayout(next_actions)
+        self.original_receipt_button = QPushButton("Copy Original Video Receipt Path")
+        self.original_receipt_button.setVisible(copy_frame_for_organizer)
+        self.original_receipt_button.clicked.connect(lambda: self.send_trim_to_ingest(copy_original=True))
+        layout.addWidget(self.original_receipt_button, 0, Qt.AlignLeft)
         saved = QHBoxLayout()
         self.saved_frame = QComboBox(); self.saved_frame.setAccessibleName("Saved extracted frame")
         self.saved_trim = QComboBox(); self.saved_trim.setAccessibleName("Saved trimmed clip")
@@ -330,6 +335,7 @@ class VideoFinishingDialog(QDialog):
         self.animate_button.setEnabled(ready and self._frame_result is not None)
         self.frame_ingest_button.setEnabled(ready and self._frame_result is not None)
         self.ingest_button.setEnabled(ready and self._trim_result is not None)
+        self.original_receipt_button.setEnabled(ready and self._trim_result is not None)
         self.saved_frame.setEnabled(ready and bool(self._saved_frames))
         self.saved_trim.setEnabled(ready and bool(self._saved_trims))
         self.find_saved_button.setEnabled(ready)
@@ -430,7 +436,7 @@ class VideoFinishingDialog(QDialog):
             self.status.setText("Extracted frame prepared with unreviewed lineage. Review it in Ingest before keeping it.")
         self._run("Prepare extracted frame for Ingest", work, complete, resource="io")
 
-    def send_trim_to_ingest(self):
+    def send_trim_to_ingest(self, *, copy_original=False):
         result = self._trim_result
         if result is None:
             return
@@ -441,7 +447,22 @@ class VideoFinishingDialog(QDialog):
                 runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime)]
         def work(_job):
             return verified_outputs(result.receipt_path)
-        def complete(_outputs):
+        def complete(outputs):
+            if self._copy_frame_for_organizer:
+                from PySide6.QtGui import QGuiApplication
+                output, = outputs
+                if copy_original:
+                    original = output["generation"]["finishing"]["original_output_receipt"]
+                    path = Path(original["path"])
+                    if not path.is_absolute() or path.name != "receipt.json":
+                        raise ValueError("The original Manager video job receipt is unavailable.")
+                    message = "Original receipt path copied. Paste it when Organizer asks for the original Manager video."
+                else:
+                    path = Path(output["output_receipt"]["path"])
+                    message = "Trim receipt path copied. In Organizer, choose Review Manager Result and paste it. Then copy the original receipt path here."
+                QGuiApplication.clipboard().setText(str(path))
+                self.status.setText(message)
+                return
             self.ingest_requested.emit({"receipt_path": str(result.receipt_path),
                 "source_path": str(result.output_path), "verified_outputs": verified_outputs})
             self.status.setText("Trimmed video opened in Ingest for explicit review and copy.")
