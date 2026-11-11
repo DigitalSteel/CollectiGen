@@ -3638,8 +3638,8 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 43800,
-      "sha256": "85ec7ef34cd8cbcf0fa0126e1df9afe7e85079e45ef10cb1097e9a2c074afdf8"
+      "bytes": 43887,
+      "sha256": "831425f2b9e1346e9c698e2357bb733f2322cbcdb2934a477f95e9d487962181"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
