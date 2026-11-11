@@ -3790,8 +3790,8 @@
       "size_bytes": 2249
     },
     "tests/test_manager_distribution_builder.py": {
-      "sha256": "1e61b9400afd6c014c65d671eb7d4cedcbc4a1966045b9000c75068df3002458",
-      "size_bytes": 22355
+      "sha256": "07a8832244de9c7a2355759a61bf55a9f83c142496e14c303be815e75ae2cd7f",
+      "size_bytes": 25373
     },
     "tests/test_manager_production_stage.py": {
       "sha256": "bc53bda9bedd81169f58f48fdc03ff435a8edeaf176eadeb7d92f013fe0a8422",
@@ -3850,8 +3850,8 @@
       "size_bytes": 22164
     },
     "tools/MANAGER_NATIVE_BUILD.md": {
-      "size_bytes": 8891,
-      "sha256": "b1fe02204f878bc7f55c024a09a26d7fc699ccd096475ad82dab710b5d177a79"
+      "size_bytes": 9697,
+      "sha256": "2681b44adbb95b235919d9d037984723eb1f2d13d5c29712cbaf63b739bc8564"
     },
     "tools/Repair-PortableRuntime.ps1": {
       "sha256": "d8f7b4d29bbe52ad542ec14b649907dd6928c440a9fc091791c18ca725462f24",
@@ -3870,8 +3870,8 @@
       "size_bytes": 27445
     },
     "tools/build_manager_distribution.py": {
-      "size_bytes": 23323,
-      "sha256": "042ec539a61738414511a801d2fb81939f77396d6b1bc13b3d540537c88325d7"
+      "size_bytes": 26280,
+      "sha256": "2068f6bc37a32e44a9d804c54b46ee5b39b80a6ce1d1ed3670531e11e7fa6025"
     },
     "tools/build_tag_database_pack.py": {
       "sha256": "19432b16b6c2a834fc4415de23a261b52d438d47d1eec327f6a9913f03cfd11d",

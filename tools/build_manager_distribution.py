@@ -302,9 +302,49 @@ def tree_inventory(folder):
     return inventory
 
 
+def stage_training_worker(worker_root, expected_inventory_sha256, manager_root):
+    """Stage a reviewed worker tree before sealing the Manager payload inventory."""
+    worker = unredirected(worker_root)
+    manager = unredirected(manager_root)
+    destination = manager / "training-worker" / "python"
+    require(worker.is_dir() and manager.is_dir() and not destination.parent.exists()
+            and not worker.is_relative_to(manager) and not manager.is_relative_to(worker),
+            "separate_fresh_training_worker_stage_required")
+    inventory = tree_inventory(worker)
+    require(digest(json_bytes(inventory)) == expected_inventory_sha256
+            and "sha256" in inventory.get("python.exe", {}), "training_worker_input_changed")
+    for name in inventory:
+        require(not any(part.casefold() in {"data", "models", "logs", "backups", "catalogs"}
+                        for part in PurePosixPath(safe_path(name)).parts),
+                "mutable_or_private_payload")
+    directories = {name for name, row in inventory.items() if row == {"directory": True}}
+    file_parents = {parent.as_posix()
+                    for name, row in inventory.items() if "sha256" in row
+                    for parent in PurePosixPath(name).parents if parent != PurePosixPath(".")}
+    require(directories == file_parents, "training_worker_empty_directory_not_signed")
+    for name, row in inventory.items():
+        if row == {"directory": True}:
+            (destination / safe_path(name)).mkdir(parents=True, exist_ok=True)
+        else:
+            relative = safe_path(name)
+            raw = pinned(worker / relative, row["sha256"])
+            require(len(raw) == row["bytes"], "training_worker_input_size_changed")
+            write_new(destination / relative, raw)
+    require(tree_inventory(destination) == inventory and tree_inventory(worker) == inventory,
+            "training_worker_stage_readback_changed")
+
+
 def build_distribution(source_stage, output, *, stage_sha256, public_inventory, interpreter, sdk_root,
                        notice_root, root_renderer, source_manifest=HERE / 'source-manifest.json',
-                       tool_inputs=HERE / 'tool-inputs.json'):
+                       tool_inputs=HERE / 'tool-inputs.json', training_worker_root=None,
+                       training_worker_inventory_sha256=None):
+    require((training_worker_root is None) == (training_worker_inventory_sha256 is None),
+            'complete_training_worker_pins_required')
+    if training_worker_root is not None:
+        training_worker_root = unredirected(training_worker_root)
+        require(training_worker_root.is_dir()
+                and digest(json_bytes(tree_inventory(training_worker_root))) == training_worker_inventory_sha256,
+                'training_worker_input_changed')
     source_stage, output, interpreter = map(unredirected, (source_stage, output, interpreter))
     require(not output.exists() and not output.is_relative_to(source_stage)
             and not source_stage.is_relative_to(output), 'fresh_separate_output_required')
@@ -348,7 +388,8 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         write_new(stage / name, raw)
     write_new(output / 'SEALED_INPUTS.json', json_bytes({'stage_sha256': stage_sha256,
         'source_manifest_sha256': digest(manifest_raw), 'tool_inputs_sha256': digest(profile_raw),
-        'root_renderer_sha256': digest(renderer_raw), 'public_inventory_sha256': receipt['public_inventory_sha256']}))
+        'root_renderer_sha256': digest(renderer_raw), 'public_inventory_sha256': receipt['public_inventory_sha256'],
+        'training_worker_inventory_sha256': training_worker_inventory_sha256}))
     def set_root(text):
         raw = text.encode()
         path = stage / 'source/public_root_entry.py'
@@ -366,6 +407,8 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         verify_working(stage, config, metadata)
         child = verify_freeze(output, 'CollectiGenManager', '_internal', config)
         child_config = decode(json_bytes(config))  # Retain its unbound wrapper expectation.
+        if training_worker_root is not None:
+            stage_training_worker(training_worker_root, training_worker_inventory_sha256, child.parent)
         child_inventory = tree_inventory(child.parent)
         validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw)
         package = {'schema': 1, 'manager_version': receipt['software_version'], 'manager_sha256': digest(read(child)),
@@ -406,7 +449,8 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
                 files.append({'path': path.relative_to(suite).as_posix(), 'bytes': len(raw), 'sha256': digest(raw)})
         result = {'status': 'BUILD_ONLY_NOT_EXECUTED', 'software_version': receipt['software_version'],
                   'manager_package_sha256': package_pin, 'files': files, 'apps_launched': False,
-                  'signed': False, 'native_qualified': False}
+                  'signed': False, 'native_qualified': False,
+                  'training_worker_inventory_sha256': training_worker_inventory_sha256}
         write_new(output / 'BUILD_RESULT.json', json_bytes(result))
         return suite
     except Exception as error:
@@ -421,6 +465,8 @@ def main(argv=None):
     for name in ('source-stage', 'output', 'public-inventory', 'interpreter', 'sdk-root', 'notice-root', 'root-renderer'):
         parser.add_argument('--' + name, required=True, type=Path)
     parser.add_argument('--stage-sha256', required=True)
+    parser.add_argument('--training-worker-root', type=Path)
+    parser.add_argument('--training-worker-inventory-sha256')
     args = parser.parse_args(argv)
     try:
         print(build_distribution(**vars(args)))

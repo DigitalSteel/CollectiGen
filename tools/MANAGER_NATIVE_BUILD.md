@@ -8,6 +8,17 @@ native acceptance, UI acceptance, deployment trust, or release readiness.
 
 ## Accepted inputs
 
+The stock producer accepts an optional reviewed Training package-verification runtime using the paired
+`--training-worker-root` and `--training-worker-inventory-sha256` arguments. The
+pin is SHA-256 of `json_bytes(tree_inventory(worker_root))` using the existing
+producer helpers. It stages that exact tree at
+`Apps/Manager/current/training-worker/python` before sealing the Manager payload,
+retains the pin in `SEALED_INPUTS.json` and `BUILD_RESULT.json`, and includes every
+worker file in the final Suite inventory. The input is an already prepared verification runtime;
+the producer neither downloads nor executes it. Omitting both inputs keeps the
+existing desktop-only build. Including the runtime alone does not qualify signed
+entry, installation, training execution or release delivery.
+
 The current Manager candidate includes the matched SDXL Training execution
 profile, runtime catalogs, tokenizers and stock trainer sources. Vendored trainer
 Python files are packaged as data for the separate training runtime; the Manager

@@ -428,3 +428,62 @@ def test_child_tree_drift_after_root_refuses_assembly(inputs, monkeypatch, chang
     assert not (args['output'] / 'Suite').exists()
     assert not (args['output'] / 'BUILD_RESULT.json').exists()
     assert build.decode((args['output'] / 'BUILD_FAILURE.json').read_bytes())['status'] == 'BUILD_HELD'
+
+
+def training_worker(tmp_path):
+    worker = tmp_path / 'reviewed-worker'
+    (worker / 'Lib').mkdir(parents=True)
+    (worker / 'python.exe').write_bytes(b'synthetic-worker-not-executable')
+    (worker / 'Lib/runtime.py').write_bytes(b'# synthetic runtime dependency')
+    return worker, build.digest(build.json_bytes(build.tree_inventory(worker)))
+
+
+def test_reviewed_worker_is_sealed_and_copied_with_manager(inputs, monkeypatch, tmp_path):
+    args, calls = inputs
+    worker, pin = training_worker(tmp_path)
+    fake_freeze(monkeypatch, calls)
+    suite = build.build_distribution(**args, training_worker_root=worker,
+                                     training_worker_inventory_sha256=pin)
+    installed = suite / 'Apps/Manager/current/training-worker/python'
+    assert build.tree_inventory(installed) == build.tree_inventory(worker)
+    sealed = build.decode((args['output'] / 'SEALED_INPUTS.json').read_bytes())
+    result = build.decode((args['output'] / 'BUILD_RESULT.json').read_bytes())
+    assert sealed['training_worker_inventory_sha256'] == result['training_worker_inventory_sha256'] == pin
+    members = {row['path']: row for row in result['files']}
+    for name, value in build.tree_inventory(worker).items():
+        if 'sha256' in value:
+            assert members['Apps/Manager/current/training-worker/python/' + name]['sha256'] == value['sha256']
+    assert not (suite / '_bootstrap/training-worker').exists()
+    assert result['apps_launched'] is False and result['signed'] is False
+
+
+@pytest.mark.parametrize('case', ['root-only', 'pin-only', 'changed-input'])
+def test_worker_selection_requires_matching_explicit_pair_before_build(inputs, tmp_path, case):
+    args, calls = inputs
+    worker, pin = training_worker(tmp_path)
+    selected = dict(training_worker_root=worker, training_worker_inventory_sha256=pin)
+    if case == 'root-only':
+        selected.pop('training_worker_inventory_sha256')
+    elif case == 'pin-only':
+        selected.pop('training_worker_root')
+    else:
+        (worker / 'python.exe').write_bytes(b'changed')
+    with pytest.raises(build.BuildHold, match='training_worker'):
+        build.build_distribution(**args, **selected)
+    assert calls == [] and not args['output'].exists()
+
+
+def test_worker_change_during_freeze_cannot_enter_payload(inputs, monkeypatch, tmp_path):
+    args, calls = inputs
+    worker, pin = training_worker(tmp_path)
+    fake_freeze(monkeypatch, calls)
+    freeze = build.freeze
+    def change_after_freeze(*a):
+        freeze(*a)
+        (worker / 'Lib/runtime.py').write_bytes(b'changed during freeze')
+    monkeypatch.setattr(build, 'freeze', change_after_freeze)
+    with pytest.raises(build.BuildHold, match='training_worker_input_changed'):
+        build.build_distribution(**args, training_worker_root=worker,
+                                 training_worker_inventory_sha256=pin)
+    assert 'CollectiGen' not in calls
+    assert not (args['output'] / 'Suite').exists()
