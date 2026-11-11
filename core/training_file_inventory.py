@@ -25,8 +25,8 @@ from .training_windows_file_identity import assert_existing_unredirected, checke
 MAX_FILES = 200_000
 MAX_BYTES = 64 * 1024 ** 3
 MAX_MANIFEST_BYTES = 64 * 1024 ** 2
-MAX_SECONDS = 180
-HASH_WORKERS = 4
+MAX_SECONDS = 300
+HASH_WORKERS = 8
 SHA = re.compile(r"[0-9a-f]{64}")
 
 
@@ -118,39 +118,52 @@ def _scan(root, cancel, deadline, progress=None):
     """Enumerate only the explicitly selected root, never following links."""
     directories, files, pending, seen, size = [], [], [Path(root)], set(), 0
     last = 0.0
-    while pending:
-        _control(cancel, deadline)
-        directory = pending.pop()
-        before = _check_path(directory, directory=True)
-        relative = directory.relative_to(root).as_posix()
-        directories.append((relative, before))
-        with os.scandir(directory) as entries:
-            for entry in entries:
+    with ThreadPoolExecutor(max_workers=HASH_WORKERS, thread_name_prefix="software-scan") as pool:
+        while pending:
+            _control(cancel, deadline)
+            directory = pending.pop()
+            before = _check_path(directory, directory=True)
+            relative = directory.relative_to(root).as_posix()
+            directories.append((relative, before))
+            observations = []
+            with os.scandir(directory) as entries:
+                for entry in entries:
+                    _control(cancel, deadline)
+                    path = Path(entry.path)
+                    relative = path.relative_to(root).as_posix()
+                    _relative(relative)
+                    folded = relative.casefold()
+                    if folded in seen or len(seen) >= MAX_FILES:
+                        raise FileInventoryError("Software inventory exceeds its entry bound or repeats a path.")
+                    seen.add(folded)
+                    if progress and time.monotonic() - last >= .25:
+                        progress(len(seen), 0, "Checking selected software directory entries")
+                        last = time.monotonic()
+                    # Check the path before classifying or traversing it. Reparse
+                    # points/cloud placeholders are never followed or hydrated.
+                    value = entry.stat(follow_symlinks=False)
+                    if stat.S_ISDIR(value.st_mode):
+                        _check_path(path, directory=True)
+                        pending.append(path)
+                    else:
+                        observations.append((relative, pool.submit(_check_path, path)))
+                        if len(observations) < 2 * HASH_WORKERS:
+                            continue
+                        relative, future = observations.pop(0)
+                        identity = future.result()
+                        size += identity[2]
+                        if size > MAX_BYTES:
+                            raise FileInventoryError("Software inventory exceeds its byte bound.")
+                        files.append((relative, identity))
+            for relative, future in observations:
                 _control(cancel, deadline)
-                path = Path(entry.path)
-                relative = path.relative_to(root).as_posix()
-                _relative(relative)
-                folded = relative.casefold()
-                if folded in seen or len(seen) >= MAX_FILES:
-                    raise FileInventoryError("Software inventory exceeds its entry bound or repeats a path.")
-                seen.add(folded)
-                if progress and time.monotonic() - last >= .25:
-                    progress(len(seen), 0, "Checking selected software directory entries")
-                    last = time.monotonic()
-                # Check the path before classifying or traversing it. Reparse
-                # points/cloud placeholders are never followed or hydrated.
-                value = entry.stat(follow_symlinks=False)
-                if stat.S_ISDIR(value.st_mode):
-                    _check_path(path, directory=True)
-                    pending.append(path)
-                else:
-                    identity = _check_path(path)
-                    size += identity[2]
-                    if size > MAX_BYTES:
-                        raise FileInventoryError("Software inventory exceeds its byte bound.")
-                    files.append((relative, identity))
-        if _check_path(directory, directory=True) != before:
-            raise FileInventoryError("Software directory changed during enumeration.")
+                identity = future.result()
+                size += identity[2]
+                if size > MAX_BYTES:
+                    raise FileInventoryError("Software inventory exceeds its byte bound.")
+                files.append((relative, identity))
+            if _check_path(directory, directory=True) != before:
+                raise FileInventoryError("Software directory changed during enumeration.")
     return tuple(sorted(directories)), tuple(sorted(files)), size
 
 
@@ -186,9 +199,9 @@ class SoftwareInventoryService:
         deadline = time.monotonic() + MAX_SECONDS
         directories, files, total = _scan(root, should_cancel, deadline, progress)
         result, completed, last = [], 0, 0.0
-        # Only read-only hashing overlaps. Enumeration, callbacks, manifest
+        # Only read-only file observations overlap. Directory traversal, callbacks, manifest
         # writes, process ownership and publication remain on the caller.
-        # At most eight pending digests and four 1-MiB read buffers are live.
+        # At most sixteen pending digests and eight 1-MiB read buffers are live.
         aborted = threading.Event()
         pending, remaining = [], iter(files)
         with ThreadPoolExecutor(max_workers=HASH_WORKERS, thread_name_prefix="software-hash") as pool:

@@ -31,7 +31,7 @@ MAX_RECORD = 256 * 1024
 MAX_EVENTS = 32
 LEGACY_ENVIRONMENT = "diagnostic-offline-v1"
 LOCAL_ENVIRONMENT = "local-processing-v1"
-VERIFICATION_SECONDS = 180
+VERIFICATION_SECONDS = 300
 PENDING_NAME = ".trainer-active.json"
 TERMINAL = {"exited_unverified", "cancelled", "failed", "interrupted"}
 TRANSITIONS = {"": {"reserved"}, "reserved": {"starting", "failed", "cancelled", "interrupted"},
@@ -520,7 +520,7 @@ class TrainingProcessService:
                 job.update(0, 0, "Verifying selected software and process inputs")
                 last_verification_progress = time.monotonic()
             return cancel()
-        prelaunch_deadline = time.monotonic() + VERIFICATION_SECONDS
+        prelaunch_deadline = time.monotonic() + 2 * VERIFICATION_SECONDS
         try:
             _cancel(cancel)
             if _directory(plan.root) != plan.root_identity:
