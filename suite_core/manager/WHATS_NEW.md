@@ -7,6 +7,8 @@
   closing Generate restores the saved comparison.
   Registered Training results and evaluation checkpoints keep their exact run
   and LoRA when opening a comparison, with return to Manager Applications.
+- Saved held-out Validation opens its chart and per-image measurements from
+  Training History. New Validation reviews use the current Training workspace.
 - Training Experiments keeps run names, notes and favorites, compares retained
   runs, and clones a run into a new draft. Export the draft for editing through
   Organizer's Dataset Plans workflow; the updated Organizer package is required.

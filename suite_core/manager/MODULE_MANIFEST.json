@@ -958,7 +958,8 @@
     "tools/training_validation_evidence.json",
     "tools/training_validation_profile.json",
     "tools/training_verification_worker.py",
-    "version.py"
+    "version.py",
+    "core/training_validation_worker.py"
   ],
   "support_files": [
     "suite_core/manager/README.md",

@@ -85,6 +85,23 @@ class TrainingValidationDialog(FeedbackEnabledDialog):
         QTimer.singleShot(0, dialog._recover)
         return dialog
 
+    @classmethod
+    def from_saved_report(cls, report, jobs, *, evaluation_root, report_hash_verified=False, parent=None):
+        """Present a canonically checked retained report without any process I/O."""
+        dialog = cls(None, {'review': {'images': {'roles': {}}}}, None, jobs,
+                     evaluation_root=evaluation_root, parent=parent)
+        dialog._phase = 'report_only'
+        dialog.setWindowTitle('Saved Held-out Validation')
+        dialog.scope.setText('Saved held-out denoising MSE: a noise-prediction measurement, not image quality.')
+        dialog.detail.setText('The original Training and evaluator inputs were not rechecked. '
+                              'This review does not start or recover a process.')
+        dialog._set_report(deepcopy(report))
+        integrity = 'Saved report hash verified.' if report_hash_verified else 'This older History entry has no saved report hash.'
+        qualification = 'Candidate measurement. ' if report.get('qualification') == 'candidate_only' else ''
+        dialog.status.setText(qualification + integrity + ' Read-only saved measurement.')
+        dialog._update()
+        return dialog
+
     def __init__(self, plan, contract, selected, jobs, *, evaluation_root,
                  service=None, retained_review=None, parent=None):
         super().__init__(parent)
@@ -143,6 +160,12 @@ class TrainingValidationDialog(FeedbackEnabledDialog):
         self._update()
 
     def _update(self):
+        if self._phase == 'report_only':
+            for button in (self.check_button, self.prepare_button, self.start_button,
+                           self.cancel_button, self.recover_button):
+                button.setEnabled(False)
+                button.hide()
+            return
         idle = self._task is None and not self._closing
         self.check_button.setEnabled(idle and self.retained_review is None)
         self.prepare_button.setEnabled(idle and self._request is not None

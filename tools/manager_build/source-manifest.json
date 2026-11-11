@@ -3263,13 +3263,13 @@
     },
     {
       "path": "qt_app/training_validation_dialog.py",
-      "bytes": 17728,
-      "sha256": "0554a379cc968ff5c2dbbe8c8bf46125d397b207c086d30a01a13b406bcfcc33"
+      "bytes": 19206,
+      "sha256": "46264c2d7945945017ef4575e1c27e080d279ee090670c786fdbf1d279868e03"
     },
     {
       "path": "qt_app/training_workflow_controller.py",
-      "bytes": 47684,
-      "sha256": "59d617871956add606594400f181bd3b1de0717c8db2d6782eac0dbbc2c5f96f"
+      "bytes": 47941,
+      "sha256": "6927934f7016a71562c0be602348a101f1ed1aabed3c7595ef7f6b83aef35e89"
     },
     {
       "path": "qt_app/training_workspace.py",
@@ -3638,8 +3638,8 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 43887,
-      "sha256": "831425f2b9e1346e9c698e2357bb733f2322cbcdb2934a477f95e9d487962181"
+      "bytes": 43929,
+      "sha256": "27d4dcb43e15ac8ff76cdb8a4cb8dfb970b3cc83433acbcf92641c31e0c9cf81"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -3983,8 +3983,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 258305,
-      "sha256": "f58461552b1d8c3d61d850464947403756edd83a07f4d288ee4159766c8ef4a1"
+      "bytes": 259375,
+      "sha256": "78eb55f9f15938c37f9016fcf7dbf5fbf15e57c2c05caa28b87a102584544f18"
     },
     {
       "path": "suite_core/media_examples.py",
@@ -4775,6 +4775,11 @@
       "path": "version.py",
       "bytes": 324,
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48"
+    },
+    {
+      "path": "core/training_validation_worker.py",
+      "bytes": 12619,
+      "sha256": "fe30736587537a78add0f29d928417530e56bc6d416be4ddf2a715d5c105624e"
     }
   ]
 }

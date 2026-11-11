@@ -117,7 +117,7 @@ class TrainingWorkflowController(QObject):
     def __init__(self, jobs, parent, *, workflow_factory=None, run_service=None,
                  run_index=None, saved_setup=None, preparation_root=None,
                  run_output_scope=None, session_allowed=None, draft_store_path=None,
-                 clone_opener=None, prepare_opener=None, experiments_index=None, evaluation_opener=None):
+                 clone_opener=None, prepare_opener=None, experiments_index=None, evaluation_opener=None, validation_root=None):
         super().__init__(parent)
         self.jobs = jobs
         from core.training_execution import TrainingExecutionService
@@ -129,6 +129,7 @@ class TrainingWorkflowController(QObject):
         self._prepare_opener = prepare_opener
         self._experiments_index = experiments_index
         self._evaluation_opener = evaluation_opener
+        self._validation_root = validation_root
         self.workflow_factory = workflow_factory or (lambda: TrainingWorkflowService(jobs,
             readiness=TrainingExecutionReadinessService(run_index=run_index),
             preparation_root=preparation_root, run_output_scope=run_output_scope))
@@ -700,11 +701,13 @@ class TrainingWorkflowController(QObject):
         return self._show(dialog)
 
     def _validation(self, source, selected):
-        if self._closing or source not in self.dialogs: return None
+        if (self._closing or source not in self.dialogs
+                or (self._session_allowed is not None and not self._session_allowed())): return None
         from core.paths import USER_DATA_DIR
         from .training_validation_dialog import TrainingValidationDialog
         dialog = TrainingValidationDialog(source.plan, source.contract, selected,
-            self.jobs, evaluation_root=USER_DATA_DIR / 'training-validation', parent=self.parent())
+            self.jobs, evaluation_root=(self._validation_root if self._validation_root is not None
+                             else USER_DATA_DIR / 'training-validation'), parent=self.parent())
         if hasattr(dialog, 'reviewRetained'):
             dialog.reviewRetained.connect(lambda payload: self._queue_retained('validation', payload, dialog))
         return self._show(dialog)
