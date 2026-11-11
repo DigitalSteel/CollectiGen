@@ -3954,8 +3954,8 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "d99312c655a9b50017074235044ac381d5ae80a9dc9951323d5f00ebe7d1c766",
-      "size_bytes": 163112
+      "sha256": "b05b1f6e91cfdefe691cf5a9418caa64c6bb0cec67f3deed610b0167b0db8a34",
+      "size_bytes": 163281
     },
     "tools/manager_build/tool-inputs.json": {
       "sha256": "e2c3f13d1cea4b42c2a65ae94379fd8d01658a38f81d1b4e869ce5d208c4480f",
