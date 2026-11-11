@@ -1,30 +1,18 @@
 # CollectiGen Suite Manager
 
-Current development source: **a.0.5.0** (wire **0.5.0-alpha.1**), **2026-10-14**;
-[dated source notes](WHATS_NEW.md). This is an unpublished candidate.
+Development source includes the unreleased Training and Generate workflows plus
+Reader and Organizer setup. The published Manager download is still **a.0.5.1**;
+see the repository download table for the actual shipped package.
 
-Manager coordinates Reader and Organizer setup, visible progress, explicit Open
-and ordinary Close, and recovery. Its Tag Database workspace keeps connection,
-preview, Apply and recovery as separate decisions and protects local corrections.
-Help and release history share the current application version label.
+Manager coordinates component setup, visible progress, Open, Close and recovery.
+The default source configuration now includes signed Reader **a.0.3.1** and
+Organizer **a.0.4.23** download offers. Finding a release does not install or
+launch it: review and confirm installation in the component workspace.
+Existing Reader and Organizer folders can also be connected there.
 
-This source keeps production enrollment inactive. The distributed package README
-identifies its configured verified releases and supported installation routes.
-Manager self-update is unavailable. This is alpha evaluation software for Windows
-11 x64 portable use; keep backups and use test copies for catalog evaluation.
-
-Applications search and status filters include Encyclopedia; its card shows one supported next action and Options for existing connection and release workspaces. Dependencies routes supplied status and blockers to those original setup/recovery owners.
-
-Applications > Encyclopedia connects an already installed standalone reader.
-Review its package folder, save the selection and restart Manager before Launch.
-Launch stays disabled after changing the saved reader until the exact selection
-is admitted at startup. Open saved connection retains that choice. Automatic reader download/install
-has no default production feed or trust profile and remains unavailable.
-Databases provides separate Tag connection, preview, Apply, recovery and Reload.
-Model/chat tools retain their existing bounded scope. Native application updates,
-public release and GPU operation remain separately qualified. Clean-machine/
-non-elevated coverage is waived for the approved first release, not established
-by these checks. See each candidate README for its exact packaged scope.
+The Tag Database workspace provides connection, preview, Apply and recovery,
+preserving local corrections. Manager self-update is not yet delivered. These
+source capabilities do not change the older published Manager executable.
 
 Run `python -B -m suite_core.manager` from a checkout with Python and PySide6.
 Use `--theme system|dark|light|midnight` and `--color-blind-mode` for presentation;

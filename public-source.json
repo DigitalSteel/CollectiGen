@@ -1,10 +1,14 @@
 {
-  "allowlisted_source_file_count": 1145,
+  "allowlisted_source_file_count": 1146,
   "component_ids": [
     "collectigen.suite-manager"
   ],
   "export_scope": "component-source",
   "files": {
+    "tests/test_manager_default_organizer_profile.py": {
+      "sha256": "b8a44e8041b81520a87c68c2086819cdb8e58bcde6b59bc2cfc65105060ded92",
+      "size_bytes": 1971
+    },
     "tests/test_manager_retained_training_review_ui.py": {
       "sha256": "bda16bed11e51309b54661cabf62a41e3f0b83e076cbcd0d9014d361445c9828",
       "size_bytes": 12243
@@ -3114,8 +3118,8 @@
       "sha256": "176ee7091db25eb2d60c85e7c18a7734206af3192930d06374bca88c27c69767"
     },
     "suite_core/manager/README.md": {
-      "sha256": "c1e2868bced18b4b10646f0e55c707bbaafb036459cf22324149cdbb739c681f",
-      "size_bytes": 8251
+      "sha256": "e1dff937a4f791c6f8133950729630f18eb196cfb7c12b462e11760b7254592d",
+      "size_bytes": 7212
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
       "sha256": "b7982f9825aeec4b618ae49a68d0186af51d555412fc946634c51ce57dba2ed5",
@@ -3134,8 +3138,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "9c9291225cb445bfaa9da06b2ac0b00c49c585a600dd2042bceae0f7a59960b0",
-      "size_bytes": 19284
+      "sha256": "71dfa5664d2413044bfefa0bd7c78ead7f065c4b508162655d67312ea4e868a4",
+      "size_bytes": 19587
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3186,8 +3190,8 @@
       "size_bytes": 3434
     },
     "suite_core/manager/compiled_organizer_config.py": {
-      "sha256": "4688e9d89e69a9011184fa1d5900b4e0d5375a365a5f8d7cb2966da2a205e7eb",
-      "size_bytes": 96
+      "sha256": "85d436eba86e3fe3375c1cbfa46b808713cf07e119dc2b5f98623c90e40d9f9f",
+      "size_bytes": 3096
     },
     "suite_core/manager/compiled_update_config.py": {
       "sha256": "540dcdcfa934187836903aaf9883d3cffa12bf1ae1c3710edb8348e1597b27da",

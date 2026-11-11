@@ -1,3 +1,10 @@
+## Unreleased source - November 11, 2026
+
+- Restore the reviewed signed Organizer a.0.4.23 download configuration in the
+  default Manager installer. Reuse the existing component installation flow;
+  installation still requires confirmation. This source change is not a new
+  published Manager binary.
+
 # What's New - a.0.5.1 (embedded 0.5.1-alpha.1) - 2026-10-18
 
 - Dashboard now lists Tag Encyclopedia Reader, with a pointer to Applications.
