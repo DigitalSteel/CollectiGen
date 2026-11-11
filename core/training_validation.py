@@ -19,7 +19,8 @@ from .training_configuration import TrainingConfiguration
 from .training_process import (_bytes, _read, _write_new, ProcessInput, ProcessInventory,
     TrainingProcessPlan, TrainingProcessResult, TrainingProcessService,
     TrainingRunJournal, LOCAL_ENVIRONMENT)
-from .training_result import VerifiedTrainingResult, SdxlTrainingResultService
+from .training_result import VerifiedTrainingResult
+from .training_retained_result import verify_retained_result
 from .training_source_io import _assert_unredirected
 
 
@@ -42,7 +43,7 @@ OWNED_NATIVE_CODE = {name: _ROOT / name for name in (
     'core/training_reference_tokenizers.py', 'core/training_tokenizer_files.py',
     'core/training_tokenizer_contract.py', 'core/training_continuation_hooks.py',
     'core/training_unet_step_contract.py', 'core/training_model_contract.py',
-    'core/model_resource_registry.py')}
+    'core/model_resource_registry.py', 'core/training_retained_result.py')}
 
 
 class TrainingValidationError(ValueError):
@@ -106,8 +107,8 @@ def request_for_verified(plan, contract, verified: VerifiedTrainingResult, *, sh
     """
     if type(verified) is not VerifiedTrainingResult or verified.plan != plan:
         raise TrainingValidationError('validation_result_unbound')
-    fresh = SdxlTrainingResultService().verify(plan, verified.outcome, contract,
-        verified.anchor_sha256, should_cancel=should_cancel)
+    fresh = verify_retained_result(plan, verified.outcome, contract,
+        verified.anchor_sha256, expected_receipt_sha256=verified.receipt_sha256, should_cancel=should_cancel)
     if fresh.receipt_json != verified.receipt_json:
         raise TrainingValidationError('validation_result_changed')
     receipt = fresh.receipt

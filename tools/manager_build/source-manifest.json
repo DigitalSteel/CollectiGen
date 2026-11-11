@@ -2253,8 +2253,8 @@
     },
     {
       "path": "core/training_validation.py",
-      "bytes": 34336,
-      "sha256": "c6306ec2526be436c5ab4c830b3b0ed2f60be1cd29a7eb728d5a84351c132135"
+      "bytes": 34444,
+      "sha256": "c42a905a8984450b0336941c5727ecdba682032bd1912d09e33a160c79df5a8c"
     },
     {
       "path": "core/training_verification.py",
@@ -4785,6 +4785,11 @@
       "path": "core/training_reference_loading.py",
       "bytes": 1848,
       "sha256": "ddda42a5d7f309aa2f27f62dc0edde99f0fbe89e3485b3449f09d374876c6370"
+    },
+    {
+      "path": "core/training_retained_result.py",
+      "bytes": 13280,
+      "sha256": "3331337d12706c56110bd092936809aedd9a007c10e206525e1ee10488318d37"
     }
   ]
 }

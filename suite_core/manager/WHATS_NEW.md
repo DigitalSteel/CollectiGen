@@ -7,6 +7,8 @@
   closing Generate restores the saved comparison.
   Registered Training results and evaluation checkpoints keep their exact run
   and LoRA when opening a comparison, with return to Manager Applications.
+- Held-out Validation can verify an anchored Training result after application
+  code updates, using its saved result receipt and current output files.
 - Saved held-out Validation opens its chart and per-image measurements from
   Training History. New Validation reviews use the current Training workspace.
 - Training Experiments keeps run names, notes and favorites, compares retained

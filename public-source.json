@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1156,
+  "allowlisted_source_file_count": 1159,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1894,8 +1894,8 @@
       "size_bytes": 14600
     },
     "core/training_validation.py": {
-      "sha256": "c6306ec2526be436c5ab4c830b3b0ed2f60be1cd29a7eb728d5a84351c132135",
-      "size_bytes": 34336
+      "sha256": "c42a905a8984450b0336941c5727ecdba682032bd1912d09e33a160c79df5a8c",
+      "size_bytes": 34444
     },
     "core/training_verification.py": {
       "sha256": "9243c9a5c2663b6fa0da90e3c31a1cd0a8dca1bc582deb783857063896fc5029",
@@ -3146,8 +3146,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "de7553f0d72383b607ec079414e2189a03e376e69a05aa43ca2c33da39e7527f",
-      "size_bytes": 21311
+      "sha256": "222d0d2c37b6a613d1fac570972ed4d76e315373ee37b80da37475c7177f4a3c",
+      "size_bytes": 21465
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3954,8 +3954,8 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "b05b1f6e91cfdefe691cf5a9418caa64c6bb0cec67f3deed610b0167b0db8a34",
-      "size_bytes": 163281
+      "sha256": "d67c384a8a54cb15018dd58f886f58cd61ad79c29747e54a2e1716b23488c4ed",
+      "size_bytes": 163449
     },
     "tools/manager_build/tool-inputs.json": {
       "sha256": "e2c3f13d1cea4b42c2a65ae94379fd8d01658a38f81d1b4e869ce5d208c4480f",
@@ -4578,11 +4578,11 @@
       "size_bytes": 3064
     },
     "tools/training_validation_evidence.json": {
-      "sha256": "8039b3df0fff263a9e6e9fef2d8628577648af1e1bfab54ef1ed0c53ba1757de",
-      "size_bytes": 2884
+      "sha256": "59282951cd37c6d6de7fffe515e7ead3048247bfa7d52243ff4d17d9643cb0a7",
+      "size_bytes": 2986
     },
     "tools/training_validation_profile.json": {
-      "sha256": "926522886f121e93de36543be945503de21017cd623b8987e66226e593e96f9b",
+      "sha256": "714b0a03b1b0c1350c3334acb30d761e855252504a94e88c0f1fb1ec856e7d1d",
       "size_bytes": 382
     },
     "tools/training_verification_worker.py": {
@@ -4628,6 +4628,18 @@
     "tests/test_manager_validation_review.py": {
       "sha256": "2acb96ec068d45defc38f7998d84529b92fc5f325cf848f0288e7e9749ecec17",
       "size_bytes": 9614
+    },
+    "core/training_retained_result.py": {
+      "sha256": "3331337d12706c56110bd092936809aedd9a007c10e206525e1ee10488318d37",
+      "size_bytes": 13280
+    },
+    "docs/TRN10_RETAINED_RESULTS.md": {
+      "sha256": "1215b63b9a8660d65d5dcc68c5d4c390f9cc239ba2cd40c4ef2697f5140e661c",
+      "size_bytes": 1529
+    },
+    "tests/test_training_retained_result.py": {
+      "sha256": "7226c28bc5145e0cea32de084225580bb81ffb3e5b75d324dc841b054485901a",
+      "size_bytes": 3808
     }
   },
   "fresh_history_required": true,
