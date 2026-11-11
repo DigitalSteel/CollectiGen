@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 827,
+  "allowlisted_source_file_count": 830,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -3130,20 +3130,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "88961fb6304a879694603d102e638d426c6754c42693028703cd246e55224505",
-      "size_bytes": 5010
+      "sha256": "26e8e3d64a68c203683b664a1b124622a70a383a2a1724707771910f91ae404f",
+      "size_bytes": 4968
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "85dc980e6cedf04d6f28c4d32999813e850969b2ca001e223cf8af93cbb3485c",
-      "size_bytes": 15199
+      "sha256": "4d3a305920cbbc1abf292e470200b5181f8329f9b7162c3a0e2f8616d0f2f0b2",
+      "size_bytes": 15569
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
-      "sha256": "ffc1ca8026561deb5c555eb386d9bc824ff9f647b6c5122afc2e629a3b71c012",
-      "size_bytes": 251
+      "sha256": "d0ab1b1139c6525e5e768227373076887854abd2770f476d294b2cf7fe86b87e",
+      "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "506213910a531c8400bb9127005c39b37559ae9cd06f5b21e67886eaac052055",
-      "size_bytes": 24274
+      "sha256": "28e7ffbfcdd46788ae44c5bf44c921a4b97172a9a1eb1665ad0dfdf157f6d4d2",
+      "size_bytes": 25314
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3202,8 +3202,8 @@
       "size_bytes": 3136
     },
     "suite_core/media_organizer/version.py": {
-      "sha256": "ba1377466fa4300715564dcefc1b30f1ac438ecd65edbca1889e208eecce795b",
-      "size_bytes": 267
+      "sha256": "a941937b7b388ac4df20b5d0b68f46bb8057faa318ede572003bd598fb806074",
+      "size_bytes": 264
     },
     "suite_core/registry/__init__.py": {
       "sha256": "510411f0065510db578ac1d249051f1c207c1930866b1cc07bfd6c6c0a4498e9",
@@ -3312,6 +3312,18 @@
     "tests/test_organizer_experiment_handoff_ui.py": {
       "sha256": "d50e4bf382e5fb807dddc585ffbbf24b47b9b75bf327e5c08fb64f309bd56f03",
       "size_bytes": 13511
+    },
+    "core/duplicate_recycle_batch.py": {
+      "sha256": "85edcc1e1dcbeac376f8f42b19590cfcd2ece2e9de820103f486fc306a0128bb",
+      "size_bytes": 4163
+    },
+    "qt_app/history_task_lifetime.py": {
+      "sha256": "b81b77917dda0784294b1654682bb6216d1a8081a3dd895d660ccb302823ec74",
+      "size_bytes": 4431
+    },
+    "qt_app/indicator_resources.py": {
+      "sha256": "176f2d67fe34590c9133b32a729f9064c7d5e193b9b19cac2a23f189cae84a15",
+      "size_bytes": 3801
     }
   },
   "fresh_history_required": true,

@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.5.0-alpha.1",
+      "numeric_version": "0.5.0",
+      "maturity": "alpha",
+      "date": "2026-11-11",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate;exact validation/publication receipt required",
+      "scope": "Import Manager Training experiments into editable Dataset drafts"
+    },
+    {
       "software_version": "0.4.23-alpha.1",
       "numeric_version": "0.4.23",
       "maturity": "alpha",

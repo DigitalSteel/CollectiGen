@@ -1,3 +1,24 @@
+# Media Organizer a.0.5.0
+
+2026-11-11 (America/New_York)
+
+## Training draft handoff
+
+Import a Training experiment draft from Suite Manager in Dataset > Dataset Plans >
+Import Training Draft. Organizer creates a separate editable Dataset draft, checks
+its current images and Image Knowledge, and opens the existing candidate editor.
+Save your changes with Save Draft; reopen them through Saved Dataset Drafts.
+Collection drafts let you choose and review the current Collection first.
+
+The original Manager experiment, transfer file and images remain unchanged.
+Import waits for an existing Dataset check to finish; background status checks
+resume after the handoff. Generation and training execution belong to Suite
+Manager. This update adds Dataset planning and exchange, not a training runtime.
+
+The bundled Python, Qt, Pillow and ExifTool runtime is unchanged from a.0.4.23.
+Earlier Organizer fixes remain included. Package and installed-workflow evidence
+are recorded separately; this source selection alone is not a published release.
+
 # Media Organizer a.0.4.23
 
 2026-11-04 (America/New_York)
