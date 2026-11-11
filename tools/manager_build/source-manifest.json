@@ -1938,8 +1938,8 @@
     },
     {
       "path": "core/training_continuation.py",
-      "bytes": 21926,
-      "sha256": "3804dbdab302a17c062c51543f619b7c7c42416b87dc99c6ddda4c038bed9955"
+      "bytes": 22088,
+      "sha256": "9d077714c3f4d9800acbdefa5e2022e053157ac093b78e5d12eed4fee50ae812"
     },
     {
       "path": "core/training_continuation_execution.py",
@@ -2023,8 +2023,8 @@
     },
     {
       "path": "core/training_file_inventory.py",
-      "bytes": 15541,
-      "sha256": "b312dabad88e489930690321bdfb2ab47bf88bd4babb6644a809647972777782"
+      "bytes": 15840,
+      "sha256": "22bb17abdefeac188b01504584bf2af2de304326c8c6867e708658d077b71524"
     },
     {
       "path": "core/training_image_effects_contract.py",
@@ -2178,8 +2178,8 @@
     },
     {
       "path": "core/training_run_recovery.py",
-      "bytes": 10512,
-      "sha256": "044484d664f73f76709079ab1ab21e65b0cb218483535cca02e765cda0d357eb"
+      "bytes": 10903,
+      "sha256": "a395ff456edb00c6976cf1d30780dcca42dcdc80aad3f0c93ca43db4fa8d2c43"
     },
     {
       "path": "core/training_runtime_contract.py",
@@ -3223,8 +3223,8 @@
     },
     {
       "path": "qt_app/training_restore_dialog.py",
-      "bytes": 6362,
-      "sha256": "3a312edb707660ae996ff46308690e7246edc49df67772132f829ba18cab4a39"
+      "bytes": 7403,
+      "sha256": "15ce06794f242d2c98ff004bcb06c447a5762a13904b3c36cfa8c663b8ad3b36"
     },
     {
       "path": "qt_app/training_run_dialog.py",
@@ -3973,8 +3973,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 250736,
-      "sha256": "bb402523aaeed0c433baaa366f456f12739b91680f77874fe1cb27b87b13b236"
+      "bytes": 254598,
+      "sha256": "42227bc97a299685f21f15b4e0f4cd3ddf4e686826136f0152913d32416285e8"
     },
     {
       "path": "suite_core/media_examples.py",
@@ -4648,8 +4648,8 @@
     },
     {
       "path": "tools/trainer_runtime_health_worker.py",
-      "bytes": 9601,
-      "sha256": "fc7fc894387857150b7365d6343eb8bdda32082e3675ac8237da5db042e84620"
+      "bytes": 9669,
+      "sha256": "95e9edd0cf8a714a77a964af5e398b9c4640e688ce6671fc0876f9b10c397bac"
     },
     {
       "path": "tools/trainer_runtime_profile.json",
@@ -4684,7 +4684,7 @@
     {
       "path": "tools/training_execution_profile.json",
       "bytes": 5206,
-      "sha256": "5ca323713c348e2d463ddfcfbdddba0b5fdbf1da8e61a7a357ff0cceaca6e238"
+      "sha256": "65c90f70e9124053f7d2b555c0fec35e21796a7ea5228dd180e9fc1e92e457f5"
     },
     {
       "path": "tools/training_execution_qualification.json",
@@ -4693,8 +4693,8 @@
     },
     {
       "path": "tools/training_execution_readiness_worker.py",
-      "bytes": 7518,
-      "sha256": "3b25df8af31fa94778fec5cb2cea33fcd2dc48fdbe2ad19f06835fa848aa8b6e"
+      "bytes": 7586,
+      "sha256": "bb9d2b6a4338c99d6fd6e908005f705752f03161434b5cc38f9f471afb03c848"
     },
     {
       "path": "tools/training_execution_tensor_specs.json",
@@ -4703,8 +4703,8 @@
     },
     {
       "path": "tools/training_execution_worker.py",
-      "bytes": 25693,
-      "sha256": "5386562a8dd487a813abf61b973de9a3569cc5adc66acf68f6b500fe728e6eb6"
+      "bytes": 26405,
+      "sha256": "68f2f83e41b449bb3ae432a9116a6dcb5dc270b7ca4473e5236e1ce63e867c88"
     },
     {
       "path": "tools/training_local_components_worker.py",

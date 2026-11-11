@@ -615,7 +615,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             training_panel = self.training_panel = QWidget()
             training_layout = QVBoxLayout(training_panel)
             training_layout.setContentsMargins(0, 0, 0, 0)
-            training_layout.addWidget(QLabel("Training review · Check a package before manual handoff"))
+            training_layout.addWidget(QLabel("Training · Prepare a package, choose a local trainer or open a saved run"))
             self._trainer_setup_dialog = None
             self._trainer_setup_close_requested = False
             self.trainer_setup_button = compact_action(QPushButton("Review Existing Trainer…"))
@@ -1863,6 +1863,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             return cancel
 
         def open_training_history(self, *, preparations=False):
+            from time import monotonic
+
             state = self.generation_state()
             if state is None or getattr(self, "_training_history_dialog", None) is not None:
                 return
@@ -1876,6 +1878,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                            model_registry_path=state.generation_data_root / MODEL_RESOURCES_PATH.name))
             task = None
             closing_review = False
+            receipt_started = 0.0
 
             class ManagerTrainingHistoryDialog(TrainingHistoryDialog):
                 def done(self, result):
@@ -1897,9 +1900,23 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if preparations:
                 dialog.setWindowTitle("Saved SDXL Preparations")
             dialog.open_button.setText("Review Selected Preparation")
+            dialog.open_button.setMinimumWidth(
+                dialog.fontMetrics().horizontalAdvance("Review Saved Process Outcome") + 32)
             self._training_history_dialog = dialog
+            receipt_timer = QTimer(dialog)
+            def receipt_activity():
+                if task is not None and not closing_review:
+                    dialog.set_retained_index_status(
+                        f"Checking the selected saved review · Elapsed {int(monotonic() - receipt_started)}s")
+            receipt_timer.timeout.connect(receipt_activity)
             reviewed = None
             handoff = None
+            retained_handoff = None
+            open_run = QPushButton("Open Saved Training Review", dialog)
+            open_run.setAutoDefault(False)
+            open_run.setProperty("primary", True)
+            open_run.hide()
+            dialog.layout().addWidget(open_run)
             plan_result = QPushButton("Plan an Image With This Result…", dialog)
             plan_result.setAutoDefault(False)
             plan_result.hide()
@@ -1916,8 +1933,21 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         and record.phase in {"stopped", "cancelled", "failed", "interrupted",
                                              "verification_required", "registration_required", "completed"})
 
-            def verify(record, revision, *, open_workspace=False):
-                nonlocal task, reviewed, prepared_review
+            def can_open_run(record):
+                return (not preparations and record is not None and has_saved_outcome(record)
+                        and Path(record.registry_path) == state.generation_data_root / MODEL_RESOURCES_PATH.name)
+
+            def update_open_run():
+                selected = dialog._selected()
+                available = can_open_run(selected)
+                open_run.setVisible(available)
+                open_run.setEnabled(available and task is None and not closing_review
+                                    and bool(dialog._revision) and self.generation_state() is state
+                                    and not self.close_policy.pending and not dialog._history_operation_busy())
+                dialog.open_button.setProperty("primary", not available)
+
+            def verify(record, revision, *, open_workspace=False, open_retained=False):
+                nonlocal task, reviewed, prepared_review, receipt_started
                 prepared_review = None
                 open_prepared.hide()
                 reviewed = None
@@ -1959,13 +1989,22 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 task = CoordinatedCallTask(state.jobs, "Verify Training receipt",
                                            inspect,
                                            resource="io")
+                receipt_started = monotonic()
+                dialog.progress.setRange(0, 0)
+                dialog.progress.show()
+                receipt_activity()
+                receipt_timer.start(250)
+                update_open_run()
 
                 def finish(message):
                     nonlocal task
                     task = None
+                    receipt_timer.stop()
+                    dialog.progress.hide()
                     if closing_review:
                         dialog.reject()
                         return
+                    update_open_run()
                     if self._training_history_dialog is dialog:
                         if self.generation_state() is not state:
                             dialog.set_retained_index_status(
@@ -1978,7 +2017,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                             dialog.set_retained_index_status(message)
 
                 def complete(result):
-                    nonlocal reviewed, prepared_review
+                    nonlocal reviewed, prepared_review, retained_handoff
                     if closing_review:
                         finish("")
                         return
@@ -2032,6 +2071,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                                          if registered is not None else "")
                         finish(f"Saved journal verified: the training process {outcome} and its process tree stopped. "
                                f"{exit_detail}{result_detail}Output files and live inputs were not checked.")
+                        if (open_retained and can_open_run(record)
+                                and self._training_history_dialog is dialog
+                                and self.generation_state() is state and not self.close_policy.pending
+                                and dialog._selected() == record and dialog._revision == revision):
+                            retained_handoff = record, revision
+                            dialog.accept()
+                            return
                         if (registered is not None and self._training_history_dialog is dialog
                                 and self.generation_state() is state and dialog._selected() == record
                                 and dialog._revision == revision
@@ -2060,6 +2106,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     message = "Still checking a saved receipt…" if task is not None else ""
                     dialog.set_retained_index_status(message)
                 selected = dialog._selected()
+                update_open_run()
                 completed_validation = selected is not None and selected.kind == "validation" and selected.phase == "completed"
                 if selected is not None and selected.kind == "anima":
                     dialog.open_button.setText("Review Saved Anima Settings")
@@ -2089,6 +2136,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 verify(*prepared_review, open_workspace=True)
 
             open_prepared.clicked.connect(open_saved_workspace)
+            def open_saved_run():
+                selected = dialog._selected()
+                if (task is not None or closing_review or not can_open_run(selected)
+                        or not dialog._revision or self.generation_state() is not state
+                        or self.close_policy.pending or dialog._history_operation_busy()):
+                    return
+                verify(selected, dialog._revision, open_retained=True)
+
+            open_run.clicked.connect(open_saved_run)
             plan_result.clicked.connect(plan_with_result)
             if not preparations:
                 from PySide6.QtWidgets import QFileDialog
@@ -2230,6 +2286,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if task is not None:
                     task.cancel()
                 dialog.deleteLater()
+            if (retained_handoff is not None and self.generation_state() is state
+                    and not self.close_policy.pending):
+                from core.model_resource_registry import ModelResourceRegistry
+
+                registry = ModelResourceRegistry(state.generation_data_root / MODEL_RESOURCES_PATH.name)
+                controller = self.sdxl_preparation_controller(registry)
+                if controller is not None:
+                    controller._open_retained(*retained_handoff)
             if handoff is not None and self.generation_state() is state:
                 from qt_app.generation_workflow import open_generation_workspace
 
@@ -2430,10 +2494,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if self._trainer_setup_close_requested:
                     QTimer.singleShot(0, self.close)
 
-        def open_sdxl_preparation(self, package, registry, recipe):
+        def sdxl_preparation_controller(self, registry):
             state = self.generation_state()
-            if state is None:
-                return False
+            if state is None or self.close_policy.pending:
+                return None
             from core.training_run_index import TrainingRunIndex
             from core.training_source_io import _assert_unredirected
             from qt_app.training_workflow_controller import TrainingWorkflowController
@@ -2449,7 +2513,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 except (OSError, RuntimeError) as exc:
                     from PySide6.QtWidgets import QMessageBox
                     QMessageBox.warning(self, "Training folder unavailable", str(exc))
-                    return False
+                    return None
                 def session_allowed():
                     return normal_entry_session.state == "ready" and not self.close_policy.pending
 
@@ -2469,6 +2533,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     lambda selected: self.open_krea_training_review(destination=selected.destination,
                         expected_package_fingerprint=selected.package_fingerprint))
                 self._sdxl_preparation_controller = controller
+            return controller
+
+        def open_sdxl_preparation(self, package, registry, recipe):
+            controller = self.sdxl_preparation_controller(registry)
+            if controller is None:
+                return False
             return controller.prepare(package, registry, recipe) is not None
 
         def open_krea_training_review(self, *, destination=None, expected_package_fingerprint=None):

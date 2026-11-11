@@ -140,7 +140,13 @@ def recover_plan_process(plan, process, expected_tip):
         raise TrainingRunIndexError('The retained process exit status is invalid.')
     if result.status == 'exited_unverified' and code is None:
         raise TrainingRunIndexError('The stopped trainer has no retained exit status.')
-    return replace(result, exit_code=code)
+    # A successful retained result is checked against this exact terminal
+    # receipt. Keep its message as well as its exit code, rather than the
+    # process owner's generic recovery notice.
+    message = after[-1]['details'].get('message', result.message)
+    if type(message) is not str:
+        raise TrainingRunIndexError('The retained process message is invalid.')
+    return replace(result, exit_code=code, message=message)
 
 
 @dataclass(frozen=True)

@@ -371,7 +371,22 @@ def native_run(context, owned_loader):
 def failure_record(exc, binding=None):
     """Stable recovery categories; never copy paths, prompts, or traceback text."""
     error_type = type(exc).__name__
-    if isinstance(exc, MemoryError) or (error_type == 'OutOfMemoryError' and type(exc).__module__.startswith('torch')):
+    # "raise ... from None" hides display context, but retains __context__.
+    # Preserve this fixed inspection category without copying selected data.
+    cause = exc
+    inventory_timeout = False
+    for _ in range(8):
+        if cause is None:
+            break
+        if (type(cause).__name__ == 'FileInventoryError'
+                and type(cause).__module__.endswith('.training_file_inventory')
+                and cause.args == ('Software inventory exceeded its bounded inspection time.',)):
+            inventory_timeout = True
+            break
+        cause = cause.__context__
+    if inventory_timeout:
+        code, error_type = 'resource_unavailable', 'FileInventoryError'
+    elif isinstance(exc, MemoryError) or (error_type == 'OutOfMemoryError' and type(exc).__module__.startswith('torch')):
         code = 'out_of_memory'
     elif isinstance(exc, OSError) and (exc.errno in {errno.ENOSPC, getattr(errno, 'EDQUOT', -1)} or getattr(exc, 'winerror', None) == 112):
         code = 'workspace_unavailable'
@@ -386,7 +401,7 @@ def failure_record(exc, binding=None):
         code = 'runtime_failed'
     public_types = {'ValueError', 'TypeError', 'KeyError', 'RuntimeError', 'OSError', 'FileNotFoundError',
         'ModuleNotFoundError', 'ImportError', 'MemoryError', 'OutOfMemoryError', 'InterruptedError', 'KeyboardInterrupt',
-        'WorkerError', 'TrainingExecutionPlanError', 'TrainingProcessError', 'CheckpointError', 'PermissionError'}
+        'WorkerError', 'TrainingExecutionPlanError', 'TrainingProcessError', 'CheckpointError', 'PermissionError', 'FileInventoryError'}
     return {'schema_version': 1, 'kind': 'sdxl_training_failure', 'code': code,
         'error_type': error_type if error_type in public_types else 'RuntimeError',
         'process_fingerprint': binding['process_sha256'] if binding else None,

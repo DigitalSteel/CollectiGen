@@ -162,3 +162,27 @@ This reuses the existing stage, renderer, recipes and binary guards to make the
 Manager build inspectable while preserving source authority and failed-build
 recovery. Navigation and public-export enrollment of these new tooling entry
 points are integration-owner work.
+
+The inventory hasher checks redirect status before opening the file, checks the
+opened descriptor identity before and after reading, and rechecks the final path.
+It no longer performs a redundant metadata-only native open immediately before
+the descriptor check. The inspection budget remains unchanged. This alters the
+inventory guard only; the numerical/trainer functions are unchanged.
+The candidate profile pins this guard revision. Existing numerical evidence is
+reused for its unchanged scope. A generated four-step source run completed and
+registered its LoRA; installed admission and signed delivery remain separate.
+
+The worker preserves a software-inspection timeout through a suppressed exception
+context as unavailable software, instead of reporting changed inputs. Its
+receipt retains only the fixed category and exception type, with no exception
+payload or selected content. Training execution and numerical settings are unchanged.
+
+Retained Training recovery preserves the journal terminal message together with
+its exit code, so the existing strict result verifier can accept the same
+successful stopped run after reopening. This does not restart training or
+rewrite its journal, checkpoints, output or historical qualification evidence.
+
+Manager Training History opens the existing retained Training review from its
+checked record, revision and Manager registry scope. Opening does not launch
+training. The same scoped controller serves preparation and restored reviews;
+receipt/restore waits show activity and elapsed time and settle Close safely.

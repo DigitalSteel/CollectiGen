@@ -142,6 +142,8 @@ CODE_HASHES = {
         '6e57d93200d9c74bc4f4c68aa2f8f302f8db531ab708a3200f3f3473173425c6',
     ],
     'training_file_inventory.py': [
+        # Reviewed descriptor-first hash read; numerical/trainer code is unchanged.
+        '22bb17abdefeac188b01504584bf2af2de304326c8c6867e708658d077b71524',
         'ac9ac04ba2acdf7c7df1312651d4b2d06abd50c064a9f7250db3a7c00dfa9593',
         '18e02adda84959e7ea6ce6141b179d8fab21139065cb77e9bbbeab9a7d1707b3',
         'b312dabad88e489930690321bdfb2ab47bf88bd4babb6644a809647972777782',

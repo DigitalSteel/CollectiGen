@@ -96,8 +96,13 @@ def inspection_control(should_cancel=None):
 def _hash_file(path, expected, cancel, deadline):
     digest = hashlib.sha256()
     _control(cancel, deadline)
-    if _check_path(path) != expected:
-        raise FileInventoryError("Software changed before hashing.")
+    # The descriptor is checked before the first read below. Reopening the
+    # same path for a preliminary native identity query adds no read authority.
+    # Keep current redirect checks before open and the full final path check.
+    try:
+        assert_existing_unredirected(path)
+    except (OSError, RuntimeError) as exc:
+        raise FileInventoryError("Software changed before hashing.") from exc
     with Path(path).open("rb") as handle:
         if descriptor_identity(handle.fileno()) != expected:
             raise FileInventoryError("Software changed before reading.")

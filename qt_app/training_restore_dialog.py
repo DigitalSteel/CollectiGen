@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtWidgets import QDialogButtonBox, QLabel, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import QDialogButtonBox, QLabel, QPushButton, QVBoxLayout, QProgressBar
+from time import monotonic
 
 from core.training_run_recovery import restore_training_context, recover_plan_process, note_outcome
 from core.training_process import TrainingProcessService, TrainingRunJournal
@@ -30,6 +31,15 @@ class TrainingRestoreDialog(FeedbackEnabledDialog):
         self.destination.setTextFormat(Qt.PlainText); self.destination.setWordWrap(True)
         self.destination.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(self.destination)
+        self.activity = QLabel('')
+        self.activity.hide()
+        layout.addWidget(self.activity)
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 0)
+        self.progress.hide()
+        layout.addWidget(self.progress)
+        self._activity_timer = QTimer(self)
+        self._activity_timer.timeout.connect(self._show_activity)
         layout.addStretch(1)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
@@ -44,6 +54,10 @@ class TrainingRestoreDialog(FeedbackEnabledDialog):
         if self._closing or self._task is not None: return
         task = CoordinatedCallTask(self.jobs, label, operation, resource='io')
         self._task = task
+        self._activity_started = monotonic()
+        self._activity_label = label
+        self.activity.show(); self.progress.show()
+        self._show_activity(); self._activity_timer.start(250)
         self.recover_button.setEnabled(False)
         task.signals.complete.connect(lambda value: self._finish(task, complete, value))
         task.signals.failed.connect(lambda error: self._finish(task, complete, None, str(error)))
@@ -54,10 +68,15 @@ class TrainingRestoreDialog(FeedbackEnabledDialog):
     def _finish(self, task, complete, value, error=''):
         if self._task is not task: return
         self._task = None
+        self._activity_timer.stop(); self.activity.hide(); self.progress.hide()
         if self._closing: super().reject(); return
         if value is None: self.message.setText(str(error)[:2000])
         else: complete(value)
         self.recover_button.setEnabled(self._readiness is not None)
+
+    def _show_activity(self):
+        if self._task is not None:
+            self.activity.setText(f'{self._activity_label} · Elapsed {int(monotonic() - self._activity_started)}s')
 
     def _open(self):
         self._launch('Open retained training review', lambda job:
@@ -108,6 +127,9 @@ class TrainingRestoreDialog(FeedbackEnabledDialog):
     def reject(self):
         self._closing = True
         if self._task is not None:
+            self.message.setText('Closing after the current saved-review check stops…')
+            self._activity_label = 'Closing saved review'
+            self._show_activity()
             self.jobs.cancel(self._task.job_id)
             return
         super().reject()

@@ -271,3 +271,14 @@ def test_changed_software_still_fails_execution_after_snapshot_reuse(tmp_path, m
     snapshot.validate(prepared.request, 'f' * 64)
     with pytest.raises(RuntimeError):
         TrainingProcessService._verify_inputs(prepared.plan)
+
+
+@pytest.mark.parametrize("module_name", ["training_execution_readiness_worker", "trainer_runtime_health_worker"])
+def test_reviewed_readiness_bootstrap_loads_current_execution_worker(module_name):
+    from importlib import import_module
+    worker = import_module("tools." + module_name)
+    bridge = worker.bootstrap()
+    assert callable(bridge.prepare_owned)
+    record = bridge.failure_record(RuntimeError("private diagnostic value"))
+    assert record["code"] == "runtime_failed"
+    assert "private diagnostic value" not in str(record)
