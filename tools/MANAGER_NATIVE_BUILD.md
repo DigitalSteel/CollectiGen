@@ -14,6 +14,12 @@ Python files are packaged as data for the separate training runtime; the Manager
 freezer does not import them or pull its GPU dependencies into the desktop app.
 This source/package change does not establish a published update.
 
+Connected Training preparation carries its completed readiness software snapshot
+through selection and plan creation. It copies the checked inventories instead
+of rescanning the same environment at each join. The snapshot is local to that
+preparation; standalone checks and the full process execution checks remain in
+place, and the package images are still captured separately.
+
 First obtain an accepted public export with its `public-source.json` inventory.
 The finite frozen subset is independent of the runtime manifest's full catalog:
 only explicitly reviewed rows are staged. Python rows must also be runtime

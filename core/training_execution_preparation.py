@@ -136,8 +136,10 @@ def _epoch_batches(manifest):
     return sum(math.ceil(count / config.batch_size) for count in buckets.values())
 
 
-def _inventory(service, root, manifest_path, purpose, should_cancel, progress):
-    captured = service.capture(root, should_cancel=should_cancel, progress=progress)
+def _inventory(service, root, manifest_path, purpose, should_cancel, progress, software_snapshot=None):
+    captured = (software_snapshot.inventory(purpose, root)
+                if software_snapshot is not None and purpose != "package_inventory"
+                else service.capture(root, should_cancel=should_cancel, progress=progress))
     service.save(captured, manifest_path)
     summary = captured.summary()
     selected = ProcessInventory(str(root), str(manifest_path), _hash(manifest_path.read_bytes()),
@@ -195,7 +197,7 @@ def reference_component_binding(base_id, tokenizer_identities):
 
 def _reference_admission(value, profile, base, tokenizer_identities,
                          tokenizer_binding_sha256, inventories, observation_sha256, resolved,
-                         should_cancel=None):
+                         should_cancel=None, software_snapshot=None):
     if type(value) is not dict or set(value) != execution_plan.REFERENCE_ADMISSION_FIELDS:
         raise TrainingExecutionPreparationError("training_execution_reference_admission_invalid")
     native = value.get("native_readiness_receipt")
@@ -209,7 +211,11 @@ def _reference_admission(value, profile, base, tokenizer_identities,
         raise TrainingExecutionPreparationError("training_execution_native_readiness_changed")
     from .training_execution_readiness import MAX_RECEIPT as MAX_NATIVE_RECEIPT, validate_reference_admission
     try:
-        validate_reference_admission(value, _read(native_path, limit=MAX_NATIVE_RECEIPT))
+        if software_snapshot is None:
+            validate_reference_admission(value, _read(native_path, limit=MAX_NATIVE_RECEIPT))
+        else:
+            validate_reference_admission(value, _read(native_path, limit=MAX_NATIVE_RECEIPT),
+                                         software_snapshot=software_snapshot)
     except InterruptedError:
         raise
     except (OSError, RuntimeError, ValueError, TypeError, KeyError):
@@ -256,7 +262,7 @@ class TrainingExecutionPreparationService:
     def prepare(self, package, registry, recipe, selection, reference_admission, resolved, environment,
                 device_observation, preparation_root, run_root, run_name, *, tensor_specs,
                 previous=None, expected_registry, timeout_seconds=DEFAULT_TIMEOUT,
-                log_limit=DEFAULT_LOG_LIMIT, should_cancel=None, progress=None):
+                log_limit=DEFAULT_LOG_LIMIT, should_cancel=None, progress=None, software_snapshot=None):
         _cancel(should_cancel)
         profile = execution_plan.qualified_profile()
         if profile is None:
@@ -331,13 +337,14 @@ class TrainingExecutionPreparationService:
         preparation.mkdir()
         service = SoftwareInventoryService()
         inventory_pairs = []
+        shared = {"software_snapshot": software_snapshot} if software_snapshot is not None else {}
         for purpose, root in (("source_inventory", environment.source_root),
                               ("environment_inventory", environment.environment_root),
                               ("python_base_inventory", environment.python_base_root),
                               ("package_inventory", Path(fresh.destination))):
             _cancel(should_cancel)
             inventory_pairs.append(_inventory(service, root, preparation / (purpose + ".json"),
-                                               purpose, should_cancel, progress))
+                                               purpose, should_cancel, progress, **shared))
         inventories = tuple(pair[0] for pair in inventory_pairs)
         inventory_rows = [pair[1] for pair in inventory_pairs]
         prior_runtime = prerequisite["runtime"]["software_inventories"]
@@ -349,7 +356,7 @@ class TrainingExecutionPreparationService:
         observation_sha = _hash(_bytes(observation))
         reference_admission, native_readiness_input = _reference_admission(
             reference_admission, profile, base, tokenizer_identities,
-            tokenizer_binding_sha, current_inventory, observation_sha, resolved, should_cancel)
+            tokenizer_binding_sha, current_inventory, observation_sha, resolved, should_cancel, **shared)
         reference_admission_path = preparation / "reference-admission.json"
         reference_admission_sha = _write(reference_admission_path, _bytes(reference_admission))
         config_path = preparation / "trainer.toml"
@@ -495,7 +502,6 @@ class TrainingExecutionPreparationService:
             str(run_root), _directory(run_root), run_name, tuple(command), tuple(inputs), _hash(raw),
             timeout_seconds=timeout_seconds, log_limit=log_limit, schema_version=3,
             inventories=inventories, environment_profile=LOCAL_ENVIRONMENT)
-        execution_plan.validate_worker_contract(contract, plan)
         execution_plan.validate_execution_contract(contract, plan)
         _cancel(should_cancel)
         return TrainingExecutionPreparation(plan, contract, preparation, dict(sorted(receipt_hashes.items())))

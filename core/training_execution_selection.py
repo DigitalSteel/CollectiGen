@@ -138,18 +138,23 @@ def _native_receipt(value, should_cancel):
     return deepcopy(value), raw, receipt
 
 
-def _inventories(request, should_cancel, progress):
+def _inventories(request, should_cancel, progress, software_snapshot=None, receipt_sha256=None):
     rows = request["process"]["inventories"]
     expected = ["source_inventory", "environment_inventory", "python_base_inventory"]
     if [row.get("purpose") for row in rows] != expected:
         raise TrainingExecutionSelectionError("training_execution_native_inventories_invalid")
     result = {}
     service = SoftwareInventoryService()
+    if software_snapshot is not None:
+        if type(software_snapshot) is not readiness._SoftwareSnapshot:
+            raise TrainingExecutionSelectionError("training_execution_native_inventory_changed")
+        software_snapshot.validate(request, receipt_sha256)
     for row in rows:
         _cancel(should_cancel)
         try:
-            summary = service.verify(row["root"], row["manifest_path"],
-                                     should_cancel=should_cancel, progress=progress)
+            summary = (software_snapshot.inventory(row["purpose"], row["root"]).summary()
+                       if software_snapshot is not None else service.verify(
+                           row["root"], row["manifest_path"], should_cancel=should_cancel, progress=progress))
         except (OSError, RuntimeError, ValueError, TypeError, KeyError):
             raise TrainingExecutionSelectionError("training_execution_native_inventory_changed") from None
         if (summary["inventory_sha256"] != row["inventory_sha256"]
@@ -175,7 +180,7 @@ class TrainingExecutionSelectionService:
 
     def select(self, package, registry, recipe, components, native_receipt, prepared_source, *,
                expected_registry, save_every_n_steps=None, resume_contract=None,
-               should_cancel=None, progress=None):
+               should_cancel=None, progress=None, software_snapshot=None):
         _cancel(should_cancel)
         if not isinstance(package, TrainingPackageVerification) or not package.valid:
             raise TrainingExecutionSelectionError("training_execution_package_invalid")
@@ -208,7 +213,7 @@ class TrainingExecutionSelectionService:
         if (request["source_revision"] != SOURCE_REVISION
                 or qualification["runtime_profile"] != prerequisite_contract.profile_contract()["qualification"]["runtime_profile"]):
             raise TrainingExecutionSelectionError("training_execution_native_qualification_changed")
-        inventories = _inventories(request, should_cancel, progress)
+        inventories = _inventories(request, should_cancel, progress, software_snapshot, native_receipt["sha256"])
         manifest_raw = _read(fresh.destination / MANIFEST_NAME,
                              limit=preparation.execution_plan.MAX_PACKAGE_MANIFEST)
         manifest_sha = _hash(manifest_raw)
@@ -288,7 +293,10 @@ class TrainingExecutionSelectionService:
             "continuation_contract_sha256": continuation.digest(resolved),
             "native_readiness_receipt": native_reference}
         try:
-            readiness.validate_reference_admission(admission, native_raw)
+            if software_snapshot is None:
+                readiness.validate_reference_admission(admission, native_raw)
+            else:
+                readiness.validate_reference_admission(admission, native_raw, software_snapshot=software_snapshot)
         except InterruptedError:
             raise
         except (OSError, RuntimeError, ValueError, TypeError, KeyError):

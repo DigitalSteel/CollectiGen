@@ -164,12 +164,54 @@ class NativeReadinessPreparation:
     request: dict
 
 
+@dataclass(frozen=True)
+class _SoftwareSnapshot:
+    """One connected call's completed readiness observation, never a live-file cache."""
+    receipt_sha256: str
+    request_sha256: str
+    inventories: tuple
+
+    def inventory(self, purpose, root):
+        for name, value in self.inventories:
+            if name == purpose and value.root == str(Path(root).absolute()):
+                return value
+        raise ValueError('training_readiness_snapshot_binding_changed')
+
+    def validate(self, request, receipt_sha256):
+        from .training_file_inventory import MAX_MANIFEST_BYTES
+        from .training_process import _read
+        if self.receipt_sha256 != receipt_sha256 or self.request_sha256 != digest(request):
+            raise ValueError('training_readiness_snapshot_binding_changed')
+        rows = request['process']['inventories']
+        if tuple(name for name, _ in self.inventories) != tuple(row['purpose'] for row in rows):
+            raise ValueError('training_readiness_snapshot_binding_changed')
+        for row in rows:
+            value = self.inventory(row['purpose'], row['root'])
+            summary = value.summary()
+            raw = _read(Path(row['manifest_path']), limit=MAX_MANIFEST_BYTES)
+            if (hashlib.sha256(raw).hexdigest() != row['manifest_sha256']
+                    or summary['inventory_sha256'] != row['inventory_sha256']
+                    or summary['files'] != row['file_count'] or summary['bytes'] != row['byte_count']):
+                raise ValueError('training_readiness_snapshot_binding_changed')
+
+
+def _software_snapshot(request, receipt_sha256):
+    from .training_file_inventory import SoftwareInventoryService
+    service = SoftwareInventoryService()
+    values = tuple((row['purpose'], service.load(row['root'], row['manifest_path']))
+                   for row in request['process']['inventories'])
+    snapshot = _SoftwareSnapshot(receipt_sha256, digest(request), values)
+    snapshot.validate(request, receipt_sha256)
+    return snapshot
+
+
 class TrainingExecutionReadinessService:
     def __init__(self, *, process=None, run_index=None):
         from .training_process import TrainingProcessService
         self.process = process or TrainingProcessService()
         self.run_index = run_index
         self.index_recovery_required = False
+        self.software_snapshot = None
         self.process_invoked = False
 
     def prepare(self, source, environment, python_base, python, tokenizers_root, configuration,
@@ -234,6 +276,7 @@ class TrainingExecutionReadinessService:
         return NativeReadinessPreparation(plan, request)
 
     def execute(self, prepared, confirmed_fingerprint, jobs, *, should_cancel=None):
+        self.software_snapshot = None
         self.process_invoked = False
         if self.run_index is None:
             return self._execute(prepared, confirmed_fingerprint, jobs, should_cancel=should_cancel)
@@ -280,10 +323,11 @@ class TrainingExecutionReadinessService:
         path = plan.destination / 'native-readiness-evidence.json'
         _write_new(path, canonical(value))
         if _read(path, limit=MAX_RECEIPT) != canonical(value): raise ValueError('training_readiness_evidence_readback')
+        self.software_snapshot = _software_snapshot(request, digest(value))
         return outcome, {'path': str(path), 'sha256': digest(value)}
 
 
-def validate_reference_admission(reference_admission, native_receipt_bytes):
+def validate_reference_admission(reference_admission, native_receipt_bytes, *, software_snapshot=None):
     """Recheck a selected stopped native measurement before joining its facts."""
     from .training_process import (ProcessInput, ProcessInventory, TrainingProcessPlan, TrainingProcessService,
                                   TrainingRunJournal, _read, _bytes)
@@ -327,5 +371,16 @@ def validate_reference_admission(reference_admission, native_receipt_bytes):
     inventories = {row['purpose'].removesuffix('_inventory'): row['inventory_sha256'] for row in request['process']['inventories']}
     if reference_admission['software_inventories'] != inventories:
         raise ValueError('training_readiness_inventory_evidence_changed')
-    TrainingProcessService._verify_inputs(plan)
+    if software_snapshot is None:
+        TrainingProcessService._verify_inputs(plan)
+    else:
+        if type(software_snapshot) is not _SoftwareSnapshot:
+            raise ValueError('training_readiness_snapshot_binding_changed')
+        software_snapshot.validate(request, reference_admission['native_readiness_receipt']['sha256'])
+        # The completed readiness job already verified these directory bytes at
+        # exit. Keep current small-input checks here; actual training still uses
+        # the unchanged full before-create, before-resume and after-exit checks.
+        for expected_input in plan.inputs:
+            if ProcessInput.capture(expected_input.path) != expected_input:
+                raise ValueError('training_readiness_process_input_changed')
     return value

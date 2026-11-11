@@ -149,6 +149,7 @@ class TrainingWorkflowService:
         patch.parent.mkdir(exist_ok=False)
         _write_new(patch, patch_source(raw_source, catalog).encode('utf-8'))
         runtime_config = _runtime_configuration(fresh.manifest, recipe, str(base.inspection.path))
+        software_snapshot = None
         if native_receipt is None:
             if previous is not None or resume_contract is not None:
                 raise ValueError('Resume requires the original retained native readiness evidence.')
@@ -168,18 +169,22 @@ class TrainingWorkflowService:
             self.recovery_required = outcome.status == 'recovery_required' or not outcome.tree_stopped and outcome.status != 'held'
             if native_receipt is None:
                 raise ValueError('Trainer readiness did not pass. ' + str(outcome.message)[:1500])
+            software_snapshot = getattr(self.readiness, 'software_snapshot', None)
+            if software_snapshot is not None:
+                self.readiness.software_snapshot = None
         cancel()
+        shared = {'software_snapshot': software_snapshot} if software_snapshot is not None else {}
         joined = self.selection.select(fresh, registry, recipe, components, native_receipt,
             PreparedTrainingSource(original, SOURCE_CATALOG, patch), expected_registry=revision,
             save_every_n_steps=selected['checkpoint_interval'] or None, resume_contract=resume_contract,
-            should_cancel=should_cancel, progress=progress)
+            should_cancel=should_cancel, progress=progress, **shared)
         environment = QualifiedExecutionEnvironment(selected['python'], selected['source_root'],
             selected['environment_root'], selected['python_base_root'], patch, evidence)
         self._check_output_scope(output)
         return self.preparation.prepare(fresh, registry, recipe, components, joined.admission,
             joined.resolved, environment, joined.device_observation, folder / 'execution-inputs',
             output, selected['run_name'], tensor_specs=specs, previous=previous,
-            expected_registry=revision, should_cancel=should_cancel, progress=progress)
+            expected_registry=revision, should_cancel=should_cancel, progress=progress, **shared)
 
     def recover_preparation(self, *, should_cancel=None, progress=None):
         if should_cancel and should_cancel(): raise InterruptedError('Recovery check cancelled.')
