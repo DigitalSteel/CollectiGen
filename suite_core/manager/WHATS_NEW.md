@@ -5,6 +5,8 @@
   Open drafts are preserved and every queued image rechecks the connection.
   Reviewing a single image also keeps Return to Training Comparison available;
   closing Generate restores the saved comparison.
+  Registered Training results and evaluation checkpoints keep their exact run
+  and LoRA when opening a comparison, with return to Manager Applications.
 - Training Experiments keeps run names, notes and favorites, compares retained
   runs, and clones a run into a new draft. Export the draft for editing through
   Organizer's Dataset Plans workflow; the updated Organizer package is required.

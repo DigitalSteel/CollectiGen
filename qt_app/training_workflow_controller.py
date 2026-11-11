@@ -117,7 +117,7 @@ class TrainingWorkflowController(QObject):
     def __init__(self, jobs, parent, *, workflow_factory=None, run_service=None,
                  run_index=None, saved_setup=None, preparation_root=None,
                  run_output_scope=None, session_allowed=None, draft_store_path=None,
-                 clone_opener=None, prepare_opener=None, experiments_index=None):
+                 clone_opener=None, prepare_opener=None, experiments_index=None, evaluation_opener=None):
         super().__init__(parent)
         self.jobs = jobs
         from core.training_execution import TrainingExecutionService
@@ -128,6 +128,7 @@ class TrainingWorkflowController(QObject):
         self._clone_opener = clone_opener
         self._prepare_opener = prepare_opener
         self._experiments_index = experiments_index
+        self._evaluation_opener = evaluation_opener
         self.workflow_factory = workflow_factory or (lambda: TrainingWorkflowService(jobs,
             readiness=TrainingExecutionReadinessService(run_index=run_index),
             preparation_root=preparation_root, run_output_scope=run_output_scope))
@@ -709,13 +710,18 @@ class TrainingWorkflowController(QObject):
         return self._show(dialog)
 
     def _evaluate_resource(self, source, resource_id):
-        if self._closing or source not in self.dialogs or not resource_id: return
+        if (self._closing or source not in self.dialogs or not resource_id
+                or (self._session_allowed is not None and not self._session_allowed())): return
         from .generation_workflow import open_generation_workspace
         def opened(_dialog):
             if not self._closing and source in self.dialogs:
-                self.evaluation(source.plan.run_id, resource_id)
+                if self._evaluation_opener is not None:
+                    self._evaluation_opener(run_id=source.plan.run_id, required_resource=resource_id)
+                else:
+                    self.evaluation(source.plan.run_id, resource_id)
         open_generation_workspace(self.parent(), resource_id=resource_id,
-            selected_role='lora', force_new=True, on_opened=opened)
+            selected_role='lora', force_new=True, on_opened=opened,
+            source_result_allowed=self._session_allowed)
 
     def _resume(self, run, package, registry, recipe, request, previous):
         selected = deepcopy(request)

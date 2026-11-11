@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1153,
+  "allowlisted_source_file_count": 1154,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -2782,8 +2782,8 @@
       "size_bytes": 17728
     },
     "qt_app/training_workflow_controller.py": {
-      "sha256": "0347ae88935fa86ef8773dff4ef6d5367ac04e4584d09b6f2eed566511428f58",
-      "size_bytes": 47272
+      "sha256": "59d617871956add606594400f181bd3b1de0717c8db2d6782eac0dbbc2c5f96f",
+      "size_bytes": 47684
     },
     "qt_app/training_workspace.py": {
       "sha256": "588ad7cdc02f6d7efc4a96f63fc6a71125f358648977036c62037e5b5e029e5c",
@@ -3146,8 +3146,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "734ebc1dd4fd85b6d10095a559bc60ca5dcf7da3e3253f94649085ae8e7838a5",
-      "size_bytes": 20999
+      "sha256": "6b12042e8bb8b2f2680aff2265544c18d34d98a9e2a98868723d191dff52a098",
+      "size_bytes": 21154
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3418,8 +3418,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "1fb5485738c826337748e003a13b00243a22db44d58ac7b2512f64cd6c8c22d1",
-      "size_bytes": 257996
+      "sha256": "f58461552b1d8c3d61d850464947403756edd83a07f4d288ee4159766c8ef4a1",
+      "size_bytes": 258305
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3954,7 +3954,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "c2234aa14c3ecb41e28ddf9766256488d2eb3af9b57172665015c8ac8f0593c8",
+      "sha256": "a92c7a82d45d4700bdc45451b9472e17a4505a03f852af2dff6d66c9521f446a",
       "size_bytes": 162942
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4616,6 +4616,10 @@
     "qt_app/training_draft_transfer_dialog.py": {
       "sha256": "0b4bc777a0595f0ce7bb53fdce6e97c590f15239f7e01a9a940436be6a65b5db",
       "size_bytes": 7484
+    },
+    "tests/test_manager_registered_training_evaluation.py": {
+      "sha256": "f5e347b552ff49c26141b97a9d779fbb438f3496665912571d545d88dd2837c4",
+      "size_bytes": 6724
     }
   },
   "fresh_history_required": true,
