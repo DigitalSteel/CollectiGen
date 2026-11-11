@@ -2734,7 +2734,7 @@
       "size_bytes": 37752
     },
     "qt_app/training_history_dialog.py": {
-      "sha256": "e7c04b49e5a96ce2b848785a9cfce2fdbaed204e1e8a2158daa9566524d10c6c",
+      "sha256": "29da2276b878244d72b6398b7162e8ee49b2c3139033174c9c825b1d44c1d08c",
       "size_bytes": 40478
     },
     "qt_app/training_merge_dialog.py": {
@@ -2782,8 +2782,8 @@
       "size_bytes": 19206
     },
     "qt_app/training_workflow_controller.py": {
-      "sha256": "6927934f7016a71562c0be602348a101f1ed1aabed3c7595ef7f6b83aef35e89",
-      "size_bytes": 47941
+      "sha256": "18360919652c6e429d704f7c11ce8c34f76caa574628a01e17a77d6a38b51f9e",
+      "size_bytes": 48145
     },
     "qt_app/training_workspace.py": {
       "sha256": "588ad7cdc02f6d7efc4a96f63fc6a71125f358648977036c62037e5b5e029e5c",
@@ -3146,8 +3146,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "41a4fb66faa01c854e32c616c054f3dafb64ebfdabad839fd26588ededef5998",
-      "size_bytes": 22124
+      "sha256": "15ba45eb950e5ed0aef2db8e90b4ba553bcaec91ced03e63be65c5b145d3ec59",
+      "size_bytes": 22285
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3418,8 +3418,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "d865bda61251509aa7b065cef32f5dfbf698b95bcf86ecdc45a9f0a3e9859091",
-      "size_bytes": 265300
+      "sha256": "007ec3312790117cd73a58d567cf50a58b82642921651b5170ab88ae517594f9",
+      "size_bytes": 266701
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -4626,8 +4626,8 @@
       "size_bytes": 12619
     },
     "tests/test_manager_validation_review.py": {
-      "sha256": "2acb96ec068d45defc38f7998d84529b92fc5f325cf848f0288e7e9749ecec17",
-      "size_bytes": 9614
+      "sha256": "e9cf00ab5269f97866eea850c43e7e54ebca29daec99ab2e3e26a6f8784ea51b",
+      "size_bytes": 14485
     },
     "core/training_retained_result.py": {
       "sha256": "3331337d12706c56110bd092936809aedd9a007c10e206525e1ee10488318d37",
@@ -4660,6 +4660,10 @@
     "tests/test_manager_result_context_ui.py": {
       "sha256": "1f714f55a4953fbff7c89656e415729056bdee947c69b84eebd99e6b5f8f6675",
       "size_bytes": 1885
+    },
+    "docs/TRN09_UNLISTED_VALIDATION.md": {
+      "sha256": "9794ea66f9bb385e52b2c693f11ee16483c450a4711e94032c2835fd8da47a6f",
+      "size_bytes": 937
     }
   },
   "fresh_history_required": true,

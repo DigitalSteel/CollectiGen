@@ -1,5 +1,7 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Training History can import an unlisted saved Validation review, recheck its
+  retained measurement and add it to History without starting a new evaluation.
 - Verified Results keeps image/receipt actions above the preview and explains
   the result review. Updated Organizer accepts its receipt through normal Ingest
   copy review, preserving the source and generation lineage.

@@ -165,3 +165,91 @@ def test_packaged_validation_worker_preserves_finite_measurement_contract(measur
     else:
         assert evaluate_values(request, lambda case: measurement) == [
             {"stable_id": "generated", "mse_by_timestep": measurement}]
+
+
+@pytest.mark.parametrize("choice", ["open", "cancel", "ended_session"])
+def test_manager_history_imports_unlisted_validation(tmp_path, monkeypatch, choice):
+    """Normal History entry, generated stopped receipt; no evaluator is launched."""
+    from PySide6.QtWidgets import QFileDialog, QPushButton
+    from core.training_validation import TrainingValidationService
+    application = app()
+    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
+    manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+    manager.resize(1500, 960); manager.show()
+    state = manager.generation_state()
+    training_root = state.generation_data_root / "training"
+    report = saved_measurement(training_root)
+    index_path = training_root / "training-runs.json"
+    index_path.unlink()  # Generated receipt is deliberately not listed in History.
+    receipt = training_root / "validation" / "saved-review.json"
+    source_before = {p: p.read_bytes() for p in receipt.parent.rglob("*") if p.is_file()}
+    def no_launch(*args, **kwargs):
+        pytest.fail("Importing a retained review must not launch an evaluator")
+    monkeypatch.setattr(TrainingValidationService, "execute", no_launch)
+    # This route fixture contains no model/package inputs. The unchanged input
+    # verifier has its own service tests; retain real journal/report readback.
+    def generated_inputs_only(request):
+        assert request == {"qualification": "product", "cases": [{"stable_id": "generated-image"}]}
+    monkeypatch.setattr(validation, "_current_inputs", generated_inputs_only)
+    picks = []
+    def choose(*args, **kwargs):
+        picks.append(True)
+        if choice == "ended_session":
+            session.state = "closed"
+        return ("" if choice == "cancel" else str(receipt), "")
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", choose)
+    item = manager.navigation.item(manager.page_rows["Applications"])
+    QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
+                    pos=manager.navigation.visualItemRect(item).center())
+    errors = []; clicked = []; deadline = time.monotonic() + 25
+    def drive():
+        try:
+            assert time.monotonic() < deadline, "Unlisted review entry did not settle"
+            history = getattr(manager, "_training_history_dialog", None)
+            if history is None or clicked or history._task is not None:
+                return
+            assert history.runs.topLevelItemCount() == 0
+            button = next(b for b in history.findChildren(QPushButton)
+                          if b.text().startswith("Import Validation Review"))
+            clicked.append(True)
+            capture(history, "manager-unlisted-validation-entry")
+            click(button)
+        except BaseException as exc:
+            errors.append(repr(exc))
+            history = getattr(manager, "_training_history_dialog", None)
+            if history is not None: history.reject()
+    timer = QTimer(); timer.setInterval(20); timer.timeout.connect(drive); timer.start()
+    try:
+        click(manager.training_history_button)
+    finally:
+        timer.stop()
+    assert not errors, errors
+    assert picks == [True]
+    controller = manager._sdxl_preparation_controller
+    if choice == "open":
+        view = next(v for v in controller.open_reviews() if isinstance(v, TrainingValidationDialog))
+        settle(lambda: view._task is None, seconds=60)
+        assert view._report is not None, view.status.text()
+        settle(lambda: controller._retained_task is None, seconds=60)
+        assert index_path.exists(), controller._retained_error
+        assert view._report == report
+        assert view.chart.values == (1.0, 3.0)
+        rows, revision = TrainingRunIndex(index_path).snapshot()
+        assert len(rows) == 1 and rows[0].kind == "validation"
+        assert rows[0].review_path == str(receipt)
+        assert "measurement" in view.status.text().lower()
+        capture(view, "manager-unlisted-validation-imported")
+        click(view.findChild(QDialogButtonBox).button(QDialogButtonBox.Close))
+        settle(lambda: not controller.open_reviews())
+    else:
+        assert not controller.open_reviews()
+        assert not index_path.exists()
+    after = {p: p.read_bytes() for p in receipt.parent.rglob("*") if p.is_file()}
+    assert {p: after[p] for p in source_before} == source_before
+    extras = set(after) - set(source_before)
+    assert extras <= {receipt.parent / ".trainer-owner.lock"}
+    assert not extras or after[receipt.parent / ".trainer-owner.lock"] == b"0"
+    session.state = "ready"
+    controller.request_background_shutdown()
+    settle(lambda: not controller.has_active_background_work())
+    manager.close(); application.processEvents()

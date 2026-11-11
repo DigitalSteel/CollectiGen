@@ -82,7 +82,7 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         heading.addWidget(self.help_button)
         layout.addLayout(heading)
         layout.addWidget(self._label(
-            "Find and open saved training reviews. This window cannot change the saved list."
+            "Find and open saved training reviews. Opening a review does not start training."
             if self._read_only else
             "Find previous local training runs and setup checks. Open a run to review "
             "its result, check recovery, or choose an earlier checkpoint."))

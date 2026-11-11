@@ -352,11 +352,14 @@ class TrainingWorkflowController(QObject):
         return self._show(dialog)
 
     def open_validation(self):
-        if self._closing: return None
+        if self._closing or (self._session_allowed is not None and not self._session_allowed()):
+            return None
         from PySide6.QtWidgets import QFileDialog
         from .training_validation_dialog import TrainingValidationDialog
         path, _ = QFileDialog.getOpenFileName(self.parent(), 'Open Retained Validation', '', 'Validation review (*.json)')
-        if not path: return None
+        if (not path or self._closing
+                or (self._session_allowed is not None and not self._session_allowed())):
+            return None
         dialog = TrainingValidationDialog.open_retained(path, jobs=self.jobs, parent=self.parent())
         if hasattr(dialog, 'reviewRetained'):
             dialog.reviewRetained.connect(lambda payload: self._queue_retained('validation', payload, dialog))
