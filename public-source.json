@@ -1818,8 +1818,8 @@
       "size_bytes": 8442
     },
     "core/training_result.py": {
-      "sha256": "364f8d3381dd967b30eda1e9538a799f90caccfd11b56367670946dac72d3e0d",
-      "size_bytes": 28947
+      "sha256": "9114d918f68d65437654098c3a759ba51d5193cc8574b62b1003b1b557e428ae",
+      "size_bytes": 28665
     },
     "core/training_resume_adapter.py": {
       "sha256": "2bbed799135641cb01a25903f8bf5749029368a196ea39e162985acf2a3e26a6",
@@ -3146,8 +3146,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "de7553f0d72383b607ec079414e2189a03e376e69a05aa43ca2c33da39e7527f",
-      "size_bytes": 21311
+      "sha256": "0893b58cd25b92ad7279ba0fc7dbc5881c221f6e4afbf09c459008ee274c9b6e",
+      "size_bytes": 21461
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",

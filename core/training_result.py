@@ -446,6 +446,7 @@ class VerifiedTrainingResult:
     contract_json: bytes = field(repr=False)
     anchor_sha256: str
     receipt_json: bytes
+    _output_inspection: ResourceInspection | None = field(default=None, repr=False, compare=False)
 
     @property
     def receipt_sha256(self) -> str:
@@ -542,7 +543,7 @@ class SdxlTrainingResultService:
         final_manifest, final_manifest_sha256 = _package(binding, should_cancel)
         if final_manifest_sha256 != manifest_sha256 or _canonical(final_manifest) != _canonical(manifest):
             raise TrainingResultError("training_result_package_changed")
-        return VerifiedTrainingResult(plan, outcome, contract_raw, expected_anchor_sha256, _canonical(receipt))
+        return VerifiedTrainingResult(plan, outcome, contract_raw, expected_anchor_sha256, _canonical(receipt), inspection)
 
     @_safe
     def register(self, registry: ModelResourceRegistry, verified: VerifiedTrainingResult,
@@ -550,15 +551,6 @@ class SdxlTrainingResultService:
         if type(registry) is not ModelResourceRegistry or type(verified) is not VerifiedTrainingResult or not _hash(expected_registry):
             raise TrainingResultError("training_result_registration_invalid")
         contract = resources._json(verified.contract_json)
-        checked = self.verify(
-            verified.plan,
-            verified.outcome,
-            contract,
-            verified.anchor_sha256,
-            should_cancel=should_cancel,
-        )
-        if checked.receipt_json != verified.receipt_json:
-            raise TrainingResultError("training_result_verification_changed")
         _, binding, _ = _validated_contract(contract, verified.plan)
         parents = []
         for resource_id in binding["parent_ids"]:
@@ -568,9 +560,10 @@ class SdxlTrainingResultService:
             parents.append(resolution.inspection)
         with registry._writer():
             value, current = registry.snapshot()
-            if current != expected_registry and checked.receipt["output"]["resource_id"] not in value["resources"]:
+            if current != expected_registry and verified.receipt["output"]["resource_id"] not in value["resources"]:
                 raise TrainingResultError("training_result_registry_changed")
-            # Repeat every non-parent proof while holding the publication lock.
+            # Recheck once under the publication lock; retain that exact output
+            # inspection for the following atomic registry transaction.
             final = self.verify(
                 verified.plan,
                 verified.outcome,
@@ -581,9 +574,8 @@ class SdxlTrainingResultService:
             if final.receipt_json != verified.receipt_json:
                 raise TrainingResultError("training_result_verification_changed")
             receipt = final.receipt
-            output_path = (verified.plan.destination / Path(binding["output_relative_path"])).absolute()
-            inspection = resources.inspect_model_resource(output_path, should_cancel=should_cancel)
-            if inspection.resource_id != receipt["output"]["resource_id"]:
+            inspection = final._output_inspection
+            if inspection is None or inspection.resource_id != receipt["output"]["resource_id"]:
                 raise TrainingResultError("training_result_output_changed")
             for parent in parents:
                 resources._current(parent)

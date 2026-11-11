@@ -7,6 +7,8 @@
   closing Generate restores the saved comparison.
   Registered Training results and evaluation checkpoints keep their exact run
   and LoRA when opening a comparison, with return to Manager Applications.
+- Finishing Training avoids a duplicate full result-verification pass during
+  registration and reuses the checked output with current-file guards.
 - Saved held-out Validation opens its chart and per-image measurements from
   Training History. New Validation reviews use the current Training workspace.
 - Training Experiments keeps run names, notes and favorites, compares retained
