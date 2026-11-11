@@ -566,7 +566,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             generation_actions.addWidget(self.generate_plan_button)
             self._generation_setup_dialog = None
             for label, action in (
-                ("Review Generator Connection…", self.review_generator_connection),
+                ("Generator Setup…", self.review_generator_connection),
                 ("Plan a Remix…", self.open_remix_plan),
                 ("Create Generation Setup…", self.create_generation_setup),
                 ("Use Saved Setup…", self.use_saved_generation_setup),
@@ -1321,6 +1321,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from core.swarm_runtime import SwarmRuntimeManager
             from core.training_source_io import _assert_unredirected
             from qt_app.swarm_runtime_widget import SwarmRuntimeWidget
+            from qt_app.generation_workflow import _generation_model_registry
 
             record_path = state.generation_data_root / SWARM_RUNTIME_PATH.name
             try:
@@ -1331,25 +1332,32 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
             class ConnectionDialog(QDialog):
                 def reject(dialog):
-                    if dialog.review._task is None:
+                    if dialog.review.request_setup_close(dialog.reject):
                         super().reject()
-                    else:
-                        dialog.review.state_detail.setText("Wait for the current connection check or save to finish.")
 
                 def closeEvent(dialog, event):
-                    if dialog.review._task is not None:
-                        event.ignore()
-                        dialog.reject()
-                    else:
-                        super().closeEvent(event)
+                    event.ignore()
+                    dialog.reject()
 
             dialog = ConnectionDialog(self)
-            dialog.setWindowTitle("Review Generator Connection")
+            dialog.setWindowTitle("Generator Setup")
             layout = QVBoxLayout(dialog)
             dialog.review = SwarmRuntimeWidget(
-                None, dialog, manager=SwarmRuntimeManager(record_path), adoption_only=True,
+                state.settings, dialog, manager=SwarmRuntimeManager(record_path),
+                model_registry=_generation_model_registry(self), jobs=state.jobs,
+                settings_path=state.generation_settings_path,
+                generation_storage_root=state.generation_data_root / "generation",
+                action_allowed=lambda: self.generation_state() is state,
             )
-            layout.addWidget(dialog.review)
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setFrameShape(QFrame.NoFrame)
+            scroll.setWidget(dialog.review)
+            layout.addWidget(scroll)
+            dialog.resize(1040, 820)
+            if getattr(self, "_generation_dialog", None) is not None:
+                dialog.review.set_request_return_available(True)
+                dialog.review.return_requested.connect(dialog.reject)
             buttons = QDialogButtonBox(QDialogButtonBox.Close)
             buttons.rejected.connect(dialog.reject)
             layout.addWidget(buttons)
@@ -1367,7 +1375,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if normal_entry_session is None or normal_entry_session.state != "ready" or self.close_policy.pending:
                 return None
             root = Path(normal_entry_session.admitted.layout.data_root) / "Manager"
-            return SwarmRuntimeManager(root / SWARM_RUNTIME_PATH.name).checked_adopted_connection()
+            return SwarmRuntimeManager(root / SWARM_RUNTIME_PATH.name).checked_generation_connection()
 
         def generation_state(self):
             session = normal_entry_session
@@ -1380,8 +1388,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
             if not hasattr(self, "state"):
                 root = Path(session.admitted.layout.data_root) / "Manager"
+                from core.settings import AppSettings
+                from core.training_source_io import _assert_unredirected
+                settings_path = root / "generation-settings.json"
+                _assert_unredirected(settings_path)
+                settings = (AppSettings.load(settings_path) if settings_path.exists()
+                            else AppSettings(ai_models_directory=str(root / "models")))
                 self.state = SimpleNamespace(
-                    jobs=BackgroundJobManager(), settings=None, generation_data_root=root,
+                    jobs=BackgroundJobManager(), settings=settings, generation_data_root=root,
+                    generation_settings_path=settings_path,
                     generation_runtime_allowed=False, video_decoder_lifetime=VideoDecoderLifetime(),
                     admit_manager_video_runtime=getattr(session, "admit_manager_video_runtime", None),
                     video_draft_session_state=self.generation_state,

@@ -1683,8 +1683,8 @@
     },
     {
       "path": "core/swarm_runtime.py",
-      "bytes": 65967,
-      "sha256": "0e163d5c54a4da391101e9589333f944655427c02bf7d956115cdb14a01c3ff0"
+      "bytes": 66313,
+      "sha256": "fd73a607640ec797e0b9fd80790f1e82181d3d545f05f2c1055b8fb6ae40b48e"
     },
     {
       "path": "core/swarm_setup_file_import.py",
@@ -2608,8 +2608,8 @@
     },
     {
       "path": "qt_app/generation_dialog.py",
-      "bytes": 285501,
-      "sha256": "9ec74cde442248e415780e79c2ed029584cf8f6817789f63cb963bf2cd2915ce"
+      "bytes": 285441,
+      "sha256": "d765f0974b153912a790dddf1c01576b02f1e459509d95ed5302af845728737a"
     },
     {
       "path": "qt_app/generation_experiment_dialog.py",
@@ -3058,8 +3058,8 @@
     },
     {
       "path": "qt_app/swarm_runtime_widget.py",
-      "bytes": 45088,
-      "sha256": "dec0d985f839fc5e5598e850fcb5c390b74125b7ea7a55391fbce40aaa4e6b41"
+      "bytes": 48511,
+      "sha256": "004fa48681895e4ce488859305572928391c0b14df10552eea546fcfc5ed2d94"
     },
     {
       "path": "qt_app/swarm_setup_file_dialog.py",
@@ -3983,8 +3983,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 259375,
-      "sha256": "78eb55f9f15938c37f9016fcf7dbf5fbf15e57c2c05caa28b87a102584544f18"
+      "bytes": 260348,
+      "sha256": "52b45034a090605d6cd78e7e2cacda5726dd6e4896727977fda3bb01cb2ab4d4"
     },
     {
       "path": "suite_core/media_examples.py",

@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1159,
+  "allowlisted_source_file_count": 1162,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -46,8 +46,8 @@
       "size_bytes": 9008
     },
     "README.md": {
-      "sha256": "23d18e1fa98d8f49f9357e2070ccdd6242d54cc95b959c19d0709fd1b574ba62",
-      "size_bytes": 7632
+      "sha256": "083cb0120f6e7fc2bcb82807649e82094afa1b41b59160d1f0075fb7e53bd85e",
+      "size_bytes": 8108
     },
     "SUPPORT.md": {
       "sha256": "1cb1e9aea57477e1494bf8b89ff692c9342e9169c4af5b8292ece123788fb1f3",
@@ -1426,8 +1426,8 @@
       "size_bytes": 9027
     },
     "core/swarm_runtime.py": {
-      "sha256": "0e163d5c54a4da391101e9589333f944655427c02bf7d956115cdb14a01c3ff0",
-      "size_bytes": 65967
+      "sha256": "fd73a607640ec797e0b9fd80790f1e82181d3d545f05f2c1055b8fb6ae40b48e",
+      "size_bytes": 66313
     },
     "core/swarm_setup_file_import.py": {
       "sha256": "15f8154c52f7df7ff4968da5b234fe967ec65be9dbbf0451f7eb3d644f7b877a",
@@ -2246,8 +2246,8 @@
       "size_bytes": 79634
     },
     "qt_app/generation_dialog.py": {
-      "sha256": "9ec74cde442248e415780e79c2ed029584cf8f6817789f63cb963bf2cd2915ce",
-      "size_bytes": 285501
+      "sha256": "d765f0974b153912a790dddf1c01576b02f1e459509d95ed5302af845728737a",
+      "size_bytes": 285441
     },
     "qt_app/generation_experiment_dialog.py": {
       "sha256": "efd99ae269514581d1e215f68b7818d861685ffbe64b49d06c8f14c92ae1da6b",
@@ -2618,8 +2618,8 @@
       "size_bytes": 12252
     },
     "qt_app/swarm_runtime_widget.py": {
-      "sha256": "dec0d985f839fc5e5598e850fcb5c390b74125b7ea7a55391fbce40aaa4e6b41",
-      "size_bytes": 45088
+      "sha256": "004fa48681895e4ce488859305572928391c0b14df10552eea546fcfc5ed2d94",
+      "size_bytes": 48511
     },
     "qt_app/swarm_setup_file_dialog.py": {
       "sha256": "f170f453c37f9df8cb38b9682a4505b53e1820c03b7939e3415b26ffc67589a4",
@@ -3146,8 +3146,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "222d0d2c37b6a613d1fac570972ed4d76e315373ee37b80da37475c7177f4a3c",
-      "size_bytes": 21465
+      "sha256": "d8c26b48fb8e6c5d51a46f050261a94b42e7e58337427ae26915d7f90404ba1c",
+      "size_bytes": 21762
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3418,8 +3418,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "78eb55f9f15938c37f9016fcf7dbf5fbf15e57c2c05caa28b87a102584544f18",
-      "size_bytes": 259375
+      "sha256": "52b45034a090605d6cd78e7e2cacda5726dd6e4896727977fda3bb01cb2ab4d4",
+      "size_bytes": 260348
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3954,7 +3954,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "c6005926c6fb45a8cd328663ba3962670ae1c5921e1a34bf2ed101af661f32b8",
+      "sha256": "1fc3e32d1d2e1d10fa2d7b72a9d8b2c24be42bce59eb6f47af85ed1859e4c449",
       "size_bytes": 163449
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4633,13 +4633,25 @@
       "sha256": "3331337d12706c56110bd092936809aedd9a007c10e206525e1ee10488318d37",
       "size_bytes": 13280
     },
-    "docs/TRN10_RETAINED_RESULTS.md": {
-      "sha256": "1215b63b9a8660d65d5dcc68c5d4c390f9cc239ba2cd40c4ef2697f5140e661c",
-      "size_bytes": 1529
-    },
     "tests/test_training_retained_result.py": {
       "sha256": "7226c28bc5145e0cea32de084225580bb81ffb3e5b75d324dc841b054485901a",
       "size_bytes": 3808
+    },
+    "tests/test_manager_generator_setup_ui.py": {
+      "sha256": "ddb235a2ae9b593967491eb829b28e06cee96b470a0da827c41ba67f3bef2a76",
+      "size_bytes": 14321
+    },
+    "docs/GEN09_MANAGER_GENERATOR_SETUP.md": {
+      "sha256": "1c9f73ae8316556701e33ad96abb9f80a2d3db894e6f587e2a9c1ca2ab53cfbd",
+      "size_bytes": 1461
+    },
+    "docs/TRN09_RETAINED_RESULTS.md": {
+      "sha256": "1215b63b9a8660d65d5dcc68c5d4c390f9cc239ba2cd40c4ef2697f5140e661c",
+      "size_bytes": 1529
+    },
+    "docs/GEN09_UI_JOURNEYS.json": {
+      "sha256": "b6e005af8d4976b3372f95885342ed54baf801e18e317cbf891420fa619b66c5",
+      "size_bytes": 3671
     }
   },
   "fresh_history_required": true,

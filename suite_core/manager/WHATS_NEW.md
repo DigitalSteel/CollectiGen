@@ -1,5 +1,9 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Generator Setup now includes the original connect/install, run/status,
+  models/import and maintenance sections. Setup uses Manager's model registry,
+  preferences and presets, and Return keeps the same generation draft.
+  Generate accepts both checked existing and managed local installations.
 - Training comparisons can open their saved batch in Generate's normal queue.
   Review the candidates and explicitly Start through the checked local generator.
   Open drafts are preserved and every queued image rechecks the connection.

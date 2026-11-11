@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "journeys": [
+    {
+      "id": "manager-generator-setup-return",
+      "roadmap_ids": [
+        "GEN-09",
+        "GEN-10"
+      ],
+      "goal": "I need to correct my local image generator connection and return to the same unfinished image request.",
+      "start": {
+        "surface": "Suite Manager > Applications > Plan an Image",
+        "action": "Start New Image, enter a prompt, then choose Generator Setup."
+      },
+      "audiences": {
+        "new_user": {
+          "default_route": "Use Connect or install, choose an existing SwarmUI or a managed installation, then Return to Generation Plan.",
+          "ease_check": "One setup task is visible at a time and Return stays available when switching tasks.",
+          "overload_guard": "Runtime controls, model paths/import, backups and updates are in their own named tasks rather than a single action wall."
+        },
+        "advanced_user": {
+          "entry": "Choose Run and status, Models and import, or Maintenance directly; Setup search reveals the relevant task.",
+          "customization": "Review model paths, configuration backups, the companion package or updates without hiding the connection choice.",
+          "continuity": "Switching tasks does not change the generator, discard the saved request, or dismiss Return."
+        }
+      },
+      "consistency": {
+        "reference": "Original all-in-one Setup > Local Generation (the same SwarmRuntimeWidget)",
+        "shared_patterns": [
+          "A visible task list selects one pane.",
+          "The contextual return stays outside the selected task."
+        ],
+        "departures": [
+          "Connection and runtime status stay above the task list because they apply to every task; generator actions retain their existing separate review dialogs."
+        ]
+      },
+      "steps": [
+        {
+          "action": "Start a new image, enter a prompt, let the draft save and choose Generator Setup.",
+          "expected": "Manager opens the shared four-task setup surface and retains the same draft."
+        },
+        {
+          "action": "Switch to Maintenance and back to Connect or install.",
+          "expected": "Only the selected task's actions appear; Return to Generation Plan stays visible."
+        },
+        {
+          "action": "Choose Return to Generation Plan.",
+          "expected": "The same prompt and request return without probing or launching a generator."
+        }
+      ],
+      "completion": {
+        "visible": "Generate shows the same request and saved prompt after Return.",
+        "authority": "Setup navigation changes no runtime, installation, model file, or generation result; connection and import actions keep their separate explicit reviews."
+      },
+      "recovery": [
+        {
+          "trigger": "SwarmUI is not enrolled or a later setup action is unavailable.",
+          "expected": "Connect or install names the next setup choice, while Return remains available so the saved request is not stranded."
+        }
+      ],
+      "automation": {
+        "status": "partial",
+        "visible_controls_only": true,
+        "tests": [
+          "tests/test_manager_generator_setup_ui.py::test_manager_visible_full_setup_scopes_models_import_and_close",
+          "tests/test_manager_generator_setup_ui.py::test_image_plan_visible_setup_return_preserves_saved_draft"
+        ],
+        "visual_runner": "tests/test_manager_generator_setup_ui.py",
+        "captures": [],
+        "notes": "Source-component host integration with generated profiles and fake runtime I/O; installed package and actual SwarmUI lifecycle are not claimed."
+      }
+    }
+  ]
+}

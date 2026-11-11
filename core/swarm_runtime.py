@@ -206,11 +206,18 @@ class SwarmRuntimeManager:
 
     def checked_adopted_connection(self) -> tuple[str, str] | None:
         """Return the saved loopback endpoint and server ID from a successful check."""
+        return self._checked_connection(("adopted",))
+
+    def checked_generation_connection(self) -> tuple[str, str] | None:
+        """Use a checked existing or managed installation for generation."""
+        return self._checked_connection(("adopted", "managed"))
+
+    def _checked_connection(self, ownerships) -> tuple[str, str] | None:
         record, issue = self._load()
         server = record.get("server_id")
         checked = record.get("last_health_check")
         backends = record.get("backend_ids")
-        if (issue or record.get("ownership") != "adopted" or record.get("lifecycle_pending")
+        if (issue or record.get("ownership") not in ownerships or record.get("lifecycle_pending")
                 or record.get("control_plane_online") is not True
                 or record.get("backend_state") != "ready"
                 or record.get("compatibility_state") != "supported"

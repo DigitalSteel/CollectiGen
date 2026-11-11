@@ -225,7 +225,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         layout.addWidget(heading)
         self.workflow_context = WorkflowContextSummary()
         layout.addWidget(self.workflow_context)
-        self.review_connection_button = QPushButton("Review Generator Connection…")
+        self.review_connection_button = QPushButton("Generator Setup…")
         self.review_connection_button.setVisible(callable(self._review_generator_connection))
         self.review_connection_button.clicked.connect(self._open_checked_connection_review)
         layout.addWidget(self.review_connection_button, 0, Qt.AlignLeft)
@@ -3332,10 +3332,10 @@ class GenerationDialog(FeedbackEnabledDialog):
                          else input_issue or "Review your request, then save the draft or export the request.")
             self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
                 result="A saved draft or exported request.",
-                readiness=("Planning only. Use Review Generator Connection to check an existing local generator."
+                readiness=("Planning only. Use Generator Setup to check an existing local generator."
                            if callable(self._review_generator_connection) else
                            "Planning only. To generate, save this draft and return to Applications. "
-                           "Choose Review Generator Connection, then reopen the draft after saving a checked connection."
+                           "Choose Generator Setup, then reopen the draft after saving a checked connection."
                            if self._review_verified_results and self._offline_job_recovery else
                            "Planning only. Generator access is unavailable here."), next_step=next_step)
             self._next_step_tab = 0 if not self.plan.request.positive_prompt or input_issue else 1
@@ -3921,7 +3921,7 @@ class GenerationDialog(FeedbackEnabledDialog):
     def _check_submission_authority(self):
         if self._checked_connection is None or self._checked_connection_provider() != self._checked_connection:
             if callable(self._review_generator_connection):
-                raise ValueError("The saved generator connection changed. Choose Review Generator Connection and check it again.")
+                raise ValueError("The saved generator connection changed. Choose Generator Setup and check it again.")
             raise ValueError("The saved generator connection changed. Reopen Generate after reviewing it.")
 
     def submit_reviewed(self) -> None:
@@ -4457,7 +4457,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._image_submission_allowed = self.runtime_allowed
         self.adapter = self.binding = self.prepared = None
         self.tabs.setTabVisible(self._readiness_tab_index, self.runtime_allowed)
-        self.connection_issue = "The saved generator connection changed. Choose Review Generator Connection and check it again."
+        self.connection_issue = "The saved generator connection changed. Choose Generator Setup and check it again."
         self.connection_detail.clear()
         self.status.setText(self.connection_issue)
         self._update_actions()

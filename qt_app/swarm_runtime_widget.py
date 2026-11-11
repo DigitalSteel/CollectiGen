@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from pathlib import Path
+from time import monotonic
+
+from shiboken6 import isValid
 
 from PySide6.QtCore import Qt, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QFileDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-    QListWidget, QStackedWidget,
+    QListWidget, QStackedWidget, QProgressBar,
     QPlainTextEdit, QTextEdit,
     QMessageBox, QPushButton, QVBoxLayout, QWidget,
 )
@@ -24,10 +27,22 @@ class SwarmRuntimeWidget(QGroupBox):
     status_changed = Signal(object)
     return_requested = Signal()
 
-    def __init__(self, settings, parent=None, *, manager=None, adoption_only=False):
+    def __init__(self, settings, parent=None, *, manager=None, adoption_only=False,
+                 model_registry=None, jobs=None, settings_path=None,
+                 generation_storage_root=None, action_allowed=None):
         super().__init__("Local Generation (SwarmUI)", parent)
         self.settings = settings
         self.adoption_only = adoption_only
+        self._model_registry = model_registry
+        self._jobs = jobs
+        self._settings_path = settings_path
+        self._generation_storage_root = generation_storage_root
+        self._action_allowed = action_allowed or (lambda: True)
+        self._activity_started = None
+        self._activity_label = ""
+        self._activity_timer = QTimer(self)
+        self._activity_timer.setInterval(1000)
+        self._activity_timer.timeout.connect(self._show_activity)
         self.manager = manager or SwarmRuntimeManager()
         self.pool = QThreadPool.globalInstance()
         self._task = None
@@ -63,6 +78,11 @@ class SwarmRuntimeWidget(QGroupBox):
         self.state_detail.setObjectName("mutedLabel")
         layout.addWidget(self.state_label)
         layout.addWidget(self.state_detail)
+        self.activity = QProgressBar()
+        self.activity.setRange(0, 0)
+        self.activity.setAccessibleName("Generator setup operation in progress")
+        self.activity.hide()
+        layout.addWidget(self.activity)
 
         self.task_nav = QListWidget()
         self.task_nav.setAccessibleName("Local generation setup tasks")
@@ -299,14 +319,43 @@ class SwarmRuntimeWidget(QGroupBox):
         self.return_to_request_button.setEnabled(
             self._request_return_available and not busy and self._startup_checks_remaining <= 0
         )
+        self.activity.setVisible(busy)
         if busy:
-            self.state_label.setText(text)
+            if text:
+                self._activity_label = text
+            if self._activity_started is None:
+                self._activity_started = monotonic()
+                self._activity_timer.start()
+            self._show_activity()
+        else:
+            self._activity_timer.stop()
+            self._activity_started = None
+
+    def _show_activity(self):
+        if self._activity_started is not None:
+            elapsed = int(monotonic() - self._activity_started)
+            self.state_label.setText(f"{self._activity_label} - Elapsed {elapsed}s")
+
+    def _registry(self):
+        if self._model_registry is not None:
+            return self._model_registry
+        from core.model_resource_registry import ModelResourceRegistry
+        from core.paths import MODEL_RESOURCES_PATH
+        return ModelResourceRegistry(MODEL_RESOURCES_PATH)
+
+    def _job_owner(self):
+        return self._jobs if self._jobs is not None else getattr(getattr(self.parent(), "state", None), "jobs", None)
 
     def _run(self, label: str, operation, completed):
-        if self._task is not None and not self._task.is_finished():
+        if not self._action_allowed() or (self._task is not None and not self._task.is_finished()):
             return
         self._set_busy(True, label)
-        task = AsyncCallTask(operation)
+        allowed = self._action_allowed
+        def run_if_current():
+            if not allowed():
+                raise RuntimeError("The Manager session ended. Reopen Generator Setup from the current session.")
+            return operation()
+        task = AsyncCallTask(run_if_current)
         self._task = task
         task.signals.complete.connect(lambda result: self._finished(result, completed))
         task.signals.failed.connect(self._failed)
@@ -314,6 +363,12 @@ class SwarmRuntimeWidget(QGroupBox):
 
     def _finished(self, result, completed):
         self._task = None
+        if not isValid(self):
+            return
+        self._set_busy(False)
+        if not self._action_allowed():
+            self.setEnabled(False)
+            return
         try:
             completed(result)
         finally:
@@ -321,6 +376,12 @@ class SwarmRuntimeWidget(QGroupBox):
 
     def _failed(self, message: str):
         self._task = None
+        if not isValid(self):
+            return
+        self._set_busy(False)
+        if not self._action_allowed():
+            self.setEnabled(False)
+            return
         if self._startup_checks_remaining > 0:
             self._startup_checks_remaining = 0
             self._startup_timer.stop()
@@ -603,6 +664,9 @@ class SwarmRuntimeWidget(QGroupBox):
         self._startup_checked(self.manager.snapshot())
 
     def _poll_startup(self):
+        if not self._action_allowed():
+            self._startup_checks_remaining = 0
+            return
         if self._startup_checks_remaining <= 0:
             return
         snapshot = self.manager.snapshot()
@@ -793,16 +857,14 @@ class SwarmRuntimeWidget(QGroupBox):
             self._model_paths_dialog.activateWindow()
             return
         from .swarm_model_paths_dialog import SwarmModelPathsDialog
-        from core.model_resource_registry import ModelResourceRegistry
         from core.model_selection import protected_model_roots
-        from core.paths import MODEL_RESOURCES_PATH
         dialog = SwarmModelPathsDialog(
             self.manager, self,
             model_directory=getattr(self.settings, "ai_models_directory", "") or "",
-            model_registry=ModelResourceRegistry(MODEL_RESOURCES_PATH),
+            model_registry=self._registry(),
             protected_roots=protected_model_roots(self.settings),
             boundary_provider=lambda: protected_model_roots(self.settings),
-            jobs=getattr(getattr(self.parent(), "state", None), "jobs", None),
+            jobs=self._job_owner(),
         )
         dialog.setAttribute(Qt.WA_DeleteOnClose)
         self._model_paths_dialog = dialog
@@ -815,17 +877,38 @@ class SwarmRuntimeWidget(QGroupBox):
         if not self.onboarding_button.isEnabled(): return
         if self._onboarding_dialog is not None and self._onboarding_dialog.isVisible():
             self._onboarding_dialog.raise_(); self._onboarding_dialog.activateWindow(); return
-        from core.paths import MODEL_RESOURCES_PATH
-        from core.model_resource_registry import ModelResourceRegistry
         from core.model_selection import protected_model_roots
         from .swarm_onboarding_workflow import open_swarm_onboarding
-        jobs = getattr(getattr(self.parent(), "state", None), "jobs", None)
+        jobs = self._job_owner()
         if jobs is None:
             self.state_detail.setText("Open Import Existing Setup from Setup while a workspace is available.")
             return
         self._onboarding_dialog = open_swarm_onboarding(self,
-            ModelResourceRegistry(MODEL_RESOURCES_PATH), jobs, settings=self.settings,
-            protected_roots=protected_model_roots(self.settings), manager=self.manager)
+            self._registry(), jobs, settings=self.settings,
+            protected_roots=protected_model_roots(self.settings), manager=self.manager,
+            settings_path=self._settings_path,
+            generation_storage_root=self._generation_storage_root)
+
+    def request_setup_close(self, continuation):
+        """Keep the host alive until its existing child operations can close."""
+        if self._task is not None:
+            self.state_detail.setText("Wait for the current setup operation to finish, then close or return.")
+            return False
+        for name in ("_model_paths_dialog", "_onboarding_dialog", "_logs_dialog",
+                     "_installation_dialog", "_configuration_backups_dialog",
+                     "_companion_package_dialog", "_compatibility_dialog", "_update_review_dialog"):
+            dialog = getattr(self, name)
+            if dialog is None or not isValid(dialog) or not dialog.isVisible():
+                continue
+            request = getattr(dialog, "request_parent_close", None)
+            if request is not None:
+                if not request(continuation):
+                    return False
+            elif not dialog.close():
+                return False
+        self._startup_timer.stop()
+        self._startup_checks_remaining = 0
+        return True
 
     def request_onboarding_close(self, continuation):
         dialog = self._onboarding_dialog
