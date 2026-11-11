@@ -107,6 +107,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         connection_issue="",
         prompt_knowledge=None,
         swarm_preset_service=None,
+        runtime_allowed=True,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -124,6 +125,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.remix_source = False
         self.prompt_knowledge = prompt_knowledge
         self.swarm_preset_service = swarm_preset_service
+        self.runtime_allowed = runtime_allowed
         self.storage_root = Path(storage_root)
         self.source_record = GenerationRecord.from_dict(source_record.to_dict()) if source_record else None
         self.source_identity = _mapping(source_identity)
@@ -194,7 +196,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.setWindowTitle("Plan Image Generation")
         self.resize(1000, 860)
         layout = QVBoxLayout(self)
-        heading = QLabel("Review a complete request before any local generator receives it")
+        heading = QLabel("Review a complete request before any local generator receives it"
+            if self.runtime_allowed else "Plan an image for Suite Manager")
         heading.setObjectName("sectionTitle")
         layout.addWidget(heading)
         self.workflow_context = WorkflowContextSummary()
@@ -228,8 +231,10 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.tabs.addTab(self._scroll(self._build_review_tab()), "Review")
         self.tabs.addTab(self._build_advanced_tab(), "Advanced")
         connection = self._build_connection_tab()
-        self.tabs.addTab(self._scroll(self._build_results_tab()), "Results && Queue")
+        results_tab = self.tabs.addTab(self._scroll(self._build_results_tab()), "Results && Queue")
         self._readiness_tab_index = self.tabs.addTab(self._scroll(connection), "Readiness")
+        self.tabs.setTabVisible(results_tab, self.runtime_allowed)
+        self.tabs.setTabVisible(self._readiness_tab_index, self.runtime_allowed)
         body = QHBoxLayout()
         body.addWidget(self.tabs, 1)
         self.source_panel = self._build_source_panel()
@@ -255,6 +260,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.submit_button = QPushButton("Submit Reviewed Request")
         self.submit_button.setProperty("primary", True); self.submit_button.clicked.connect(self.submit_reviewed)
         buttons.addButton(self.submit_button, QDialogButtonBox.AcceptRole)
+        self.submit_button.setVisible(self.runtime_allowed)
         buttons.addButton(self.next_step_button, QDialogButtonBox.ActionRole)
         self.more_draft_actions_button = QPushButton("More Draft Actions…")
         self.more_draft_actions_button.setCheckable(True)
@@ -475,7 +481,9 @@ class GenerationDialog(FeedbackEnabledDialog):
             consequence="Chose an editable image-change starting point; original unchanged")
         self._refresh_from_plan(
             "Starting amount of change applied. This is not a model-specific quality guarantee. "
-            "Describe the desired result, review the exact model and settings, then prepare deliberately."
+            + ("Describe the desired result, review the exact model and settings, then prepare deliberately."
+               if self.runtime_allowed else
+               "Describe the desired result, then save or export the request for Suite Manager.")
         )
 
     def configure_remix(self):
@@ -582,7 +590,8 @@ class GenerationDialog(FeedbackEnabledDialog):
                 consequence="Selected image-guided task, exact source, dimensions and amount of change")
             self.prepared = None
             self.receipt = None
-            self._refresh_from_plan("Source attached. Review the prompt, model and local connection before preparing.")
+            self._refresh_from_plan("Source attached. Review the prompt, model and local connection before preparing."
+                if self.runtime_allowed else "Source attached. Edit the request, then save or export it for Suite Manager.")
         except (ValueError, KeyError, TypeError) as exc:
             self.prepared = None
             self.status.setText(str(exc))
@@ -769,7 +778,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.source_task_summary.setText(
             f"Image task: {self.image_task.currentText()}. The original image stays unchanged. "
             + ("Upscaling may redraw details. " if task == "upscale" else "")
-            + "Review the prompt, model and output before preparing."
+            + ("Review the prompt, model and output before preparing." if self.runtime_allowed else
+               "Review the request, then save or export it for Suite Manager.")
         )
         self.source_task_summary.setVisible(linked)
         self._request_form.setRowVisible(self.intent, not linked)
@@ -842,7 +852,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.goal = QLineEdit(); self.goal.setMaxLength(500)
         self.goal.setPlaceholderText("Optional planning note; not sent to the generator")
         self.positive = QTextEdit(); self.positive.setFixedHeight(90); self.positive.setAccessibleName("Image prompt sent to generator")
-        self.positive.setPlaceholderText("Describe the image you want to generate. This text is sent to the generator.")
+        self.positive.setPlaceholderText("Describe the image you want to generate. This text is sent to the generator."
+            if self.runtime_allowed else "Describe the image you want to plan.")
         self.negative = QTextEdit(); self.negative.setFixedHeight(70); self.negative.setAccessibleName("Negative prompt")
         self.negative.setPlaceholderText("Optional details to avoid in the image")
         self.model = QLineEdit(); self.model.setPlaceholderText("Exact generator model name")
@@ -2600,7 +2611,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             button.setEnabled(idle)
         self.history_choice.setEnabled(idle)
         selected_job = self.history_choice.currentData()
-        self.recover_button.setEnabled(idle and isinstance(selected_job, dict)
+        self.recover_button.setEnabled(self.runtime_allowed and idle and isinstance(selected_job, dict)
                                        and bool(selected_job.get("job_id")))
         selection_needs_open = self._selected_job_needs_open()
         if selection_needs_open:
@@ -2635,7 +2646,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         if self._output_preview and self._output_preview.get("application_blocker"):
             self.output_apply_button.setEnabled(False)
         self.output_apply_button.setToolTip((self._output_preview or {}).get("application_blocker", ""))
-        self.check_button.setEnabled(idle)
+        self.check_button.setEnabled(idle and self.runtime_allowed)
         self.choose_resource_button.setEnabled(self.registry is not None and not self._pending and not active)
         for button in (self.add_lora_button, self.choose_vae_button, self.choose_other_resource_button):
             button.setEnabled(self.registry is not None and not self._pending and not active)
@@ -2683,7 +2694,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             input_issue=input_issue)
         self._update_draft_action_presentation()
         self.source_panel.setEnabled(idle)
-        self.experiment_button.setEnabled(not self._pending and (idle or bool(self._experiment_dialog)))
+        self.experiment_button.setEnabled(self.runtime_allowed and not self._pending and (idle or bool(self._experiment_dialog)))
         self.results_experiment_button.setEnabled(self.experiment_button.isEnabled())
         self.save_recipe_button.setEnabled(idle and not input_issue)
         self.save_recipe_button.setToolTip(input_issue)
@@ -2702,7 +2713,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             "valid", self.prepared.get("request") is not None))
             or self._next_step_tab == 1 or self.submit_button.isEnabled())
         self.submit_button.setVisible(
-            review_stage and not self._pending and not self._execution_active()
+            self.runtime_allowed and review_stage and not self._pending and not self._execution_active()
         )
         self.next_step_button.setVisible(not self.submit_button.isEnabled())
         self.more_draft_actions_button.setText(
@@ -2710,6 +2721,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         )
 
     def open_experiment(self):
+        if not self._require_generation_runtime():
+            return
         if self._pending or self._shutdown_requested: return
         if self._experiment_dialog is None:
             if self._execution_active(): return
@@ -3135,6 +3148,14 @@ class GenerationDialog(FeedbackEnabledDialog):
         if any(item.kind == "init_image" for stage in self.plan.request.stages for item in stage.inputs):
             using = ("One exact source image is attached for image-guided generation."
                      if callable(self.source_image_provider) else "Saved image reference; reconnect the exact original to continue.")
+        if not self.runtime_allowed:
+            next_step = ("Enter your image prompt, then review the request." if not self.plan.request.positive_prompt
+                else input_issue or "Save or export this request. In Suite Manager, use Plan an Image to import it.")
+            self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
+                result="A saved draft or exported request for Suite Manager.",
+                readiness="Planning only. Generator access is unavailable here.", next_step=next_step)
+            self._next_step_tab = 0 if not self.plan.request.positive_prompt or input_issue else 1
+            return
         result = "New images; originals unchanged. Verified results go to Ingest as unreviewed."
         job_state = str(getattr(self._submitted_progress, "state", ""))
         if "submit" in self._pending:
@@ -3348,7 +3369,15 @@ class GenerationDialog(FeedbackEnabledDialog):
         if not self._pending:
             self._io_timer.stop()
 
+    def _require_generation_runtime(self):
+        if self.runtime_allowed:
+            return True
+        self.status.setText("This workspace supports planning and export. Use Suite Manager to run the request.")
+        return False
+
     def check_connection(self) -> None:
+        if not self._require_generation_runtime():
+            return
         if self._pending or self._execution_active(): return
         if self.connection_issue:
             self.status.setText(self.connection_issue)
@@ -3373,6 +3402,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._run("probe", adapter.probe, done)
 
     def bind_local_model(self) -> None:
+        if not self._require_generation_runtime():
+            return
         if self._pending or self._execution_active() or self.adapter is None: return
         name, path = self.local_model_name.text().strip(), Path(self.local_model_path.text().strip())
         if not name or path.suffix.casefold() != ".safetensors":
@@ -3444,6 +3475,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.prepared = None; self.connection_detail.setPlainText(_plain_json(binding)); self._refresh_from_plan("Exact local model is bound. Review its visible name and hash, then prepare.")
 
     def prepare_request(self) -> None:
+        if not self._require_generation_runtime():
+            return
         if self._pending or self._execution_active(): return
         input_issue, _target = self._ordinary_input_issue()
         if input_issue:
@@ -3647,6 +3680,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._refresh_from_plan("Validated neutral JSON edits were applied with a new audit diff. Bind and prepare again before submitting.")
 
     def submit_reviewed(self) -> None:
+        if not self._require_generation_runtime():
+            return
         if self._shutdown_requested:
             return
         if self.remix_source and (not callable(self.source_image_provider) or not any(
@@ -3900,6 +3935,8 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.status.setText("Selected a result to check. Record Outcome Review verifies its Ingest transfer, lineage and bytes.")
 
     def load_history(self, *, on_open: bool = False) -> None:
+        if not self._require_generation_runtime():
+            return
         from core.generation_execution import GenerationExecutionService
         service = GenerationExecutionService(self.storage_root, self.jobs)
         def done(receipts):
@@ -3936,6 +3973,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._run("history", service.history, done)
 
     def recover_selected(self) -> None:
+        if not self._require_generation_runtime():
+            return
         receipt = self.history_choice.currentData()
         if not isinstance(receipt, dict) or not receipt.get("job_id"):
             self.status.setText("Load and select a retained job first."); return

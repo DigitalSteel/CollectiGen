@@ -46,6 +46,10 @@ def make_window_type(base_window: type, *, current_application: Callable,
             return command
 
         def _build_ui(self):
+            # Context actions can open the shared floating image planner.
+            # Organizer owns drafting, never generator execution.
+            self.state.generation_runtime_allowed = False
+            self.state.video_generation_runtime_allowed = False
             super()._build_ui()
             # Retain canonical indices/items for contextual repair and mode changes.
             # Primary product navigation exposes only its existing workspaces.

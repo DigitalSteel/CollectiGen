@@ -53,6 +53,11 @@ def open_video_generation_workspace(parent, *, source_path=None, on_opened=None,
                                     draft_label=None):
     """Default opens immediately; explicit runtime context is admitted off-UI."""
     host=_host(parent);state=host.state
+    if not getattr(state, "video_generation_runtime_allowed", True):
+        QMessageBox.information(parent, "Plan video in Suite Manager",
+            "Video generation is unavailable in Media Organizer. "
+            "In Suite Manager, choose Applications > Plan a Video. Your source image stays unchanged.")
+        return None
     factory=getattr(state,"dependency_service_factory",None)
     lifetime=getattr(state,"video_decoder_lifetime",None)
     options=dict(source_path=source_path,on_opened=on_opened,

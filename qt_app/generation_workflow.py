@@ -513,7 +513,11 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
         outfits = [{**o.to_dict(), "associated_character_ids": list(character_db.associated_character_ids(o.id)),
                     "text": ", ".join(o.sdxl_tags), "reviewed": True}
                    for o in getattr(character_db, "outfits", {}).values()][:1000]
-        endpoint, connection_issue = _saved_runtime_connection(setup_window)
+        runtime_allowed = getattr(state, "generation_runtime_allowed", True)
+        endpoint, connection_issue = (
+            _saved_runtime_connection(setup_window) if runtime_allowed else
+            ("", "Plan this image here, then export the request for Suite Manager.")
+        )
         dialog = GenerationDialog(state.jobs, registry=model_registry,
             storage_root=USER_DATA_DIR / "generation", source_record=source,
             source_identity=identity, knowledge_fragments=fragments,
@@ -523,10 +527,10 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             protected_model_roots=protected_model_roots(settings),
             settings=settings,
             ingest_history=getattr(state, "moves", None),
-            setup_available=setup_window is not None,
+            setup_available=setup_window is not None and runtime_allowed,
             initial_endpoint=endpoint, connection_issue=connection_issue,
             prompt_knowledge=getattr(state, "knowledge", None),
-            characters=characters, outfits=outfits, parent=host)
+            characters=characters, outfits=outfits, runtime_allowed=runtime_allowed, parent=host)
         dialog.source_records = saved_records
         if preloaded_draft is not None:
             plan, target, token = preloaded_draft

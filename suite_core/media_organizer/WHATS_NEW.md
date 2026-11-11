@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Dataset image actions keep Remix and image-request editing in an offline planner. Save or export the request, then import it with Suite Manager Plan an Image. Generator access stays in Manager. Animate This Image points to Manager Plan a Video.
+
 2026-11-11 (America/New_York)
 
 ## Generation results
