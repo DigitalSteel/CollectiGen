@@ -935,6 +935,8 @@ class DatasetPage(QWidget):
             )+24
         )
         library_menu=QMenu(self.library_actions)
+        self.import_training_draft_action=library_menu.addAction("Import Training Draft…")
+        self.import_training_draft_action.triggered.connect(self.import_training_draft)
         self.plan_training_scope_action=QAction("Plan Training Dataset…",self)
         self.plan_training_scope_action.setToolTip(
             "Choose the selected images or the exact current matching results across all pages."
@@ -4561,7 +4563,7 @@ class DatasetPage(QWidget):
             return
         DatasetPage.open_concept_groups(self,include_selection=True,selected_paths=selected)
 
-    def open_concept_groups(self,checked=False,*,include_selection=False,selected_paths=None,selected_group_id=""):
+    def open_concept_groups(self,checked=False,*,include_selection=False,selected_paths=None,selected_group_id="",training_draft=None):
         from core.concept_groups import ConceptGroupStore
         from .concept_group_dialog import ConceptGroupDialog
         selection_at_open=tuple(self.selected_paths())
@@ -4591,6 +4593,10 @@ class DatasetPage(QWidget):
             existing.close()
             existing=None
         if existing is not None and not existing._closed:
+            if training_draft is not None:
+                existing.status.setText("Close this collection review, then reopen the saved Training draft to choose its collection.")
+                existing.show(); existing.raise_(); existing.activateWindow()
+                return
             if not existing.has_active_background_work():
                 existing.dataset=dataset
                 existing.selected_paths=selected
@@ -4621,6 +4627,9 @@ class DatasetPage(QWidget):
         dialog.image_requested.connect(self._preview_collection_image)
         dialog.background_work_finished.connect(self._notify_background_work_finished)
         dialog._dataset_scope_generation=generation
+        dialog._training_draft=training_draft
+        if training_draft is not None:
+            dialog.status.setText("Choose and review the current Collection. Its images will use the saved draft's goal and settings.")
         self._concept_group_dialog=dialog
         dialog.show()
 
@@ -4630,8 +4639,18 @@ class DatasetPage(QWidget):
             return
         window=self.window() if callable(getattr(self,"window",None)) else None
         open_training=getattr(window,"open_training_workspace",None)
-        accepted=(open_training(group=group,collection_reviewed=True)
-                  if callable(open_training) else self.plan_concept_training(group))
+        draft=getattr(dialog,"_training_draft",None)
+        if draft is not None:
+            if self.dataset is not dialog.dataset or getattr(self,"_dataset_scope_generation",0)!=dialog._dataset_scope_generation:
+                dialog.status.setText("The library changed. Reopen the saved draft.")
+                return
+            self.training_plan_drafts.load()
+            current=next((d for d in self.training_plan_drafts.all_drafts() if d.draft_id==draft.draft_id),None)
+            if current is None or current.fingerprint!=draft.fingerprint:
+                dialog.status.setText("The saved draft changed. Reopen it before continuing.")
+                return
+        accepted=(open_training(group=group,draft=draft,collection_reviewed=True)
+                  if callable(open_training) else self.plan_concept_training(group,draft=draft))
         if accepted:
             dialog.complete_training_handoff()
 
@@ -4653,7 +4672,7 @@ class DatasetPage(QWidget):
         finally:
             card.deleteLater()
 
-    def plan_concept_training(self,group) -> bool:
+    def plan_concept_training(self,group,*,draft=None) -> bool:
         from core.concept_groups import group_fingerprint
         from core.federated_dataset import LibraryImageIdentity
         if getattr(self, "_shutdown_requested", False):
@@ -4672,6 +4691,15 @@ class DatasetPage(QWidget):
             QMessageBox.information(self,"Collection library unavailable","Restore the collection's named libraries before planning. No substitute images were selected.")
             return False
         paths=tuple(identities)
+        if draft is not None:
+            if not DatasetPage._storage_scope_ready(self,paths,write=False,action="resume a collection Training draft"):
+                return False
+            self._training_export_profile_id=draft.profile.profile_id
+            self._start_training_candidate_plan(paths,draft.goal,draft.profile,identities=identities,
+                overrides=draft.overrides(),permission_disposition=draft.permission_disposition(),
+                configuration=draft.configuration(),guard_selection=False,draft=draft,concept_group=frozen,
+                source_label=f"Collection {frozen['name']} [{frozen['id']}] snapshot {group_fingerprint(frozen)}")
+            return self._training_candidate_task is not None
         dialog=TrainingCandidateGoalDialog(len(paths),self.export_profiles,self.settings.export_content_level,self,
             current_profile_id=self._training_export_profile_id,
             scope_choices=(TrainingScopeChoice(TrainingScopeKind.SELECTED,len(paths),f"Collection: {frozen['name']}"),),
@@ -4771,6 +4799,32 @@ class DatasetPage(QWidget):
             guard_selection=kind==TrainingScopeKind.SELECTED,scope_context=context,
         )
 
+    def import_training_draft(self):
+        if getattr(self, "_shutdown_requested", False) or self._training_candidate_task is not None:
+            return
+        if self.dataset is None:
+            QMessageBox.information(self,"Open a library", "Open a named library before importing a Training draft.")
+            return
+        from .training_draft_transfer_dialog import TrainingDraftTransferDialog
+        if getattr(self,"_training_draft_transfer_dialog",None) is not None:
+            return
+        dataset=self.dataset; generation=getattr(self,"_dataset_scope_generation",0)
+        dialog=TrainingDraftTransferDialog(self.state.jobs,self.training_plan_drafts.path,self,importing=True)
+        self._training_draft_transfer_dialog=dialog
+        dialog.finished.connect(self._notify_background_work_finished)
+        try:
+            accepted=dialog.exec()==QDialog.Accepted
+        finally:
+            self._training_draft_transfer_dialog=None
+            dialog.deleteLater()
+        if not accepted or dialog.imported_draft is None or getattr(self,"_shutdown_requested",False):
+            return
+        self.training_plan_drafts.load()
+        if self.dataset is not dataset or getattr(self,"_dataset_scope_generation",0)!=generation:
+            QMessageBox.information(self,"Draft saved", "The library changed. Reopen the saved draft in the current library.")
+            return
+        self.resume_training_dataset_draft(draft=dialog.imported_draft)
+
     def resume_training_dataset_draft(self,*,draft=None):
         if self._training_candidate_task is not None:
             show_operation_in_progress(self,"Training dataset planning")
@@ -4794,6 +4848,9 @@ class DatasetPage(QWidget):
                 return
             draft=picker.selected_draft()
         if draft is None:
+            return
+        if str(draft.plan_manifest["selection_scope"]["source_label"]).startswith("Collection "):
+            self.open_concept_groups(training_draft=draft)
             return
         resolution=draft.resolve_selection(self.dataset)
         if not resolution.ready:
@@ -6508,6 +6565,8 @@ class DatasetPage(QWidget):
         task.cancel(); self.cancel_projection_button.setText("Cancelling…"); self.cancel_projection_button.setEnabled(False)
 
     def has_active_background_work(self) -> bool:
+        transfer=getattr(self,"_training_draft_transfer_dialog",None)
+        if transfer is not None and transfer._task is not None:return True
         impact=getattr(self,"_preparation_impact_dialog",None)
         media=getattr(self,"_media_library_dialog",None)
         if media is not None and media.has_active_background_work():return True
@@ -6546,9 +6605,12 @@ class DatasetPage(QWidget):
     def request_background_shutdown(self) -> bool:
         """Stop cancellable Dataset work and wait for every safe boundary."""
         self._shutdown_requested=True
+        transfer=getattr(self,"_training_draft_transfer_dialog",None)
+        transfer_active=bool(transfer is not None and transfer._task is not None)
+        if transfer is not None:transfer.reject()
         queue=getattr(self,"_preparation_request_queue",None)
         if queue is not None:queue.cancel_all()
-        active=close_history_dialogs(self) or bool(getattr(self,"_history_refresh_tasks",()))
+        active=transfer_active or close_history_dialogs(self) or bool(getattr(self,"_history_refresh_tasks",()))
         resolution_filter=getattr(self,"resolution_filter",None)
         if resolution_filter is not None:
             resolution_filter.shutdown()

@@ -137,10 +137,10 @@ def with_workflow_corrections(reviewed_window_type, *, label_library_item=_nativ
             if group is not None:
                 if group.get("rules") is not None and not collection_reviewed:
                     self._queue_dataset_page_action(
-                        lambda: self.dataset_page.open_concept_groups(selected_group_id=group["id"]))
+                        lambda: self.dataset_page.open_concept_groups(selected_group_id=group["id"], training_draft=draft))
                     return False  # collection owner must review its current scope
                 return bool(self._queue_dataset_page_action(
-                    lambda: self.dataset_page.plan_concept_training(group)))
+                    lambda: self.dataset_page.plan_concept_training(group, draft=draft)))
             self._queue_dataset_page_action(
                 lambda: self.dataset_page.resume_training_dataset_draft(draft=draft))
             # Legacy callers must not assume a TrainingPage exists. The owning

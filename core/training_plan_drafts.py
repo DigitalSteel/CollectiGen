@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -835,6 +836,41 @@ class TrainingPlanDraft:
             "updated_at":self.updated_at,
         }
         return {**payload,"draft_fingerprint":_stable_hash(payload)}
+
+    @classmethod
+    def read_transfer(cls, path: Path) -> "TrainingPlanDraft":
+        """Read one user-selected canonical draft without resolving its source paths."""
+        from .training_source_io import read_stable_training_source
+
+        def unique_fields(pairs):
+            fields = {}
+            for key, value in pairs:
+                if key in fields:
+                    raise TrainingPlanDraftError("The Dataset draft contains duplicate JSON fields.")
+                fields[key] = value
+            return fields
+
+        def reject_constant(_value):
+            raise TrainingPlanDraftError("The Dataset draft contains a non-finite JSON value.")
+
+        def finite_float(value):
+            parsed = float(value)
+            if not math.isfinite(parsed):
+                reject_constant(value)
+            return parsed
+
+        try:
+            raw, _ = read_stable_training_source(path, max_bytes=16 * 1024 * 1024)
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise TrainingPlanDraftError(
+                "Choose a regular Dataset draft of at most 16 MiB at a stable, unredirected path."
+            ) from exc
+        try:
+            value = json.loads(raw, object_pairs_hook=unique_fields, parse_constant=reject_constant,
+                               parse_float=finite_float)
+            return cls.from_dict(value)
+        except (UnicodeError, ValueError, RecursionError) as exc:
+            raise TrainingPlanDraftError("The selected Dataset draft could not be read.") from exc
 
     @classmethod
     def from_dict(cls,value: Any) -> "TrainingPlanDraft":
