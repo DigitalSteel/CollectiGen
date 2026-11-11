@@ -1325,6 +1325,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         def refresh_generator_card(self):
             """Project saved runtime observations; never probe or start a generator."""
+            if not hasattr(self, "view"):
+                return
             from qt_app.module_card import ModuleCardPresentation
             from core.paths import SWARM_RUNTIME_PATH
             from core.swarm_runtime import SwarmRuntimeManager

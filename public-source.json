@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1163,
+  "allowlisted_source_file_count": 1164,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -2246,8 +2246,8 @@
       "size_bytes": 79634
     },
     "qt_app/generation_dialog.py": {
-      "sha256": "d765f0974b153912a790dddf1c01576b02f1e459509d95ed5302af845728737a",
-      "size_bytes": 285441
+      "sha256": "c527798848d286a838434206a9e9884d4d6f17438eaa1d9783431c7d21e762d2",
+      "size_bytes": 287171
     },
     "qt_app/generation_experiment_dialog.py": {
       "sha256": "efd99ae269514581d1e215f68b7818d861685ffbe64b49d06c8f14c92ae1da6b",
@@ -3146,8 +3146,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "19288e82bdf859f89af1c38c31375ebc569bf9398023afb1d2ef507ceb7eac6e",
-      "size_bytes": 21904
+      "sha256": "41a4fb66faa01c854e32c616c054f3dafb64ebfdabad839fd26588ededef5998",
+      "size_bytes": 22124
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3418,8 +3418,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "c67ba578fc05cf8c9406080c7f3f52988039fb395d2dfd828b2906feb6a91f22",
-      "size_bytes": 265235
+      "sha256": "d865bda61251509aa7b065cef32f5dfbf698b95bcf86ecdc45a9f0a3e9859091",
+      "size_bytes": 265300
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3954,7 +3954,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "fea79930fdf6f9e732be8b47e2cd4a177d88f6b0862fd6373d884a63ad9ca6f1",
+      "sha256": "e19756d1cc68d59ff749944d6b9a7f2a9b05cee3a43d950a9bfe36ef1479d9dd",
       "size_bytes": 163449
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4654,8 +4654,12 @@
       "size_bytes": 7367
     },
     "tests/test_manager_generator_dashboard_ui.py": {
-      "sha256": "05f4ccaf05d4857b557e6fbc0f5dc7fa381abdbd977de0413dbc38af2144b7d4",
-      "size_bytes": 5910
+      "sha256": "53f2b49cd9a9e9dcfcab6e0d02050fd0231e31de83c3522637753318148031f9",
+      "size_bytes": 6357
+    },
+    "tests/test_manager_result_context_ui.py": {
+      "sha256": "1f714f55a4953fbff7c89656e415729056bdee947c69b84eebd99e6b5f8f6675",
+      "size_bytes": 1885
     }
   },
   "fresh_history_required": true,

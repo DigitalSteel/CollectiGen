@@ -1,5 +1,8 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Verified Results keeps image/receipt actions above the preview and explains
+  the result review. Updated Organizer accepts its receipt through normal Ingest
+  copy review, preserving the source and generation lineage.
 - Dashboard shows saved local-generator status and routes to Setup, image
   drafts or generation work without contacting or starting SwarmUI.
 - Generator Setup now includes the original connect/install, run/status,

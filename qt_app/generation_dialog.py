@@ -217,12 +217,12 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.setWindowTitle("Plan Image Generation")
         self.resize(1000, 860)
         layout = QVBoxLayout(self)
-        heading = QLabel(
+        self.workflow_heading = QLabel(
             "Review a complete request before any local generator receives it"
             if self.runtime_allowed else "Plan an image to save as a draft or export as a request"
         )
-        heading.setObjectName("sectionTitle")
-        layout.addWidget(heading)
+        self.workflow_heading.setObjectName("sectionTitle")
+        layout.addWidget(self.workflow_heading)
         self.workflow_context = WorkflowContextSummary()
         layout.addWidget(self.workflow_context)
         self.review_connection_button = QPushButton("Generator Setup…")
@@ -1914,8 +1914,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         handoff_row.insertWidget(1, self.finish_result_button)
         outcome_actions.addLayout(history_row)
         outcome_actions.addWidget(self.opened_result_status)
-        outcome_actions.addWidget(self.result_preview)
         outcome_actions.addLayout(handoff_row)
+        outcome_actions.addWidget(self.result_preview)
         outcome_actions.addWidget(self.ingest_folder_recovery)
         iteration_row = QHBoxLayout()
         self.result_action = QComboBox()
@@ -3302,6 +3302,31 @@ class GenerationDialog(FeedbackEnabledDialog):
 
     def _update_workflow_context(self, *, prepared_valid: bool, active: bool,
                                  input_issue: str = "") -> None:
+        self.workflow_heading.setText(
+            "Review a complete request before any local generator receives it"
+            if self.runtime_allowed else "Plan an image to save as a draft or export as a request")
+        if self._review_verified_results and self.tabs.currentIndex() == 3:
+            if active or self._execution_active():
+                self.workflow_heading.setText("Track image generation work")
+            else:
+                self.workflow_heading.setText("Review a verified image for Organizer")
+                opened = self.copy_receipt_path_button.isEnabled()
+                if self._pending:
+                    readiness, next_step = "Checking saved results...", "Wait for the current check."
+                elif opened:
+                    readiness, next_step = "Verified result open.", "Preview the image or copy its receipt path for Organizer."
+                elif self.history_choice.count():
+                    readiness = "Recent results are available."
+                    next_step = "Select a recent job and choose " + self.recover_button.text().replace("&&", "&") + "."
+                else:
+                    readiness, next_step = "No verified result is open.", "Choose Refresh Recent Jobs to look for saved results."
+                self.workflow_context.update_context(
+                    using=self._opened_result_name() if opened else "Saved Manager results.",
+                    model="Saved job receipt and image metadata.",
+                    result="A receipt path for copy review in Organizer.",
+                    readiness=readiness, next_step=next_step)
+                self._next_step_tab = 3
+                return
         identity = self.plan.source_identity
         collection = identity.get("collection")
         count = len(collection) if isinstance(collection, list) else int(bool(identity or self.plan.source))

@@ -2608,8 +2608,8 @@
     },
     {
       "path": "qt_app/generation_dialog.py",
-      "bytes": 285441,
-      "sha256": "d765f0974b153912a790dddf1c01576b02f1e459509d95ed5302af845728737a"
+      "bytes": 287171,
+      "sha256": "c527798848d286a838434206a9e9884d4d6f17438eaa1d9783431c7d21e762d2"
     },
     {
       "path": "qt_app/generation_experiment_dialog.py",
@@ -3983,8 +3983,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 265235,
-      "sha256": "c67ba578fc05cf8c9406080c7f3f52988039fb395d2dfd828b2906feb6a91f22"
+      "bytes": 265300,
+      "sha256": "d865bda61251509aa7b065cef32f5dfbf698b95bcf86ecdc45a9f0a3e9859091"
     },
     {
       "path": "suite_core/media_examples.py",

@@ -118,3 +118,15 @@ def test_unavailable_session_does_not_read_generator_record(tmp_path, monkeypatc
     QTest.mouseClick(window.generator_card.action_button, Qt.LeftButton)
     assert reads == []
     window.close(); app.processEvents()
+
+
+def test_dashboard_initial_navigation_waits_for_first_view(tmp_path, monkeypatch):
+    import sys
+    app = application()
+    failures = []
+    monkeypatch.setattr(sys, "excepthook", lambda *args: failures.append(args))
+    window, session, value, reads = fixture_window(tmp_path, monkeypatch)
+    app.processEvents()
+    assert failures == []
+    assert window.generator_card.presentation.action_enabled
+    window.close(); app.processEvents()
