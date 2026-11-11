@@ -116,13 +116,18 @@ class TrainingWorkflowController(QObject):
 
     def __init__(self, jobs, parent, *, workflow_factory=None, run_service=None,
                  run_index=None, saved_setup=None, preparation_root=None,
-                 run_output_scope=None, session_allowed=None):
+                 run_output_scope=None, session_allowed=None, draft_store_path=None,
+                 clone_opener=None, prepare_opener=None, experiments_index=None):
         super().__init__(parent)
         self.jobs = jobs
         from core.training_execution import TrainingExecutionService
         from core.training_execution_readiness import TrainingExecutionReadinessService
         self.run_index, self.saved_setup = run_index, saved_setup
         self._session_allowed = session_allowed
+        self._draft_store_path = draft_store_path
+        self._clone_opener = clone_opener
+        self._prepare_opener = prepare_opener
+        self._experiments_index = experiments_index
         self.workflow_factory = workflow_factory or (lambda: TrainingWorkflowService(jobs,
             readiness=TrainingExecutionReadinessService(run_index=run_index),
             preparation_root=preparation_root, run_output_scope=run_output_scope))
@@ -302,14 +307,17 @@ class TrainingWorkflowController(QObject):
         self._start_retained_index()
 
     def experiments(self):
-        if self._closing or self.run_index is None: return None
+        if (self._closing or self.run_index is None
+                or (self._session_allowed is not None and not self._session_allowed())): return None
         from core.paths import TRAINING_PLAN_DRAFTS_PATH
         from .training_experiments_dialog import TrainingExperimentsDialog
         for dialog in self.dialogs:
             if isinstance(dialog, TrainingExperimentsDialog):
                 self.show_review(dialog); return dialog
-        dialog = TrainingExperimentsDialog(self.run_index, self.jobs,
-            TRAINING_PLAN_DRAFTS_PATH, self.parent())
+        dialog = TrainingExperimentsDialog(self._experiments_index or self.run_index, self.jobs,
+            self._draft_store_path or TRAINING_PLAN_DRAFTS_PATH, self.parent(),
+            saved_drafts_available=self._clone_opener is not None)
+        dialog.savedDraftsRequested.connect(lambda: self._open_cloned_draft(None))
         dialog.openRunRequested.connect(self._open_retained)
         dialog.draftCreated.connect(self._open_cloned_draft)
         dialog.evaluationRequested.connect(lambda review: self._open_retained(review.record, dialog._revision))
@@ -317,7 +325,10 @@ class TrainingWorkflowController(QObject):
         return self._show(dialog)
 
     def _return_to_training_prepare(self):
-        if self._closing:
+        if self._closing or (self._session_allowed is not None and not self._session_allowed()):
+            return
+        if self._prepare_opener is not None:
+            self._prepare_opener()
             return
         from .training_workspace import open_training_workspace
         if open_training_workspace(self.parent()):
@@ -350,7 +361,10 @@ class TrainingWorkflowController(QObject):
         return self._show(dialog)
 
     def _open_cloned_draft(self, draft):
-        if self._closing: return
+        if self._closing or (self._session_allowed is not None and not self._session_allowed()): return
+        if self._clone_opener is not None:
+            self._clone_opener(draft)
+            return
         from .training_workspace import open_training_workspace
         open_training_workspace(self.parent(), draft=draft)
 

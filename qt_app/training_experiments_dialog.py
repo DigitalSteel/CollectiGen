@@ -27,12 +27,13 @@ class TrainingExperimentsDialog(FeedbackEnabledDialog):
 
     openRunRequested = Signal(object, str)
     draftCreated = Signal(object)
+    savedDraftsRequested = Signal()
     evaluationRequested = Signal(object)
     prepareRequested = Signal()
     editorCloseReady = Signal()
     feedback_workflow = "Training experiments"
 
-    def __init__(self, index, jobs, draft_store_path, parent=None):
+    def __init__(self, index, jobs, draft_store_path, parent=None, *, saved_drafts_available=False):
         super().__init__(parent)
         self.service = TrainingExperiments(index, draft_store_path)
         self.jobs = jobs
@@ -66,6 +67,11 @@ class TrainingExperimentsDialog(FeedbackEnabledDialog):
         bar.addWidget(self.refresh_button)
         self.summary = QLabel("Waiting to read saved runs.")
         bar.addWidget(self.summary)
+        if saved_drafts_available:
+            self.saved_drafts_button = QPushButton("Export Saved Draft…")
+            self.saved_drafts_button.clicked.connect(
+                lambda: self._guard_unsaved(self.savedDraftsRequested.emit))
+            bar.addWidget(self.saved_drafts_button)
         bar.addStretch(1)
         layout.addLayout(bar)
         filters = QHBoxLayout()
@@ -601,6 +607,8 @@ class TrainingExperimentsDialog(FeedbackEnabledDialog):
         rows = self._selected() if idle else ()
         single = len(rows) == 1 and rows[0].kind == "execution" and bool(self._revision)
         pair = len(rows) == 2 and all(row.kind == "execution" for row in rows) and bool(self._revision)
+        if hasattr(self, "saved_drafts_button"):
+            self.saved_drafts_button.setEnabled(idle)
         self.refresh_button.setEnabled(idle)
         self.search_edit.setEnabled(idle)
         self.favorite_filter.setEnabled(idle)

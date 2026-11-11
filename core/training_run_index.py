@@ -658,6 +658,12 @@ class ScopedTrainingHistory:
         self._check_records(page.records)
         return page
 
+    def update_annotation(self, run_id, annotation, expected_revision):
+        records, revision = self.snapshot()
+        if revision != expected_revision:
+            raise TrainingRunIndexError("Saved runs changed. Refresh before saving notes.")
+        return self._index.update_annotation(run_id, annotation, expected_revision)
+
     def snapshot(self):
         records, revision = self._index.snapshot()
         self._check_records(records)

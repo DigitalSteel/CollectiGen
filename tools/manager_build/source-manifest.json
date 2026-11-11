@@ -1972,6 +1972,11 @@
       "sha256": "6008fbdabe3210b4a1ec1d2cb6cf981b17035050f14d7538b7c1176275c7c818"
     },
     {
+      "path": "core/training_draft_transfer.py",
+      "bytes": 1895,
+      "sha256": "1334ae6ddcc820342b5a9b36030819753b74c2220089c535acfb5de637d7f908"
+    },
+    {
       "path": "core/training_duplicate_evidence.py",
       "bytes": 30173,
       "sha256": "274a1711e1e0592286425861136ba1798297b4555ecf93615a238d8e5a6d0c43"
@@ -2173,8 +2178,8 @@
     },
     {
       "path": "core/training_run_index.py",
-      "bytes": 50621,
-      "sha256": "e6f20ccc8ea389b3ed9e40dea82163ed91f01cd596298eb795a18faf9b5a28f2"
+      "bytes": 50962,
+      "sha256": "e5f79068fe9db15bd1b48e5c09cfdc1a23d7bcf856c02c18ad7f05326598b49a"
     },
     {
       "path": "core/training_run_recovery.py",
@@ -3177,6 +3182,11 @@
       "sha256": "03998e59cb9ee9bad8fb63f672bcc791edda807b1c685c87acc280cde6ff1226"
     },
     {
+      "path": "qt_app/training_draft_transfer_dialog.py",
+      "bytes": 6142,
+      "sha256": "d58e6ed952948d35367e8f7f75a94824ccbfd5b491e1dd0430b2cf9557e99aa9"
+    },
+    {
       "path": "qt_app/training_duplicate_evidence_view.py",
       "bytes": 7830,
       "sha256": "4f7879399de8196d168ab738292c68f0512a73f7742e6737ad0467869c149f7b"
@@ -3193,8 +3203,8 @@
     },
     {
       "path": "qt_app/training_experiments_dialog.py",
-      "bytes": 37278,
-      "sha256": "cf77dba9572228a4a310fb99004aa1b36724f317200be647dd76cafe121845bf"
+      "bytes": 37752,
+      "sha256": "990466c08734a55f31aace8e5f4f2ba96d2efbab06d63e8e312dba6c66dee6b8"
     },
     {
       "path": "qt_app/training_history_dialog.py",
@@ -3258,8 +3268,8 @@
     },
     {
       "path": "qt_app/training_workflow_controller.py",
-      "bytes": 46313,
-      "sha256": "c4687245b0e9566dc573e3fb6170b8fe7e11733fe8378a42eeb74ff7ff657724"
+      "bytes": 47254,
+      "sha256": "0058c5fb02a3daeed9ca728efd1120e781496cd50435742dcac4e9f85e86e545"
     },
     {
       "path": "qt_app/training_workspace.py",
@@ -3973,8 +3983,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 254649,
-      "sha256": "e3736943c48690e10180473950c3fd11400a06f6e3b0123c8049534773451463"
+      "bytes": 256508,
+      "sha256": "32b834f7bab86db74be3a602e3bf271979bfd426feb5e63d66fb6914d0825f8d"
     },
     {
       "path": "suite_core/media_examples.py",

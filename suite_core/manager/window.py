@@ -632,6 +632,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.training_comparison_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.training_comparison_button.clicked.connect(self.open_training_comparison)
             training_layout.addWidget(self.training_comparison_button, 0, Qt.AlignLeft)
+            self.training_experiments_button = compact_action(QPushButton("Training Experiments…"))
+            self.training_experiments_button.setVisible(not view.synthetic and normal_entry_session is not None)
+            self.training_experiments_button.clicked.connect(self.open_training_experiments)
+            training_layout.addWidget(self.training_experiments_button, 0, Qt.AlignLeft)
             self.training_history_button = compact_action(QPushButton("Review Saved Training Runs…"))
             self.training_history_button.setVisible(not view.synthetic and normal_entry_session is not None)
             self.training_history_button.clicked.connect(self.open_training_history)
@@ -1695,6 +1699,27 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         _TRAINING_PICKER_CLOSE_NOTICE = "Close held. Finish or close the training package chooser, then close Manager again."
 
+        def open_training_experiments(self):
+            from qt_app.generation_workflow import _generation_model_registry
+            if self.generation_state() is None:
+                return
+            controller = self.sdxl_preparation_controller(_generation_model_registry(self))
+            if controller is not None:
+                controller.experiments()
+
+        def export_training_experiment_draft(self, draft=None):
+            state = self.generation_state()
+            controller = getattr(self, "_sdxl_preparation_controller", None)
+            if state is None or controller is None or self.close_policy.pending:
+                return
+            from qt_app.training_draft_transfer_dialog import TrainingDraftTransferDialog
+            for dialog in controller.open_reviews():
+                if isinstance(dialog, TrainingDraftTransferDialog):
+                    controller.show_review(dialog)
+                    return
+            controller._show(TrainingDraftTransferDialog(state.jobs,
+                state.generation_data_root / "training" / "training-plan-drafts.json", self, selected=draft))
+
         def open_training_draft(self):
             state = self.generation_state()
             if state is None or getattr(self, "_training_draft_review_open", False):
@@ -2499,7 +2524,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             state = self.generation_state()
             if state is None or self.close_policy.pending:
                 return None
-            from core.training_run_index import TrainingRunIndex
+            from core.training_run_index import TrainingRunIndex, ScopedTrainingHistory
             from core.training_source_io import _assert_unredirected
             from qt_app.training_workflow_controller import TrainingWorkflowController
             from .krea_training_review import resolve_manager_saved_sdxl_setup
@@ -2529,6 +2554,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     preparation_root=root / "preparation", run_output_scope=runs,
                     saved_setup=load_saved_setup if training_draft_settings_path is not None else None,
                     session_allowed=session_allowed,
+                    draft_store_path=root / "training-plan-drafts.json",
+                    clone_opener=self.export_training_experiment_draft,
+                    prepare_opener=self.open_krea_training_review,
+                    experiments_index=ScopedTrainingHistory(root, model_registry_path=registry.path),
                 )
                 controller.packageReviewRequested.connect(
                     lambda selected: self.open_krea_training_review(destination=selected.destination,
