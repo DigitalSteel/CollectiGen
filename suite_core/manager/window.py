@@ -422,6 +422,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             applications_layout.addWidget(self.applications)
             dashboard_page = QWidget(); dashboard_layout = QVBoxLayout(dashboard_page)
             dashboard_layout.setContentsMargins(0, 0, 0, 0)
+            from qt_app.module_card import ModuleCard, ModuleCardPresentation
+            self.generator_card = ModuleCard(ModuleCardPresentation(
+                "local-generator", "Local Image Generation", "Not checked",
+                "Open Generator Setup to connect or install SwarmUI.", "Generator Setup",
+                icon_name="Generate", action_enabled=False,
+                disabled_reason="Start Suite Manager normally to use generation."), dashboard_page)
+            self.generator_card.action_requested.connect(self.open_dashboard_generator)
+            dashboard_layout.addWidget(self.generator_card)
             self.dashboard_slot = QVBoxLayout(); dashboard_layout.addLayout(self.dashboard_slot, 1)
             self.components = QTableView(); self.components.setSelectionBehavior(QTableView.SelectRows)
             self.component_model = IncrementalResultModel(("Component", "Configured version", "Locator state", "Freshness"), parent=self)
@@ -736,6 +744,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 item = QListWidgetItem(navigation_icon(("Dashboard", "Setup", "Generate", "Tag Encyclopedia", "Training", "Setup")[index]), label)
                 item.setData(PageNavigationList.PAGE_INDEX_ROLE, index); self.navigation.addItem(item)
             self.navigation.pageChanged.connect(self.stack.setCurrentIndex)
+            self.navigation.pageChanged.connect(
+                lambda row: self.refresh_generator_card() if row == self.page_rows["Dashboard"] else None)
             self.navigation_commands = [UiCommand("navigate-" + name.lower(), "Go to " + name, "Navigation",
                 callback=lambda _name=name: self.navigation.setCurrentRow(self.page_rows[_name]))
                 for name in self.page_rows]
@@ -1313,6 +1323,68 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if self.chat_host is not None: self.chat_host.cancel_load()
             self.render_ollama_load()
 
+        def refresh_generator_card(self):
+            """Project saved runtime observations; never probe or start a generator."""
+            from qt_app.module_card import ModuleCardPresentation
+            from core.paths import SWARM_RUNTIME_PATH
+            from core.swarm_runtime import SwarmRuntimeManager
+            from core.training_source_io import _assert_unredirected
+
+            available = (not self.view.synthetic and normal_entry_session is not None
+                         and normal_entry_session.state == "ready" and not self.close_policy.pending)
+            self.generator_card.setVisible(not self.view.synthetic)
+            if not available:
+                self._dashboard_generator_action = ""
+                self.generator_card.set_presentation(ModuleCardPresentation(
+                    "local-generator", "Local Image Generation", "Session unavailable",
+                    "Reopen Suite Manager to review local generation.", "Generator Setup",
+                    icon_name="Generate", action_enabled=False,
+                    disabled_reason="Manager is closing or its session ended. Reopen Manager to continue."))
+                return
+            try:
+                path = Path(normal_entry_session.admitted.layout.data_root) / "Manager" / SWARM_RUNTIME_PATH.name
+                _assert_unredirected(path)
+                snapshot = SwarmRuntimeManager(path).snapshot()
+                if not snapshot.configured:
+                    action, label = "setup", "Set Up Generation"
+                elif snapshot.state == "busy":
+                    action, label = "work", "View Generation Work"
+                elif snapshot.state in {"ready", "update_available"}:
+                    action, label = "plan", "Plan or Resume Image"
+                else:
+                    action, label = "setup", "Open Generator Setup"
+                details = [snapshot.detail]
+                if snapshot.configured:
+                    if snapshot.runtime_version:
+                        details.append("SwarmUI " + snapshot.runtime_version)
+                    details.append("Last connection check: " + (snapshot.last_health_check or "not recorded"))
+                    details.append("Saved observation. Use Check Connection in Generator Setup to refresh.")
+                    if snapshot.active_jobs:
+                        details.append(f"{snapshot.active_jobs} active or waiting operations at the last check.")
+                    if snapshot.resource_summary:
+                        details.append(snapshot.resource_summary + " (saved measurement; request capacity not inferred).")
+                self._dashboard_generator_action = action
+                presentation = ModuleCardPresentation(
+                    "local-generator", "Local Image Generation", snapshot.headline + (" (saved)" if snapshot.configured else ""),
+                    "\n".join(details), label, icon_name="Generate", action_enabled=True)
+            except (OSError, ValueError, TypeError, RuntimeError):
+                self._dashboard_generator_action = "setup"
+                presentation = ModuleCardPresentation(
+                    "local-generator", "Local Image Generation", "Needs attention",
+                    "Saved generator information is unavailable. Review Generator Setup; existing drafts remain available in Applications.",
+                    "Open Generator Setup", icon_name="Generate", action_enabled=True)
+            self.generator_card.set_presentation(presentation)
+
+        def open_dashboard_generator(self, _key="local-generator"):
+            self.refresh_generator_card()
+            action = self._dashboard_generator_action
+            if action == "setup":
+                self.review_generator_connection()
+            elif action == "work":
+                self.review_generation_jobs()
+            elif action == "plan":
+                self.open_generate_plan()
+
         def review_generator_connection(self):
             state = self.generation_state()
             if state is None or self._generation_setup_dialog is not None:
@@ -1358,6 +1430,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if getattr(self, "_generation_dialog", None) is not None:
                 dialog.review.set_request_return_available(True)
                 dialog.review.return_requested.connect(dialog.reject)
+            dialog.review.status_changed.connect(lambda _snapshot: self.refresh_generator_card())
             buttons = QDialogButtonBox(QDialogButtonBox.Close)
             buttons.rejected.connect(dialog.reject)
             layout.addWidget(buttons)
@@ -1367,6 +1440,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             finally:
                 self._generation_setup_dialog = None
                 dialog.deleteLater()
+                self.refresh_generator_card()
 
         def checked_image_connection(self):
             from core.paths import SWARM_RUNTIME_PATH
@@ -2774,6 +2848,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 old = self.dashboard_slot.takeAt(0).widget()
                 if old is not None: old.hide(); old.deleteLater()
             self.dashboard = dashboard; self.dashboard_slot.addWidget(dashboard)
+            self.refresh_generator_card()
             from .servers_ui import create_servers_panel
             old_servers = self.servers_page.takeWidget()
             if old_servers is not None:

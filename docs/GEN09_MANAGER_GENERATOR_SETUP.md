@@ -22,3 +22,13 @@ open delivery row for the unpublished Manager 0.6.0 candidate.
 Related Training correction: the retained-result Validation work belongs to
 TRN-09 (and TRN-04 performance), not TRN-10 Anima. Historical evidence filenames
 are retained so artifact identities remain traceable.
+
+## Dashboard status and return
+
+Manager Dashboard now shows the saved Local Image Generation state, runtime
+version, last check, work and resource observations. Saved observations are
+labeled; opening Dashboard contacts no service. Set Up Generation and offline
+or attention states open the existing Generator Setup. Ready opens the existing
+image draft chooser; Busy opens the existing generation work view. These actions
+recheck the saved state and current Manager session before dispatch. Returning
+from Setup refreshes the same card without changing the Dashboard selection.

@@ -1,5 +1,7 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Dashboard shows saved local-generator status and routes to Setup, image
+  drafts or generation work without contacting or starting SwarmUI.
 - Generator Setup now includes the original connect/install, run/status,
   models/import and maintenance sections. Setup uses Manager's model registry,
   preferences and presets, and Return keeps the same generation draft.

@@ -69,6 +69,76 @@
         "captures": [],
         "notes": "Source-component host integration with generated profiles and fake runtime I/O; installed package and actual SwarmUI lifecycle are not claimed."
       }
+    },
+    {
+      "id": "manager-dashboard-local-generation",
+      "roadmap_ids": [
+        "GEN-09",
+        "GEN-10"
+      ],
+      "goal": "See the last known local-generator state and open the right generation or setup workflow.",
+      "start": {
+        "surface": "Suite Manager > Dashboard",
+        "action": "Read the Local Image Generation card and choose its named action."
+      },
+      "audiences": {
+        "new_user": {
+          "default_route": "Use Connect or install, choose an existing SwarmUI or a managed installation, then Return to Generation Plan.",
+          "ease_check": "One setup task is visible at a time and Return stays available when switching tasks.",
+          "overload_guard": "Runtime controls, model paths/import, backups and updates are in their own named tasks rather than a single action wall."
+        },
+        "advanced_user": {
+          "entry": "Choose Run and status, Models and import, or Maintenance directly; Setup search reveals the relevant task.",
+          "customization": "Review model paths, configuration backups, the companion package or updates without hiding the connection choice.",
+          "continuity": "Switching tasks does not change the generator, discard the saved request, or dismiss Return."
+        }
+      },
+      "consistency": {
+        "reference": "Original all-in-one Setup > Local Generation (the same SwarmRuntimeWidget)",
+        "shared_patterns": [
+          "A visible task list selects one pane.",
+          "The contextual return stays outside the selected task."
+        ],
+        "departures": [
+          "Connection and runtime status stay above the task list because they apply to every task; generator actions retain their existing separate review dialogs."
+        ]
+      },
+      "steps": [
+        {
+          "action": "Open Dashboard with no saved local generator.",
+          "expected": "Set Up Generation is available; Dashboard performs no runtime probe."
+        },
+        {
+          "action": "Choose Set Up Generation, inspect the four existing task sections and Close.",
+          "expected": "Return to the same Dashboard with the saved state refreshed."
+        },
+        {
+          "action": "Choose the ready or busy card action.",
+          "expected": "The existing image draft chooser or generation-work entry receives the request."
+        }
+      ],
+      "completion": {
+        "visible": "Dashboard retains its selection and shows the refreshed saved generator observation.",
+        "authority": "Card actions recheck the Manager session and saved record; no automatic check, install, start or submit."
+      },
+      "recovery": [
+        {
+          "trigger": "SwarmUI is not enrolled or a later setup action is unavailable.",
+          "expected": "Connect or install names the next setup choice, while Return remains available so the saved request is not stranded."
+        }
+      ],
+      "automation": {
+        "status": "partial",
+        "visible_controls_only": true,
+        "tests": [
+          "tests/test_manager_generator_dashboard_ui.py::test_dashboard_opens_real_setup_and_refreshes_saved_state_on_return",
+          "tests/test_manager_generator_dashboard_ui.py::test_dashboard_saved_states_and_existing_action_dispatch",
+          "tests/test_manager_generator_dashboard_ui.py::test_unavailable_session_does_not_read_generator_record"
+        ],
+        "visual_runner": "tests/test_manager_generator_dashboard_ui.py",
+        "captures": [],
+        "notes": "Generated saved runtime snapshots. Real Dashboard-to-Setup-and-Close route; ready/busy dispatch checked as component routing. No live runtime or installed-package claim."
+      }
     }
   ]
 }
