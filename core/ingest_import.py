@@ -4,7 +4,7 @@ import hashlib
 import os
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Callable, Iterable, Literal
+from typing import TYPE_CHECKING, Callable, Iterable, Literal
 
 from .dataset_scope import DatasetScope, IMG_EXTENSIONS
 from .library_profiles import (
@@ -18,6 +18,9 @@ from .library_storage import LibraryFileState,LibraryStorageInspector
 from .verified_transfer import VerifiedTransferEngine, VerifiedTransferPlan
 from .media_inventory import inspect_media
 from .image_derivatives import DerivativeIngestHandoff
+
+if TYPE_CHECKING:
+    from .generation_execution import GenerationIngestHandoff
 
 
 IngestImportAction = Literal["copy", "move"]
@@ -143,7 +146,7 @@ class IngestImportPlanningService:
         destination_profile: LibraryProfile | None = None,
         transfers=None,
         preserve_source: bool = False,
-        verified_versions: tuple[DerivativeIngestHandoff, ...] = (),
+        verified_versions: tuple[DerivativeIngestHandoff | GenerationIngestHandoff, ...] = (),
     ) -> None:
         self.ingest_root = Path(ingest_root).expanduser().resolve()
         self.library_registry = library_registry or LibraryProfileRegistry()

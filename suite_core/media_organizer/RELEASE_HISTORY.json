@@ -9,7 +9,7 @@
       "timezone": "America/New_York",
       "interface_version": 1,
       "status": "candidate;exact validation/publication receipt required",
-      "scope": "Import Manager Training experiments into editable Dataset drafts"
+      "scope": "Import Manager Training experiments into Dataset drafts and verified generation results into source-preserving Ingest copy review"
     },
     {
       "software_version": "0.4.23-alpha.1",

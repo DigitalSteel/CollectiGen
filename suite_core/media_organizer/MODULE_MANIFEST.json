@@ -101,7 +101,10 @@
     "suite_core/manager/ui_cards.py",
     "core/character_storage_transaction.py",
     "qt_app/dataset_page.py",
-    "qt_app/knowledge_page.py"
+    "qt_app/knowledge_page.py",
+    "core/generation_execution.py",
+    "core/ingest_import.py",
+    "qt_app/ingest_page.py"
   ],
   "runtime_kind": "interpreter-portable",
   "runtime_profile": "organizer-image",

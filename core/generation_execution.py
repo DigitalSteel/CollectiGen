@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 from copy import copy, deepcopy
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import io
@@ -693,6 +694,40 @@ class SwarmLocalAdapter:
         return session
 
 
+@dataclass(frozen=True)
+class GenerationIngestHandoff:
+    """Retain the exact job identity through Ingest preview and retry."""
+
+    store_root: Path
+    job_id: str
+    receipt_digest: str
+    output: Path
+
+    @classmethod
+    def from_selected_manager_receipt(cls, selected_path):
+        """Bind an explicitly selected local Manager receipt without scanning."""
+        selected = Path(selected_path).absolute()
+        root = selected.parent.parent
+        if selected.name != "receipt.json" or root.name != "generation" or root.parent.name != "Manager":
+            raise ValueError("Choose receipt.json from a Manager generation job folder.")
+        service = GenerationExecutionService(root, None)
+        receipt = service._read(selected.parent.name)
+        if receipt.get("state") != "verified" or len(receipt.get("outputs", ())) != 1:
+            raise ValueError("Choose a Manager job with one verified image.")
+        return cls(root, receipt["job_id"], digest(receipt), selected.with_name("result.png"))
+
+    def verify(self):
+        service = GenerationExecutionService(self.store_root, None)
+        receipt = service.review_verified_result(self.job_id, self.receipt_digest)
+        member = receipt["outputs"][0]
+        if Path(member["path"]).absolute() != self.output:
+            raise ValueError("The selected generation output changed; review it again.")
+        return (
+            (str(self.output), member["sha256"]),
+            (str(self.output.with_suffix(".tags.json")), member["sidecar_sha256"]),
+        )
+
+
 class GenerationExecutionService:
     def __init__(self, storage_root, jobs):
         self.root = Path(storage_root).absolute()
@@ -1317,6 +1352,20 @@ class GenerationExecutionService:
                 raise ValueError("The retained result changed; recover and review it before sending to Ingest.")
             self._check_outputs(receipt)
             return [output["path"] for output in receipt["outputs"]]
+
+    def review_verified_result(self, job_id, expected_receipt_digest):
+        """Open a reviewed job by identity inside this service's trusted root."""
+        with _LOCK:
+            receipt = self._read(job_id)
+            if digest(receipt) != expected_receipt_digest:
+                raise ValueError("The retained result changed; recover and review it before sending to Ingest.")
+            self._check_outputs(receipt)
+            return receipt
+
+    def verified_ingest_handoff(self, job_id, expected_receipt_digest):
+        receipt = self.review_verified_result(job_id, expected_receipt_digest)
+        return GenerationIngestHandoff(self.root, job_id, expected_receipt_digest,
+                                       Path(receipt["outputs"][0]["path"]).absolute())
 
     def _check_outputs(self, receipt, *, max_verification_bytes=None):
         if receipt.get("state") != "verified" or len(receipt.get("outputs", [])) != 1:

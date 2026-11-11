@@ -2,6 +2,13 @@
 
 2026-11-11 (America/New_York)
 
+## Generation results
+
+- In Ingest > Add Images > Review Manager Result, choose the verified receipt
+  copied from Suite Manager. Review and confirm a copy through the normal Ingest
+  preview. Source images, metadata and receipt remain in Manager; imported images
+  keep generation lineage and remain unreviewed.
+
 ## Training draft handoff
 
 Import a Training experiment draft from Suite Manager in Dataset > Dataset Plans >

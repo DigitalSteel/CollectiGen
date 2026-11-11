@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 830,
+  "allowlisted_source_file_count": 832,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -514,8 +514,8 @@
       "size_bytes": 11356
     },
     "core/generation_execution.py": {
-      "sha256": "a77dc0dc52465421cfa574436cfdb7ab9931e97372d70e8e85a84b129cfc7b51",
-      "size_bytes": 94746
+      "sha256": "afdc9b5029b0bb5a23e5452017645e325a4cf99d27380a47b737a6d5bb6ec614",
+      "size_bytes": 97103
     },
     "core/generation_experiments.py": {
       "sha256": "273475091b129964df7e84b1827f3ce32802314952464f46026bac4be7277821",
@@ -722,8 +722,8 @@
       "size_bytes": 2519
     },
     "core/ingest_import.py": {
-      "sha256": "5a53aaabc22c28194849937fe81a69a24836f439bf525822729ca375c98e5f3a",
-      "size_bytes": 21941
+      "sha256": "b94071102493795ab811d0e4d4241c20abc7d1d9368d6d726ed258414d22e1a6",
+      "size_bytes": 22063
     },
     "core/ingest_preparation_request.py": {
       "sha256": "5a44a9ac5c839e1b245358f3658bde0882b09bb6ebf14667b9fbd1a829339af5",
@@ -2198,8 +2198,8 @@
       "size_bytes": 14920
     },
     "qt_app/ingest_page.py": {
-      "sha256": "9dcbc6155c94db2d882f1b350d4792e30b596dd2c227f466650147de85dce422",
-      "size_bytes": 365484
+      "sha256": "c381cb69a472ee566a90617790053756cea06298aca8ba8ef04bf7759bba7bba",
+      "size_bytes": 366638
     },
     "qt_app/ingest_preparation_queue.py": {
       "sha256": "82870eaf359ff7108e51ca2d0bd91d95f422abb404d96c42f411f10cac2f6d6b",
@@ -3130,20 +3130,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "26e8e3d64a68c203683b664a1b124622a70a383a2a1724707771910f91ae404f",
-      "size_bytes": 4968
+      "sha256": "cf950363f6d64ec5e0c698e193f24818d1eab7f3870768a4c74dddfbad3345ac",
+      "size_bytes": 5062
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "4d3a305920cbbc1abf292e470200b5181f8329f9b7162c3a0e2f8616d0f2f0b2",
-      "size_bytes": 15569
+      "sha256": "354e4a165c8512aa221079f4d12c34f35daad0979da667181ab5e60fcd4ef094",
+      "size_bytes": 15634
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
       "sha256": "d0ab1b1139c6525e5e768227373076887854abd2770f476d294b2cf7fe86b87e",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "28e7ffbfcdd46788ae44c5bf44c921a4b97172a9a1eb1665ad0dfdf157f6d4d2",
-      "size_bytes": 25314
+      "sha256": "30bb62d08a02588f20fcf9519ffdebc9cb050feeee27009c2e882e799c283447",
+      "size_bytes": 25628
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3324,6 +3324,14 @@
     "qt_app/indicator_resources.py": {
       "sha256": "176f2d67fe34590c9133b32a729f9064c7d5e193b9b19cac2a23f189cae84a15",
       "size_bytes": 3801
+    },
+    "tests/test_manager_result_ingest.py": {
+      "sha256": "d1635c7cd8f50db4c5dfdbf9fcc2381412b2876db3241a1e9937827c9cdb1949",
+      "size_bytes": 5775
+    },
+    "docs/GEN06_MANAGER_RESULT_INGEST.md": {
+      "sha256": "5b7cf8905aadd0fc03cffc9cae9744dbfa3562ee11936e3f93b4ef6f583f47c8",
+      "size_bytes": 1367
     }
   },
   "fresh_history_required": true,
