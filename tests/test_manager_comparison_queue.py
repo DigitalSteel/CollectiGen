@@ -270,3 +270,56 @@ def test_manager_visible_comparison_opens_saved_batch_and_returns(tmp_path, monk
     assert review.isVisible()
     assert saved.read_bytes() == before
     close_clean(generation); close_clean(review); manager.close(); application.processEvents()
+
+
+@pytest.mark.parametrize("return_mode", ["button", "close"])
+def test_manager_single_comparison_image_returns_to_saved_review(tmp_path, monkeypatch, return_mode):
+    """Use the real Manager entry and visible image-review and return controls."""
+    application = app()
+    from core.training_evaluation import create_evaluation
+    from qt_app import training_evaluation_dialog as evaluation
+    from suite_core.manager.window import create_window, unconfigured
+    monkeypatch.setattr(evaluation, "CoordinatedCallTask", ImmediateTask)
+    saved = tmp_path / "single-image-comparison.json"
+    fixed = create_evaluation(plan(), prompts=["generated blue cube"], seeds=[7, 8])
+    save_plan(saved, fixed)
+    before = saved.read_bytes()
+    monkeypatch.setattr(evaluation.QFileDialog, "getOpenFileName", lambda *a, **k: (str(saved), ""))
+    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
+    manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+    manager.checked_image_connection = lambda: ("http://127.0.0.1:7801", "fixture-v1")
+    manager.resize(1500, 960); manager.show()
+    item = manager.navigation.item(manager.page_rows["Applications"])
+    QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
+                    pos=manager.navigation.visualItemRect(item).center())
+    click(manager.training_comparison_button)
+    review, = tuple(manager._training_comparison_controller.dialogs)
+    click(review.open_saved)
+    assert review.session is not None, review.status.text()
+    row = review.items.topLevelItem(1)
+    QTest.mouseClick(review.items.viewport(), Qt.LeftButton,
+                    pos=review.items.visualItemRect(row).center())
+    click(review.expert_toggle)
+    assert review.generate.isVisible()
+    selected_plan = review.cells[1].plan
+    click(review.generate)
+    settle(lambda: getattr(manager, "_generation_dialog", None) is not None)
+    generation = manager._generation_dialog
+    assert generation.plan.request.to_dict() == selected_plan.request.to_dict()
+    assert not review.isVisible()
+    assert generation.training_comparison_return.isVisible()
+    capture(generation, "manager-single-image-return-" + return_mode)
+    if return_mode == "button":
+        click(generation.training_comparison_return_button)
+    else:
+        close_clean(generation)
+    settle(review.isVisible)
+    assert manager.navigation.currentRow() == manager.page_rows["Applications"]
+    assert review.path == saved
+    assert saved.read_bytes() == before
+    assert review.session.digest == fixed.digest
+    assert "saved comparison remains fixed" in review.status.text().casefold()
+    capture(review, "manager-single-image-restored-" + return_mode)
+    if return_mode == "button":
+        close_clean(generation)
+    close_clean(review); manager.close(); application.processEvents()

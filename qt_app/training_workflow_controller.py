@@ -506,7 +506,7 @@ class TrainingWorkflowController(QObject):
                 )
                 return
             open_generation_workspace(self.parent(), force_new=True, initial_plan=plan,
-                                      source_result_allowed=generation_allowed)
+                                      on_opened=opened, source_result_allowed=generation_allowed)
 
         dialog.generationRequested.connect(open_sample)
         dialog.batchRequested.connect(lambda selection: self._open_evaluation_batch(

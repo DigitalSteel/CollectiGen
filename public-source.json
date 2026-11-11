@@ -6,8 +6,8 @@
   "export_scope": "component-source",
   "files": {
     "tests/test_manager_comparison_queue.py": {
-      "sha256": "54bc7f2a7180e6af3987e86c4f40ea7be72aa8bac57fddc479bf9d73363c3917",
-      "size_bytes": 12757
+      "sha256": "b47897338e8a28ea66c423505ca90157852a2b31ecb7bbceddf9cc366fd5eb0b",
+      "size_bytes": 15637
     },
     "tests/test_manager_payload_count.py": {
       "sha256": "8a64dbc51a49a459f8da31345042a9527aa25c205f128b60a6bfaa2a84ba64f0",
@@ -2782,8 +2782,8 @@
       "size_bytes": 17728
     },
     "qt_app/training_workflow_controller.py": {
-      "sha256": "0058c5fb02a3daeed9ca728efd1120e781496cd50435742dcac4e9f85e86e545",
-      "size_bytes": 47254
+      "sha256": "0347ae88935fa86ef8773dff4ef6d5367ac04e4584d09b6f2eed566511428f58",
+      "size_bytes": 47272
     },
     "qt_app/training_workspace.py": {
       "sha256": "588ad7cdc02f6d7efc4a96f63fc6a71125f358648977036c62037e5b5e029e5c",
@@ -3146,8 +3146,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "b6fc8cdd0cf1f15347102a7a8d1b24a5b8186afcebd1487042b17d6f13232605",
-      "size_bytes": 20868
+      "sha256": "734ebc1dd4fd85b6d10095a559bc60ca5dcf7da3e3253f94649085ae8e7838a5",
+      "size_bytes": 20999
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3418,8 +3418,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "ad2f285038e5080c20d808a0c2cb177b6e85d82cfbf29de4360a36116700d438",
-      "size_bytes": 257865
+      "sha256": "1fb5485738c826337748e003a13b00243a22db44d58ac7b2512f64cd6c8c22d1",
+      "size_bytes": 257996
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3954,7 +3954,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "d4a261223a3856a11c4feb645868cf811ae6bdc0142bf229effb81268a313963",
+      "sha256": "c2234aa14c3ecb41e28ddf9766256488d2eb3af9b57172665015c8ac8f0593c8",
       "size_bytes": 162942
     },
     "tools/manager_build/tool-inputs.json": {

@@ -3,6 +3,8 @@
 - Training comparisons can open their saved batch in Generate's normal queue.
   Review the candidates and explicitly Start through the checked local generator.
   Open drafts are preserved and every queued image rechecks the connection.
+  Reviewing a single image also keeps Return to Training Comparison available;
+  closing Generate restores the saved comparison.
 - Training Experiments keeps run names, notes and favorites, compares retained
   runs, and clones a run into a new draft. Export the draft for editing through
   Organizer's Dataset Plans workflow; the updated Organizer package is required.
