@@ -302,8 +302,8 @@
       "size_bytes": 30625
     },
     "core/conflict_rules.py": {
-      "sha256": "a41f470dbe9119d7d535194eab66f485b10411a53a2b726da40e1fe5d3de8893",
-      "size_bytes": 30082
+      "sha256": "e80e765a921b76464a018e3be9258bb721d02796837dadca85b32a07e64b6175",
+      "size_bytes": 30126
     },
     "core/connected_version_observation.py": {
       "sha256": "3bdb7195dccb8e3e0fc28643353982c081035a9fd7ca333615244102a01a2a2d",
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "3d91ef5abc14fad549940957c9bc6197308e6cf9bbb175b35bb288d532d8c959",
-      "size_bytes": 27690
+      "sha256": "bcc0ca38db3543eb3ab7b8bd07b60db8b25f054c67d4e24e533a35c90a369020",
+      "size_bytes": 27860
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3306,8 +3306,8 @@
       "size_bytes": 8655
     },
     "tests/test_training_draft_transfer.py": {
-      "sha256": "fadb8ef4e447f5f1512fb08fbde5b0566d34f1a5c94a7bf2bc59cfe46ef5a9f2",
-      "size_bytes": 16901
+      "sha256": "de079a0749e5376b711bea54697b882b175713fcbe2cef83331e214b9007076d",
+      "size_bytes": 18329
     },
     "tests/test_organizer_experiment_handoff_ui.py": {
       "sha256": "d50e4bf382e5fb807dddc585ffbbf24b47b9b75bf327e5c08fb64f309bd56f03",

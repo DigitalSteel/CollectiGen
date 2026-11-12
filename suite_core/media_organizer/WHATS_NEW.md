@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Training plans retain reviewed relationship constraints when the optional legacy conflicts file is absent; rebuild older saved plans to refresh their caption context.
+
 - Saved Training drafts retain the context reference needed for caption comparison in Manager; older drafts remain readable.
 
 - Saved Dataset Drafts can export a selected plan for Suite Manager → Applications → Review a Dataset Draft, retaining its exact settings and original sources without building a training package.
