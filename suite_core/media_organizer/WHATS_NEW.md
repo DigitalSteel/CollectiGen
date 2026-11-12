@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Saved Dataset Drafts keeps its Organizer label when Dataset finishes loading in the background.
+
 - Dataset Plans now includes Plan Training Dataset for current selected or matching images; resume saved plans through Saved Dataset Drafts.
 
 - Closing Dataset while its initial conflict checks are queued no longer starts background work after shutdown.

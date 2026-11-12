@@ -3,6 +3,22 @@ from dataclasses import replace
 from .hosted_encyclopedia_overlay import compose_startup_runtime, CompositionBoundaryError
 
 
+def _label_dataset_training_resume(window):
+    """Keep the Organizer-only resume name correct after deferred page binding."""
+    resume = getattr(getattr(window, "dataset_page", None), "training_resume_button", None)
+    if resume is not None:
+        resume.setText("Saved Dataset Drafts.")
+        resume.setToolTip(
+            "Review and resume saved Dataset plans. Training execution is unavailable in Media Organizer.")
+        # Reuse the shared Ribbon's existing source binding.
+        controller = getattr(window, "command_controller", None)
+        binding = getattr(controller, "_page_commands", {}).get(2)
+        if binding is not None and binding[0] is window.dataset_page:
+            for command in binding[1]:
+                if command.source is resume:
+                    command.label = resume.text()
+
+
 def _native_library_label(item, *, compact):
     # Explicit native UI use only; never called by fake tests or module import.
     from PySide6.QtCore import Qt
@@ -115,18 +131,7 @@ def with_workflow_corrections(reviewed_window_type, *, label_library_item=_nativ
             if index == 2:
                 from .organizer_prompt_entry import install_prompt_action
                 install_prompt_action(self)
-                resume = getattr(getattr(self, "dataset_page", None), "training_resume_button", None)
-                if resume is not None:
-                    resume.setText("Saved Dataset Drafts.")
-                    resume.setToolTip(
-                        "Review and resume saved Dataset plans. Training execution is unavailable in Media Organizer.")
-                    # Reuse the shared Ribbon's existing source binding.
-                    controller = getattr(self, "command_controller", None)
-                    binding = getattr(controller, "_page_commands", {}).get(2)
-                    if binding is not None and binding[0] is self.dataset_page:
-                        for command in binding[1]:
-                            if command.source is resume:
-                                command.label = resume.text()
+                _label_dataset_training_resume(self)
             return result
 
         def open_training_workspace(self, *, group=None, draft=None, collection_reviewed=False):

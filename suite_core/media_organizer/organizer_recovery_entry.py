@@ -1,6 +1,6 @@
 """Recovery and browser-opening composition lane; prior candidate unchanged."""
 from dataclasses import replace
-from .organizer_workflow_corrections import compose_final_runtime
+from .organizer_workflow_corrections import compose_final_runtime, _label_dataset_training_resume
 from .hosted_encyclopedia_overlay import CompositionBoundaryError
 
 
@@ -12,6 +12,7 @@ def with_dataset_recovery(window_type):
             from qt_app.command_bar import UiCommand
             commands=[]
             if index==2:
+                _label_dataset_training_resume(self)
                 from qt_app.command_bar import bind_source
                 page=getattr(self,"dataset_page",None)
                 source=getattr(page,"training_plan_button",None)

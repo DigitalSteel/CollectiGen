@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 853,
+  "allowlisted_source_file_count": 854,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "6e304ebec1b23f72a4b88fe160a935878f5e5986143360b2ebf2b7c4fce55766",
-      "size_bytes": 27264
+      "sha256": "688fba268a767092dc17b8c98d9cb631b8f8bb60dd9ee538825d8c8384eb9922",
+      "size_bytes": 27363
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3190,12 +3190,12 @@
       "size_bytes": 8711
     },
     "suite_core/media_organizer/organizer_recovery_entry.py": {
-      "sha256": "ce66b79946fe78828a599b18c6276d75092e5e9b3ad74f1101870d8c4ea3e5af",
-      "size_bytes": 14357
+      "sha256": "91901cfbf8c502a2dc32a1bf7dcdd875e5f2d3bfcb6f843ae4d2e68b05e3ab8c",
+      "size_bytes": 14443
     },
     "suite_core/media_organizer/organizer_workflow_corrections.py": {
-      "sha256": "c4bf0913271bee11bb86b7e3b828c3cce001b02a45742b81825ad30185083dea",
-      "size_bytes": 9265
+      "sha256": "bfd31d9c64eed7b68d4dbb2ce66eaf2e519577a6e604b467be6ed270370e0d4e",
+      "size_bytes": 9314
     },
     "suite_core/media_organizer/runtime_startup.py": {
       "sha256": "c966eb0bda34f1a35e5bb4009f9242a0ac1c8edb5714f9c2701bbd046bd4152f",
@@ -3410,12 +3410,16 @@
       "size_bytes": 756
     },
     "tests/test_organizer_training_commands.py": {
-      "sha256": "828178ad9a1153bcd9cdfacb1768523a5309de2fef3ad2bd74b6a7606fd19f41",
-      "size_bytes": 1875
+      "sha256": "aa489867c91515efbb79d4003b2f6174a5610620468fa20c04792751ebf81a69",
+      "size_bytes": 2903
     },
     "docs/BUG338_TRAINING_ENTRY.md": {
       "sha256": "e42607e8699d93140c591191d5d20c626cd5faaefaf75494392d82b45716570d",
       "size_bytes": 880
+    },
+    "docs/BUG339_SAVED_DRAFT_LABEL.md": {
+      "sha256": "219838b75f500078d738c08542de5f7f2071dd1e76c10d6ccb6ad1bbb6110ab4",
+      "size_bytes": 611
     }
   },
   "fresh_history_required": true,
