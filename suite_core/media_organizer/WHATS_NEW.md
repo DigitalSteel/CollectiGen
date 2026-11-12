@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Dataset status stays owned by its page during first startup, so background
+  status feedback cannot leave a separate window alive after Close.
 - Training packages retain the saved caption-assessment context. Current plans
   and legacy plans remain readable without dropping their source identity.
 - Animate This Image opens an offline Video draft with the selected still. Save the draft, then load it in Suite Manager to continue; runtime setup and generation stay in Manager.
