@@ -118,6 +118,7 @@ _PUBLIC_TRAINING_INPUTS = frozenset({
     'tools/training_verification_worker.py',
 })
 _PUBLIC_LEARNING_INPUTS = frozenset({'resources/learning/bundled_topics.json'})
+_PUBLIC_MODEL_INPUTS = frozenset({'data/model_workflow_baseline.json'})
 
 
 def safe_source(workspace,name, *, public_export_inputs=False):
@@ -128,7 +129,7 @@ def safe_source(workspace,name, *, public_export_inputs=False):
         raise ValueError('private_QA_source_excluded')
     if not (name.startswith(('core/','suite_core/','qt_app/','licenses/')) or
             name in {'LICENSE','LICENSES.md','THIRD_PARTY_NOTICES.md','release_contract.py','runtime_contract.py','version.py'} or
-            (public_export_inputs and (name in (_PUBLIC_TRAINING_INPUTS | _PUBLIC_LEARNING_INPUTS)
+            (public_export_inputs and (name in (_PUBLIC_TRAINING_INPUTS | _PUBLIC_LEARNING_INPUTS | _PUBLIC_MODEL_INPUTS)
                 or name in {'tools/training_distribution_assets.json', 'tools/trainer_runtime_profile.json',
                     'tools/trainer_runtime_catalog.json', 'tools/training_execution_profile.json',
                     'tools/training_execution_qualification.json', 'tools/training_execution_tensor_specs.json',
@@ -204,7 +205,7 @@ def prepare_public_stage(source_root,output,*,public_inventory_sha256,
         aliases.add(name.casefold())
         origin=safe_source(source_root,name,public_export_inputs=True)
         if (inventory['files'].get(name)!={'size_bytes':row['bytes'],'sha256':row['sha256']} or
-                (name.endswith('.py') or name in (_PUBLIC_TRAINING_INPUTS | _PUBLIC_LEARNING_INPUTS))
+                (name.endswith('.py') or name in (_PUBLIC_TRAINING_INPUTS | _PUBLIC_LEARNING_INPUTS | _PUBLIC_MODEL_INPUTS))
                 and name not in declared):
             raise ValueError('frozen_subset_not_declared_public_source')
         raw=pinned_bytes(origin,row['sha256'],'reviewed_public_source_changed')

@@ -130,7 +130,8 @@ def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw):
     require(all(n.startswith(('core/', 'suite_core/', 'qt_app/', 'licenses/', 'tools/'))
                 or n in {'LICENSE', 'LICENSES.md', 'THIRD_PARTY_NOTICES.md', 'version.py',
                          'runtime_contract.py', 'release_contract.py',
-                         'resources/learning/bundled_topics.json'} for n in expected), 'nonpublic_source_scope')
+                         'resources/learning/bundled_topics.json',
+                         'data/model_workflow_baseline.json'} for n in expected), 'nonpublic_source_scope')
     require(digest(inventory_raw) == receipt.get('public_inventory_sha256'), 'public_inventory_changed')
     inventory = decode(inventory_raw)
     require(inventory.get('schema_version') == 1 and inventory.get('manifest_excludes_self') is True

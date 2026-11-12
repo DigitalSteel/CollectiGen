@@ -487,3 +487,31 @@ def test_worker_change_during_freeze_cannot_enter_payload(inputs, monkeypatch, t
                                  training_worker_inventory_sha256=pin)
     assert 'CollectiGen' not in calls
     assert not (args['output'] / 'Suite').exists()
+
+
+@pytest.mark.parametrize('approved', [True, False])
+def test_distribution_admits_only_exact_model_guidance_data(inputs, approved):
+    args,calls=inputs
+    name='data/model_workflow_baseline.json' if approved else 'data/not-approved.json'
+    raw=b'{"synthetic":true}'
+    entry=row(name,raw)
+    stage=args['source_stage']
+    target=stage/'source'/name;target.parent.mkdir();target.write_bytes(raw)
+    manifest=build.decode(args['source_manifest'].read_bytes())
+    manifest['source_rows'].append(entry);save(args['source_manifest'],manifest)
+    inventory=build.decode(args['public_inventory'].read_bytes())
+    inventory['files'][name]={'size_bytes':len(raw),'sha256':build.digest(raw)}
+    save(args['public_inventory'],inventory)
+    receipt=build.decode((stage/'STAGE.json').read_bytes())
+    receipt['source_rows'].append(dict(entry,origin='synthetic reviewed data'))
+    receipt['frozen_sources_sha256']=build.digest(args['source_manifest'].read_bytes())
+    receipt['public_inventory_sha256']=build.digest(args['public_inventory'].read_bytes())
+    save(stage/'STAGE.json',receipt)
+    def validate():
+        return build.validate_sources(stage,build.digest((stage/'STAGE.json').read_bytes()),
+            args['source_manifest'].read_bytes(),args['public_inventory'].read_bytes())
+    if approved:
+        _,_,sources=validate();assert sources[name]==raw
+    else:
+        with pytest.raises(ValueError,match='nonpublic_source_scope'):validate()
+    assert calls==[]

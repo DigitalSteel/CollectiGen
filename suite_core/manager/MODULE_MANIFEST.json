@@ -960,7 +960,8 @@
     "tools/training_verification_worker.py",
     "version.py",
     "core/training_validation_worker.py",
-    "core/training_retained_result.py"
+    "core/training_retained_result.py",
+    "data/model_workflow_baseline.json"
   ],
   "support_files": [
     "suite_core/manager/README.md",

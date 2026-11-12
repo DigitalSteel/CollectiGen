@@ -3638,8 +3638,8 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 43969,
-      "sha256": "a6a7d066c9d6ff4b77c20f430e40087a7c4cd4fba17667bfdb1c595f7ca37ab0"
+      "bytes": 44010,
+      "sha256": "6551d3b57a72da254831b93494b68b26219002ed97c66a4bcbf7ea0f59c1a066"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -4790,6 +4790,11 @@
       "path": "core/training_retained_result.py",
       "bytes": 13280,
       "sha256": "3331337d12706c56110bd092936809aedd9a007c10e206525e1ee10488318d37"
+    },
+    {
+      "path": "data/model_workflow_baseline.json",
+      "bytes": 10578,
+      "sha256": "751df980a86705b89cabfda5d3f6c92f1b21ef4c36de3a1cb67722b0fc3fb683"
     }
   ]
 }

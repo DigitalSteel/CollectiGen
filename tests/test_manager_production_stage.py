@@ -357,3 +357,31 @@ def test_registered_reader_owners_use_current_sources_missing_from_historical_st
         assert (stage/'source'/name).read_bytes()==raw
         assert rows[name]['sha256']==hashlib.sha256(raw).hexdigest()
     assert (stage/'source/public_root_entry.py').read_text()==candidate.root_entry()
+
+
+@pytest.mark.parametrize('case', ['approved', 'undeclared', 'other-data'])
+def test_model_guidance_catalog_is_explicit_reviewed_runtime_data(public_inputs, case):
+    name = 'data/not-approved.json' if case == 'other-data' else 'data/model_workflow_baseline.json'
+    root = public_inputs['source_root']
+    path = root / name; path.parent.mkdir(); path.write_bytes(b'{"synthetic":true}')
+    runtime = root / 'suite_core/manager/MODULE_MANIFEST.json'
+    manifest = json.loads(runtime.read_bytes())
+    if case != 'undeclared': manifest['runtime_files'].append(name)
+    runtime.write_bytes(json.dumps(manifest).encode())
+    inventory = json.loads((root/'public-source.json').read_bytes())
+    for relative in (name, 'suite_core/manager/MODULE_MANIFEST.json'):
+        data=(root/relative).read_bytes()
+        inventory['files'][relative]={'size_bytes':len(data),'sha256':H(root/relative)}
+    (root/'public-source.json').write_bytes(json.dumps(inventory).encode())
+    subset=json.loads(public_inputs['frozen_sources'].read_bytes())
+    subset['source_rows'].append({'path':name,'bytes':path.stat().st_size,'sha256':H(path)})
+    public_inputs['frozen_sources'].write_bytes(json.dumps(subset).encode())
+    public_inputs.update(public_inventory_sha256=H(root/'public-source.json'),
+        frozen_sources_sha256=H(public_inputs['frozen_sources']),manifest_sha256=H(runtime))
+    if case=='approved':
+        stage=candidate.prepare_public_stage(**public_inputs)
+        assert (stage/'source'/name).read_bytes()==path.read_bytes()
+    else:
+        with pytest.raises(ValueError,match='frozen_subset_not_declared_public_source|outside_stock_application_source_scope'):
+            candidate.prepare_public_stage(**public_inputs)
+        assert not public_inputs['output'].exists()
