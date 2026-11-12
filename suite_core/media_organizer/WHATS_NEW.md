@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Dataset Plans now includes Plan Training Dataset for current selected or matching images; resume saved plans through Saved Dataset Drafts.
+
 - Closing Dataset while its initial conflict checks are queued no longer starts background work after shutdown.
 
 - Training Dataset Models & Guidance includes its offline model catalog again, so reviewed model-specific planning profiles can return to the selected image scope.

@@ -11,6 +11,14 @@ def with_dataset_recovery(window_type):
             if index not in (0,2):return []
             from qt_app.command_bar import UiCommand
             commands=[]
+            if index==2:
+                from qt_app.command_bar import bind_source
+                page=getattr(self,"dataset_page",None)
+                source=getattr(page,"training_plan_button",None)
+                if source is not None:
+                    commands.append(bind_source(page,"organizer:training-plan",source,"Dataset Plans",
+                        move=True,context="Dataset",keywords=("training","plan","selected","matching"),
+                        description="Choose current Dataset images, review model-aware captions and save an offline training plan. Execution remains in Suite Manager."))
             if index==2:commands.append(UiCommand("organizer:package-recovery","Review Package Receipt.","Dataset Plans",
                 callback=self.review_dataset_package_receipt,context="Dataset",
                 description="Read an exact interrupted package receipt. Publication requires a separate review."))
