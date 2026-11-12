@@ -1,11 +1,11 @@
 # CollectiGen Suite Manager
 
-**Suite Manager a.0.6.2** provides component installation plus dedicated Generate
+**Suite Manager a.0.6.3** provides component installation plus dedicated Generate
 and Training workspaces. Use the complete Windows ZIP for a fresh installation.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.2-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.2-alpha.1/SuiteManager-a.0.6.2-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.2-alpha.1/SuiteManager-a.0.6.2-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.3-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.3-alpha.1/SuiteManager-a.0.6.3-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.3-alpha.1/SuiteManager-a.0.6.3-windows-x64.zip.sha256)
 
 Extract into a new, short writable folder such as `C:\CollectiGen`, keep the
 complete folder together, and run **CollectiGen.exe**. Long installation paths
@@ -13,6 +13,9 @@ can prevent Qt's Windows plugin from loading. Keep the previous package and
 separate data backups. Review and confirm each installation; restart when asked.
 
 ## Workspaces
+
+Use the **Help** group or **F1** in Generate and Training for the matching
+workflow guide. Reading Help preserves your open work and starts no operation.
 
 - **Dashboard** summarizes suite and saved generator readiness and links to the
   work that needs attention.
@@ -53,15 +56,10 @@ raw generation lineage are preserved rather than promoted into confirmed tags.
 This release offers signed Reader a.0.3.1 and Organizer a.0.5.0
 downloads. Review and confirm installation in each component workspace.
 Tag Database is reviewed content, rather than another application installer.
-The corrected a.0.6.2 managed baseline uses a fresh folder. Its updater-compatible
-package and signed recovery bundle do not qualify migration or self-update
-from the older unsigned portable Manager releases.
-
-Manager a.0.6.2 fixes the update-reply timeout and starts a new managed-update
-baseline. Install its complete Windows ZIP in a fresh folder. The a.0.6.0 and
-a.0.6.1 clients still contain the old timeout and cannot apply this update;
-the signed package refuses those clients before Apply. A future update from
-the corrected client has not yet been exercised.
+Use the full Windows ZIP in a new folder for a fresh installation. The
+a.0.6.2 client can find and stage a.0.6.3; applying that update and rollback
+have not yet been exercised. Earlier clients need the full ZIP because they
+retain the old Apply timeout or predate the managed-update baseline.
 
 ## Source startup
 
