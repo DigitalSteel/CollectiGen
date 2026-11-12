@@ -385,3 +385,32 @@ def test_model_guidance_catalog_is_explicit_reviewed_runtime_data(public_inputs,
         with pytest.raises(ValueError,match='frozen_subset_not_declared_public_source|outside_stock_application_source_scope'):
             candidate.prepare_public_stage(**public_inputs)
         assert not public_inputs['output'].exists()
+
+
+def _signed_training_profile_input():
+    public=b'public training fixture';review=b'stock review fixture'
+    return dict(schema=1,trust_hex=public.hex(),trust_sha256=hashlib.sha256(public).hexdigest(),
+        channel='beta',transport_id='github-release-assets-https',
+        initial_prior=dict(version='0.6.0-alpha.1',channel='beta',platform=dict(os='windows',architecture='x86_64'),
+            files={name:dict(path='Recovery/baseline/'+name,size=1,sha256='a'*64)
+                for name in ('archive','manifest','signature','trust','proof','inventory','executable')}),
+        updater_sha256='b'*64,stock_review_hex=review.hex(),stock_review_sha256=hashlib.sha256(review).hexdigest())
+
+
+def test_training_baseline_is_offered_by_root_and_keeps_child_cohort_unchanged():
+    value=_signed_training_profile_input()
+    enabled=dict(value,enable_training_baseline=True)
+    assert candidate.render_compiled_update_config(enabled)==candidate.render_compiled_update_config(value)
+    assert candidate.render_compiled_update_config(dict(value,enable_training_baseline=False),include_prior=True)==candidate.render_compiled_update_config(value,include_prior=True)
+    root={};exec(candidate.render_compiled_update_config(enabled,include_prior=True),root)
+    child={};exec(candidate.render_compiled_update_config(enabled),child)
+    assert root['PROFILE'].check().enable_training_baseline is True
+    assert root['PROFILE'].initial_prior==value['initial_prior']
+    assert child['PROFILE'].check().enable_training_baseline is False
+    assert child['PROFILE'].initial_prior is None
+
+
+@pytest.mark.parametrize('flag',[None,0,1,'true',[]])
+def test_training_baseline_profile_refuses_nonboolean_enablement(flag):
+    with pytest.raises(ValueError,match='explicit_training_baseline_flag_required'):
+        candidate.render_compiled_update_config(dict(_signed_training_profile_input(),enable_training_baseline=flag),include_prior=True)

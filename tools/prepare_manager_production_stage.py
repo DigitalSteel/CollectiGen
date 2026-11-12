@@ -54,7 +54,7 @@ def render_compiled_update_config(value, *, include_prior=False):
     """Render only reviewed public JSON data into the fixed trusted template."""
     required={'schema','trust_hex','trust_sha256','channel','transport_id','initial_prior',
         'updater_sha256','stock_review_hex','stock_review_sha256'}
-    if type(value) is not dict or set(value)!=required or value['schema']!=1:
+    if type(value) is not dict or set(value) not in (required,required|{'enable_training_baseline'}) or value['schema']!=1:
         raise ValueError('exact_compiled_update_input_schema_required')
     for data,pin in (('trust_hex','trust_sha256'),('stock_review_hex','stock_review_sha256')):
         if type(value[data]) is not str or len(value[data])>2*1024*1024:
@@ -66,6 +66,12 @@ def render_compiled_update_config(value, *, include_prior=False):
             or (value['initial_prior'] is None and include_prior)
             or value['initial_prior'] is not None and type(value['initial_prior']) is not dict):
         raise ValueError('reviewed_stock_update_profile_required')
+    training=value.get('enable_training_baseline',False)
+    if type(training) is not bool:
+        raise ValueError('explicit_training_baseline_flag_required')
+    # Root alone offers the signed baseline; the child obtains its proof from
+    # the original authenticated session, without changing its compiled cohort.
+    training_option=', enable_training_baseline=True' if training and include_prior else ''
     prior=value['initial_prior']
     if prior is not None and (set(prior)!={'version','channel','platform','files'} or set(prior['files'])!={'archive','manifest','signature','trust','proof','inventory','executable'}):
         raise ValueError('exact_compiled_prior_release_required')
@@ -86,7 +92,7 @@ def render_compiled_update_config(value, *, include_prior=False):
         'opener=ComponentReleaseTransport(ReleaseTransportPolicy(asset_redirect_origins=("https://release-assets.githubusercontent.com",))),\n'
         '    initial_prior='+repr(prior if include_prior else None)+',\n'
         '    updater_sha256='+repr(value['updater_sha256'])+',\n'
-        '    native_review=QualifiedStockReview(bytes.fromhex('+repr(value['stock_review_hex'])+'), '+repr(value['stock_review_sha256'])+'))\n')
+        '    native_review=QualifiedStockReview(bytes.fromhex('+repr(value['stock_review_hex'])+'), '+repr(value['stock_review_sha256'])+')'+training_option+')\n')
 
 def render_qualification_update_config(value, *, include_prior=False, mapping_sha256=None):
     """Explicit isolated test build; production renderer remains HTTPS-only."""
