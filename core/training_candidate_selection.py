@@ -456,6 +456,8 @@ class TrainingCandidatePlan:
             "limitations": list(self.limitations),
             "cancelled": self.cancelled,
         }
+        if self.assessment_context_fingerprint:
+            payload["assessment_context_fingerprint"] = self.assessment_context_fingerprint
         return {**payload, "plan_fingerprint": _stable_hash(payload)}
 
 
