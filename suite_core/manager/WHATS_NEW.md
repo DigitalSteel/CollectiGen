@@ -1,7 +1,7 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
-- Manager startup accepts normal Windows filename casing for CollectiGen.exe;
-  renamed entries and missing files remain refused.
+- Manager startup accepts normal Windows casing for CollectiGen.exe and its
+  folder, keeping the canonical entry binding; renamed entries remain refused.
 - Training preparation can receive the signed packaged worker through the
   original Manager session; trainer launch remains a separate user action.
 - Dataset status stays owned by its page during first startup, so background

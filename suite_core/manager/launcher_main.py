@@ -755,6 +755,7 @@ def main(argv=None, *, expected_package_sha256=None, executable=None, abort_acti
         successor_trust_sha256=compiled_update_profile.trust_sha256
     exe = Path(sys.executable if executable is None else executable).absolute()
     _assert_unredirected(exe)
+    exe = exe.resolve(strict=False)
     if exe.name.casefold() != 'collectigen.exe' or not exe.is_file(): raise ValueError('exact_public_root_entry_required')
     if not (exe.parent / '_bootstrap').is_dir(): raise ValueError('public_bootstrap_payload_required')
     controller = PublicLaunch(exe.parent, abort_action_admission=abort_action_admission,

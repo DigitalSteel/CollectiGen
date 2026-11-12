@@ -417,17 +417,18 @@ def test_training_baseline_profile_refuses_nonboolean_enablement(flag):
 
 
 @pytest.mark.skipif(__import__('os').name!='nt',reason='Windows executable filename aliases')
-@pytest.mark.parametrize('spelling',['collectigen.exe','COLLECTIGEN.EXE'])
-def test_normal_packaged_root_accepts_windows_filename_case(tmp_path,monkeypatch,spelling):
+@pytest.mark.parametrize(('spelling','lower_path'),[('collectigen.exe',False),('COLLECTIGEN.EXE',False),('collectigen.exe',True)])
+def test_normal_packaged_root_accepts_windows_filename_case(tmp_path,monkeypatch,spelling,lower_path):
     from suite_core.manager import launcher_main
     root=tmp_path/'Suite';root.mkdir();(root/'CollectiGen.exe').write_bytes(b'Unexecuted synthetic entry')
     (root/'_bootstrap').mkdir()
     def stop_before_owner(selected_root,**options):
-        assert selected_root==root
+        assert str(selected_root)==str(root.resolve())
         raise RuntimeError('constructor_reached_without_launch')
     monkeypatch.setattr(launcher_main,'PublicLaunch',stop_before_owner)
     with pytest.raises(RuntimeError,match='constructor_reached_without_launch'):
-        launcher_main.main([],expected_package_sha256='a'*64,executable=root/spelling)
+        entry=str(root/spelling)
+        launcher_main.main([],expected_package_sha256='a'*64,executable=entry.lower() if lower_path else entry)
     assert not (root/'Data').exists()
 
 
