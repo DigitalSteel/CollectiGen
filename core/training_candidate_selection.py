@@ -80,14 +80,17 @@ def capture_dataset_caption_authority(
     user = data_root / "user"
     required = (
         *(defaults / name for name in (
-            "automation_rules.json", "categories.json", "community_tags.json",
-            "concepts.json", "conflicts.json", "foundation_tags.json",
+            "categories.json", "community_tags.json",
+            "concepts.json", "foundation_tags.json",
             "modifiers.json", "promoted_tags.json", "relationships.json", "tag_aliases.json",
         )),
         user / "default_knowledge_state.json",
         user / "tags.json",
     )
-    optional = frozenset(user / name for name in (
+    # Public Organizer defaults may omit these stores; their absence is authority.
+    optional = frozenset(defaults / name for name in (
+        "automation_rules.json", "conflicts.json",
+    )) | frozenset(user / name for name in (
         "automation_rules.json", "categories.json", "characters.json", "outfits.json",
         "relationships.json", "series.json",
     ))

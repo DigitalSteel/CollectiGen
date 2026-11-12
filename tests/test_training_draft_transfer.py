@@ -197,3 +197,40 @@ def test_assessment_context_is_part_of_manifest_integrity(tmp_path):
     changed=deepcopy(one);changed["assessment_context_fingerprint"]="b"*64
     with pytest.raises(TrainingPlanDraftError,match="fingerprint"):
         TrainingPlanDraftStore(tmp_path/"tampered.json").save_manifest(changed,"Tampered")
+
+
+@pytest.mark.parametrize("name", ["automation_rules.json", "conflicts.json"])
+def test_caption_authority_tracks_absent_optional_default_rules(tmp_path, name):
+    from core.training_candidate_selection import capture_dataset_caption_authority
+    defaults=tmp_path/"defaults";user=tmp_path/"user"
+    defaults.mkdir();user.mkdir()
+    for filename in ("categories.json","community_tags.json","concepts.json","foundation_tags.json",
+                     "modifiers.json","promoted_tags.json","relationships.json","tag_aliases.json"):
+        (defaults/filename).write_text("{}",encoding="utf-8")
+    for filename in ("default_knowledge_state.json","tags.json"):
+        (user/filename).write_text("{}",encoding="utf-8")
+    before={str(p):p.read_bytes() for p in tmp_path.rglob("*.json")}
+    current=capture_dataset_caption_authority(tmp_path)
+    assert current() and before=={str(p):p.read_bytes() for p in tmp_path.rglob("*.json")}
+    rule=defaults/name;rule.write_text("{}",encoding="utf-8")
+    assert not current()
+    present=capture_dataset_caption_authority(tmp_path)
+    assert present()
+    rule.unlink()
+    assert not present()
+    (defaults/"categories.json").unlink()
+    with pytest.raises(FileNotFoundError):capture_dataset_caption_authority(tmp_path)
+
+
+def test_missing_flat_conflict_store_retains_reviewed_typed_constraints(tmp_path):
+    from core.conflict_rules import ConflictRuleEngine
+    from core.knowledge_relationships import KnowledgeRelationship,SCOPED_CONSTRAINT
+    relation=KnowledgeRelationship("typed-conflict",SCOPED_CONSTRAINT,(),label="Typed constraint")
+    evaluator=NS(registry=NS(relationships=[relation]))
+    path=tmp_path/"conflicts.json"
+    engine=ConflictRuleEngine.load(path,relationship_evaluator=evaluator)
+    assert engine.relationship_evaluator is evaluator
+    assert [rule.relationship_id for rule in engine.rules]==[relation.id]
+    assert not path.exists()
+    path.write_text("{broken",encoding="utf-8")
+    with pytest.raises(ValueError):ConflictRuleEngine.load(path,relationship_evaluator=evaluator)

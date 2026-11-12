@@ -328,8 +328,8 @@
     },
     {
       "path": "core/conflict_rules.py",
-      "bytes": 30243,
-      "sha256": "197cc6a6208a93b401e39fefbcd5c51a1d456c6b63858aabf171272d4345ac8e"
+      "bytes": 30270,
+      "sha256": "44518887effbfdac25d2bdefccf2aa70c972eba26dbda39a39254de9af146b4a"
     },
     {
       "path": "core/connected_version_observation.py",
@@ -1903,8 +1903,8 @@
     },
     {
       "path": "core/training_candidate_selection.py",
-      "bytes": 70705,
-      "sha256": "d716dd20e71e5ddc905047c67457c994e11fb164b0f203c9d90380b83c26e80b"
+      "bytes": 70845,
+      "sha256": "9e5571832faa7155f10345a9cbc56ee3d6ee6cdbd929a06ce3981794625db60e"
     },
     {
       "path": "core/training_caption_review.py",

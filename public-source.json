@@ -334,8 +334,8 @@
       "size_bytes": 30625
     },
     "core/conflict_rules.py": {
-      "sha256": "197cc6a6208a93b401e39fefbcd5c51a1d456c6b63858aabf171272d4345ac8e",
-      "size_bytes": 30243
+      "sha256": "44518887effbfdac25d2bdefccf2aa70c972eba26dbda39a39254de9af146b4a",
+      "size_bytes": 30270
     },
     "core/connected_version_observation.py": {
       "sha256": "3bdb7195dccb8e3e0fc28643353982c081035a9fd7ca333615244102a01a2a2d",
@@ -1614,8 +1614,8 @@
       "size_bytes": 22646
     },
     "core/training_candidate_selection.py": {
-      "sha256": "d716dd20e71e5ddc905047c67457c994e11fb164b0f203c9d90380b83c26e80b",
-      "size_bytes": 70705
+      "sha256": "9e5571832faa7155f10345a9cbc56ee3d6ee6cdbd929a06ce3981794625db60e",
+      "size_bytes": 70845
     },
     "core/training_caption_review.py": {
       "sha256": "0c285fdff68f5f7160380645ba8326f33302dc3208948cc24dea422f1a2bf91c",
@@ -3150,8 +3150,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "7be0e87caf4c2dc5ac213cac25686669af9b1f2822f6819b8951ecb080446dcc",
-      "size_bytes": 22835
+      "sha256": "a6cf1dcabecb8d2cd443448c91264459dc5d45b2e0b39bc8b56b2fa7183518c9",
+      "size_bytes": 22992
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3958,7 +3958,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "5fa49de1699f899a2c1a1091b8779d34e38067a48aa3052291de01b5772697b6",
+      "sha256": "c96abc5d86b1cbd201e3f708f8061adb5bb7b0d1be9a55892b5a243fd7377084",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4606,8 +4606,8 @@
       "size_bytes": 7669
     },
     "tests/test_training_draft_transfer.py": {
-      "sha256": "c3f965e4bf9db15e3d17bd4fba5cb8e6edfd925c9e6a9d8866142d81b96623f9",
-      "size_bytes": 10916
+      "sha256": "8198a23ef45122200e0fc2cfefa1e04c131287df91c1c2bb84dd6c4e7dac18fa",
+      "size_bytes": 13017
     },
     "core/training_draft_transfer.py": {
       "sha256": "1334ae6ddcc820342b5a9b36030819753b74c2220089c535acfb5de637d7f908",
