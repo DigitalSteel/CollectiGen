@@ -157,3 +157,78 @@ def test_training_open_review_selection_retains_exact_controller_owner(manager_w
     window._sdxl_preparation_controller = None
     window._training_comparison_controller = None
     first.close(); second.close()
+
+
+@pytest.mark.parametrize("theme", ("dark", "light"))
+@pytest.mark.parametrize("section,topic,required", (
+    ("Generate", "generation", ("New or Saved Image", "Review Generation Jobs", "Media Organizer")),
+    ("Training", "training", ("Review Training Package", "Review a Dataset Draft", "Review Saved Training Runs")),
+))
+def test_workflow_help_ribbon_f1_and_close_keep_scope(manager_window, tmp_path, theme, section, topic, required):
+    from pathlib import Path
+    from PySide6.QtWidgets import QAbstractButton, QTextBrowser
+    from qt_app.theme import apply_theme
+    from qt_app.help_content import manager_workspace_help
+    app, window = manager_window
+    from test_manager_comparison_queue import app as configure_ui_fonts
+    assert configure_ui_fonts() is app
+    apply_theme(app, theme)
+    window.resize(1920, 1040)
+    item = window.navigation.item(window.page_rows[section])
+    QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
+                    pos=window.navigation.visualItemRect(item).center())
+    app.processEvents()
+    selected = window.navigation.currentRow()
+    control = window._workflow_help_controls[section]
+    assert control.help_text == manager_workspace_help(topic)
+    assert not control.isVisible()  # The command bar owns the one visible home.
+    command, = (c for c in window.commands if c.key == "workflow-help")
+    assert command.source is control and command.label == "Help for " + section
+    tab = next(i for i in range(window.bar.tabs.count()) if window.bar.tabs.tabText(i) == "Help")
+    QTest.mouseClick(window.bar.tabs, Qt.LeftButton, pos=window.bar.tabs.tabRect(tab).center())
+    app.processEvents()
+    visible = [b for b in window.bar.findChildren(QAbstractButton)
+               if b.isVisible() and b.text() == "Help for " + section]
+    assert len(visible) == 1
+    out = Path(os.environ.get("CG_WORKFLOW_HELP_CAPTURES", str(tmp_path)))
+    out.mkdir(parents=True, exist_ok=True)
+    assert window.grab().save(str(out / (section.lower() + "-" + theme + "-entry.png")))
+    QTest.mouseClick(visible[0], Qt.LeftButton)
+    app.processEvents()
+    guide = control._help_dialog
+    assert guide is not None and guide.isVisible() and guide.windowTitle() == section + " Help"
+    text = "\n".join(b.toPlainText() for b in guide.findChildren(QTextBrowser))
+    assert all(word in text for word in required), text
+    assert "Dataset Collections" not in text  # No nonexistent all-in-one navigation.
+    assert not hasattr(window, "state")  # Help starts no generator, trainer or model work.
+    assert window.navigation.currentRow() == selected
+    assert guide.grab().save(str(out / (section.lower() + "-" + theme + "-guide.png")))
+    assert guide.close()
+    app.processEvents()
+    window.activateWindow(); window.setFocus(); app.processEvents()
+    QTest.keyClick(window, Qt.Key_F1)
+    app.processEvents()
+    assert control._help_dialog is not None and control._help_dialog.isVisible()
+    assert window.navigation.currentRow() == selected and not hasattr(window, "state")
+    assert control._help_dialog.close()
+    app.processEvents()
+    assert window.grab().save(str(out / (section.lower() + "-" + theme + "-return.png")))
+    # Other workspaces do not acquire a disabled/no-op Help command.
+    other = window.navigation.item(window.page_rows["Dashboard"])
+    QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
+                    pos=window.navigation.visualItemRect(other).center())
+    app.processEvents()
+    assert not window._workflow_help_shortcut.isEnabled()
+    assert not any(c.key == "workflow-help" for c in window.commands)
+    # Normal Manager Close settles its own open guide as well.
+    QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
+                    pos=window.navigation.visualItemRect(item).center())
+    app.processEvents(); window.activateWindow(); window.setFocus(); app.processEvents()
+    QTest.keyClick(window, Qt.Key_F1); app.processEvents()
+    assert control._help_dialog.isVisible()
+    assert window.close()
+    app.processEvents()
+    assert not window.isVisible()
+    from shiboken6 import isValid
+    remaining = control._help_dialog
+    assert remaining is None or not isValid(remaining) or not remaining.isVisible()

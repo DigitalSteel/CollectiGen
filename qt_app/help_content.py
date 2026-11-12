@@ -894,3 +894,42 @@ Old rectangles need a fresh review after a recipe or output setting changes the 
 def section_help(topic_id: str) -> str:
     """Return guidance for a dialog with its own local Help entry."""
     return SECTION_HELP[topic_id]
+
+
+MANAGER_WORKSPACE_HELP = {
+    "generation": """## Start an image or video
+
+Open **Generate** in Suite Manager. Choose **New or Saved Image…** to start an image request or reopen a saved draft. Use the video planning controls for a video request; **Set Up Video Components…** reviews the separate video runtime.
+
+## Keep and switch work
+
+Image and video requests stay in the draft selector. Switching drafts does not replace another request. Save important work before closing it. Saved setups and model-guided planning open a separate image request, preserving the work already open.
+
+## Review before generating
+
+Choose your model, prompt and output settings in the shared editor. Configure a local generator separately, review readiness, then deliberately submit the request. Drafting and saving do not start generation or download models.
+
+## Results and recovery
+
+Use **Review Generation Jobs…** for saved jobs and their recovery actions. **Plan Remix from Verified Result…** starts from checked output. Bring verified output into Media Organizer through **Add Images**; review its image facts there. Generation prompts remain lineage rather than confirmed image descriptions. A failed request retains its draft; review its reported state before retrying.""",
+    "training": """## 1. Prepare data in Media Organizer
+
+Use Organizer's **Dataset** workspace to choose images, review captions and prepare a Training package. Organizer owns collection membership and image corrections. Export a saved Dataset draft when you want to review its planned sources in Manager; a draft is not a built package.
+
+## 2. Review the package and trainer
+
+In Suite Manager's **Training** workspace, choose **Review Training Package…** for the built package. **Review a Dataset Draft…** opens an exported plan for review instead. Use **Review Existing Trainer…** to review your local trainer, then return to the package. Follow its SDXL or Anima preparation and readiness checks before choosing Start. Opening a review does not start training.
+
+## 3. Review results
+
+Use **Return to Open Review** for a review already open. **Review Saved Training Runs…** reopens saved runs and results; **Review Saved SDXL Preparations…** reopens a prepared run. **Training Experiments…** retains comparisons and planning choices. **Compare Training Samples…** compares saved samples or prepares a generation comparison. A completed run or a numerical measurement does not establish visual quality.
+
+## Return and recover
+
+Review changed images or captions back in Organizer and rebuild the package there. **Review Interrupted Training Package…** opens the existing package recovery route. A resumed run uses a new destination rather than overwriting the old run. Keep the original package and saved results; models, optional runtimes and actual training are separate deliberate choices.""",
+}
+
+
+def manager_workspace_help(topic_id: str) -> str:
+    """Describe the same workflow in its modular host, without all-in-one routes."""
+    return MANAGER_WORKSPACE_HELP[topic_id]

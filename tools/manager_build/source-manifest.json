@@ -2683,8 +2683,8 @@
     },
     {
       "path": "qt_app/help_content.py",
-      "bytes": 607029,
-      "sha256": "c20cc55f497166295b8a898c6adbd2e10b56977ded426a62efff60dd15f837e8"
+      "bytes": 610101,
+      "sha256": "137fb16abd3a3ffb1ca2095e18b879f6660dab36b0812c525503389363e9a849"
     },
     {
       "path": "qt_app/history_domain_panel.py",
@@ -3639,7 +3639,7 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 44010,
-      "sha256": "6fa583b6b907823f86d2a9a9b3b42e747d6ef6bfb5af5e47e84881a72cba20b6"
+      "sha256": "ea6f9d18c031c9e59f44bc61a45a3450bc1746ed0978d59f86f3f545dce4599d"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -3979,12 +3979,12 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 281,
-      "sha256": "c5f4a92b60b50ffca35f0396475d6b560d5ad90e2ff73f56c0deff032d236e28"
+      "sha256": "6020213cff65c39c52b6fb8ec723461771c9e6db51f6dec40b602b4e3d9cc45d"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 279484,
-      "sha256": "711bdbf19e67006f0c14a44972b53d453d238853a816df503de1d626139f2451"
+      "bytes": 281760,
+      "sha256": "fa323249cef22e1cc1c812ca7dc20303be15a874a2f1423b49c130685de4564a"
     },
     {
       "path": "suite_core/media_examples.py",

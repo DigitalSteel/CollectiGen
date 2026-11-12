@@ -12,6 +12,12 @@ complete folder together, and run **CollectiGen.exe**. Long installation paths
 can prevent Qt's Windows plugin from loading. Keep the previous package and
 separate data backups. Review and confirm each installation; restart when asked.
 
+## Unreleased workflow guidance
+
+The a.0.6.3 source candidate restores Generate and Training Help in the command
+bar and F1. The downloads above remain the published a.0.6.2 baseline until
+this successor completes package qualification and delivery.
+
 ## Workspaces
 
 - **Dashboard** summarizes suite and saved generator readiness and links to the

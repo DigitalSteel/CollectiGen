@@ -1,3 +1,8 @@
+# What's New - a.0.6.3 (embedded 0.6.3-alpha.1) - 2026-11-12
+
+- Restored contextual Generate and Training Help through the Help ribbon and F1.
+- Explain data preparation in Organizer and execution/review in Manager while retaining open work.
+
 # What's New - a.0.6.2 (embedded 0.6.2-alpha.1) - 2026-11-12
 
 - Fixed Apply giving up before the launcher finished checking a signed update.
