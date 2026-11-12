@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Animate This Image opens an offline Video draft with the selected still. Save the draft, then load it in Suite Manager to continue; runtime setup and generation stay in Manager.
+
 - Training plans retain reviewed relationship constraints when the optional legacy conflicts file is absent; rebuild older saved plans to refresh their caption context.
 
 - Saved Training drafts retain the context reference needed for caption comparison in Manager; older drafts remain readable.
@@ -24,7 +26,7 @@
   Review and copy through Video Ingest while retaining the original and lineage.
 - Reviewed Character and Outfit generation setups can be exported for Manager after explicit eligible-library selection. Prompt sharing is opt-in; cancellation and changed-source refusal retain the saved setup. Manager imports and reviews the setup in a separate image draft.
 
-- Dataset image actions keep Remix and image-request editing in an offline planner. Save or export the request, then import it with Suite Manager Plan an Image. Generator access stays in Manager. Animate This Image points to Manager Plan a Video.
+- Dataset image actions keep Remix and image-request editing in an offline planner. Save or export the request, then import it with Suite Manager Plan an Image. Generator access stays in Manager. Animate This Image saves an offline video draft for Manager Plan a Video.
 
 2026-11-11 (America/New_York)
 

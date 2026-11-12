@@ -54,10 +54,12 @@ def open_video_generation_workspace(parent, *, source_path=None, on_opened=None,
     """Default opens immediately; explicit runtime context is admitted off-UI."""
     host=_host(parent);state=host.state
     if not getattr(state, "video_generation_runtime_allowed", True):
-        QMessageBox.information(parent, "Plan video in Suite Manager",
-            "Video generation is unavailable in Media Organizer. "
-            "In Suite Manager, choose Applications > Plan a Video. Your source image stays unchanged.")
-        return None
+        return _open_prepared_video_generation_workspace(
+            parent, source_path=source_path, on_opened=on_opened,
+            frame_reference_provider=frame_reference_provider,
+            initial_request=initial_request, draft_label=draft_label,
+            runtime_allowed=False,
+        )
     factory=getattr(state,"dependency_service_factory",None)
     lifetime=getattr(state,"video_decoder_lifetime",None)
     options=dict(source_path=source_path,on_opened=on_opened,
@@ -115,12 +117,13 @@ def open_video_generation_workspace(parent, *, source_path=None, on_opened=None,
 
 def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_opened=None,
                                     frame_reference_provider=None, initial_request=None,
-                                    draft_label=None,runtime_binding=None,decoder_lifetime=None):
+                                    draft_label=None,runtime_binding=None,decoder_lifetime=None,runtime_allowed=True):
     """Open a fresh retained draft; an explicit still attaches asynchronously."""
     host = _host(parent)
     window = _setup_window(host)
     state = host.state
     runtime_options={}
+    if not runtime_allowed:runtime_options["runtime_allowed"]=False
     if runtime_binding is not None:runtime_options["runtime_binding"]=runtime_binding
     if decoder_lifetime is not None:runtime_options["decoder_lifetime"]=decoder_lifetime
     dialog = VideoGenerationDialog(state.jobs, ModelResourceRegistry(MODEL_RESOURCES_PATH),
