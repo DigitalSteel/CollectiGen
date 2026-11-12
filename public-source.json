@@ -2182,8 +2182,8 @@
       "size_bytes": 18258
     },
     "qt_app/dataset_page.py": {
-      "sha256": "8a799f71ba827ca5a4fe108c83c0047b3c4cd0e8010bd08c5f816078282de59d",
-      "size_bytes": 514459
+      "sha256": "eaafb4157a751523ad4943a3234a7c275f0bdc934ae22edfa457467dbe7f4635",
+      "size_bytes": 514463
     },
     "qt_app/dataset_preparation_queue.py": {
       "sha256": "0978e5838b13bf1872a93b671af7021183a4ce79db32ea554d299c0c9ca4afff",
@@ -3150,8 +3150,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "6d23fce1703147dedeb404c499f18d0f8f7fb4adb287b2956c011130f1a189f2",
-      "size_bytes": 23989
+      "sha256": "6be88593a6fdb62b869885b9594e34e8587a8b4f7db11f3b6eb3c26b92025522",
+      "size_bytes": 24134
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3958,7 +3958,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "cc806c2265cedfd869eefaf469467504dfca17feea480e9ce09f1adf80a1503a",
+      "sha256": "e2ff8e35e60ae84a5a96a96f6ba9cc94df79790cf7fdcc0952795cfb8a20d255",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {

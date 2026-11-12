@@ -1139,7 +1139,7 @@ class DatasetPage(QWidget):
         self._unbounded_workflow_maximum_height=workflow_tabs.maximumHeight()
         browser_layout.addWidget(workflow_tabs)
         self.result_label=QLabel("Load a library to browse images."); self.result_label.setObjectName("mutedLabel")
-        self.search_activity_status=QLabel(); self.search_activity_status.hide()
+        self.search_activity_status=QLabel(self); self.search_activity_status.hide()
         from .components import bind_status_footer
         bind_status_footer(self,self.search_activity_status,title="Dataset results",follow_visibility=True)
         gallery_toolbar=QFrame(); self.gallery_toolbar=gallery_toolbar; gallery_toolbar.setObjectName("galleryToolbar"); gallery_toolbar_layout=QVBoxLayout(gallery_toolbar); gallery_toolbar_layout.setContentsMargins(9,7,9,7)

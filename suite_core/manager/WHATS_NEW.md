@@ -1,5 +1,7 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Dataset status stays owned by its page during first startup, so background
+  status feedback cannot leave a separate window alive after Close.
 - Applications offers signed Media Organizer a.0.5.0 through the existing
   download, review and confirmed-install workflow.
 - Training packages retain the saved caption-assessment context. Current plans
