@@ -1,0 +1,258 @@
+{
+  "schema_version": 1,
+  "catalog_id": "collectigen.model-workflow-baseline",
+  "catalog_version": 2,
+  "as_of": "2026-09-15",
+  "reviewer": "CollectiGen maintainers",
+  "records": [
+    {
+      "id": "stabilityai/sdxl-base-1.0",
+      "family": "SDXL",
+      "version": "1.0",
+      "variant": "base",
+      "modality": "image",
+      "goal_kinds": ["character", "style", "product", "outfit", "action", "concept"],
+      "catalog_status": "current",
+      "license": "CreativeML Open RAIL++-M",
+      "summary": "The maintained reproducible image-training baseline. The base checkpoint can generate alone or feed the separately identified refiner.",
+      "sources": [
+        {
+          "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0",
+          "kind": "official_model_card",
+          "applicable_revision": "stable-diffusion-xl-base-1.0 model card as reviewed",
+          "revision_status": "dated_moving_reference",
+          "checked_on": "2026-09-14"
+        }
+      ],
+      "recipe": {
+        "id": "collectigen.sdxl-1.0-lora-v1",
+        "version": 1,
+        "method": "lora",
+        "caption_profile_id": "collectigen.sdxl.tags-only",
+        "caption_profile_version": 6,
+        "caption_profile_base_id": "collectigen.sdxl.tags-only",
+        "caption_strategy": "sdxl_tags_only",
+        "resolution": 1024,
+        "minimum_storage_gib": 10,
+        "minimum_ram_gib": 16,
+        "minimum_vram_gib": 8,
+        "adapter": {
+          "id": "collectigen.sd-scripts-sdxl-lora-preview",
+          "version": 2,
+          "source_revision": "6721028c79ee85a78b3a06dfd8954dae310a1cce",
+          "status": "tested_adapter"
+        },
+        "limitations": [
+          "Training quality and creative fidelity are unmeasured by this recommendation.",
+          "The exact model bytes, runtime, free resources, and adapter admission must be rechecked before launch."
+        ]
+      },
+      "companion_requirements": [],
+      "generation_recipe": {
+        "id": "collectigen.swarmui.sdxl-t2i-preview-v1",
+        "version": 1,
+        "process": "text_to_image",
+        "configuration": {
+          "width": 1024,
+          "height": 1024,
+          "steps": 20,
+          "cfg_scale": null,
+          "sampler": "",
+          "scheduler": ""
+        },
+        "configuration_evidence": {
+          "width": "documented_model_source",
+          "height": "documented_model_source",
+          "steps": "collectigen_neutral_default",
+          "cfg_scale": "exact_runtime_required",
+          "sampler": "exact_runtime_required",
+          "scheduler": "exact_runtime_required"
+        },
+        "editable_fields": ["width", "height", "steps", "cfg_scale", "sampler", "scheduler"],
+        "conditioning_inputs": ["positive_prompt", "negative_prompt"],
+        "required_runtime_settings": ["cfg_scale", "sampler", "scheduler"],
+        "resource_evidence_status": "unmeasured",
+        "adapter": {
+          "id": "collectigen.swarmui.t2i.v1",
+          "version": 1,
+          "source_revision": "cd53fde595b7ea432bf48eabbe9f0efc96849f8f",
+          "status": "tested_adapter",
+          "runtime_policy": "live_exact_identity"
+        },
+        "limitations": [
+          "This recommendation only covers the admitted one-image local SwarmUI SDXL request shape.",
+          "CFG scale, sampler, and scheduler must be selected from an exact current local runtime probe.",
+          "Applying the recommendation does not authorize connection, request preparation, submission, or execution."
+        ]
+      }
+    },
+    {
+      "id": "circlestone-labs/anima-base-v1.0",
+      "family": "Anima",
+      "version": "Base-v1.0",
+      "variant": "base",
+      "modality": "image",
+      "goal_kinds": ["character", "style", "outfit", "action", "concept"],
+      "catalog_status": "current",
+      "license": "CircleStone Labs non-commercial license",
+      "summary": "An illustration-focused base variant whose official card designates Anima-Base for LoRA training and documents separate text-encoder and VAE companions.",
+      "sources": [
+        {
+          "url": "https://huggingface.co/circlestone-labs/Anima",
+          "kind": "official_model_card",
+          "applicable_revision": "Anima Base v1.0 model card as reviewed",
+          "revision_status": "dated_moving_reference",
+          "checked_on": "2026-09-14"
+        },
+        {
+          "url": "https://github.com/kohya-ss/sd-scripts/blob/main/docs/anima_train_network.md",
+          "kind": "upstream_training_documentation",
+          "applicable_revision": "main documentation as reviewed; not an admitted CollectiGen adapter",
+          "revision_status": "dated_moving_reference",
+          "checked_on": "2026-09-14"
+        }
+      ],
+      "recipe": {
+        "id": "collectigen.anima-base-v1.0-mixed-caption-preview-v1",
+        "version": 1,
+        "method": "lora",
+        "caption_profile_id": "research.trn02.anima-base-v1.0-mixed",
+        "caption_profile_version": 6,
+        "caption_profile_base_id": "collectigen.sdxl.tags-and-descriptions",
+        "caption_strategy": "sdxl_tags_then_plain_language",
+        "resolution": 1024,
+        "minimum_storage_gib": 24,
+        "minimum_ram_gib": 24,
+        "minimum_vram_gib": 12,
+        "required_companions": ["Qwen3 0.6B text encoder", "Qwen-Image VAE"],
+        "adapter": {
+          "id": "",
+          "version": 0,
+          "source_revision": "",
+          "status": "unavailable"
+        },
+        "limitations": [
+          "This is a source-grounded dataset/configuration preview, not a CollectiGen-supported Anima trainer adapter.",
+          "Anima is a separate family; SDXL runtime qualification does not transfer to it."
+        ]
+      },
+      "companion_requirements": [
+        {
+          "slot": "text_encoder",
+          "role": "text_encoder",
+          "family": "Qwen3",
+          "variant": "0.6B",
+          "revision": "",
+          "revision_note": "The reviewed Anima model card names Qwen3 0.6B but does not pin an admitted component revision.",
+          "applies_to": ["training", "generation"],
+          "necessity": "required",
+          "compatibility_status": "not_assessed",
+          "accepted_sha256": []
+        },
+        {
+          "slot": "vae",
+          "role": "vae",
+          "family": "Qwen-Image",
+          "variant": "VAE",
+          "revision": "",
+          "revision_note": "The reviewed Anima model card names Qwen-Image VAE but does not pin an admitted component revision.",
+          "applies_to": ["training", "generation"],
+          "necessity": "required",
+          "compatibility_status": "not_assessed",
+          "accepted_sha256": []
+        }
+      ]
+    },
+    {
+      "id": "krea/krea-2-raw",
+      "family": "Krea 2",
+      "version": "RAW-2026",
+      "variant": "raw-training-base",
+      "modality": "image",
+      "goal_kinds": ["character", "style", "product", "concept"],
+      "catalog_status": "current",
+      "license": "Krea 2 Community License v1 (2026-06-22)",
+      "summary": "The official training base. Krea recommends LoRA training on RAW and inference or validation with the separately identified Turbo checkpoint.",
+      "sources": [
+        {
+          "url": "https://github.com/krea-ai/krea-2",
+          "kind": "official_repository",
+          "applicable_revision": "main README as reviewed",
+          "revision_status": "dated_moving_reference",
+          "checked_on": "2026-09-14"
+        },
+        {
+          "url": "https://github.com/huggingface/diffusers/blob/main/examples/dreambooth/README_krea2.md",
+          "kind": "upstream_training_documentation",
+          "applicable_revision": "main Krea 2 DreamBooth LoRA example as reviewed",
+          "revision_status": "dated_moving_reference",
+          "checked_on": "2026-09-14"
+        }
+      ],
+      "recipe": {
+        "id": "collectigen.krea-2-raw-lora-preview-v1",
+        "version": 1,
+        "method": "lora",
+        "caption_profile_id": "collectigen.plain-language.descriptions-only",
+        "caption_profile_version": 4,
+        "caption_profile_base_id": "collectigen.plain-language.descriptions-only",
+        "caption_strategy": "plain_language_only",
+        "resolution": 1024,
+        "minimum_storage_gib": 40,
+        "minimum_ram_gib": 32,
+        "minimum_vram_gib": 24,
+        "required_companions": ["Krea 2 Turbo for recommended validation and inference"],
+        "adapter": {
+          "id": "",
+          "version": 0,
+          "source_revision": "",
+          "status": "unavailable"
+        },
+        "limitations": [
+          "This preview does not translate settings for Diffusers, AI Toolkit, Fal, or musubi-tuner.",
+          "RAW and Turbo are distinct resources and must retain separate exact identities and license evidence."
+        ]
+      },
+      "companion_requirements": [
+        {
+          "slot": "validation_checkpoint",
+          "role": "checkpoint",
+          "family": "Krea 2",
+          "variant": "Turbo",
+          "revision": "",
+          "revision_note": "The reviewed official repository names Krea 2 Turbo but does not pin an admitted checkpoint revision.",
+          "applies_to": ["generation", "validation"],
+          "necessity": "recommended",
+          "compatibility_status": "not_assessed",
+          "accepted_sha256": []
+        }
+      ]
+    },
+    {
+      "id": "wan-ai/wan2.2-ti2v-5b",
+      "family": "Wan 2.2",
+      "version": "TI2V-5B",
+      "variant": "text-and-image-to-video-720p",
+      "modality": "video",
+      "goal_kinds": ["video"],
+      "catalog_status": "investigation_only",
+      "license": "Apache-2.0 on the exact Hugging Face model card revision",
+      "summary": "Video-awareness record only. The official model repository identifies a combined text/image-to-video 5B variant; CollectiGen has no accepted clip-data or execution adapter.",
+      "sources": [
+        {
+          "url": "https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B/tree/921dbaf3f1674a56f47e83fb80a34bac8a8f203e",
+          "kind": "official_model_repository",
+          "applicable_revision": "921dbaf3f1674a56f47e83fb80a34bac8a8f203e",
+          "revision_status": "immutable_revision",
+          "checked_on": "2026-09-14"
+        }
+      ],
+      "recipe": null,
+      "companion_requirements": [],
+      "limitations": [
+        "VID-01 owns clip data, temporal conditioning, and any execution proposal.",
+        "Published model size and runtime examples do not establish readiness, speed, or output quality on this machine."
+      ]
+    }
+  ]
+}

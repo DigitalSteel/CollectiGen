@@ -105,7 +105,8 @@
     "qt_app/knowledge_page.py",
     "core/generation_execution.py",
     "core/ingest_import.py",
-    "qt_app/ingest_page.py"
+    "qt_app/ingest_page.py",
+    "resources/model_workflow_baseline.json"
   ],
   "runtime_kind": "interpreter-portable",
   "runtime_profile": "organizer-image",

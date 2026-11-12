@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Training Dataset Models & Guidance includes its offline model catalog again, so reviewed model-specific planning profiles can return to the selected image scope.
+
 - Media review explains Refresh after a busy scan, shows ready feedback after playback closes, and stops cleanly when closed while opening.
 
 - Existing Video playback and verification setup is available for the qualified Windows runtime. Optional dependency cache refresh is serialized so concurrent startup checks cannot interrupt Dataset/Ingest preparation.

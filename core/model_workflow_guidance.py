@@ -31,7 +31,11 @@ from .training_configuration import (
 from .training_presets import preview_training_preset
 
 
-BASELINE_PATH = Path(__file__).resolve().parents[1] / "data" / "model_workflow_baseline.json"
+_APPLICATION_ROOT = Path(__file__).resolve().parents[1]
+_RESOURCE_BASELINE = _APPLICATION_ROOT / "resources" / "model_workflow_baseline.json"
+# Immutable portable assets live in resources; retain legacy source-tree lookup.
+BASELINE_PATH = (_RESOURCE_BASELINE if _RESOURCE_BASELINE.is_file()
+                 else _APPLICATION_ROOT / "data" / "model_workflow_baseline.json")
 MAX_CATALOG_BYTES = 2 * 1024 * 1024
 MAX_RECORDS = 256
 MAX_RECOVERY_RECEIPTS = 64

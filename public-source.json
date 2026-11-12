@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 846,
+  "allowlisted_source_file_count": 849,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -986,8 +986,8 @@
       "size_bytes": 13477
     },
     "core/model_workflow_guidance.py": {
-      "sha256": "001b8490a34ee350714bc75e186a4baaee3e2ba7505b1a045a06678f8ecc2218",
-      "size_bytes": 93043
+      "sha256": "bccc848c4532acb222827ec79acd8c54906c17ff4814b64eaba7049476344c9e",
+      "size_bytes": 93323
     },
     "core/model_workspace.py": {
       "sha256": "6dcfba2217f3730a0f377fb64682dcf1c9f354e38c712d8c231c7f530022b57d",
@@ -3130,20 +3130,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "e6a58edc82f1d1d4dd395bb0f6fda762fac4e8cd9cbb22733edd6446d67b7ccb",
-      "size_bytes": 5358
+      "sha256": "97474bb47e85e6027a574167b590781a2464ddfe67cbaf6ffeddeec1df93badf",
+      "size_bytes": 5404
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "1676c935938103490f8a403e87d5131fc7da767ca1739dee8543f61f5b485ae5",
-      "size_bytes": 15844
+      "sha256": "2ba4b45dc291ec58e8a5f445f17fa11a25d41e2427108ea201a70465696c96a0",
+      "size_bytes": 15894
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
       "sha256": "d0ab1b1139c6525e5e768227373076887854abd2770f476d294b2cf7fe86b87e",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "641cd38de3b2e6e243515feb152c2361fc37ed0b053026ec7f217130b153abeb",
-      "size_bytes": 26844
+      "sha256": "b6f25fcd8c644daeffbd8f9f5c1d654bcb93d1aad63edb338cd596114dec293b",
+      "size_bytes": 27009
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3388,6 +3388,18 @@
     "docs/VID02P3_MEDIA_REVIEW_FEEDBACK.md": {
       "sha256": "a565fcda44c1fc9110dc6120230f52ec25e9030c99951023d6c221fa31ca03bf",
       "size_bytes": 2133
+    },
+    "resources/model_workflow_baseline.json": {
+      "sha256": "751df980a86705b89cabfda5d3f6c92f1b21ef4c36de3a1cb67722b0fc3fb683",
+      "size_bytes": 10578
+    },
+    "tests/test_organizer_training_guidance.py": {
+      "sha256": "8d6a19458cbe651c4fbd819421b8d30a20268bc680899c5475e2c660527bcc0f",
+      "size_bytes": 8048
+    },
+    "docs/TRN02_ORGANIZER_GUIDANCE.md": {
+      "sha256": "2444e08088468d36d0a2d58b441cd60a801cd7374e189e71a3b317a379b173bb",
+      "size_bytes": 1064
     }
   },
   "fresh_history_required": true,
