@@ -2608,8 +2608,8 @@
     },
     {
       "path": "qt_app/generation_dialog.py",
-      "bytes": 287171,
-      "sha256": "c527798848d286a838434206a9e9884d4d6f17438eaa1d9783431c7d21e762d2"
+      "bytes": 287439,
+      "sha256": "ab411fb4ad183d9b7705bfd9bf9732ffcbb216a2f2fddffc105da026597779e1"
     },
     {
       "path": "qt_app/generation_experiment_dialog.py",
@@ -2888,13 +2888,13 @@
     },
     {
       "path": "qt_app/model_workflow_guidance_dialog.py",
-      "bytes": 54426,
-      "sha256": "bf4855ce5824eda84c80e76fd9abd346fc3ffc243fdb8c6fb74c591c43c4400a"
+      "bytes": 55277,
+      "sha256": "2a39d8da9456c3065be7657b0652ce910f0bf7b69a96cb87b152cdecb4235f6d"
     },
     {
       "path": "qt_app/model_workspace_dialog.py",
-      "bytes": 244612,
-      "sha256": "6388a272f8c27339b38b973f4c2befa4c1778dc44058b4e1d2debe48515e40e7"
+      "bytes": 245386,
+      "sha256": "3f556c08adeebab803efeaad6788a3e8b3aaf59ce529332497ea7651c1a971cc"
     },
     {
       "path": "qt_app/module_card.py",
@@ -2918,8 +2918,8 @@
     },
     {
       "path": "qt_app/pages.py",
-      "bytes": 300398,
-      "sha256": "406b608fba9e69c0edbef1a71c2c25568e61e595694db775f52bca25a4c96a8c"
+      "bytes": 300637,
+      "sha256": "0a7d45aed80f3235000ccdad8782d5bf1c910793c5c19394b1bb154ba41bbe5f"
     },
     {
       "path": "qt_app/preferred_caption_preparation_dialog.py",
@@ -3983,8 +3983,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 271669,
-      "sha256": "c6cf279bad3fde4fd0a17aa5acc8c081b390231a6c42ad13d46f21060e2b4b63"
+      "bytes": 271908,
+      "sha256": "a4198fedb0d5a20382fcaac4a99d044ae4e501ed2d765568d37aa9ec89be085c"
     },
     {
       "path": "suite_core/media_examples.py",

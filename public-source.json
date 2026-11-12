@@ -1,10 +1,14 @@
 {
-  "allowlisted_source_file_count": 1171,
+  "allowlisted_source_file_count": 1172,
   "component_ids": [
     "collectigen.suite-manager"
   ],
   "export_scope": "component-source",
   "files": {
+    "tests/test_selected_lora_guidance_handoff.py": {
+      "sha256": "18d19a72df9e7e01b5281e9ac00df4a96d7440da1d3d3edff8fea50359de8dc8",
+      "size_bytes": 5266
+    },
     "tests/test_manager_comparison_queue.py": {
       "sha256": "b47897338e8a28ea66c423505ca90157852a2b31ecb7bbceddf9cc366fd5eb0b",
       "size_bytes": 15637
@@ -2246,8 +2250,8 @@
       "size_bytes": 79634
     },
     "qt_app/generation_dialog.py": {
-      "sha256": "c527798848d286a838434206a9e9884d4d6f17438eaa1d9783431c7d21e762d2",
-      "size_bytes": 287171
+      "sha256": "ab411fb4ad183d9b7705bfd9bf9732ffcbb216a2f2fddffc105da026597779e1",
+      "size_bytes": 287439
     },
     "qt_app/generation_experiment_dialog.py": {
       "sha256": "efd99ae269514581d1e215f68b7818d861685ffbe64b49d06c8f14c92ae1da6b",
@@ -2474,12 +2478,12 @@
       "size_bytes": 23178
     },
     "qt_app/model_workflow_guidance_dialog.py": {
-      "sha256": "bf4855ce5824eda84c80e76fd9abd346fc3ffc243fdb8c6fb74c591c43c4400a",
-      "size_bytes": 54426
+      "sha256": "2a39d8da9456c3065be7657b0652ce910f0bf7b69a96cb87b152cdecb4235f6d",
+      "size_bytes": 55277
     },
     "qt_app/model_workspace_dialog.py": {
-      "sha256": "6388a272f8c27339b38b973f4c2befa4c1778dc44058b4e1d2debe48515e40e7",
-      "size_bytes": 244612
+      "sha256": "3f556c08adeebab803efeaad6788a3e8b3aaf59ce529332497ea7651c1a971cc",
+      "size_bytes": 245386
     },
     "qt_app/module_card.py": {
       "sha256": "b31930cb91b6852c2eb449c8e6437979fe18d1ff6a5ecc663b9687e495c99b5e",
@@ -2502,8 +2506,8 @@
       "size_bytes": 21659
     },
     "qt_app/pages.py": {
-      "sha256": "406b608fba9e69c0edbef1a71c2c25568e61e595694db775f52bca25a4c96a8c",
-      "size_bytes": 300398
+      "sha256": "0a7d45aed80f3235000ccdad8782d5bf1c910793c5c19394b1bb154ba41bbe5f",
+      "size_bytes": 300637
     },
     "qt_app/preferred_caption_preparation_dialog.py": {
       "sha256": "f6d41b5610acf60e79cf45b0e5b77708294925c34564b6c23e39e707d5f9076b",
@@ -3146,8 +3150,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "f729c6f9f4c833f7a6a24c376f7023f2043d37c9ce967971974247bf10f49c83",
-      "size_bytes": 22502
+      "sha256": "489a769db05d804271da207b0e8a07b25af04a9f59315be1965c698815552cfb",
+      "size_bytes": 22707
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3418,8 +3422,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "c6cf279bad3fde4fd0a17aa5acc8c081b390231a6c42ad13d46f21060e2b4b63",
-      "size_bytes": 271669
+      "sha256": "a4198fedb0d5a20382fcaac4a99d044ae4e501ed2d765568d37aa9ec89be085c",
+      "size_bytes": 271908
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3954,7 +3958,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "741d4394975c016cd0ec2f2a4488568c61558ee0167ae69eb8bf19c976306079",
+      "sha256": "5891e94a206377a651c6a7e6f70a8390aa2a314d02e6a7f6b00139f343d3af1b",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4666,8 +4670,8 @@
       "size_bytes": 937
     },
     "tests/test_manager_models_workspace.py": {
-      "sha256": "a5c082b3e6cac64e1199a655c6faf3ab40c6b4e6dca702fcb2b54d379d6fd797",
-      "size_bytes": 8099
+      "sha256": "8be59ee581ed43dde661ff514742197abb516d3e885874d2d78b2549c8703ea5",
+      "size_bytes": 8389
     },
     "docs/MOD01_MANAGER_MODELS.md": {
       "sha256": "e94baf0e9153e0f8b6781e1805bf1b1250c03ac15b638d4a1b994c64f6ed473c",
@@ -4678,8 +4682,8 @@
       "size_bytes": 6652
     },
     "tests/test_manager_models_journey.py": {
-      "sha256": "380d0053abd110bd4b63b75aebdf8932bf94888df330185ef4e1141e179641c2",
-      "size_bytes": 14194
+      "sha256": "d0e1050c983465719b0c592883aa3fdf4397446652173aed9d96045913869629",
+      "size_bytes": 14864
     },
     "data/model_workflow_baseline.json": {
       "sha256": "751df980a86705b89cabfda5d3f6c92f1b21ef4c36de3a1cb67722b0fc3fb683",

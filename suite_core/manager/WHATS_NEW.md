@@ -1,5 +1,8 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Generate planning from a registered LoRA keeps its exact LoRA role in the new
+  draft; it no longer treats that selection as a checkpoint. Checkpoint choice
+  and generator readiness remain separate.
 - Applications opens the original local Models workspace for registration, notes,
   storage and model-guided planning. Reviewed guidance opens a new Generate draft;
   a busy or changed review can return to Models.

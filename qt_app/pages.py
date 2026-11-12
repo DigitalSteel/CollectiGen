@@ -3519,7 +3519,8 @@ Use **Automatic** unless you need to choose the CPU or an NVIDIA GPU explicitly.
 
         if not getattr(dialog, "_generation_handoff_ready", False) or dialog.generation_handoff is None:
             return
-        guidance, configuration, registry_revision, service, catalog_token = dialog.generation_handoff
+        guidance, configuration, registry_revision, service, catalog_token = dialog.generation_handoff[:5]
+        selected_resources = dialog.generation_handoff[5] if len(dialog.generation_handoff) > 5 else ()
 
         def retry(message):
             self._retain_models_generation_handoff(dialog, message)
@@ -3546,8 +3547,10 @@ Use **Automatic** unless you need to choose the CPU or an NVIDIA GPU explicitly.
                 if service.catalog_write_token() != catalog_token:
                     target.status.setText("Model guidance changed before application. Open Recommended Setup to review a fresh recommendation; this new draft was not changed.")
                     return
-                applied = target.apply_model_guidance(guidance, configuration,
-                    expected_registry_revision=registry_revision)
+                options = {"expected_registry_revision": registry_revision}
+                if selected_resources:
+                    options["selected_resources"] = selected_resources
+                applied = target.apply_model_guidance(guidance, configuration, **options)
             except (OSError, RuntimeError, ValueError) as exc:
                 target.status.setText(f"Could not apply the reviewed setup: {exc}. Open Recommended Setup to review again; this new draft was not changed.")
                 return

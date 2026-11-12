@@ -36,6 +36,7 @@ class ModelWorkflowGuidanceDialog(FeedbackEnabledDialog):
         available_generation_adapters=(),
         current_configuration: TrainingConfiguration | None = None,
         current_generation_configuration: GenerationConfigurationRecommendation | None = None,
+        selected_generation_resources=(),
         caption_previews=(),
         image_count: int = 0,
         workflow_kind: str = "training",
@@ -151,6 +152,16 @@ class ModelWorkflowGuidanceDialog(FeedbackEnabledDialog):
             self.base_model_id.setText(current_configuration.base_model_id)
         form.addRow("Local model identity", self.base_model_id)
         layout.addLayout(form)
+        self.selected_generation_resources_label = QLabel()
+        self.selected_generation_resources_label.setWordWrap(True)
+        self.selected_generation_resources_label.setAccessibleName("Selected model for the new Generate draft")
+        if selected_generation_resources:
+            identities = ", ".join(identity for identity, role in selected_generation_resources)
+            self.selected_generation_resources_label.setText(
+                "Selected LoRA: " + identities + ". This LoRA will be added to the new Generate draft. "
+                "Choose its base checkpoint separately in Generate; the LoRA is not a checkpoint.")
+        self.selected_generation_resources_label.setVisible(bool(selected_generation_resources))
+        layout.addWidget(self.selected_generation_resources_label)
 
         resources = QGroupBox("Model resources" if self._guided_generation else "Companion resources for this workflow")
         resources_layout = QVBoxLayout(resources)

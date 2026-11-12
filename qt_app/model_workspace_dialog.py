@@ -3107,10 +3107,21 @@ class ModelWorkspaceDialog(ModelResourceDialog):
         from qt_app.model_workflow_guidance_dialog import ModelWorkflowGuidanceDialog
         service, machine, snapshot, verified = result
         configuration = self.guidance_configuration
+        selected_resources = ()
         if identity:
-            configuration = replace(configuration or TrainingConfiguration(), base_model_id=identity)
+            roles = {item.get("role") for item in snapshot["resources"][identity].get("declarations", ())}
+            if workflow_kind == "generation" and roles == {"lora"}:
+                selected_resources = ((identity, "lora"),)
+                if configuration is not None and configuration.base_model_id == identity:
+                    configuration = replace(configuration, base_model_id="")
+            elif roles == {"checkpoint"}:
+                configuration = replace(configuration or TrainingConfiguration(), base_model_id=identity)
+            else:
+                self.status.setText("Choose a model with one declared checkpoint or LoRA role for this workflow. The existing reviewed setup is unchanged.")
+                return
         dialog = ModelWorkflowGuidanceDialog(service, machine, registry_snapshot=snapshot,
             verified_resource_ids=verified, current_configuration=configuration,
+            selected_generation_resources=selected_resources,
             registry=self.registry, jobs=self.jobs, protected_roots=self.workspace.protected_roots,
             workflow_kind=workflow_kind, allow_workflow_switch=not self.select_plan and workflow_kind != "generation",
             image_count=self.image_count, parent=self)
@@ -3149,7 +3160,7 @@ class ModelWorkspaceDialog(ModelResourceDialog):
                     self.status.setText("Model guidance changed during review. Open Plan for a Model and review a fresh recommendation.")
                     return
                 self.generation_handoff = (dialog.plan, self.selected_generation_configuration,
-                                           registry_revision, service, catalog_token)
+                                           registry_revision, service, catalog_token, selected_resources)
                 self.continue_generation_button.show()
                 self._update_planning_summary()
                 self.status.setText("Generation setup reviewed but not applied. Continue in Generate to open a new draft; model readiness and generation remain separate.")
@@ -3178,7 +3189,7 @@ class ModelWorkspaceDialog(ModelResourceDialog):
             self.dialog_commands.select_group("Local Models")
             self.notes.setFocus(Qt.OtherFocusReason)
             return
-        guidance, configuration, registry_revision, service, catalog_token = self.generation_handoff
+        guidance, configuration, registry_revision, service, catalog_token = self.generation_handoff[:5]
         try:
             if (self.registry.snapshot()[1] != registry_revision or
                     service.catalog_write_token() != catalog_token):

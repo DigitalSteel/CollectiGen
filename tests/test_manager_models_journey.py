@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import time
+import pytest
 from pathlib import Path
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtTest import QTest
@@ -10,7 +11,8 @@ from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox, QFileDial
 from tests.test_manager_models_workspace import manager
 
 
-def test_manager_register_notes_reopen_guidance_and_save(tmp_path, monkeypatch):
+@pytest.mark.parametrize("model_role", ["checkpoint", "lora"])
+def test_manager_register_notes_reopen_guidance_and_save(tmp_path, monkeypatch, model_role):
     from core.model_resource_registry import ModelResourceRegistry
     from core.generation_planning import load_plan
     from core import model_workflow_guidance as knowledge
@@ -86,8 +88,8 @@ def test_manager_register_notes_reopen_guidance_and_save(tmp_path, monkeypatch):
             elif step=="declare" and models is not None and models._task is None and models._inspection is not None:
                 assert not host.registry_path.exists()
                 models.role.setFocus();QTest.keyClick(models.role,Qt.Key_Home)
-                for _ in range(models.role.findText("checkpoint")):QTest.keyClick(models.role,Qt.Key_Down)
-                assert models.role.currentText()=="checkpoint"
+                for _ in range(models.role.findText(model_role)):QTest.keyClick(models.role,Qt.Key_Down)
+                assert models.role.currentText()==model_role
                 models.family.setFocus();QTest.keyClick(models.family,Qt.Key_Home)
                 for _ in range(models.family.findData("SDXL")):QTest.keyClick(models.family,Qt.Key_Down)
                 assert models.family.text()=="SDXL"
@@ -98,7 +100,7 @@ def test_manager_register_notes_reopen_guidance_and_save(tmp_path, monkeypatch):
                 assert models.models.currentItem().data(0,Qt.UserRole)==identity
                 resources=ModelResourceRegistry(host.registry_path).snapshot()[0]["resources"]
                 assert set(resources)=={identity}
-                assert any(d["role"]=="checkpoint" and d["family"]=="SDXL" for d in resources[identity]["declarations"])
+                assert any(d["role"]==model_role and d["family"]=="SDXL" for d in resources[identity]["declarations"])
                 tab(models,"Notes")
                 text(models.tags,"synthetic, favorite");text(models.notes,"My saved model notes")
                 capture(models,"03-model-notes")
@@ -136,6 +138,10 @@ def test_manager_register_notes_reopen_guidance_and_save(tmp_path, monkeypatch):
             elif step=="guidance" and guidance is not None:
                 assert guidance.workflow.currentData()=="generation"
                 guidance.resize(1300,900)
+                if model_role == "lora":
+                    assert guidance.base_model_id.text() == ""
+                    assert guidance.selected_generation_resources_label.isVisible()
+                    assert identity in guidance.selected_generation_resources_label.text()
                 click(guidance.customize_model_set);assert guidance.base_model_id.isVisible()
                 click(guidance.customize_model_set);assert not guidance.base_model_id.isVisible()
                 text(guidance.goal,"Create a synthetic portrait")
@@ -153,7 +159,8 @@ def test_manager_register_notes_reopen_guidance_and_save(tmp_path, monkeypatch):
                 draft=window._generation_dialog
                 assert draft.isVisible() and isinstance(draft,GenerationDialog)
                 assert draft.plan.goal=="Create a synthetic portrait"
-                assert draft.plan.request.model_hash==identity.removeprefix("sha256:")
+                assert draft.plan.request.model_hash==(identity.removeprefix("sha256:") if model_role == "checkpoint" else "")
+                assert any(item.id == identity and item.role == model_role for item in draft.plan.request.resources)
                 assert not window.state.generation_runtime_allowed
                 assert not draft._pending
                 capture(draft,"10-new-generate-draft")
@@ -170,7 +177,8 @@ def test_manager_register_notes_reopen_guidance_and_save(tmp_path, monkeypatch):
             elif step=="saved" and saved.is_file() and not window._generation_dialog._pending:
                 plan=load_plan(saved)
                 assert plan.goal=="Create a synthetic portrait"
-                assert plan.request.model_hash==identity.removeprefix("sha256:")
+                assert plan.request.model_hash==(identity.removeprefix("sha256:") if model_role == "checkpoint" else "")
+                assert any(item.id == identity and item.role == model_role for item in plan.request.resources)
                 assert plan.target_context["model_guidance"]["family"]=="SDXL"
                 capture(window._generation_dialog,"11-generate-saved")
                 state["completed"]=True;state["step"]="complete";driver.stop()

@@ -2813,7 +2813,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             handoff = dialog.generation_handoff
             if not dialog._generation_handoff_ready or handoff is None:
                 return True
-            guidance, configuration, revision, service, catalog_token = handoff
+            guidance, configuration, revision, service, catalog_token = handoff[:5]
+            selected_resources = handoff[5] if len(handoff) > 5 else ()
             def retain(message):
                 dialog._generation_handoff_ready = False
                 dialog.dialog_commands.select_group('Planning')
@@ -2835,7 +2836,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     if service.catalog_write_token() != catalog_token:
                         target.status.setText('Model guidance changed. Review Recommended Setup again; this new draft was not changed.')
                         return
-                    if target.apply_model_guidance(guidance, configuration, expected_registry_revision=revision):
+                    options = {"expected_registry_revision": revision}
+                    if selected_resources:
+                        options["selected_resources"] = selected_resources
+                    if target.apply_model_guidance(guidance, configuration, **options):
                         dialog.generation_handoff = None
                         dialog._generation_handoff_ready = False
                 except (OSError, RuntimeError, ValueError) as exc:

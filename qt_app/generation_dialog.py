@@ -1463,7 +1463,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         if dialog.exec() == QDialog.Accepted:
             self.apply_model_guidance(dialog.plan, dialog.selected_generation_configuration())
 
-    def apply_model_guidance(self, guidance, configuration, *, expected_registry_revision=None) -> bool:
+    def apply_model_guidance(self, guidance, configuration, *, expected_registry_revision=None, selected_resources=()) -> bool:
         """Apply one reviewed preview to a new request revision, preserving source evidence."""
         if configuration is None or guidance is None or guidance.request.workflow_kind != "generation":
             return False
@@ -1475,6 +1475,10 @@ class GenerationDialog(FeedbackEnabledDialog):
                     (self.registry is None or self.registry.snapshot()[1] != expected_registry_revision)):
                 raise ValueError("Registered models changed. Review a fresh recommendation before applying it.")
             chosen = [(guidance.request.base_model_id, "checkpoint")] if guidance.request.base_model_id else []
+            for identity, role in selected_resources:
+                if role != "lora":
+                    raise ValueError("The selected model role changed; reopen Models and review it again.")
+                chosen.append((identity, role))
             requirements = {item.slot: item for item in guidance.companion_requirements}
             for binding in guidance.request.resource_bindings:
                 requirement = requirements.get(binding.slot)

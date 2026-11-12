@@ -104,7 +104,8 @@ def test_repository_mode_stays_separate_and_retained_review_is_not_replaced(tmp_
 
 
 @pytest.mark.parametrize("mode", ["success", "registry", "catalog", "busy", "late_catalog"])
-def test_guidance_new_draft_recheck_and_retention(tmp_path, monkeypatch, mode):
+@pytest.mark.parametrize("with_lora", [False, True])
+def test_guidance_new_draft_recheck_and_retention(tmp_path, monkeypatch, mode, with_lora):
     from qt_app import generation_workflow
     app, window, host = manager(tmp_path)
     dialog = host.open_local_models(window)
@@ -113,6 +114,8 @@ def test_guidance_new_draft_recheck_and_retention(tmp_path, monkeypatch, mode):
     service = NS(catalog_write_token=lambda: "changed" if mode == "catalog" else "token")
     guidance, configuration = object(), object()
     dialog.generation_handoff = (guidance, configuration, "stale" if mode == "registry" else revision, service, "token")
+    selected = (("sha256:" + "b" * 64, "lora"),) if with_lora else ()
+    if with_lora: dialog.generation_handoff += (selected,)
     dialog._generation_handoff_ready = True
     calls = []
     target = NS(status=QLabel(), apply_model_guidance=lambda *a, **k: calls.append((a,k)) or True)
@@ -125,7 +128,9 @@ def test_guidance_new_draft_recheck_and_retention(tmp_path, monkeypatch, mode):
     result = window.continue_models_generation(dialog)
     if mode == "success":
         assert result and len(calls) == 1
-        assert calls[0] == ((guidance, configuration), {"expected_registry_revision": revision})
+        expected = {"expected_registry_revision": revision}
+        if with_lora: expected["selected_resources"] = selected
+        assert calls[0] == ((guidance, configuration), expected)
         assert dialog.generation_handoff is None
     elif mode == "late_catalog":
         assert result and not calls and "not changed" in target.status.text()
