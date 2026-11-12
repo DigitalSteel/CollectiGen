@@ -3130,8 +3130,8 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "5c9c2e4625418d8046b47ed70aa9d45666294d9ae1474400fe252d1b9b5008c9",
-      "size_bytes": 5185
+      "sha256": "39d6b93542eedadf4e066f70e7350559854a34984b875b122e6c23d7bffb5fc6",
+      "size_bytes": 5221
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
       "sha256": "82dbd10b5ae0301361a30affe4eb4dec775029e8c8f0c859facf10a1d2691ecd",
@@ -3356,6 +3356,10 @@
     "docs/GEN06_MANAGER_VIDEO_INGEST.md": {
       "sha256": "e6bd4ea36c12c3a5cdcd1bfbf4a5beac78766d27b3344337e85a8d5d7c80fae0",
       "size_bytes": 1712
+    },
+    "core/video_decoder_worker.py": {
+      "sha256": "a0cc23b29ba40648d3d000a0795de0da0ed32ebfe336707e86908dc965e955f4",
+      "size_bytes": 10051
     }
   },
   "fresh_history_required": true,

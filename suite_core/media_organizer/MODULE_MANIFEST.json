@@ -65,6 +65,7 @@
   ],
   "runtime_files": [
     "core/component_release_identity.py",
+    "core/video_decoder_worker.py",
     "release_contract.py",
     "suite_core/media_organizer/RELEASE_PRESENTATION.json",
     "suite_core/media_organizer/__init__.py",
