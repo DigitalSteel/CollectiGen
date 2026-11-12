@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 841,
+  "allowlisted_source_file_count": 844,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -370,8 +370,8 @@
       "size_bytes": 7409
     },
     "core/dependencies.py": {
-      "sha256": "5a2635fbd7e2e6776897cc43bcd9cb98b53209646dd5dc5d8828445fee1a4c7b",
-      "size_bytes": 142326
+      "sha256": "5d6b67285bbee2d073bf0a1f2b47c7c5b05bd636839b34bdacf19431fb3f3887",
+      "size_bytes": 142755
     },
     "core/derived_refresh.py": {
       "sha256": "759874a2ebd75a62001a50c1d6a27e1ceb13be7e7829a930e9a70344f00a0530",
@@ -3130,20 +3130,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "39d6b93542eedadf4e066f70e7350559854a34984b875b122e6c23d7bffb5fc6",
-      "size_bytes": 5221
+      "sha256": "e6a58edc82f1d1d4dd395bb0f6fda762fac4e8cd9cbb22733edd6446d67b7ccb",
+      "size_bytes": 5358
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "82dbd10b5ae0301361a30affe4eb4dec775029e8c8f0c859facf10a1d2691ecd",
-      "size_bytes": 15772
+      "sha256": "1676c935938103490f8a403e87d5131fc7da767ca1739dee8543f61f5b485ae5",
+      "size_bytes": 15844
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
       "sha256": "d0ab1b1139c6525e5e768227373076887854abd2770f476d294b2cf7fe86b87e",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "3600125e95ca0f9eb7834ee31d322787f0c1570e81276178295bad6165a25d17",
-      "size_bytes": 26483
+      "sha256": "0cf8eccdc7534cad725508b8c4826ab8519eee0fb22f3c9b8d4320526e6e2c76",
+      "size_bytes": 26703
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3250,8 +3250,8 @@
       "size_bytes": 27445
     },
     "tools/optional-ai-profiles.json": {
-      "sha256": "4181e1c9bda9e0bbce7006a62442643a88a7c05c45d82c4015aa6e785ab5d393",
-      "size_bytes": 25624
+      "sha256": "36444773c1b56e6061f189b405ca7c5d0453d3acc0acf5a3535d3054bdde62fc",
+      "size_bytes": 25724
     },
     "tools/organizer-prerequisite-source/BUILD.md": {
       "sha256": "b5b64b9fd24c59ba3b3f59bbb20c7433045a28dd528732f6fea24d008362f35c",
@@ -3368,6 +3368,18 @@
     "docs/VID02P1_PLAYBACK_ADMISSION.md": {
       "sha256": "3f327d818ff7930b47003bbb7afbccbd9f85d0060d84da8e335227938f232cdd",
       "size_bytes": 2590
+    },
+    "tests/test_optional_import_cache_serialization.py": {
+      "sha256": "450ef5ea01e133f6617687935c01103daee81174db0c22f5a78d403edd99aa2b",
+      "size_bytes": 1423
+    },
+    "docs/VID02P2_OPTIONAL_CACHE_STARTUP.md": {
+      "sha256": "ac310a1b1013f2871eb2b91573f6da74b2b5b1d76f7952ad7fdfa66613382d6a",
+      "size_bytes": 1439
+    },
+    "docs/VID02_ORGANIZER_CODEC_QUALIFICATION.md": {
+      "sha256": "3bae4aaedb4c4b8b0fe79e5063a4c6108f6b7af7cdb413e11616b374ef1bb194",
+      "size_bytes": 2435
     }
   },
   "fresh_history_required": true,

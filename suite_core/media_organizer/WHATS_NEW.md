@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Existing Video playback and verification setup is available for the qualified Windows runtime. Optional dependency cache refresh is serialized so concurrent startup checks cannot interrupt Dataset/Ingest preparation.
+
 - Video runtime checking avoids repeated ancestor walks while retaining fresh file-integrity checks. Exact packaged playback qualification remains part of candidate delivery.
 
 - Review Manager Result now accepts original and trimmed video receipts.

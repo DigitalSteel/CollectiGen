@@ -65,6 +65,17 @@ FASTEST_WD_MODEL = "SmilingWolf/wd-vit-tagger-v3"
 WINDOWS_RESERVED_FILE_STEMS = {
     "con","prn","aux","nul",*(f"com{value}" for value in range(1,10)),*(f"lpt{value}" for value in range(1,10)),
 }
+_OPTIONAL_IMPORT_CACHE_LOCK = threading.RLock()
+
+
+def _invalidate_optional_import_caches() -> None:
+    # PathFinder deletes missing/relative importer entries while invalidating.
+    # Concurrent dependency startup/install/removal calls must not delete the
+    # same cached entry from separate snapshots at the same time.
+    with _OPTIONAL_IMPORT_CACHE_LOCK:
+        importlib.invalidate_caches()
+
+
 _EXIFTOOL_JUNCTION_LOCK = threading.Lock()
 _EXIFTOOL_JUNCTION_ROOT: Path | None = None
 _EXIFTOOL_JUNCTION_SOURCE: Path | None = None
@@ -1211,7 +1222,7 @@ print(json.dumps({"version":av.__version__}))
             pass
         if root.is_dir():
             _activate_optional_component_site()
-            importlib.invalidate_caches()
+            _invalidate_optional_import_caches()
         return recovered
 
     @classmethod
@@ -1804,7 +1815,7 @@ print(json.dumps({"version":av.__version__}))
         except subprocess.CalledProcessError as exc:
             detail=(exc.stderr or exc.stdout or str(exc)).strip()
             raise RuntimeError(f"Capability package removal failed:\n\n{detail}") from exc
-        importlib.invalidate_caches()
+        _invalidate_optional_import_caches()
 
     def remove(self,plan: DependencyRemovalPlan) -> DependencyRemovalResult:
         if plan.capability not in {"wd","joy"}: raise ValueError("The removal plan is not an optional AI capability.")
@@ -1963,7 +1974,7 @@ print(json.dumps({"version":av.__version__}))
         except subprocess.CalledProcessError as exc:
             detail=(exc.stderr or exc.stdout or str(exc)).strip()
             raise RuntimeError(f"Package installation failed:\n\n{detail}") from exc
-        importlib.invalidate_caches()
+        _invalidate_optional_import_caches()
         return "Installed: " + ", ".join(packages)
 
     @classmethod
@@ -2141,7 +2152,7 @@ print(json.dumps({"version":av.__version__}))
             except OSError:
                 cleanup_pending=backup.exists()
         _activate_optional_component_site()
-        importlib.invalidate_caches()
+        _invalidate_optional_import_caches()
         return cleanup_pending
 
     def install_profile(

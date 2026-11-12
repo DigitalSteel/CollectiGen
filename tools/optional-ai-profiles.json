@@ -28,7 +28,7 @@
   },
   "profiles": {
     "organizer-video-windows": {
-      "support": "proposed",
+      "support": "supported",
       "display_name": "Video playback and verification",
       "roots": [
         "av==18.1.0"
@@ -43,7 +43,7 @@
           "source_url": "https://pypi.org/project/av/18.1.0/"
         }
       ],
-      "qualification": "proposal only; native/setup/runtime-repair acceptance pending"
+      "qualification": "Windows x64 CPython 3.13.15 native setup, rollback, decode, preview drain and changed-file admission qualified; see docs/VID02_ORGANIZER_CODEC_QUALIFICATION.md."
     },
     "joycaption": {
       "capability": "joy",
