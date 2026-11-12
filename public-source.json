@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 832,
+  "allowlisted_source_file_count": 841,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -370,8 +370,8 @@
       "size_bytes": 7409
     },
     "core/dependencies.py": {
-      "sha256": "77a88acf3ebbd7fdc3ebc8c95079c58b4e7c611dc9757c6f0dd11b0670a0482a",
-      "size_bytes": 141931
+      "sha256": "5a2635fbd7e2e6776897cc43bcd9cb98b53209646dd5dc5d8828445fee1a4c7b",
+      "size_bytes": 142326
     },
     "core/derived_refresh.py": {
       "sha256": "759874a2ebd75a62001a50c1d6a27e1ceb13be7e7829a930e9a70344f00a0530",
@@ -1102,8 +1102,8 @@
       "size_bytes": 58192
     },
     "core/profile_paths.py": {
-      "sha256": "6bebb1a54c9376c049898ac8a1537f29b498a80d8d6865c8fb73a15ae96c1375",
-      "size_bytes": 1751
+      "sha256": "6df8ac673a21f09ddbc04b93ed3b0cadcd7839921556e04a596dfdd781b182af",
+      "size_bytes": 2012
     },
     "core/projection_exclusion.py": {
       "sha256": "4c5b93ca0a12d2f204418cf4a83779547ae400865b2fc291ebfe2acc4745c065",
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "d023967075e259a0ae66b49712257ef16ab3b6b157a4bf5ba5c054a0b701dd4e",
-      "size_bytes": 26307
+      "sha256": "3600125e95ca0f9eb7834ee31d322787f0c1570e81276178295bad6165a25d17",
+      "size_bytes": 26483
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3360,6 +3360,14 @@
     "core/video_decoder_worker.py": {
       "sha256": "a0cc23b29ba40648d3d000a0795de0da0ed32ebfe336707e86908dc965e955f4",
       "size_bytes": 10051
+    },
+    "tests/test_video_admission_path_cost.py": {
+      "sha256": "363b2963b799fa4813053aafe00291d85e5d0c1addbc59a33fb21cf4fba70d89",
+      "size_bytes": 2840
+    },
+    "docs/VID02P1_PLAYBACK_ADMISSION.md": {
+      "sha256": "3f327d818ff7930b47003bbb7afbccbd9f85d0060d84da8e335227938f232cdd",
+      "size_bytes": 2590
     }
   },
   "fresh_history_required": true,

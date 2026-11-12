@@ -11,6 +11,7 @@ def unredirected_directory(path, *, must_exist=False):
     # Inspect original components too, before normalizing '..'.
     cursor = Path(raw.anchor) if raw.is_absolute() else Path.cwd()
     parts = raw.parts[1:] if raw.is_absolute() else raw.parts
+    checked = set()
     for part in parts:
         cursor = cursor / part
         try:
@@ -21,8 +22,13 @@ def unredirected_directory(path, *, must_exist=False):
             raise RuntimeError("Test path contains symlink/reparse point")
         if not stat.S_ISDIR(info.st_mode):
             raise RuntimeError("Test path contains non-directory")
+        checked.add(cursor)
     # Also inspect the cwd/anchor and every normalized ancestor.
     for target in (*reversed(absolute.parents), absolute):
+        # Original and normalized paths commonly share these exact ancestors.
+        # Retain original dot-dot checks, but inspect each existing directory once.
+        if target in checked:
+            continue
         try:
             info = target.lstat()
         except FileNotFoundError:

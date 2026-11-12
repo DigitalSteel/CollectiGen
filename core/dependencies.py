@@ -964,8 +964,14 @@ print(json.dumps({"version":av.__version__}))
 
     @classmethod
     def _safe_component_file(cls,path: Path,root: Path) -> Path:
-        admitted=cls._safe_component_directory(root)
+        raw_root=Path(root).expanduser()
+        admitted=Path(os.path.abspath(raw_root))
         parent=cls._safe_component_directory(path.parent)
+        # For a canonical root, the fresh parent walk already checks every
+        # root ancestor. Preserve raw-path checks when normalization could
+        # otherwise conceal a redirected dot-dot component.
+        if not raw_root.is_absolute() or raw_root!=admitted or ".." in raw_root.parts:
+            admitted=cls._safe_component_directory(raw_root)
         if not parent.is_relative_to(admitted):
             raise RuntimeError("Optional component file escapes its admitted root.")
         try:
