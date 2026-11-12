@@ -18,7 +18,7 @@ def test_training_package_review_binds_saved_anima_setup_to_ready_session(
         unconfigured(datetime.now(timezone.utc)), normal_entry_session=session,
         training_draft_settings_path=settings)
     qt_test_scope.show(manager, size=(1920, 1080))
-    manager.navigation.setCurrentRow(manager.page_rows["Applications"])
+    manager.navigation.setCurrentRow(manager.page_rows["Training"])
     qt_test_scope.settle()
     observed = []
 

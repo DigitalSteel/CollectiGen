@@ -10,7 +10,8 @@ from core.model_resource_registry import ModelResourceRegistry
 from core.paths import MODEL_RESOURCES_PATH, USER_DATA_DIR
 from core.video_generation_draft import load_video_draft, scoped_video_draft_path
 
-from .generation_workflow import _generation_data_root, _host, _setup_window
+from .generation_workflow import (_generation_data_root, _host, _setup_window,
+    _generation_workspace_host, _show_generation_workspace_home)
 from .status_notifications import FooterMessageBox as QMessageBox
 from .video_generation_dialog import VideoGenerationDialog
 from .workers import CoordinatedCallTask
@@ -271,9 +272,9 @@ def _open_prepared_video_generation_workspace(parent, *, source_path=None, on_op
     dialog.frame_ingest_requested.connect(ingest_frame)
     dialog.workspace_closed.connect(detached)
     host._video_generation_dialog = dialog
-    if window is not None and hasattr(window, "generation_page"):
-        window.navigation.setCurrentRow(7)
-        window.generation_page.add_workspace(dialog,
+    workspace_host = _generation_workspace_host(host)
+    if workspace_host is not None and _show_generation_workspace_home(workspace_host):
+        workspace_host.generation_page.add_workspace(dialog,
                                              label=(draft_label or "Video Draft") if initial_request is not None
                                              else "Animate Image" if source_path is not None else "New Video",
                                              task="video",

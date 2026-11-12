@@ -1,5 +1,14 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Training packages retain the saved caption-assessment context. Current plans
+  and legacy plans remain readable without dropping their source identity.
+- Training lists open run, setup and comparison reviews. Return to the selected
+  original review without creating another review or restarting its work.
+- Generate keeps multiple image and video drafts in the original workspace
+  switcher. New plans and model-guided requests preserve open drafts; Close
+  consults every retained request before releasing its original jobs.
+- Generate and Training now have dedicated sidebar workspaces. Their existing
+  dialogs, saved work and controllers are retained; comparisons return to Training.
 - Training plans retain reviewed relationship constraints when the optional legacy conflicts file is absent; rebuild older saved plans to refresh their caption context.
 
 - Caption checks accept Organizer defaults without optional rule files, retain typed relationship constraints and detect rule-file changes during review.

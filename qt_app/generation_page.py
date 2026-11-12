@@ -17,9 +17,10 @@ class GenerationPage(QWidget):
     background_work_finished = Signal()
     draft_save_finished = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, show_launchers=True):
         super().__init__(parent)
         self.setAccessibleName("Generate")
+        self._show_launchers = bool(show_launchers)
         self._dialogs = []
         self._tasks = {}
         self._media = {}
@@ -103,13 +104,15 @@ class GenerationPage(QWidget):
             message = "Create a short silent video from a prompt or one image. Review exact Wan2.2 models, timing and an isolated local runtime."
             enabled = True
         self.task_status.setText(message)
+        self.begin_button.setVisible(self._show_launchers)
+        self.media_choice.setVisible(self._show_launchers)
         self.begin_button.setEnabled(True)
         self.begin_button.setText("Start New Image…" if media == "image" else "Start New Video…")
         self.begin_button.setToolTip("Create a separate draft; keep existing drafts.")
-        self.resume_button.setVisible(media == "image")
-        self.open_video_draft_button.setVisible(media == "video")
-        self.use_setup_button.setVisible(media == "image")
-        self.create_setup_button.setVisible(media == "image")
+        self.resume_button.setVisible(self._show_launchers and media == "image")
+        self.open_video_draft_button.setVisible(self._show_launchers and media == "video")
+        self.use_setup_button.setVisible(self._show_launchers and media == "image")
+        self.create_setup_button.setVisible(self._show_launchers and media == "image")
         active = self.workspaces.currentWidget()
         matching = active is not None and self._media.get(active) == media
         self.workspaces.setVisible(matching)
@@ -165,7 +168,13 @@ class GenerationPage(QWidget):
         self._tasks[dialog] = task
         self._media[dialog] = media_type
         self.workspaces.addWidget(dialog)
-        self.draft_choice.addItem(label)
+        used_labels = {self.draft_choice.itemText(index) for index in range(self.draft_choice.count())}
+        display_label = label
+        suffix = 2
+        while display_label in used_labels:
+            display_label = f"{label} ({suffix})"
+            suffix += 1
+        self.draft_choice.addItem(display_label)
         self.draft_choice.show()
         self.draft_choice.setCurrentIndex(len(self._dialogs) - 1)
         self.workspaces.setCurrentWidget(dialog)
@@ -182,6 +191,10 @@ class GenerationPage(QWidget):
     def has_active_background_work(self):
         return any(callable(check := getattr(dialog, "has_active_background_work", None)) and check()
                    for dialog in self._dialogs)
+
+    def retained_workspaces(self):
+        """Snapshot every original workspace for host Close and return routing."""
+        return tuple(self._dialogs)
 
     def retained_workspace(self, media_type):
         """Return the active or latest retained draft for this media kind."""

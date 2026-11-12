@@ -139,7 +139,10 @@ def settle(predicate, seconds=8):
 
 
 def close_clean(widget):
+    from shiboken6 import isValid
     def choose_discard():
+        if not isValid(widget):
+            return
         modal = QApplication.activeModalWidget()
         if isinstance(modal, QMessageBox):
             button = modal.button(QMessageBox.Discard) or modal.button(QMessageBox.Yes)
@@ -150,7 +153,7 @@ def close_clean(widget):
             QTimer.singleShot(20, choose_discard)
     QTimer.singleShot(20, choose_discard)
     QTest.keyClick(widget, Qt.Key_Escape)
-    settle(lambda: not widget.isVisible())
+    settle(lambda: not isValid(widget) or not widget.isVisible())
 
 
 def capture(widget, name):
@@ -226,7 +229,7 @@ def test_manager_visible_comparison_opens_saved_batch_and_returns(tmp_path, monk
     manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
     manager.checked_image_connection = lambda: ("http://127.0.0.1:7801", "fixture-v1")
     manager.resize(1500, 960); manager.show()
-    item = manager.navigation.item(manager.page_rows["Applications"])
+    item = manager.navigation.item(manager.page_rows["Training"])
     QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
                      pos=manager.navigation.visualItemRect(item).center())
     click(manager.training_comparison_button)
@@ -289,7 +292,7 @@ def test_manager_single_comparison_image_returns_to_saved_review(tmp_path, monke
     manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
     manager.checked_image_connection = lambda: ("http://127.0.0.1:7801", "fixture-v1")
     manager.resize(1500, 960); manager.show()
-    item = manager.navigation.item(manager.page_rows["Applications"])
+    item = manager.navigation.item(manager.page_rows["Training"])
     QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
                     pos=manager.navigation.visualItemRect(item).center())
     click(manager.training_comparison_button)
@@ -314,7 +317,7 @@ def test_manager_single_comparison_image_returns_to_saved_review(tmp_path, monke
     else:
         close_clean(generation)
     settle(review.isVisible)
-    assert manager.navigation.currentRow() == manager.page_rows["Applications"]
+    assert manager.navigation.currentRow() == manager.page_rows["Training"]
     assert review.path == saved
     assert saved.read_bytes() == before
     assert review.session.digest == fixed.digest

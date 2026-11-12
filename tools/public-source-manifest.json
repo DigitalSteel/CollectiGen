@@ -985,7 +985,9 @@
     "tools/test_evidence.py",
     "tools/test_profile_isolation.py",
     "tools/test_suites.py",
-    "version.py"
+    "version.py",
+    "tests/test_manager_workflow_navigation.py",
+    "tests/test_training_package_context_compatibility.py"
   ],
   "reviewed_defaults": [],
   "required_provenance": []

@@ -76,7 +76,7 @@ def test_manager_history_opens_same_saved_measurement_twice_without_process_work
     monkeypatch.setattr(validation, "_current_inputs", no_process)
     monkeypatch.setattr(validation.TrainingValidationService, "recover", no_process)
     monkeypatch.setattr(validation.TrainingValidationService, "execute", no_process)
-    item = manager.navigation.item(manager.page_rows["Applications"])
+    item = manager.navigation.item(manager.page_rows["Training"])
     QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
                     pos=manager.navigation.visualItemRect(item).center())
     seen = []; requested = 0; errors = []; deadline = time.monotonic() + 35
@@ -198,7 +198,7 @@ def test_manager_history_imports_unlisted_validation(tmp_path, monkeypatch, choi
             session.state = "closed"
         return ("" if choice == "cancel" else str(receipt), "")
     monkeypatch.setattr(QFileDialog, "getOpenFileName", choose)
-    item = manager.navigation.item(manager.page_rows["Applications"])
+    item = manager.navigation.item(manager.page_rows["Training"])
     QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
                     pos=manager.navigation.visualItemRect(item).center())
     errors = []; clicked = []; deadline = time.monotonic() + 25

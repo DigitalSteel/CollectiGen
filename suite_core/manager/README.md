@@ -1,95 +1,63 @@
 # CollectiGen Suite Manager
 
-Development candidate **a.0.6.0** includes Training and Generate workflows plus
-Reader and Organizer setup. The published Manager download is still **a.0.5.1**;
-see the repository download table for the actual shipped package.
+The **a.0.6.0 development candidate** provides component setup, Generate and
+Training workspaces. The published Manager remains **a.0.5.1**. Use the main
+GitHub README download table for the version you can currently install; source
+capabilities described here do not update an older executable.
 
-Manager coordinates component setup, visible progress, Open, Close and recovery.
-The default source configuration now includes signed Reader **a.0.3.1** and
-Organizer **a.0.4.23** download offers. Finding a release does not install or
-launch it: review and confirm installation in the component workspace.
-Existing Reader and Organizer folders can also be connected there.
+## Workspaces
 
-The Tag Database workspace provides connection, preview, Apply and recovery,
-preserving local corrections. Manager self-update is not yet delivered. These
-source capabilities do not change the older published Manager executable.
+- **Dashboard** summarizes suite and saved generator readiness and links to the
+  work that needs attention.
+- **Generate** creates or reopens image and video drafts, reviews generation
+  jobs, and reconnects a checked local generator. The existing editor owns
+  prompts, model choices, settings, alternatives, queues, results and recovery.
+  The draft switcher retains multiple image and video requests. Model-guided
+  planning opens a separate request without replacing another draft; Close
+  consults every retained request.
+- **Training** opens an Organizer data package, reviews a local trainer, and
+  prepares SDXL or Anima training through the existing workflow controllers.
+  The open-review selector returns to an exact retained run or setup review
+  without starting it again. Saved runs, preparations, experiments, sample comparisons and interrupted
+  package recovery remain available here. Comparisons return to Training.
+- **Applications** installs or connects Reader and Organizer and provides the
+  existing Models and Ollama workspaces. Library files stay with Organizer.
+- **Databases** connects and reviews Tag Database content before Apply, retaining
+  local corrections and the existing content recovery route.
+- **Servers** reads local CPU, RAM and GPU observations on explicit refresh.
+  It also links to configured external model runners. Observations do not
+  establish that a model fits or that a generator is ready.
+- **Dependencies** and **Settings** retain component status, shared locations,
+  presentation and the existing recovery/setup links.
+
+## Working across components
+
+Prepare a collection, captions and a Training package in Organizer, then open
+that package in Manager's Training workspace. Saved Dataset drafts can also be
+exported from Organizer for source and caption review in Manager. Completed
+Training results can be registered and reviewed for use in Generate.
+
+Generate keeps neutral drafts available offline. Submission uses a separately
+checked local runtime and an explicit Start action. Verified generated output
+returns through Organizer's existing Add Images review; original output and
+raw generation lineage are preserved rather than promoted into confirmed tags.
+
+The candidate includes the existing signed Reader a.0.3.1 and Organizer a.0.4.23
+download offers. Review and confirm installation in each component workspace.
+Tag Database is reviewed content, rather than another application installer.
+Manager's first managed baseline and subsequent self-updates use their existing
+separate package and recovery contracts; this candidate is not a delivered
+self-update.
+
+## Source startup
 
 Run `python -B -m suite_core.manager` from a checkout with Python and PySide6.
-Use `--theme system|dark|light|midnight` and `--color-blind-mode` for presentation;
-`--demo` displays synthetic data. No dated task directory or --suite-source is needed.
+Use `--theme system|dark|light|midnight` and `--color-blind-mode` for presentation.
+`--demo` displays synthetic data. No dated task directory or `--suite-source`
+is needed. A normal host supplies its own admitted profile and component
+services; Demo does not authorize installations, execution or private data reads.
 
-Servers offers **Refresh this computer** through the context command bar to read
-local CPU, RAM and NVIDIA GPU observations. Nothing is sampled on startup,
-navigation or Details expansion. Dashboard summarizes the same observations.
-Expired/unavailable readings stay unknown; held/unmatched jobs retain their
-state, source and date without an invented server assignment. Cancel discards
-pending results and close retains the existing measurement-worker ownership.
-Demo stays synthetic. Free-memory readings do not authorize scheduling.
-
-**Connect existing Ollama** lives in Applications > Model runners. Servers opens the
-same modeless connection editor or Ollama workspace. Save and Cancel are explicit;
-Reload and Use saved values reconcile changed saved choices without replacing a draft.
-Metadata refresh remains a separate permitted action. A host can explicitly admit an exact
-qualified owned package, publication plan, environment and permission to enable reviewed
-Install new, recovery, local-key Start and retained-child Stop. Default entry has no such
-admission and keeps these actions unavailable. Model/Hermes actions remain unavailable.
-The model workspace scrolls in narrower/shorter windows, retaining readable summaries
-and complete table rows. The accepted inert source walkthrough covers saved readback,
-recovery and refresh success/failure/cancellation in light/dark and constrained windows.
-Private packaged owned Start/Stop/restart/Close is verified. Production/default entry,
-live installation and human-comprehension acceptance remain separately qualified.
-
-Default entry supplies no endpoint, archive inspector or lifecycle provider. Installed
-state, runtime readiness and model inventory remain unknown until scoped observations
-are explicitly supplied. The default Applications binding can inspect explicitly configured
-Ollama metadata with Refresh/Cancel and dated recovery. Owned runner Start/Stop requires
-the separately qualified host binding above; model download/load/unload and inference
-remain unavailable. No historical task approval is runtime authority.
-
-The owning host can inject AsyncLifecycleBridge with explicit OllamaScope and bound
-read-only client factory through create_window(lifecycle_bridge=...). This source
-recovery does not wire a production connection/configuration flow or a native runner.
-Pure lifecycle identities/deny gate live in host_contracts.py. Synthetic deployment
-bindings and accepted_host adapters belong only to suite_core.tests.fixtures.manager.
-
-CURRENT_BUILD.json is optional, adjacent to this package, read once through its bounded
-consumer. Missing/invalid metadata stays unknown. MODULE_MANIFEST.json is the explicit
-source/resource closure for future producers; use a reviewed canonical commit, not
-dated candidate directories. This is source/component evidence, not portable/runtime
-qualification. What's New contains user-facing changes; developer evidence is separate.
-
-Help > Review diagnostics offers an explicit immutable preview, category selection
-and ZIP save through create_window(diagnostics_provider=...). Normal startup binds an inert Manager-owned provider; Demo stays unbound.
-Preview reads only existing fixed-name structured Manager logs on explicit request.
-A read-only Diagnostics owner never creates or rotates log files. Export uses the
-exact reviewed bytes through the verified writer. One slot and public worker
-teardown keep close supervised. No live startup
-capture or automatic sharing follows from this source candidate. Qt/1080p and
-real request/lifetime acceptance remain pending.
-
-## Historical explicit lifecycle source proposal
-
-A host may supply an explicit disposable-module binding. Its portable root uses
-SuiteLayout validation and SYNTHETIC_TEST_ONLY admission; selected signed archives,
-finite review/approval, data sentinels and one retained lifetime lease remain required.
-There is no inferred destination or default production execution provider.
-A module launch keeps its bridge until checked close; backend connection activation
-cannot replace it. Normal metadata-only launches use the existing explicit Setup,
-Save and Refresh path. This historical proposal did not qualify native/visible
-installation; current bounded Organizer qualification is described above.
-
-Applications groups the supplied catalog by task using the shared Settings navigation, search and status filters. Declared roles and related-component links do not prove installation or compatibility. The Ollama connection tile opens the shared connection workspace; it does not establish an Installed application. Inert source presentation and saved-connection routes are reviewed. Private packaged owned-runner lifecycle acceptance is verified; production/default-entry and live-install acceptance remain pending.
-
-## Maintainer historical 0.2.0-alpha.1 source proposal - 2026-10-09
-
-The experimental component-session changes below were supplied-test-only evidence and did not enable normal installation or managed application sessions. Keep this historical source scope separate from later explicitly qualified runner workflows.
-
-# What's New - 0.2.0-alpha.1 - 2026-10-07
-
-- A supplied local test-component session keeps failed, cancelled and pending update status visible. Earlier successful observations are clearly labelled separately.
-- Closing retains ownership until the current component and its work are safely drained. Failed cleanup stays visible and protects recovery instead of claiming completion.
-- Local Ollama setup saves through the existing settings and refreshes metadata only when you request it. A delayed or refused refresh keeps older dated information visible and offers retry.
-- A component test session and Ollama connection activation stay separate. Close the component session and reopen Manager to activate a saved Ollama connection.
-
-This is an unreleased source proposal. Normal component installation remains unavailable; native startup, saved lifecycle completion and visual acceptance are pending.
-
+Keep component versions, signed package identities and rollback artifacts with
+their release. See `WHATS_NEW.md` for current candidate changes. Historical
+qualification receipts remain evidence for their exact original artifacts;
+they do not qualify a rebuilt candidate.

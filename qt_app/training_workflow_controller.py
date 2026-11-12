@@ -448,6 +448,11 @@ class TrainingWorkflowController(QObject):
         def generation_closed():
             detach_generation()
             if not self._closing and dialog in self.dialogs:
+                navigation = getattr(host, 'navigation', None)
+                if on_return is not None:
+                    on_return()
+                elif navigation is not None:
+                    navigation.setCurrentRow(8)
                 if dialog.session is not None:
                     dialog.status.setText(
                         'Generate closed. This saved comparison remains fixed. '

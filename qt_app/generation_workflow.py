@@ -38,6 +38,25 @@ def _setup_window(host):
     return None
 
 
+def _generation_workspace_host(host):
+    """Find the existing workspace owner without enrolling a Setup/runtime host."""
+    current = host
+    while current is not None:
+        page = getattr(current, "generation_page", None)
+        if page is not None and callable(getattr(page, "add_workspace", None)):
+            return current
+        current = current.parent()
+    return None
+
+
+def _show_generation_workspace_home(window):
+    route = getattr(window, "show_generate_workspace", None)
+    if callable(route):
+        return route()
+    window.navigation.setCurrentRow(7)
+    return window.navigation.currentRow() == 7
+
+
 def _generation_data_root(host):
     root = getattr(host.state, "generation_data_root", None)
     if root is None:
@@ -422,6 +441,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
         repair_context = {key: repair_context.get(key, "")[:4096] for key in allowed}
     host = _host(parent)
     setup_window = _setup_window(host)
+    workspace_host = _generation_workspace_host(host)
     requested_scope = bool(paths or record is not None or resource_id or remix or force_new or initial_plan is not None or setup_from_image or preloaded_draft is not None)
     if callable(getattr(setup_window,"_image_setup_return",None)):
         setup_window.navigation.setCurrentRow(6)
@@ -438,16 +458,15 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
     dialog = getattr(host, "_generation_dialog", None)
     if dialog is not None and not dialog._closed:
         if not requested_scope:
-            window = _setup_window(host)
-            if window is not None and hasattr(window, "generation_page"):
-                window.navigation.setCurrentRow(7)
-                window.generation_page.show_workspace(dialog)
+            if workspace_host is not None:
+                _show_generation_workspace_home(workspace_host)
+                workspace_host.generation_page.show_workspace(dialog)
             else:
                 dialog.show(); dialog.raise_(); dialog.activateWindow()
             if callable(on_opened):
                 on_opened(dialog)
             return
-        if setup_window is None or not hasattr(setup_window,"generation_page"):
+        if workspace_host is None:
             dialog.status.setText("The requested source or model was not applied. Finish, save, or close this generation workspace, then choose it again.")
             dialog.show(); dialog.raise_(); dialog.activateWindow()
             return
@@ -754,10 +773,10 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             # has ever been opened. Load its canonical home before attaching
             # this workspace instead of leaving an orphan floating dialog.
             setup_window.navigation.setCurrentRow(7)
-        if setup_window is not None and hasattr(setup_window,"generation_page"):
-            setup_window.navigation.setCurrentRow(7)
-            if setup_window.navigation.currentRow()==7:
-                setup_window.generation_page.add_workspace(dialog,
+        workspace_host = _generation_workspace_host(host)
+        if workspace_host is not None:
+            if _show_generation_workspace_home(workspace_host):
+                workspace_host.generation_page.add_workspace(dialog,
                     label=(f"{initial_task.title()}: {selected[0].name}" if remix and selected else
                            "Iteration" if initial_plan is not None else
                            f"Draft: {Path(preloaded_draft[1]).stem}" if preloaded_draft is not None else "New Image"),

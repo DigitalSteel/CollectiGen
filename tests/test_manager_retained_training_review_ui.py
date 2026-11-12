@@ -58,7 +58,7 @@ def test_manager_history_retained_handoff_uses_current_selection(tmp_path, monke
         _open_retained=lambda selected, selected_revision: calls.append(
             (selected, selected_revision, selected_registry.path, window._training_history_dialog)))
     window.show()
-    item = window.navigation.item(window.page_rows['Applications'])
+    item = window.navigation.item(window.page_rows['Training'])
     QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
         pos=window.navigation.visualItemRect(item).center())
     state = {'done': False, 'selected': False, 'clicked': False, 'changed': False}

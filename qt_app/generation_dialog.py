@@ -336,7 +336,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             self._remember_saved(*result)
             self._draft_saved_digest = snapshot.digest
             self._draft_save_error = False
-            self.draft_status.setText("Draft saved locally · use Resume Image Draft in Generate to reopen it.")
+            self.draft_status.setText("Draft saved locally · use the image draft chooser in Generate to reopen it.")
             if self._shutdown_requested:
                 self._draft_close_pending = self._draft_close_workspace = False
                 self._draft_after_save = None

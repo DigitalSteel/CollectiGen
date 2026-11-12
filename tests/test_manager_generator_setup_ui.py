@@ -105,7 +105,7 @@ def test_manager_visible_full_setup_scopes_models_import_and_close(tmp_path, mon
     session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
     window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
     window.resize(1600, 950); window.show()
-    item = window.navigation.item(window.page_rows["Applications"])
+    item = window.navigation.item(window.page_rows["Generate"])
     QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
         pos=window.navigation.visualItemRect(item).center())
     button = next(b for b in window.findChildren(QPushButton) if b.text().startswith("Generator Setup"))
@@ -220,7 +220,7 @@ def test_image_plan_visible_setup_return_preserves_saved_draft(tmp_path, monkeyp
     session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
     window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
     window.resize(1600, 950); window.show()
-    item = window.navigation.item(window.page_rows["Applications"])
+    item = window.navigation.item(window.page_rows["Generate"])
     QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
         pos=window.navigation.visualItemRect(item).center())
     def create_new():

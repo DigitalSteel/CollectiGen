@@ -37,7 +37,7 @@ def test_manager_registered_result_comparison_uses_manager_return(tmp_path, monk
     manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
     manager.checked_image_connection = lambda: ("http://127.0.0.1:7801", "generated-test")
     manager.resize(1500, 960); manager.show()
-    item = manager.navigation.item(manager.page_rows["Applications"])
+    item = manager.navigation.item(manager.page_rows["Training"])
     QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
                     pos=manager.navigation.visualItemRect(item).center())
     state = manager.generation_state()
@@ -78,7 +78,7 @@ def test_manager_registered_result_comparison_uses_manager_return(tmp_path, monk
     capture(generation, "manager-registered-" + origin + "-return")
     click(generation.training_comparison_return_button)
     settle(review.isVisible)
-    assert manager.navigation.currentRow() == manager.page_rows["Applications"]
+    assert manager.navigation.currentRow() == manager.page_rows["Training"]
     assert review.run_id == selected_run and review.required_resource == resource
     assert generation.plan.digest == before
     assert registry.path.read_bytes() == registry_before

@@ -2098,8 +2098,8 @@
     },
     {
       "path": "core/training_package.py",
-      "bytes": 118623,
-      "sha256": "a02f5c34ec9024f5ff98872625adeda0cc6483d8c773132183243c47587bd66e"
+      "bytes": 118983,
+      "sha256": "336e2236f987e8e7d78ee86177cfc729b976b2690677ac12814d3ab48309bb2d"
     },
     {
       "path": "core/training_package_effects.py",
@@ -2608,8 +2608,8 @@
     },
     {
       "path": "qt_app/generation_dialog.py",
-      "bytes": 287439,
-      "sha256": "ab411fb4ad183d9b7705bfd9bf9732ffcbb216a2f2fddffc105da026597779e1"
+      "bytes": 287444,
+      "sha256": "fb25b044d004864eba01701b2c540b16d3dae3a73ae6605f31bdfde96cd475a2"
     },
     {
       "path": "qt_app/generation_experiment_dialog.py",
@@ -2638,8 +2638,8 @@
     },
     {
       "path": "qt_app/generation_page.py",
-      "bytes": 11980,
-      "sha256": "bd5b510f70b70cde6655640e43c9656bee913153d23033e272a4e0b14faa5e9c"
+      "bytes": 12708,
+      "sha256": "20eeb53d3cadb16731d9bac9b857db08fc94493cae7f59db3304b3b6eff9fc29"
     },
     {
       "path": "qt_app/generation_prompt_templates_dialog.py",
@@ -2673,8 +2673,8 @@
     },
     {
       "path": "qt_app/generation_workflow.py",
-      "bytes": 44094,
-      "sha256": "166cc75ecf0e96ef07d406cfdba3fdca96a671d009b781e2495dbbb40bd42cdd"
+      "bytes": 44655,
+      "sha256": "d85d0c800d88e96cf912d33875d08aaea247ca6a28eef56095a2ba21a049897c"
     },
     {
       "path": "qt_app/guided_review_dialog.py",
@@ -3268,8 +3268,8 @@
     },
     {
       "path": "qt_app/training_workflow_controller.py",
-      "bytes": 48145,
-      "sha256": "18360919652c6e429d704f7c11ce8c34f76caa574628a01e17a77d6a38b51f9e"
+      "bytes": 48380,
+      "sha256": "d959aba612d33a7ed7e0be81a05eca7d122d344253658e5f00bca05bab739e1c"
     },
     {
       "path": "qt_app/training_workspace.py",
@@ -3298,8 +3298,8 @@
     },
     {
       "path": "qt_app/video_generation_workflow.py",
-      "bytes": 15157,
-      "sha256": "81a64f21d57169e24629c092c6f088bb63a966bd8a12313f057711025fb43262"
+      "bytes": 15264,
+      "sha256": "3c6e22a3630d0ac6e02d55025a18c8249edfe9ead0b2801536e9594a5cb7c6f9"
     },
     {
       "path": "qt_app/video_ingest_dialog.py",
@@ -3983,8 +3983,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 271908,
-      "sha256": "a4198fedb0d5a20382fcaac4a99d044ae4e501ed2d765568d37aa9ec89be085c"
+      "bytes": 278743,
+      "sha256": "566a301430bc58534b116b068bc5b8c708feaff2354604d1d2bb7c5755e31728"
     },
     {
       "path": "suite_core/media_examples.py",

@@ -20,7 +20,7 @@ def test_manager_visible_experiments_save_reopen_and_saved_draft_route(tmp_path,
         str(state.generation_data_root/"model_resources.json"),"d"*64,phase="completed")
     index.register(record,index.snapshot()[1])
     try:
-        item=window.navigation.item(window.page_rows["Applications"])
+        item=window.navigation.item(window.page_rows["Training"])
         QTest.mouseClick(window.navigation.viewport(),Qt.LeftButton,pos=window.navigation.visualItemRect(item).center())
         capture(window,"manager-experiments-entry.png",tmp_path)
         QTest.mouseClick(window.training_experiments_button,Qt.LeftButton)
@@ -73,10 +73,11 @@ def test_scoped_retained_compare_and_clone_real_packages(tmp_path):
         identities={image:LibraryImageIdentity("personal",image.name)})
     plan=selection_service.apply_permission_disposition(
         plan,TrainingPermissionDisposition("proceed","Reviewed generated test images.",True))
-    packages=TrainingPackageService();parent=tmp_path/"packages";parent.mkdir()
+    packages=TrainingPackageService(selection_service.knowledge);parent=tmp_path/"packages";parent.mkdir()
     destination=parent/"frozen"
     preview=packages.preview(plan,destination);assert preview.ready,preview.issues
-    assert packages.apply(preview,preview.decision.execution()).status=="created"
+    created=packages.apply(preview,preview.decision.execution())
+    assert created.status=="created",created.issues
     verified=packages.verify(destination);assert verified.valid,verified.issues
     selection={"root":str(destination),"package_fingerprint":verified.package_fingerprint,
         "manifest_sha256":hashlib.sha256((destination/MANIFEST_NAME).read_bytes()).hexdigest(),
