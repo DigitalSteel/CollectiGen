@@ -3202,7 +3202,7 @@
       "size_bytes": 3434
     },
     "suite_core/manager/compiled_organizer_config.py": {
-      "sha256": "dd004bc3ef60253da5da48dbb8ee388d5379fc2a646e105cbc44b80798efc4a9",
+      "sha256": "85d284a5f5e4c39ac2e15b0684624434d076d33ea065e2c4c5218d2bf8a6c2ee",
       "size_bytes": 3093
     },
     "suite_core/manager/compiled_update_config.py": {
@@ -3958,7 +3958,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "e2ff8e35e60ae84a5a96a96f6ba9cc94df79790cf7fdcc0952795cfb8a20d255",
+      "sha256": "f3f1f2ac9f3794438c7927224f1451b0a83cfa25f1eed6a0d286388f79eed4d6",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {
