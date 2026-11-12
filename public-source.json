@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 855,
+  "allowlisted_source_file_count": 856,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -1610,8 +1610,8 @@
       "size_bytes": 5285
     },
     "core/training_package.py": {
-      "sha256": "8e937350cb30c79e0a01a2a6b3b997b769f04f13c91adca40335ff4f5f1aec3c",
-      "size_bytes": 109911
+      "sha256": "ac53fecd178029a22ffacacadb15df7631e56962bea48311df4d65a6eb962d4a",
+      "size_bytes": 110271
     },
     "core/training_package_effects.py": {
       "sha256": "793198bffa68aaaeb9ba71d1bca1f2135e18e63ef2d7c01d17d5ccd3aa478e85",
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "366a1a0d556db974cfc6a0587f033ba89ec39b473f034a4f21d95acab4d60b77",
-      "size_bytes": 28064
+      "sha256": "b42aee79bf22c6ae33079fa144f9f1ec139d9851537e58d2fdd3843a8118ed9e",
+      "size_bytes": 28218
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3424,6 +3424,10 @@
     "tests/test_video_offline_handoff.py": {
       "sha256": "c04b75fba75a46b32149adcbe19fb94e47763d81a19427d604195e3e6e1e3204",
       "size_bytes": 6630
+    },
+    "tests/test_training_package_context_compatibility.py": {
+      "sha256": "86df88293d717f933107355077f5fd4541a9e05bf29b30334fcac6160c2e09ca",
+      "size_bytes": 3636
     }
   },
   "fresh_history_required": true,

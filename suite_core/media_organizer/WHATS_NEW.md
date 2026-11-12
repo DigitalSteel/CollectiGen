@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Training packages retain the saved caption-assessment context. Current plans
+  and legacy plans remain readable without dropping their source identity.
 - Animate This Image opens an offline Video draft with the selected still. Save the draft, then load it in Suite Manager to continue; runtime setup and generation stay in Manager.
 
 - Training plans retain reviewed relationship constraints when the optional legacy conflicts file is absent; rebuild older saved plans to refresh their caption context.

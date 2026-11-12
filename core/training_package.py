@@ -1341,15 +1341,19 @@ class TrainingPackageService:
             manifest.get("candidate_plan"),should_cancel=cancel,
         )
         checkpoint()
-        if int(candidate_manifest.get("schema_version") or 0) not in {4,5,6} or set(
-            candidate_manifest
-        )!={
+        candidate_fields={
             "schema_version","kind","goal","selection_scope","profile",
             "profile_provenance","counts","candidates","issues",
             "dataset_analysis","permission_review","training_configuration",
             "training_configuration_issues","package_ready","limitations",
             "cancelled","plan_fingerprint",
-        }:
+        }
+        if "assessment_context_fingerprint" in candidate_manifest:
+            if not _is_digest(candidate_manifest["assessment_context_fingerprint"]):
+                raise ValueError("The embedded candidate plan has an invalid assessment context.")
+            candidate_fields.add("assessment_context_fingerprint")
+        if (int(candidate_manifest.get("schema_version") or 0) not in {4,5,6}
+                or set(candidate_manifest)!=candidate_fields):
             raise ValueError("The embedded candidate plan has unsupported fields or version.")
         configuration=TrainingConfiguration.from_dict(
             manifest.get("training_configuration")
