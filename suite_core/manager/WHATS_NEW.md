@@ -1,3 +1,14 @@
+# What's New - a.0.6.1 (embedded 0.6.1-alpha.1) - 2026-11-12
+
+- Use Saved Setup opens a separate image draft while retaining your current
+  image and video drafts. You no longer need to close another image first.
+- Choosing a setup still requires explicit review and Apply. Cancelling the
+  picker or review preserves existing work; changed setups require a fresh review.
+
+Unpublished package candidate. The correction passed focused offscreen source
+checks; signed package delivery and successor update/recovery remain pending.
+This does not qualify model execution, older portable migration or full suite parity.
+
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
 - Opening Organizer keeps Manager's bundled DLL paths out of the child
