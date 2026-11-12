@@ -88,6 +88,9 @@ class MediaLibraryDialog(VideoIngestDialog):
             self._render(0)
         self._run("Inspecting media headers (no files change)…",
                   lambda cancel: scan_media(root, should_cancel=cancel), loaded)
+        if self._task is None and self._inventory is None and not self._closing:
+            self.status.setText(self.status.text() +
+                "\nWhen the other operation finishes, choose Refresh to inspect this library.")
 
     def _render(self, offset):
         if self._inventory is None:

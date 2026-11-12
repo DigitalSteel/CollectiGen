@@ -260,6 +260,7 @@ class VideoIngestDialog(QDialog):
             player.background_work_finished.connect(self._player_finished_work)
             player.finished.connect(lambda _result: self._clear_player(player))
             player.show()
+            self.status.setText("Playback is open. Close the player to return here.")
         if factory is None:
             opened();return
         admit=getattr(self.state,"admit_video_runtime",None)
@@ -279,6 +280,8 @@ class VideoIngestDialog(QDialog):
     def _clear_player(self, player):
         if self._player is player:
             self._player = None
+            if not self._closing:
+                self.status.setText("Playback closed. Media review is ready.")
         self._update_actions()
         self._player_finished_work()
 
@@ -352,6 +355,7 @@ class VideoIngestDialog(QDialog):
         return self.has_active_background_work()
 
     def reject(self):
+        self._closing = True
         if self.has_active_background_work():
             self.request_background_shutdown()
         else:
@@ -364,4 +368,5 @@ class VideoIngestDialog(QDialog):
             self.request_background_shutdown()
             event.ignore()
         else:
+            self._closing = True
             super().closeEvent(event)

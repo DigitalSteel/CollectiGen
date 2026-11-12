@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 844,
+  "allowlisted_source_file_count": 846,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -2242,8 +2242,8 @@
       "size_bytes": 264646
     },
     "qt_app/media_library_dialog.py": {
-      "sha256": "6b55a85993fb3995b3b82017af4800f72322836d4dc34d599f7386df03728962",
-      "size_bytes": 8408
+      "sha256": "10b874edf40b29eb487e28b0d9a367a8c38f7df693be2135116ad42a33c7e472",
+      "size_bytes": 8638
     },
     "qt_app/metadata_backup_dialog.py": {
       "sha256": "716023b47f14999cbeeac7c9905409e41e83fa0c9e18a9bee5ce1b1f8cda4b60",
@@ -2638,8 +2638,8 @@
       "size_bytes": 12570
     },
     "qt_app/video_ingest_dialog.py": {
-      "sha256": "0ab21a0c718e1d3bc4e81beb1a4d593a9a1210aabd91329a47a0863f31af4fd5",
-      "size_bytes": 18448
+      "sha256": "b3867858385c4c593fb50025c693a406093f3e36de5d79278d9e6d5b93f16972",
+      "size_bytes": 18709
     },
     "qt_app/video_preview_dialog.py": {
       "sha256": "4edec37ee75d68c1d5c34cb083de29bf883dc16c704aec8cdc1398b24e35620b",
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "0cf8eccdc7534cad725508b8c4826ab8519eee0fb22f3c9b8d4320526e6e2c76",
-      "size_bytes": 26703
+      "sha256": "641cd38de3b2e6e243515feb152c2361fc37ed0b053026ec7f217130b153abeb",
+      "size_bytes": 26844
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3380,6 +3380,14 @@
     "docs/VID02_ORGANIZER_CODEC_QUALIFICATION.md": {
       "sha256": "3bae4aaedb4c4b8b0fe79e5063a4c6108f6b7af7cdb413e11616b374ef1bb194",
       "size_bytes": 2435
+    },
+    "tests/test_media_review_completion.py": {
+      "sha256": "0ceaf864c11ceca3feb9a0f5096583b027ca2f64500385b9247e7e75e22aef35",
+      "size_bytes": 2056
+    },
+    "docs/VID02P3_MEDIA_REVIEW_FEEDBACK.md": {
+      "sha256": "a565fcda44c1fc9110dc6120230f52ec25e9030c99951023d6c221fa31ca03bf",
+      "size_bytes": 2133
     }
   },
   "fresh_history_required": true,
