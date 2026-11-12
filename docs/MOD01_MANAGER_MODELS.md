@@ -22,3 +22,5 @@ catalog is now an explicit runtime/frozen input. Stock stage/build admission
 permits this exact reviewed data file, requires its runtime declaration and hash,
 and continues to refuse unrelated data files. The existing stock recipe copies
 all declared frozen rows, so no new builder or updater is introduced.
+
+The component-source exporter permits this exact application catalog only for Manager. Frozen payload verification checks its declared hash and permits only that file and its parent directory; other mutable/private/default data remains excluded. The first compiled attempt failed this historical blanket data rule and is retained. A direct recheck with the narrow rule passed without executing the artifact.

@@ -515,3 +515,23 @@ def test_distribution_admits_only_exact_model_guidance_data(inputs, approved):
     else:
         with pytest.raises(ValueError,match='nonpublic_source_scope'):validate()
     assert calls==[]
+
+
+@pytest.mark.parametrize('case', ['approved', 'undeclared', 'other-data', 'changed'])
+def test_frozen_immutable_model_catalog_is_exact_and_declared(tmp_path, monkeypatch, case):
+    name='data/model_workflow_baseline.json';payload=b'{"synthetic":true}'
+    config={'source_rows':[] if case=='undeclared' else [row(name,payload)],
+            'sdk_rows':[],'notice_rows':[]}
+    save(tmp_path/'stage/STAGE.json',config)
+    source=tmp_path/'stage/source'/name;source.parent.mkdir(parents=True);source.write_bytes(payload)
+    calls=[];fake_freeze(monkeypatch,calls)
+    build.freeze(tmp_path,None,{},'CollectiGenManager')
+    folder=tmp_path/'dist/CollectiGenManager/_internal/data'
+    folder.mkdir(parents=True,exist_ok=True)
+    if case=='undeclared':(folder/'model_workflow_baseline.json').write_bytes(payload)
+    elif case=='other-data':(folder/'not-approved.json').write_bytes(b'{}')
+    elif case=='changed':(folder/'model_workflow_baseline.json').write_bytes(b'changed')
+    if case=='approved':
+        assert build.verify_freeze(tmp_path,'CollectiGenManager','_internal',config).is_file()
+    else:
+        with pytest.raises(build.BuildHold):build.verify_freeze(tmp_path,'CollectiGenManager','_internal',config)

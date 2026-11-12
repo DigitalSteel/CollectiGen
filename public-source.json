@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1170,
+  "allowlisted_source_file_count": 1171,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -3814,8 +3814,8 @@
       "size_bytes": 2249
     },
     "tests/test_manager_distribution_builder.py": {
-      "sha256": "6e490c3fd3c9cd9bf42a5bd247e11fb2ce3d45910a2bf77356a2239283dd9890",
-      "size_bytes": 26856
+      "sha256": "406db343e8db22d0f60e0639a3f2d7c2c85262dc2d731a3ff48115717f728359",
+      "size_bytes": 28081
     },
     "tests/test_manager_production_stage.py": {
       "sha256": "f13088f9d8ab04c71bb4d15b8af8da6efc14cbc04806113128869167e6a617ab",
@@ -3894,8 +3894,8 @@
       "size_bytes": 27445
     },
     "tools/build_manager_distribution.py": {
-      "sha256": "4182005d67b7cd2ffdbfe2ea17c093bbcc88aff8a0d265d3655b9d2933306826",
-      "size_bytes": 26342
+      "sha256": "785d2db469e3c12820083f93f9436c1788754d6241438a3917b3eeb43869fac3",
+      "size_bytes": 26817
     },
     "tools/build_tag_database_pack.py": {
       "sha256": "19432b16b6c2a834fc4415de23a261b52d438d47d1eec327f6a9913f03cfd11d",
@@ -3986,8 +3986,8 @@
       "size_bytes": 40367
     },
     "tools/public_source.py": {
-      "sha256": "be416250ad754efccb6f018a758890cd5d29cb7dfb0cf90478e37dcdd7b76b32",
-      "size_bytes": 40923
+      "sha256": "d9e968c7bac07a44cdabf74f92bf865edef4260093f620ffa594de989e41ba18",
+      "size_bytes": 41080
     },
     "tools/qt_test_support.py": {
       "sha256": "fb75f6e78660356dfec06750fb30cbea44020c97b0988b58b850456669ee9b14",
@@ -4670,8 +4670,8 @@
       "size_bytes": 8099
     },
     "docs/MOD01_MANAGER_MODELS.md": {
-      "sha256": "d4cd55c3cc6d424f34fc9906c041889f52ec0f241c017afdd63f3c850f6be978",
-      "size_bytes": 2553
+      "sha256": "e94baf0e9153e0f8b6781e1805bf1b1250c03ac15b638d4a1b994c64f6ed473c",
+      "size_bytes": 2962
     },
     "docs/MOD01_MANAGER_MODELS_JOURNEY.json": {
       "sha256": "156b554538a3c66fc8a9cd0656cdd0faaf0f933e4af5c285c85666dc62a33391",
@@ -4684,6 +4684,10 @@
     "data/model_workflow_baseline.json": {
       "sha256": "751df980a86705b89cabfda5d3f6c92f1b21ef4c36de3a1cb67722b0fc3fb683",
       "size_bytes": 10578
+    },
+    "tests/test_manager_public_guidance_catalog.py": {
+      "sha256": "f765d97597bdd4293aa321c862d3813495b3e687e5a5e589c8f79fd3104cbda1",
+      "size_bytes": 1209
     }
   },
   "fresh_history_required": true,

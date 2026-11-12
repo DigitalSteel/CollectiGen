@@ -280,10 +280,15 @@ def verify_freeze(output, name, contents, config):
             check_row(folder / contents / row['path'], row)
     for row in config['notice_rows']:
         check_row(folder / contents / 'licenses' / Path(row['path']).name, row)
+    model_catalog_declared = any(row['path'] == 'data/model_workflow_baseline.json' for row in config['source_rows'])
     for path in folder.rglob('*'):
         unredirected(path)
         relative = path.relative_to(folder)
-        require(not any(p.casefold() in {'data', 'models', 'logs', 'backups', 'catalogs'}
+        # check_row above has already verified every declared byte. Admit only
+        # that immutable file and its parent, never a general mutable data tree.
+        approved_model_catalog = model_catalog_declared and relative.as_posix() in {
+            contents + '/data', contents + '/data/model_workflow_baseline.json'}
+        require(approved_model_catalog or not any(p.casefold() in {'data', 'models', 'logs', 'backups', 'catalogs'}
                         or p.casefold().startswith('private_') for p in relative.parts), 'mutable_or_private_payload')
     return exe
 

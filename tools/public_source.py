@@ -199,7 +199,9 @@ def load_manifest(path: Path) -> dict[str, Any]:
                 or any(type(c) is not str or c not in known for c in components)
                 or len(set(components)) != len(components)
                 or reviewed or payload.get("required_provenance") or ".gitattributes" in files
-                or any(path.startswith("data/") and path != "data/defaults/release-trust.json" for path in files)
+                or any(path.startswith("data/") and path != "data/defaults/release-trust.json"
+                       and not (path == "data/model_workflow_baseline.json"
+                                and "collectigen.suite-manager" in components) for path in files)
                 or any(known[c] not in files for c in components)):
             raise PublicSourceError("Component source requires exact component manifests and no catalog/default content.")
     elif payload.get("export_scope") is not None:
