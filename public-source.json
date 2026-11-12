@@ -2022,8 +2022,8 @@
       "size_bytes": 18258
     },
     "qt_app/dataset_page.py": {
-      "sha256": "482c9fe4eb15273badbdf7479a862555b75680f2ca3cbe0da2bf6c321968ea40",
-      "size_bytes": 502294
+      "sha256": "ad7a9cf3c8732d371e7a2c9094a29bf99608622f8fa500ed739c2e52f36d9523",
+      "size_bytes": 503470
     },
     "qt_app/dataset_preparation_queue.py": {
       "sha256": "0978e5838b13bf1872a93b671af7021183a4ce79db32ea554d299c0c9ca4afff",
@@ -2530,8 +2530,8 @@
       "size_bytes": 56357
     },
     "qt_app/training_candidate_plan_dialog.py": {
-      "sha256": "59c70a8320c33148d0894dbbb45a37baa3a13892a808a5947458a34fa1ad9638",
-      "size_bytes": 131990
+      "sha256": "156d03ac8414da0cadaccf83abcd0ce03437b74eaea19fc9125124da36ba75c2",
+      "size_bytes": 132942
     },
     "qt_app/training_candidate_review.py": {
       "sha256": "d57655a0dc41b01067cdfac09f6b4fc068183e870602b637fe51185207737893",
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "688fba268a767092dc17b8c98d9cb631b8f8bb60dd9ee538825d8c8384eb9922",
-      "size_bytes": 27363
+      "sha256": "b1cf16918f17fde2fc4de5597ec64b0caf2620da23c15bee5c8165a2a97ab5d9",
+      "size_bytes": 27564
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3302,12 +3302,12 @@
       "size_bytes": 2653
     },
     "qt_app/training_draft_transfer_dialog.py": {
-      "sha256": "0b4bc777a0595f0ce7bb53fdce6e97c590f15239f7e01a9a940436be6a65b5db",
-      "size_bytes": 7484
+      "sha256": "5a5494890960661b1e10e623d661d24a69dc2eee9a8fcdd27f7994eac9ac40f9",
+      "size_bytes": 8655
     },
     "tests/test_training_draft_transfer.py": {
-      "sha256": "c6dea12127b9e4ec6ce8c9b1bb9d736c138bd207f6f9d10901e87ac0c32f5bc8",
-      "size_bytes": 10355
+      "sha256": "24e92cbc17d137c2568f265cfd87d53765025448c59622dfe0a5e5fd2ae4e435",
+      "size_bytes": 14992
     },
     "tests/test_organizer_experiment_handoff_ui.py": {
       "sha256": "d50e4bf382e5fb807dddc585ffbbf24b47b9b75bf327e5c08fb64f309bd56f03",

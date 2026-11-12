@@ -1102,9 +1102,10 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
 
     feedback_workflow="Training dataset draft resume"
 
-    def __init__(self,drafts,parent=None) -> None:
+    def __init__(self,drafts,parent=None,*,export_draft=None) -> None:
         super().__init__(parent)
         self.drafts=tuple(drafts)
+        self._export_draft=export_draft
         self.setWindowTitle("Resume Training Dataset Draft")
         self.resize(680,330)
         layout=QVBoxLayout(self)
@@ -1114,6 +1115,8 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
         )
         intro.setWordWrap(True); intro.setObjectName("sectionTitle")
         layout.addWidget(intro)
+        if export_draft is not None:
+            intro.setText("Choose a saved Dataset draft. Rebuild it from current images, or export its saved version for Suite Manager review. Export keeps the original draft and source images unchanged.")
         self.choice=QComboBox(); self.choice.setAccessibleName("Saved training draft")
         for draft in self.drafts:
             self.choice.addItem(
@@ -1126,11 +1129,21 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
         buttons=QDialogButtonBox(QDialogButtonBox.Open|QDialogButtonBox.Cancel)
         self.open_button=buttons.button(QDialogButtonBox.Open)
         self.open_button.setText("Rebuild Draft from Current Sources")
+        self.export_button=QPushButton("Export Draft for Suite Manager…")
+        self.export_button.setToolTip("Save a copy for Manager → Applications → Review a Dataset Draft. No training package is built.")
+        self.export_button.clicked.connect(self._export_selected)
+        buttons.addButton(self.export_button,QDialogButtonBox.ActionRole)
+        self.export_button.setVisible(export_draft is not None)
         self.open_button.setProperty("primary",True)
         buttons.accepted.connect(self.accept); buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
         self.choice.currentIndexChanged.connect(self._update_detail)
         self._update_detail()
+
+    def _export_selected(self):
+        draft=self.selected_draft()
+        if draft is not None and self._export_draft is not None:
+            self._export_draft(draft)
 
     def selected_draft(self):
         draft_id=str(self.choice.currentData() or "")
@@ -1141,6 +1154,7 @@ class TrainingPlanDraftPickerDialog(FeedbackEnabledDialog):
     def _update_detail(self) -> None:
         draft=self.selected_draft()
         self.open_button.setEnabled(draft is not None)
+        self.export_button.setEnabled(draft is not None)
         if draft is None:
             self.detail.setText("No saved draft is available.")
             return

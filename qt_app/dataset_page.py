@@ -4843,6 +4843,27 @@ class DatasetPage(QWidget):
             return
         self.resume_training_dataset_draft(draft=dialog.imported_draft)
 
+    def export_training_draft_for_manager(self,draft):
+        """Export a saved plan through the same guarded transfer/Close owner."""
+        from .training_draft_transfer_dialog import TrainingDraftTransferDialog
+        if getattr(self,"_shutdown_requested",False) or self.state.jobs.shutting_down:
+            return
+        existing=getattr(self,"_training_draft_transfer_dialog",None)
+        if existing is not None:
+            existing.show(); existing.raise_(); existing.activateWindow()
+            return
+        dialog=TrainingDraftTransferDialog(self.state.jobs,self.training_plan_drafts.path,self,
+            selected=draft,destination_host="manager",
+            can_transfer=lambda: not getattr(self,"_shutdown_requested",False)
+                and not self.state.jobs.shutting_down)
+        self._training_draft_transfer_dialog=dialog
+        dialog.finished.connect(lambda _result: QTimer.singleShot(0,self._notify_background_work_finished))
+        try:
+            dialog.exec()
+        finally:
+            self._training_draft_transfer_dialog=None
+            dialog.deleteLater()
+
     def resume_training_dataset_draft(self,*,draft=None):
         if self._training_candidate_task is not None:
             show_operation_in_progress(self,"Training dataset planning")
@@ -4861,7 +4882,8 @@ class DatasetPage(QWidget):
                         or "Save a completed candidate preview before resuming a draft.")
                 QMessageBox.information(self,"No training draft available",detail)
                 return
-            picker=TrainingPlanDraftPickerDialog(drafts,self)
+            picker=TrainingPlanDraftPickerDialog(drafts,self,
+                export_draft=self.export_training_draft_for_manager)
             self._training_draft_picker_open=True
             try:
                 accepted=picker.exec()==QDialog.Accepted

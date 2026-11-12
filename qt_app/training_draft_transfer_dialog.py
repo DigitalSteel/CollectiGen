@@ -9,8 +9,11 @@ from core.training_plan_drafts import TrainingPlanDraftStore
 
 
 class TrainingDraftTransferDialog(FeedbackEnabledDialog):
-    def __init__(self, jobs, store_path, parent=None, *, importing=False, selected=None, can_transfer=None):
+    def __init__(self, jobs, store_path, parent=None, *, importing=False, selected=None, can_transfer=None, destination_host="organizer"):
         super().__init__(parent)
+        if destination_host not in {"organizer","manager"}:
+            raise ValueError("Unknown Training draft destination.")
+        self.destination_host=destination_host
         self.jobs, self.store_path = jobs, Path(store_path)
         self.importing, self.imported_draft = importing, None
         self._task, self._closing = None, False
@@ -20,10 +23,14 @@ class TrainingDraftTransferDialog(FeedbackEnabledDialog):
         self._availability_timer = None
         self._selected = selected
         self.setWindowTitle("Import Training Draft" if importing else "Edit a Cloned Training Draft")
+        if not importing and destination_host == "manager":
+            self.setWindowTitle("Export Dataset Draft for Suite Manager")
         self.resize(620, 260)
         layout = QVBoxLayout(self)
         intro = QLabel("Import a draft exported by Suite Manager, then review and edit it with your current Dataset libraries. A fresh saved copy preserves the original."
             if importing else "Export this saved draft, then open Organizer → Dataset → Dataset Plans → Import Training Draft. Review its images and edit its settings there; the original experiment is preserved.")
+        if not importing and destination_host == "manager":
+            intro.setText("Export a copy of this saved Dataset draft, then open Suite Manager → Applications → Review a Dataset Draft. Manager can review its settings and check sources and captions. This does not create a training package or start training; your saved draft and source images stay unchanged.")
         intro.setWordWrap(True); layout.addWidget(intro)
         self.choice = QComboBox(); self.choice.setAccessibleName("Saved Training draft")
         self.choice.setVisible(not importing); layout.addWidget(self.choice)
@@ -32,6 +39,8 @@ class TrainingDraftTransferDialog(FeedbackEnabledDialog):
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
         self.transfer_button = QPushButton("Import Draft…" if importing else "Export for Organizer…")
+        if not importing and destination_host == "manager":
+            self.transfer_button.setText("Export for Suite Manager…")
         self.transfer_button.clicked.connect(self._transfer)
         self.transfer_button.setEnabled(importing)
         buttons.addButton(self.transfer_button, QDialogButtonBox.ActionRole)
@@ -116,11 +125,15 @@ class TrainingDraftTransferDialog(FeedbackEnabledDialog):
             for draft in value: self.choice.addItem(draft.name, draft.draft_id)
             if self._selected is not None:
                 self.choice.setCurrentIndex(max(0, self.choice.findData(self._selected.draft_id)))
-            self.status.setText("Choose a draft to export." if value else "Clone a saved execution run in Training Experiments first.")
+            empty = ("Save a Dataset draft before exporting it." if self.destination_host == "manager"
+                     else "Clone a saved execution run in Training Experiments first.")
+            self.status.setText("Choose a draft to export." if value else empty)
         elif action == "import":
             self.accept(); return
         else:
-            self.status.setText("Draft exported to " + str(value) + ". Import it in Organizer to edit its settings.")
+            next_step = (" Open Suite Manager → Applications → Review a Dataset Draft."
+                         if self.destination_host == "manager" else " Import it in Organizer to edit its settings.")
+            self.status.setText("Draft exported to " + str(value) + "." + next_step)
         self._refresh_availability()
 
     def reject(self):

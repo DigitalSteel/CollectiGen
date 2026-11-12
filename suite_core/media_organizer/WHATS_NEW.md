@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Saved Dataset Drafts can export a selected plan for Suite Manager → Applications → Review a Dataset Draft, retaining its exact settings and original sources without building a training package.
+
 - Saved Dataset Drafts keeps its Organizer label when Dataset finishes loading in the background.
 
 - Dataset Plans now includes Plan Training Dataset for current selected or matching images; resume saved plans through Saved Dataset Drafts.

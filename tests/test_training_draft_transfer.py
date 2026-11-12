@@ -186,3 +186,75 @@ def test_import_readiness_does_not_start_early_and_stops_refresh_on_close(tmp_pa
         assert dialog.imported_draft.draft_id!=original.draft_id
         assert not dialog._availability_timer.isActive()
     finally:dialog.reject();jobs.shutdown();application.processEvents()
+
+@pytest.mark.parametrize("empty", [False, True])
+def test_saved_dataset_picker_offers_only_selected_export(tmp_path, empty):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from qt_app.training_candidate_plan_dialog import TrainingPlanDraftPickerDialog
+    application=app();plan,_=candidate(tmp_path)
+    draft=TrainingPlanDraftStore(tmp_path/"dataset.json").save_plan(plan,"Saved Dataset plan").draft
+    exported=[]
+    picker=TrainingPlanDraftPickerDialog(() if empty else (draft,),export_draft=exported.append)
+    plain=TrainingPlanDraftPickerDialog((draft,))
+    try:
+        picker.show();application.processEvents()
+        assert picker.export_button.isVisible() and picker.export_button.isEnabled() is (not empty)
+        if not empty:
+            QTest.mouseClick(picker.export_button,Qt.LeftButton)
+            assert exported==[draft] and picker.isVisible() and picker.result()==0
+            capture(picker,"dataset-draft-export-picker.png",tmp_path)
+        plain.show();application.processEvents();assert not plain.export_button.isVisible()
+    finally:
+        picker.reject();plain.reject();application.processEvents()
+
+
+def test_manager_target_export_cancel_retry_and_readback(tmp_path, monkeypatch):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QFileDialog
+    from core.background_jobs import BackgroundJobManager
+    from core.training_plan_drafts import TrainingPlanDraft
+    from qt_app.training_draft_transfer_dialog import TrainingDraftTransferDialog
+    application=app();jobs=BackgroundJobManager();plan,image=candidate(tmp_path)
+    store=TrainingPlanDraftStore(tmp_path/"dataset.json");draft=store.save_plan(plan,"Saved Dataset plan").draft
+    before=store.path.read_bytes();pixels=image.read_bytes();existing=tmp_path/"existing.json";existing.write_text("retain this file",encoding="utf-8");destination=tmp_path/"manager-review.json"
+    choices=iter(["",str(existing),str(destination)])
+    monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *a,**k:(next(choices),""))
+    dialog=TrainingDraftTransferDialog(jobs,store.path,selected=draft,destination_host="manager")
+    try:
+        dialog.show();wait(lambda:dialog._task is None and dialog.transfer_button.isEnabled())
+        assert "Suite Manager" in dialog.windowTitle() and "Suite Manager" in dialog.transfer_button.text()
+        capture(dialog,"dataset-export-for-manager.png",tmp_path)
+        QTest.mouseClick(dialog.transfer_button,Qt.LeftButton)
+        assert dialog._task is None and not destination.exists() and dialog.isVisible()
+        QTest.mouseClick(dialog.transfer_button,Qt.LeftButton);wait(lambda:dialog._task is None)
+        assert existing.read_text(encoding="utf-8")=="retain this file" and not destination.exists()
+        assert dialog.isVisible() and dialog.transfer_button.isEnabled()
+        QTest.mouseClick(dialog.transfer_button,Qt.LeftButton);wait(lambda:dialog._task is None and destination.exists())
+        readback=TrainingPlanDraft.read_transfer(destination)
+        assert readback.fingerprint==draft.fingerprint and readback.plan_manifest==draft.plan_manifest
+        assert "Review a Dataset Draft" in dialog.status.text()
+        capture(dialog,"dataset-exported-for-manager.png",tmp_path)
+        assert store.path.read_bytes()==before and image.read_bytes()==pixels
+    finally:
+        dialog.reject();wait(lambda:dialog._task is None);jobs.shutdown(wait=True);application.processEvents()
+
+
+def test_dataset_export_reuses_original_transfer_owner_and_shutdown_gate(tmp_path,monkeypatch):
+    from qt_app.dataset_page import DatasetPage
+    from qt_app import training_draft_transfer_dialog as module
+    application=app();seen=[];finished=NS(connect=lambda callback:None)
+    class Transfer:
+        def __init__(self,*args,**kwargs):seen.append((args,kwargs));self.finished=finished
+        def exec(self):return 0
+        def deleteLater(self):pass
+    monkeypatch.setattr(module,"TrainingDraftTransferDialog",Transfer)
+    jobs=NS(shutting_down=False)
+    page=NS(state=NS(jobs=jobs),training_plan_drafts=NS(path=tmp_path/"drafts.json"),_notify_background_work_finished=lambda:None)
+    selected=object();DatasetPage.export_training_draft_for_manager(page,selected)
+    assert page._training_draft_transfer_dialog is None
+    assert seen[0][1]["destination_host"]=="manager" and seen[0][1]["selected"] is selected
+    assert seen[0][1]["can_transfer"]()
+    jobs.shutting_down=True;assert not seen[0][1]["can_transfer"]()
+    DatasetPage.export_training_draft_for_manager(page,selected);assert len(seen)==1
