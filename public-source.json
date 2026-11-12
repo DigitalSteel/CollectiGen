@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1164,
+  "allowlisted_source_file_count": 1168,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -3154,8 +3154,8 @@
       "size_bytes": 96
     },
     "suite_core/manager/__main__.py": {
-      "sha256": "75631a699c0c479ee3e308f52be96fdf3b6670a7db01caf2b42ed3ea39693d90",
-      "size_bytes": 32247
+      "sha256": "317ab25b631cdf8befaf2bd72fd859b237b4d857f8748a44bc0c3d5313fe8a76",
+      "size_bytes": 32526
     },
     "suite_core/manager/assets/collectigen.ico": {
       "sha256": "f819e00ab1dbaad539c7f25f08b9353561a56701eb83b6440e21b87dcf83bd10",
@@ -3290,8 +3290,8 @@
       "size_bytes": 5960
     },
     "suite_core/manager/model_workspace_host.py": {
-      "sha256": "641706f70efd5f78f22cfe8e1706b9e84b40813c094c04ab20b9b1fd7295bf05",
-      "size_bytes": 4649
+      "sha256": "a1fe3fdb22cfef5f7cb7b76544b3596281b4dcc86fd0adaaafcbd8088077bf08",
+      "size_bytes": 5638
     },
     "suite_core/manager/module_lifecycle_candidate.py": {
       "sha256": "6c924d7347fb3f306c8aeb22fca91040116fa9cf5ed7ad2e4d6e2d7c17aa250b",
@@ -3418,8 +3418,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "007ec3312790117cd73a58d567cf50a58b82642921651b5170ab88ae517594f9",
-      "size_bytes": 266701
+      "sha256": "e2086cb6911cb2e345785bab28d4462691fa44d8f42595956ded9aaaa05f018c",
+      "size_bytes": 271458
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -4664,6 +4664,18 @@
     "docs/TRN09_UNLISTED_VALIDATION.md": {
       "sha256": "9794ea66f9bb385e52b2c693f11ee16483c450a4711e94032c2835fd8da47a6f",
       "size_bytes": 937
+    },
+    "tests/test_manager_models_workspace.py": {
+      "sha256": "a5c082b3e6cac64e1199a655c6faf3ab40c6b4e6dca702fcb2b54d379d6fd797",
+      "size_bytes": 8099
+    },
+    "docs/MOD01_MANAGER_MODELS.md": {
+      "sha256": "7a2117f2ed23941a69719595950e5045f7929a97cc4ffe9a45ef9da6daab9212",
+      "size_bytes": 1767
+    },
+    "docs/MOD01_MANAGER_MODELS_JOURNEY.json": {
+      "sha256": "44b632802f9fe3be62fbb9676dcf6cd1cbc143ccd42f01682db7acdc44242b7a",
+      "size_bytes": 2962
     }
   },
   "fresh_history_required": true,

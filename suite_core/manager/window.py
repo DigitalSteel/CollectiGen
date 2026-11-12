@@ -549,6 +549,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 raise TypeError('Explicit Models workspace factory required')
             self._model_workspace_factory = model_workspace_factory
             self._models_workspace_dialog = None
+            self.local_models_button = compact_action(QPushButton('Manage local models'))
+            self.local_models_button.setEnabled(
+                not view.synthetic and normal_entry_session is not None
+                and normal_entry_session.state == 'ready'
+                and callable(getattr(model_workspace_factory, 'open_local_models', None)))
+            self.local_models_button.setToolTip('Register and organize existing model files, review notes and storage, or choose models for Generate and Training.')
+            self.local_models_button.clicked.connect(self.open_local_models)
+            applications_layout.addWidget(self.local_models_button, 0, Qt.AlignLeft)
             self.repository_inspection_button = compact_action(QPushButton('Inspect a model repository'))
             self.repository_inspection_button.setEnabled(model_workspace_factory is not None and not view.synthetic)
             self.repository_inspection_button.setToolTip('Review public model metadata in the existing Models workspace.'
@@ -2766,6 +2774,76 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if dialog is not None:
                     dialog.deleteLater()
                 jobs.shutdown(wait=True)
+
+        def open_local_models(self):
+            state = self.generation_state()
+            factory = self._model_workspace_factory
+            opener = getattr(factory, 'open_local_models', None)
+            if state is None or not callable(opener):
+                return
+            from qt_app.model_workspace_dialog import ModelWorkspaceDialog
+            from qt_app.generation_workflow import _generation_model_registry
+            if Path(factory.registry_path) != _generation_model_registry(self).path:
+                self.statusBar().showMessage('Models must use the same Manager registry as Generate and Training.')
+                return
+            try:
+                dialog = opener(self)
+            except (ValueError, OSError, RuntimeError):
+                self.statusBar().showMessage('Models settings are unavailable, or another Models review needs to finish.')
+                return
+            if type(dialog) is not ModelWorkspaceDialog or dialog.repository_review_only:
+                raise TypeError('Canonical local Models workspace required')
+            self._models_workspace_dialog = dialog
+            retain = False
+            try:
+                result = dialog.exec()
+                if result == QDialog.Accepted and dialog._generation_handoff_ready:
+                    retain = not self.continue_models_generation(dialog)
+            finally:
+                self._models_workspace_dialog = None
+                if not retain:
+                    factory.dialog_returned()
+                self.local_models_button.setText('Return to Models' if retain else 'Manage local models')
+                if self.close_policy.pending:
+                    self.reconsider_close()
+
+        def continue_models_generation(self, dialog):
+            # Same recheck/new-draft boundary as Setup's canonical Models handoff.
+            from qt_app.generation_workflow import open_generation_workspace
+            handoff = dialog.generation_handoff
+            if not dialog._generation_handoff_ready or handoff is None:
+                return True
+            guidance, configuration, revision, service, catalog_token = handoff
+            def retain(message):
+                dialog._generation_handoff_ready = False
+                dialog.dialog_commands.select_group('Planning')
+                dialog.status.setText(message)
+                self.statusBar().showMessage(message + ' Choose Return to Models to continue.')
+                return False
+            try:
+                if dialog.registry.snapshot()[1] != revision or service.catalog_write_token() != catalog_token:
+                    return retain('Models or guidance changed. Review a fresh recommendation; no draft was changed.')
+            except (OSError, RuntimeError, ValueError):
+                return retain('Could not recheck Models. Your reviewed setup is retained.')
+            if self.generation_state() is None:
+                return retain('Finish closing or restoring Manager before continuing in Generate.')
+            opened = False
+            def apply(target):
+                nonlocal opened
+                opened = True
+                try:
+                    if service.catalog_write_token() != catalog_token:
+                        target.status.setText('Model guidance changed. Review Recommended Setup again; this new draft was not changed.')
+                        return
+                    if target.apply_model_guidance(guidance, configuration, expected_registry_revision=revision):
+                        dialog.generation_handoff = None
+                        dialog._generation_handoff_ready = False
+                except (OSError, RuntimeError, ValueError) as exc:
+                    target.status.setText(f'Could not apply reviewed setup: {exc}. Review Recommended Setup again.')
+            open_generation_workspace(self, force_new=True, on_opened=apply)
+            if not opened:
+                return retain('Finish the open Generate workflow first. The reviewed Models setup is still here.')
+            return True
 
         def open_repository_inspection(self):
             if self.view.synthetic or self.close_policy.pending or self._model_workspace_factory is None: return

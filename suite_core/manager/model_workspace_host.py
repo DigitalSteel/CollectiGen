@@ -13,12 +13,20 @@ class ModelsWorkspaceHost:
         self.reopen_after_drain = False
 
     def __call__(self, parent):
+        return self._open(parent, repository_review_only=True)
+
+    def open_local_models(self, parent):
+        return self._open(parent, repository_review_only=False)
+
+    def _open(self, parent, *, repository_review_only):
         if self.reopen_after_drain and self.poll_close():
             self.jobs = self.dialog = None
             self.closing = self.shutdown_started = self.reopen_after_drain = False
             self.drained = False
         if self.closing: raise ValueError('Models workspace is closing.')
         if self.dialog is not None:
+            if self.dialog.repository_review_only != repository_review_only:
+                raise ValueError("Return to the retained Models review before changing workspaces.")
             return self.dialog
         from core.settings import AppSettings
         from core.model_resource_registry import ModelResourceRegistry
@@ -38,10 +46,11 @@ class ModelsWorkspaceHost:
             if getattr(settings, key, ''))
         self.jobs = self.jobs or BackgroundJobManager()
         self.dialog = ModelWorkspaceDialog(ModelResourceRegistry(self.registry_path), self.jobs,
-            parent, protected_roots=roots, settings=settings, repository_review_only=True)
-        self.dialog.setWindowTitle('Inspect public model repository')
-        self.dialog.provider.setCurrentIndex(self.dialog.provider.findData('hugging_face'))
-        self.dialog.query_kind.setCurrentIndex(self.dialog.query_kind.findData('repo_id'))
+            parent, protected_roots=roots, settings=settings, repository_review_only=repository_review_only)
+        self.dialog.setWindowTitle('Inspect public model repository' if repository_review_only else 'Manage local models')
+        if repository_review_only:
+            self.dialog.provider.setCurrentIndex(self.dialog.provider.findData('hugging_face'))
+            self.dialog.query_kind.setCurrentIndex(self.dialog.query_kind.findData('repo_id'))
         return self.dialog
 
     def dialog_returned(self):
@@ -98,3 +107,12 @@ def supervise_models_recovery(held):
     if not owner.closed: raise RuntimeError('Models entry cleanup remains held')
     held.dialog = held.app = None
     return 1
+
+
+def factory_for_entry(explicit_factory, *, session, demo=False, disposable_binding=None):
+    """Compose lazily only inside an already admitted ordinary Manager session."""
+    if explicit_factory is not None:
+        return explicit_factory
+    if demo or disposable_binding is not None or session is None or session.state != 'ready':
+        return None
+    return ModelsWorkspaceHost(Path(session.admitted.layout.data_root) / 'Manager' / 'generation-settings.json')

@@ -421,6 +421,9 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
         if connection_settings is None and not args.demo:
             from core.paths import SETTINGS_PATH
             connection_settings = SETTINGS_PATH
+        from .model_workspace_host import factory_for_entry as models_factory_for_entry
+        model_workspace_factory = models_factory_for_entry(model_workspace_factory,
+            session=normal_entry_session, demo=args.demo, disposable_binding=disposable_module_binding)
         if model_workspace_factory is not None:
             from .model_workspace_host import ModelsWorkspaceHost
             if type(model_workspace_factory) is ModelsWorkspaceHost:

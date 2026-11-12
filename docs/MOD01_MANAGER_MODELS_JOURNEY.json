@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "journeys": [
+    {
+      "id": "manager-local-models",
+      "roadmap_ids": [
+        "MOD-01",
+        "SUITE-10B"
+      ],
+      "goal": "Manage my existing models and use reviewed guidance in a new Generate request.",
+      "start": {
+        "surface": "Manager Applications",
+        "action": "Choose Manage local models."
+      },
+      "audiences": {
+        "new_user": {
+          "default_route": "Choose Manage local models, review the empty or registered model list, then Cancel to return.",
+          "overload_guard": "Reuse canonical Models command groups; no automatic scan, acquisition or execution.",
+          "ease_check": "Know which existing model file or folder to inspect, and that opening the workspace changes no model."
+        },
+        "advanced_user": {
+          "entry": "Choose the existing Planning, Storage or Provider Evidence group.",
+          "customization": "Use canonical model notes, storage previews or reviewed guidance.",
+          "continuity": "Existing model transactions and original Generate drafts are preserved."
+        }
+      },
+      "consistency": {
+        "reference": "Original all-in-one Setup > Local Generation (the same SwarmRuntimeWidget)",
+        "shared_patterns": [
+          "A visible task list selects one pane.",
+          "The contextual return stays outside the selected task."
+        ],
+        "departures": [
+          "Connection and runtime status stay above the task list because they apply to every task; generator actions retain their existing separate review dialogs."
+        ]
+      },
+      "steps": [
+        {
+          "action": "Choose Manage local models.",
+          "expected": "Canonical local Models workspace opens over Manager model registry."
+        },
+        {
+          "action": "Close Models.",
+          "expected": "Return to Applications; idle entry has not created or changed model files."
+        }
+      ],
+      "completion": {
+        "visible": "Applications returns with Manage local models available.",
+        "authority": "Same scoped registry as Generate and Training; original model transactions and physical worker drain."
+      },
+      "recovery": [
+        {
+          "trigger": "Busy Generate or stale reviewed model guidance.",
+          "expected": "Return to Models keeps the original recommendation for review; no existing draft is overwritten."
+        }
+      ],
+      "automation": {
+        "status": "partial",
+        "visible_controls_only": true,
+        "tests": [
+          "tests/test_manager_models_workspace.py::test_visible_local_models_entry_and_close"
+        ],
+        "visual_runner": "tests/test_manager_models_workspace.py",
+        "captures": [],
+        "notes": "The declared visible route is entry and Close only. Supplemental direct handoff tests do not qualify model registration, storage, full guidance, native startup or installed package journeys."
+      }
+    }
+  ]
+}
