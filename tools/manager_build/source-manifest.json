@@ -1903,8 +1903,8 @@
     },
     {
       "path": "core/training_candidate_selection.py",
-      "bytes": 70565,
-      "sha256": "ae00a88f09ace262616ca350bcb7b41b8ce42107241498987e2a871caac44913"
+      "bytes": 70705,
+      "sha256": "d716dd20e71e5ddc905047c67457c994e11fb164b0f203c9d90380b83c26e80b"
     },
     {
       "path": "core/training_caption_review.py",

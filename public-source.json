@@ -1614,8 +1614,8 @@
       "size_bytes": 22646
     },
     "core/training_candidate_selection.py": {
-      "sha256": "ae00a88f09ace262616ca350bcb7b41b8ce42107241498987e2a871caac44913",
-      "size_bytes": 70565
+      "sha256": "d716dd20e71e5ddc905047c67457c994e11fb164b0f203c9d90380b83c26e80b",
+      "size_bytes": 70705
     },
     "core/training_caption_review.py": {
       "sha256": "0c285fdff68f5f7160380645ba8326f33302dc3208948cc24dea422f1a2bf91c",
@@ -3150,8 +3150,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "489a769db05d804271da207b0e8a07b25af04a9f59315be1965c698815552cfb",
-      "size_bytes": 22707
+      "sha256": "7be0e87caf4c2dc5ac213cac25686669af9b1f2822f6819b8951ecb080446dcc",
+      "size_bytes": 22835
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3958,7 +3958,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "5891e94a206377a651c6a7e6f70a8390aa2a314d02e6a7f6b00139f343d3af1b",
+      "sha256": "5fa49de1699f899a2c1a1091b8779d34e38067a48aa3052291de01b5772697b6",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4606,8 +4606,8 @@
       "size_bytes": 7669
     },
     "tests/test_training_draft_transfer.py": {
-      "sha256": "cb0539ec11c679fbba059cfce4ea943006af4657188ffd5078d81ff5bb02acaf",
-      "size_bytes": 9007
+      "sha256": "c3f965e4bf9db15e3d17bd4fba5cb8e6edfd925c9e6a9d8866142d81b96623f9",
+      "size_bytes": 10916
     },
     "core/training_draft_transfer.py": {
       "sha256": "1334ae6ddcc820342b5a9b36030819753b74c2220089c535acfb5de637d7f908",

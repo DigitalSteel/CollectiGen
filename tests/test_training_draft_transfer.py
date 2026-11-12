@@ -164,3 +164,36 @@ def test_import_readiness_does_not_start_early_and_stops_refresh_on_close(tmp_pa
         assert dialog.imported_draft.draft_id!=original.draft_id
         assert not dialog._availability_timer.isActive()
     finally:dialog.reject();jobs.shutdown();application.processEvents()
+
+
+@pytest.mark.parametrize("context", ["", "b" * 64])
+def test_assessment_context_survives_saved_draft_transfer(tmp_path, context):
+    from core.training_plan_drafts import TrainingPlanDraft
+    plan,image=candidate(tmp_path)
+    plan=replace(plan,assessment_context_fingerprint=context)
+    manifest=plan.to_manifest_dict()
+    assert manifest.get("assessment_context_fingerprint", "")==context
+    if not context:
+        assert "assessment_context_fingerprint" not in manifest
+    source=TrainingPlanDraftStore(tmp_path/"source.json").save_plan(plan,"Context-bound plan").draft
+    assert source.plan_manifest.get("assessment_context_fingerprint", "")==context
+    pixels=image.read_bytes();stored=(tmp_path/"source.json").read_bytes()
+    path=export_training_draft(source,tmp_path/"transfer.json")
+    readback=TrainingPlanDraft.read_transfer(path)
+    imported=import_training_draft(path,TrainingPlanDraftStore(tmp_path/"destination.json"))
+    assert readback.plan_manifest==manifest and imported.plan_manifest==manifest
+    assert readback.fingerprint==source.fingerprint
+    assert image.read_bytes()==pixels and (tmp_path/"source.json").read_bytes()==stored
+
+
+def test_assessment_context_is_part_of_manifest_integrity(tmp_path):
+    from copy import deepcopy
+    from core.training_plan_drafts import TrainingPlanDraftError
+    plan,_=candidate(tmp_path)
+    one=replace(plan,assessment_context_fingerprint="a"*64).to_manifest_dict()
+    two=replace(plan,assessment_context_fingerprint="b"*64).to_manifest_dict()
+    assert one["selection_scope"]==two["selection_scope"]
+    assert one["plan_fingerprint"]!=two["plan_fingerprint"]
+    changed=deepcopy(one);changed["assessment_context_fingerprint"]="b"*64
+    with pytest.raises(TrainingPlanDraftError,match="fingerprint"):
+        TrainingPlanDraftStore(tmp_path/"tampered.json").save_manifest(changed,"Tampered")

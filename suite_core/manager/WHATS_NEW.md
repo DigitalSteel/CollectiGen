@@ -1,5 +1,7 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Saved Training drafts retain the context reference needed for caption comparison in Manager; older drafts remain readable.
+
 - Generate planning from a registered LoRA keeps its exact LoRA role in the new
   draft; it no longer treats that selection as a checkpoint. Checkpoint choice
   and generator readiness remain separate.
