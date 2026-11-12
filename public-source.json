@@ -2022,8 +2022,8 @@
       "size_bytes": 18258
     },
     "qt_app/dataset_page.py": {
-      "sha256": "5632f5482be6e99b92fb773a0aa78cc834c8722e431d0a7e44d2211d49a608bb",
-      "size_bytes": 502261
+      "sha256": "482c9fe4eb15273badbdf7479a862555b75680f2ca3cbe0da2bf6c321968ea40",
+      "size_bytes": 502294
     },
     "qt_app/dataset_preparation_queue.py": {
       "sha256": "0978e5838b13bf1872a93b671af7021183a4ce79db32ea554d299c0c9ca4afff",
@@ -3402,12 +3402,12 @@
       "size_bytes": 1064
     },
     "tests/test_organizer_dataset_close.py": {
-      "sha256": "e5e442cc2f61a89de90bb320c441b3045bc4e1461a2829c22e8abf461e622a40",
-      "size_bytes": 1480
+      "sha256": "636f0669985c619da631ca0757b86a91dbe53761808c18314ba7fdd36c6777ea",
+      "size_bytes": 2038
     },
     "docs/BUG337_DATASET_CLOSE.md": {
-      "sha256": "13e6b9caba4b2ffffb6afad71bc7505d9c4b256204c294b6cc57c264b3f6dbd8",
-      "size_bytes": 583
+      "sha256": "19028b9cc7a1ec07f5151f924321b357daea0ac43e4f6273ba379da429fafb10",
+      "size_bytes": 756
     }
   },
   "fresh_history_required": true,

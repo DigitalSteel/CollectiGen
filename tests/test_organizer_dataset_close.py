@@ -20,7 +20,7 @@ def test_queued_conflict_start_after_shutdown_is_inert():
 def test_active_page_starts_conflicts_once():
     app=QApplication.instance() or QApplication([])
     owner=SimpleNamespace(_shutdown_requested=False,_conflict_task=None,
-        state=SimpleNamespace(knowledge=object(),jobs=object()))
+        state=SimpleNamespace(knowledge=object(),jobs=SimpleNamespace(shutting_down=False)))
     with patch('qt_app.dataset_page.CoordinatedCallTask') as task:
         QTimer.singleShot(0,lambda:DatasetPage._start_conflict_preparation(owner))
         app.processEvents()
@@ -30,3 +30,14 @@ def test_active_page_starts_conflicts_once():
         assert owner._conflicts_ready is False
         DatasetPage._start_conflict_preparation(owner)
         task.assert_called_once()
+
+
+def test_new_page_during_global_shutdown_starts_no_conflicts():
+    app=QApplication.instance() or QApplication([])
+    owner=SimpleNamespace(_shutdown_requested=False,_conflict_task=None,
+        state=SimpleNamespace(jobs=SimpleNamespace(shutting_down=True)))
+    with patch('qt_app.dataset_page.CoordinatedCallTask') as task:
+        QTimer.singleShot(0,lambda:DatasetPage._start_conflict_preparation(owner))
+        app.processEvents()
+        task.assert_not_called()
+        assert owner._conflict_task is None
