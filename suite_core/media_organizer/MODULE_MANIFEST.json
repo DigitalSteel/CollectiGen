@@ -109,7 +109,7 @@
   "runtime_kind": "interpreter-portable",
   "runtime_profile": "organizer-image",
   "schema_version": 1,
-  "scope": "Organizer Dataset Training-draft import and saved editable planning; existing native runtime and component authority.",
+  "scope": "Organizer Dataset Training-draft import and saved editable planning; existing native runtime and component authority. Reviewed original/trimmed Manager video receipts return through canonical Video Ingest; no Organizer generation execution.",
   "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
   "shell_owner": "qt_app.main_window.TagManagerWindow",
   "software_version": "0.5.0-alpha.1",

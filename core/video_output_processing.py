@@ -280,6 +280,9 @@ def resize_verified_video(
     allowed_root: str | Path, width: int, height: int,
     should_cancel: Callable[[], bool] | None = None,
     timeout_seconds: float = 120,
+    runtime_binding=None,
+    decoder_lifetime=None,
+    allow_recovery: bool = True,
 ) -> VideoResizeResult:
     """Fit without cropping, black-pad and publish one separate verified derivative.
 
@@ -307,13 +310,16 @@ def resize_verified_video(
             or source.resolve(strict=True) == target.resolve(strict=False)):
         raise VideoOutputProcessingError("Choose a new MP4 destination inside the allowed output root.")
     receipt = _receipt_path(target)
+    if not allow_recovery and (not target.is_file() or not receipt.is_file()):
+        raise VideoOutputProcessingError("Reopen this incomplete resize in its original Generate workspace.")
     if os.path.lexists(target) and not os.path.lexists(receipt):
         raise VideoOutputProcessingError("Choose a new MP4 destination inside the allowed output root.")
     if should_cancel is not None and should_cancel():
         raise InterruptedError("Video resize cancelled safely.")
     _hash_source(source, source_asset, should_cancel, deadline)
     observed = verify_video_output(source, source_request, allowed_root=source.parent,
-        should_cancel=should_cancel, max_seconds=_remaining(deadline))
+        should_cancel=should_cancel, max_seconds=_remaining(deadline),
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     if (observed.asset.sha256 != source_asset.sha256
             or observed.asset.byte_length != source_asset.byte_length
             or observed.asset.stream_id != source_asset.stream_id
@@ -328,6 +334,8 @@ def resize_verified_video(
         payload, receipt_state = _read_receipt(receipt, target, source_asset, recipe)
         old_stage = target.with_name(payload["stage_name"])
         candidate = target if os.path.lexists(target) else old_stage
+        if not allow_recovery and candidate != target:
+            raise VideoOutputProcessingError("The completed resize disappeared. Reopen it in Generate.")
         if os.path.lexists(candidate):
             if candidate == old_stage:
                 _assert_unredirected(old_stage)
@@ -335,7 +343,8 @@ def resize_verified_video(
                     raise VideoOutputProcessingError("The retained resize stage changed identity.")
             verified = verify_video_output(candidate, output_request, allowed_root=boundary,
                 should_cancel=should_cancel, max_seconds=_remaining(deadline),
-                max_bytes=output_limit)
+                max_bytes=output_limit, runtime_binding=runtime_binding,
+                decoder_lifetime=decoder_lifetime)
             _matches_receipt(verified, payload)
             result = _lineage_result(target, receipt, source_asset, verified, recipe)
             _hash_source(source, source_asset, should_cancel, deadline)
@@ -346,11 +355,13 @@ def resize_verified_video(
                 os.link(old_stage, target)
                 _after_publish(target)
             _hash_source(target, verified.asset, should_cancel, deadline)
-            if (os.path.lexists(old_stage)
+            if (allow_recovery and os.path.lexists(old_stage)
                     and old_stage.stat(follow_symlinks=False).st_ino == payload["stage_id"]
                     and stat.S_ISREG(old_stage.stat(follow_symlinks=False).st_mode)):
                 old_stage.unlink()
             return result
+        if not allow_recovery:
+            raise VideoOutputProcessingError("The completed resize is unavailable. Reopen it in Generate.")
         # An owned prepublication receipt with no output or stage proves no
         # derivative was published. Retire only this exact receipt and retry.
         current_receipt = receipt.stat(follow_symlinks=False)
@@ -388,7 +399,8 @@ def resize_verified_video(
             raise VideoOutputProcessingError("The isolated output stage changed identity.")
         verified = verify_video_output(stage, output_request, allowed_root=boundary,
             should_cancel=should_cancel, max_seconds=_remaining(deadline),
-            max_bytes=output_limit)
+            max_bytes=output_limit, runtime_binding=runtime_binding,
+            decoder_lifetime=decoder_lifetime)
         outcome = _lineage_result(target, receipt, source_asset, verified, recipe)
         _hash_source(source, source_asset, should_cancel, deadline)
         if should_cancel is not None and should_cancel():

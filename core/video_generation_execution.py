@@ -41,10 +41,12 @@ class VideoExecutionService:
     """The adapter owns exact runtime/resources; the verifier owns full decoding."""
 
     def __init__(self, storage_root, jobs, *, verify_output, poll_interval=1.0, timeout=1800,
-                 registry=None, protected_roots=()):
+                 registry=None, protected_roots=(), runtime_binding=None, decoder_lifetime=None):
         self.root = Path(storage_root).absolute()
         self.jobs = jobs
         self.verify_output = verify_output
+        self.runtime_binding = runtime_binding
+        self.decoder_lifetime = decoder_lifetime
         self.poll_interval = poll_interval
         self.timeout = timeout
         self._usage_admissions, self._usage_proofs = {}, {}
@@ -538,7 +540,7 @@ class VideoExecutionService:
             return receipt  # Missing history never authorizes resubmission.
         return self._accept_history(receipt, history[receipt["prompt_id"]], adapter)
 
-    def verified_video_outputs(self, expected_receipt):
+    def verified_video_outputs(self, expected_receipt, *, allow_resize_recovery=True):
         if not isinstance(expected_receipt, dict):
             raise ValueError("A retained verified video receipt is required.")
         current = self._load(expected_receipt["job_id"])
@@ -576,15 +578,15 @@ class VideoExecutionService:
             original_asset = VideoSourceAsset.from_dict(native["source_asset"])
             mapping = DerivedClipMapping.from_dict(native["timeline"])
             checked = resize_verified_video(expected_native, original_asset, request, Path(output["path"]),
-                allowed_root=self.root, width=goal["final_width"], height=goal["final_height"])
+                allowed_root=self.root, width=goal["final_width"], height=goal["final_height"],
+                runtime_binding=self.runtime_binding, decoder_lifetime=self.decoder_lifetime,
+                allow_recovery=allow_resize_recovery)
             if (checked.source_sha256 != native["sha256"] or checked.output_sha256 != output["sha256"]
                     or checked.recipe != native["recipe"] or checked.lineage.to_dict() != mapping.to_dict()
                     or checked.verification.asset.to_dict() != output["source_asset"]):
                 raise ValueError("The retained final-video timeline or recipe differs from its exact resize receipt.")
         receipt_path = self._directory(current["job_id"]) / "receipt.json"
-        if receipt_path.stat().st_size > 32 * 1024 * 1024:
-            raise ValueError("The retained video receipt exceeds the supported size.")
-        receipt_raw, _ = read_stable_training_source(receipt_path)
+        receipt_raw, _ = read_stable_training_source(receipt_path, max_bytes=32 * 1024 * 1024)
         if strict_json(receipt_raw) != current:
             raise ValueError("The video receipt changed before Ingest handoff.")
         result = deepcopy(current["outputs"])

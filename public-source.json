@@ -1774,8 +1774,8 @@
       "size_bytes": 20227
     },
     "core/video_finishing.py": {
-      "sha256": "1118d1798ddcbc3ecf6148c0bf81daf01da87e31cd5f330418c5d041c89d45e8",
-      "size_bytes": 31693
+      "sha256": "6267a22a44cb8ac75af03bcec590be939126548b11b55dcc07e2cb8ea85b5a3a",
+      "size_bytes": 32024
     },
     "core/video_generation.py": {
       "sha256": "b10007977d045621d6e9a7042cdc6194b21368a22442390c526d1b2178dd49e7",
@@ -1786,24 +1786,24 @@
       "size_bytes": 6627
     },
     "core/video_generation_execution.py": {
-      "sha256": "9f5ceacbdc3dbae469b2d25ab176aad83309268fde16363bf85cd4ce2f430b99",
-      "size_bytes": 37146
+      "sha256": "e0a199f552c02cb861269f615861f532cafdf5f4c0535f698931da3901d551e1",
+      "size_bytes": 37348
     },
     "core/video_generation_graph.py": {
       "sha256": "c1f68f8a41aebe20c043ab9b5aaeef4749c24cfad4aa21757d685b81ebe7a858",
       "size_bytes": 15397
     },
     "core/video_ingest.py": {
-      "sha256": "f74895bf9dde2559320d92ab27c0691af8dc5fa8e237267e87629ec02e8eb7c0",
-      "size_bytes": 15716
+      "sha256": "f6eaf864358e03bd72b4d4debccac55954f33bb5f2b12e8d77d685f6c9390e55",
+      "size_bytes": 21454
     },
     "core/video_output_goal.py": {
       "sha256": "f5b04210e1d1391d15d625ad269a9976d98e9228962d6415e397bd8f4d7bf368",
       "size_bytes": 1388
     },
     "core/video_output_processing.py": {
-      "sha256": "df667659ab261a66cfb04eb058009e8282d8e8f5a2931e5071ff928c2a9b6ebc",
-      "size_bytes": 21260
+      "sha256": "07f6875260946b607ef9748d25cedd4f45a72eef01899e1c4af199d88c32cbef",
+      "size_bytes": 22093
     },
     "core/video_runtime_preferences.py": {
       "sha256": "cd39a7a72bc124e54dea23d9c1048509ee01c0c5368df004ff2a985ae81d2319",
@@ -2198,8 +2198,8 @@
       "size_bytes": 14920
     },
     "qt_app/ingest_page.py": {
-      "sha256": "c381cb69a472ee566a90617790053756cea06298aca8ba8ef04bf7759bba7bba",
-      "size_bytes": 366638
+      "sha256": "9c0a1c5c41c62cf32fb0e0e6a5b291b5f9db411cdeee8fff72deb223821b0653",
+      "size_bytes": 367700
     },
     "qt_app/ingest_preparation_queue.py": {
       "sha256": "82870eaf359ff7108e51ca2d0bd91d95f422abb404d96c42f411f10cac2f6d6b",
@@ -3130,8 +3130,8 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "cf950363f6d64ec5e0c698e193f24818d1eab7f3870768a4c74dddfbad3345ac",
-      "size_bytes": 5062
+      "sha256": "5c9c2e4625418d8046b47ed70aa9d45666294d9ae1474400fe252d1b9b5008c9",
+      "size_bytes": 5185
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
       "sha256": "82dbd10b5ae0301361a30affe4eb4dec775029e8c8f0c859facf10a1d2691ecd",
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "bf8fc7cb23a6a2c7cb6a2f33e263ecad6ece8620709132f8d0ad63ea5ec04c62",
-      "size_bytes": 26153
+      "sha256": "d023967075e259a0ae66b49712257ef16ab3b6b157a4bf5ba5c054a0b701dd4e",
+      "size_bytes": 26307
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3348,6 +3348,14 @@
     "tests/test_organizer_character_setup_export.py": {
       "size_bytes": 15400,
       "sha256": "b32d51942250f02673c86f19f7453392aa45e8ec5286f63ed70dcf1eb51762e4"
+    },
+    "tests/test_manager_video_result_ingest.py": {
+      "sha256": "42cd2d8ddc19b6148cb86362b5feafe3754eb520a91f92561f7b642f293ef331",
+      "size_bytes": 11858
+    },
+    "docs/GEN06_MANAGER_VIDEO_INGEST.md": {
+      "sha256": "e6bd4ea36c12c3a5cdcd1bfbf4a5beac78766d27b3344337e85a8d5d7c80fae0",
+      "size_bytes": 1712
     }
   },
   "fresh_history_required": true,

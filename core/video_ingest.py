@@ -302,3 +302,104 @@ class VideoIngestService:
             return VideoIngestResult("recovery_required", plan.destination, (str(exc),))
         except (OSError, ValueError, RuntimeError) as exc:
             return VideoIngestResult("failed", plan.destination, (str(exc),))
+
+
+@dataclass(frozen=True)
+class ManagerVideoIngestHandoff:
+    """One explicitly selected Manager clip/trim; no scan or generation launch.
+
+    Selection binds only bounded receipts. The existing Ingest worker rechecks
+    output bytes and, for a resize/trim, the stock decoder/finishing proof.
+    """
+    receipt_path: Path
+    source_path: Path
+    original_receipt_path: Path
+    receipt_sha256: str
+    original_sha256: str
+    runtime_admission: Callable[[], Any] | None = None
+    decoder_lifetime: Any = None
+
+    @staticmethod
+    def _read_receipt(path):
+        from .training_source_io import read_stable_training_source
+        from .video_generation_execution import strict_json
+        raw, _ = read_stable_training_source(Path(path), max_bytes=32 * 1024 * 1024)
+        value = strict_json(raw)
+        if not isinstance(value, dict):
+            raise ValueError("Choose a saved Manager result receipt.")
+        return value, hashlib.sha256(raw).hexdigest()
+
+    @classmethod
+    def selection_kind(cls, selected):
+        value, _ = cls._read_receipt(Path(selected).absolute())
+        if value.get("schema_id") == "collectigen.video-execution.v1":
+            return "video"
+        if value.get("schema_id") == "collectigen.video-finishing.v1" and value.get("operation") == "trim":
+            return "trim"
+        return "image"  # The unchanged image owner validates its own schema.
+
+    @staticmethod
+    def _no_generation(*args, **kwargs):
+        raise ValueError("Reviewing a saved video cannot generate or repair an output.")
+
+    @classmethod
+    def from_selected_receipts(cls, selected, original=None, *, runtime_admission=None, decoder_lifetime=None):
+        from .video_generation_execution import VideoExecutionService
+        selected = Path(selected).absolute()
+        value, selected_sha = cls._read_receipt(selected)
+        trim = value.get("schema_id") == "collectigen.video-finishing.v1" and value.get("operation") == "trim"
+        original = Path(original).absolute() if original is not None else selected
+        root = original.parent.parent
+        if (original.name != "receipt.json" or root.name != "jobs"
+                or root.parent.name != "video_generation" or root.parent.parent.name != "Manager"):
+            raise ValueError("Choose receipt.json from the original Manager video job.")
+        original_value, original_sha = cls._read_receipt(original)
+        service = VideoExecutionService(root, None, verify_output=cls._no_generation)
+        current = service._load(original.parent.name)
+        if (current != original_value or current.get("state") != "verified"
+                or len(current.get("outputs", ())) != 1):
+            raise ValueError("Choose one verified Manager video job.")
+        if trim:
+            name = value.get("destination_name")
+            if (not isinstance(name, str) or Path(name).name != name or not name.endswith(".mp4")
+                    or selected.parent != root.parent / "finishing"
+                    or selected.name != "." + name + ".collectigen-finishing.json"):
+                raise ValueError("Choose the exact trim receipt belonging to this Manager video workspace.")
+            source = selected.parent / name
+        else:
+            if selected != original or value.get("schema_id") != "collectigen.video-execution.v1":
+                raise ValueError("Choose an original Manager video or its exact trim receipt.")
+            source = original.parent / "result.mp4"
+        return cls(selected, source, original, selected_sha, original_sha,
+                   runtime_admission, decoder_lifetime)
+
+    def verified_outputs(self, selected):
+        from .video_generation_execution import VideoExecutionService
+        from .video_generation import VideoGenerationRequest
+        from .video_finishing import TrimmedVideo, verified_trimmed_output
+        from .video_temporal import DerivedClipMapping
+        from .video_decoder import VideoVerification
+        if Path(selected).absolute() != self.receipt_path:
+            raise ValueError("The selected video receipt changed.")
+        value, selected_sha = self._read_receipt(self.receipt_path)
+        original, original_sha = self._read_receipt(self.original_receipt_path)
+        if selected_sha != self.receipt_sha256 or original_sha != self.original_sha256:
+            raise ValueError("The selected video or original receipt changed. Review it again.")
+        trim = self.receipt_path != self.original_receipt_path
+        native = original["outputs"][0].get("generation", {}).get("native_output")
+        binding = self.runtime_admission() if (trim or native) and callable(self.runtime_admission) else None
+        service = VideoExecutionService(self.original_receipt_path.parent.parent, None,
+            verify_output=self._no_generation, runtime_binding=binding,
+            decoder_lifetime=self.decoder_lifetime)
+        outputs = service.verified_video_outputs(original, allow_resize_recovery=False)
+        if trim:
+            mapping = DerivedClipMapping.from_dict(value["lineage"])
+            result = TrimmedVideo(self.source_path, self.receipt_path,
+                                 VideoVerification(mapping.output_asset, {}), mapping)
+            request = VideoGenerationRequest.from_dict(outputs[0]["generation"]["request"])
+            outputs = [verified_trimmed_output(result, outputs[0], request,
+                runtime_binding=binding, decoder_lifetime=self.decoder_lifetime)]
+        if len(outputs) != 1 or Path(outputs[0]["path"]).absolute() != self.source_path:
+            raise ValueError("The reviewed video differs from the selected output.")
+        VideoAssetRecord.from_descriptor(outputs[0])
+        return outputs

@@ -997,18 +997,36 @@ class IngestPage(QWidget):
         if self._batch_task is not None:
             return
         selected, _ = QFileDialog.getOpenFileName(
-            self, "Choose a Manager generation receipt", self._add_images_start_folder(),
-            "Generation receipt (receipt.json)",
+            self, "Choose a Manager image or video receipt", self._add_images_start_folder(),
+            "Manager result receipts (*.json)",
         )
         if not selected:
             return
         from core.generation_execution import GenerationIngestHandoff
+        from core.video_ingest import ManagerVideoIngestHandoff
 
         try:
+            kind = ManagerVideoIngestHandoff.selection_kind(selected)
+            if kind in {"video", "trim"}:
+                original = None
+                if kind == "trim":
+                    original, _ = QFileDialog.getOpenFileName(
+                        self, "Choose the original Manager video receipt", "",
+                        "Original video receipt (receipt.json)",
+                    )
+                    if not original:
+                        return
+                video = ManagerVideoIngestHandoff.from_selected_receipts(
+                    selected, original,
+                    runtime_admission=getattr(self.state, "admit_video_runtime", None),
+                    decoder_lifetime=getattr(self.state, "video_decoder_lifetime", None),
+                )
+                return self._start_video_ingest_preview(
+                    video.receipt_path, video.source_path, video.verified_outputs)
             result = GenerationIngestHandoff.from_selected_manager_receipt(selected)
-        except (OSError, ValueError, RuntimeError):
+        except (OSError, ValueError, RuntimeError, KeyError, TypeError):
             QMessageBox.information(self, "Manager result unavailable",
-                                    "Choose receipt.json from a verified Manager generation job.")
+                "Choose a verified Manager image or video receipt. For a trim, also choose its original Manager video receipt.")
             return
         self._start_ingest_import_preview(
             "files", [result.output], preserve_source=True, verified_versions=(result,),

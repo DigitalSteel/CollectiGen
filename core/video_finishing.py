@@ -91,10 +91,11 @@ def _destination(destination, allowed_root, suffix: str) -> tuple[Path, Path]:
 
 
 def _source_check(path: Path, asset: VideoSourceAsset, request: VideoGenerationRequest,
-                  cancel, deadline: float) -> None:
+                  cancel, deadline: float, *, runtime_binding=None, decoder_lifetime=None) -> None:
     _hash_source(path, asset, cancel, deadline)
     observed = verify_video_output(path, _request_for_asset(request, asset),
-        allowed_root=path.parent, should_cancel=cancel, max_seconds=_remaining(deadline))
+        allowed_root=path.parent, should_cancel=cancel, max_seconds=_remaining(deadline),
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     if (observed.asset.sha256, observed.asset.byte_length, observed.asset.stream_id,
             observed.asset.timing) != (asset.sha256, asset.byte_length, asset.stream_id, asset.timing):
         raise VideoOutputProcessingError("The reviewed video source or timeline changed.")
@@ -262,7 +263,7 @@ def trim_verified_video(
 def verified_trimmed_output(
     trimmed: TrimmedVideo, original_descriptor: dict,
     source_request: VideoGenerationRequest,
-    *, should_cancel: Callable[[], bool] | None = None,
+    *, should_cancel: Callable[[], bool] | None = None, runtime_binding=None, decoder_lifetime=None,
 ) -> dict:
     """Recheck a finished result and project its exact lineage for Ingest.
 
@@ -279,7 +280,8 @@ def verified_trimmed_output(
     if not source_path.is_file():
         raise VideoOutputProcessingError("The original verified video is unavailable.")
     deadline = monotonic() + 120
-    _source_check(source_path, source, source_request, should_cancel, deadline)
+    _source_check(source_path, source, source_request, should_cancel, deadline,
+                  runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     target, receipt = trimmed.output_path.absolute(), trimmed.receipt_path.absolute()
     if receipt != target.with_name(f".{target.name}.collectigen-finishing.json"):
         raise VideoOutputProcessingError("The exact trim receipt path changed.")
@@ -315,7 +317,8 @@ def verified_trimmed_output(
     output_request = replace(_request_for_asset(source_request, source),
                              frame_count=output.timing.frame_count)
     observed = verify_video_output(target, output_request, allowed_root=target.parent,
-        max_seconds=_remaining(deadline), should_cancel=should_cancel)
+        max_seconds=_remaining(deadline), should_cancel=should_cancel,
+        runtime_binding=runtime_binding, decoder_lifetime=decoder_lifetime)
     if observed.asset.to_dict() != output.to_dict():
         raise VideoOutputProcessingError("The finished clip differs from its exact receipt.")
     _hash_source(source_path, source, should_cancel, deadline)

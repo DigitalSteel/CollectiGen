@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Review Manager Result now accepts original and trimmed video receipts.
+  Review and copy through Video Ingest while retaining the original and lineage.
 - Reviewed Character and Outfit generation setups can be exported for Manager after explicit eligible-library selection. Prompt sharing is opt-in; cancellation and changed-source refusal retain the saved setup. Manager imports and reviews the setup in a separate image draft.
 
 - Dataset image actions keep Remix and image-request editing in an offline planner. Save or export the request, then import it with Suite Manager Plan an Image. Generator access stays in Manager. Animate This Image points to Manager Plan a Video.
