@@ -1,5 +1,7 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Training plans retain reviewed relationship constraints when the optional legacy conflicts file is absent; rebuild older saved plans to refresh their caption context.
+
 - Caption checks accept Organizer defaults without optional rule files, retain typed relationship constraints and detect rule-file changes during review.
 
 - Saved Training drafts retain the context reference needed for caption comparison in Manager; older drafts remain readable.

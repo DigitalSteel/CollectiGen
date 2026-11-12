@@ -234,3 +234,29 @@ def test_missing_flat_conflict_store_retains_reviewed_typed_constraints(tmp_path
     assert not path.exists()
     path.write_text("{broken",encoding="utf-8")
     with pytest.raises(ValueError):ConflictRuleEngine.load(path,relationship_evaluator=evaluator)
+
+
+def test_tag_bound_conflicts_load_typed_constraints_without_flat_file(tmp_path,monkeypatch):
+    from core.conflict_rules import ConflictRuleEngine
+    from core.knowledge_relationships import KnowledgeRelationship,SCOPED_CONSTRAINT
+    from core import relationship_evaluator
+    tags=NS();relation=KnowledgeRelationship("bound-constraint",SCOPED_CONSTRAINT,(),label="Existing constraint")
+    evaluator=NS(registry=NS(relationships=[relation]));seen=[]
+    def active(knowledge):
+        seen.append(knowledge)
+        return evaluator
+    monkeypatch.setattr(relationship_evaluator,"active_relationship_evaluator",active)
+    path=tmp_path/"missing-conflicts.json"
+    engine=ConflictRuleEngine.load(path,tags=tags)
+    assert seen==[tags] and engine.relationship_evaluator is evaluator
+    assert [r.relationship_id for r in engine.rules]==[relation.id]
+    assert not path.exists()
+
+
+def test_unbound_missing_conflicts_keeps_legacy_empty_engine(tmp_path,monkeypatch):
+    from core.conflict_rules import ConflictRuleEngine
+    from core import relationship_evaluator
+    def unexpected(*args):raise AssertionError("Unbound missing file must not discover process authority")
+    monkeypatch.setattr(relationship_evaluator,"active_relationship_evaluator",unexpected)
+    engine=ConflictRuleEngine.load(tmp_path/"missing.json")
+    assert engine.rules==[] and engine.relationship_evaluator is None

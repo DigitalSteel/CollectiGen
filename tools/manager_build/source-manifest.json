@@ -328,8 +328,8 @@
     },
     {
       "path": "core/conflict_rules.py",
-      "bytes": 30270,
-      "sha256": "44518887effbfdac25d2bdefccf2aa70c972eba26dbda39a39254de9af146b4a"
+      "bytes": 30287,
+      "sha256": "9f1366b6373424d11f1c071f5404934f8b73ded4c10881ce89f678a0a31f1f4b"
     },
     {
       "path": "core/connected_version_observation.py",

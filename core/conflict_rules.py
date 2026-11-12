@@ -138,7 +138,7 @@ class ConflictRuleEngine:
     @classmethod
     def load(cls, path: str | Path, *, tags=None, relationship_evaluator=None) -> "ConflictRuleEngine":
         source=Path(path)
-        if relationship_evaluator is None and not source.exists():
+        if relationship_evaluator is None and tags is None and not source.exists():
             return cls()
         payload=json.loads(source.read_text(encoding="utf-8")) if source.exists() else {}
         raw=payload.get("rules",payload.get("conflicts",[])) if isinstance(payload,dict) else payload
