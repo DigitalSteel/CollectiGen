@@ -11,7 +11,7 @@ source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.6.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.1-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.1-alpha.1/SuiteManager-a.0.6.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.1-alpha.1/SuiteManager-a.0.6.1-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
+| **Suite Manager** | [a.0.6.2](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.2-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.2-alpha.1/SuiteManager-a.0.6.2-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.2-alpha.1/SuiteManager-a.0.6.2-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
 | **Media Organizer** | [a.0.5.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.0-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.0-alpha.1/MediaOrganizer-a.0.5.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.0-alpha.1/MediaOrganizer-a.0.5.0-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars, plus Training dataset planning and offline image/video drafts. |
 | **Tag Encyclopedia** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). View and edit tags. |
 | **Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Catalog tag data for use with the Tag Encyclopedia. |
@@ -33,7 +33,7 @@ Retain your previous package and separate profile/image/catalog backups.
 3. Review the offered version, choose **Install**, and confirm.
 4. Restart Manager when requested, then open the installed app from its workspace.
 
-Manager a.0.6.1 includes dedicated **Generate** and **Training** workspaces for
+Manager a.0.6.2 includes dedicated **Generate** and **Training** workspaces for
 image/video drafts, saved work, local setup, training preparation and retained
 reviews. Models and optional runtimes are configured separately. Saved setups can
 open a separate image draft while preserving the work already open.
@@ -44,9 +44,11 @@ bound to their installation location; moving installations and migration from
 older portable Manager releases are not qualified by this release. Release
 metadata is signed; the Windows executable is not Authenticode-signed.
 
-Manager self-update is not yet qualified: an isolated a.0.6.0 to a.0.6.1
-Apply attempt timed out. The a.0.6.1 Windows download remains qualified for
-fresh installations; the corrected update client is being packaged.
+Manager a.0.6.2 fixes the update-reply timeout and starts a new managed-update
+baseline. Install its complete Windows ZIP in a fresh folder. The a.0.6.0 and
+a.0.6.1 clients still contain the old timeout and cannot apply this update;
+the signed package refuses those clients before Apply. A future update from
+the corrected client has not yet been exercised.
 
 The Reader component ZIP is supplied for Manager's reviewed installation path.
 Read the release's included guide before using component ZIPs directly.
