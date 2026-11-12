@@ -3653,8 +3653,8 @@
     },
     {
       "path": "suite_core/manager/__main__.py",
-      "bytes": 32247,
-      "sha256": "75631a699c0c479ee3e308f52be96fdf3b6670a7db01caf2b42ed3ea39693d90"
+      "bytes": 32526,
+      "sha256": "317ab25b631cdf8befaf2bd72fd859b237b4d857f8748a44bc0c3d5313fe8a76"
     },
     {
       "path": "suite_core/manager/assets/collectigen.ico",
@@ -3823,8 +3823,8 @@
     },
     {
       "path": "suite_core/manager/model_workspace_host.py",
-      "bytes": 4649,
-      "sha256": "641706f70efd5f78f22cfe8e1706b9e84b40813c094c04ab20b9b1fd7295bf05"
+      "bytes": 5638,
+      "sha256": "a1fe3fdb22cfef5f7cb7b76544b3596281b4dcc86fd0adaaafcbd8088077bf08"
     },
     {
       "path": "suite_core/manager/module_lifecycle_candidate.py",
@@ -3983,8 +3983,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 266701,
-      "sha256": "007ec3312790117cd73a58d567cf50a58b82642921651b5170ab88ae517594f9"
+      "bytes": 271669,
+      "sha256": "c6cf279bad3fde4fd0a17aa5acc8c081b390231a6c42ad13d46f21060e2b4b63"
     },
     {
       "path": "suite_core/media_examples.py",

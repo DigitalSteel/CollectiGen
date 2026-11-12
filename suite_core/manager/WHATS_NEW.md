@@ -1,5 +1,8 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Applications opens the original local Models workspace for registration, notes,
+  storage and model-guided planning. Reviewed guidance opens a new Generate draft;
+  a busy or changed review can return to Models.
 - Training History can import an unlisted saved Validation review, recheck its
   retained measurement and add it to History without starting a new evaluation.
 - Verified Results keeps image/receipt actions above the preview and explains
