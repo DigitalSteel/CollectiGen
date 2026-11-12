@@ -3639,7 +3639,7 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 44010,
-      "sha256": "dfa3e48b029b8f8d980c7fa3e1d0ca8d3816ed710bc0f2b00ca5ee4b1ee9abff"
+      "sha256": "6fa583b6b907823f86d2a9a9b3b42e747d6ef6bfb5af5e47e84881a72cba20b6"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -3678,8 +3678,8 @@
     },
     {
       "path": "suite_core/manager/bootstrap_entry.py",
-      "bytes": 103913,
-      "sha256": "2356912d476d420df584224bdb75128c99bef70622553c1bccd5ac8534614af0"
+      "bytes": 104351,
+      "sha256": "99705256e5807c7535d339645f0ad388e8b993b590edbcad62ef47fdeb9a5edd"
     },
     {
       "path": "suite_core/manager/candidate_inventory.py",
@@ -3973,18 +3973,18 @@
     },
     {
       "path": "suite_core/manager/update_review_ui.py",
-      "bytes": 14780,
-      "sha256": "a2c3614ac69bb7903ceb22c4413737e655418ed4cbf447578f37ee84c97d8661"
+      "bytes": 14921,
+      "sha256": "7c7258b584f39270dc666285053d224772adcc8113bba2a12ecb092fc61e87b5"
     },
     {
       "path": "suite_core/manager/version.py",
       "bytes": 281,
-      "sha256": "d4c6ed1cd0cca7e373171a0fbd7e9823b58ed027f8636ccff02d73fa514cc41d"
+      "sha256": "c5f4a92b60b50ffca35f0396475d6b560d5ad90e2ff73f56c0deff032d236e28"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 279110,
-      "sha256": "c3a3a104086e7314297e74279bb63078e1ecc04d380d902aace36b3fa60578b3"
+      "bytes": 279484,
+      "sha256": "711bdbf19e67006f0c14a44972b53d453d238853a816df503de1d626139f2451"
     },
     {
       "path": "suite_core/media_examples.py",

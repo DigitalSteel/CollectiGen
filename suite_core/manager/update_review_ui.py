@@ -104,7 +104,9 @@ class ManagerUpdateReviewPanel(QGroupBox):
             self.review.clear()
             self.version_attempt_unavailable = True
         self.operation = operation
-        self.message = 'Checking signed releases…' if operation == 'discover' else 'Verifying and staging the reviewed package…'
+        self.message = ('Checking the staged update before closing Manager. Nothing has been replaced yet.'
+            if operation == 'apply' else
+            'Checking signed releases…' if operation == 'discover' else 'Verifying and staging the reviewed package…')
         def work():
             if get_ident() == self.ui_owner:
                 raise RuntimeError('Update work must run outside the UI thread.')

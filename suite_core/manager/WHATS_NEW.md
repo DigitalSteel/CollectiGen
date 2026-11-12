@@ -1,3 +1,10 @@
+# What's New - a.0.6.2 (embedded 0.6.2-alpha.1) - 2026-11-12
+
+- Fixed Apply giving up before the launcher finished checking a signed update.
+  Manager waits for the original reply without submitting the update twice.
+- Apply shows that the staged update is being checked before Manager closes.
+  Nothing is replaced until the original launcher accepts the operation.
+
 # What's New - a.0.6.1 (embedded 0.6.1-alpha.1) - 2026-11-12
 
 - Use Saved Setup opens a separate image draft while retaining your current

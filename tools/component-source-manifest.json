@@ -986,6 +986,7 @@
     "tools/test_suites.py",
     "version.py",
     "tests/test_manager_workflow_navigation.py",
+    "tests/test_manager_update_reply_deadline.py",
     "tests/test_training_package_context_compatibility.py"
   ],
   "reviewed_defaults": [],

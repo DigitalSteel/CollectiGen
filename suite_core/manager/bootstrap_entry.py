@@ -13,6 +13,7 @@ import math
 PROTOCOL = 1
 MAX_FRAME = 65536
 COMPONENT_STAGE_REPLY_TIMEOUT = 30
+MANAGER_UPDATE_REPLY_TIMEOUT = 30
 INITIAL_OFFER_TIMEOUT = 30
 FAST_HOOKS = frozenset({'--veloapp-install', '--veloapp-updated',
                         '--veloapp-obsolete', '--veloapp-uninstall'})
@@ -461,6 +462,7 @@ class NormalEntrySession:
         self.helper_capabilities = []
         self.helper_outstanding = None
         self.component_stage_outstanding = None
+        self.manager_update_outstanding = None
         self.seal = None
 
     def _peer(self):
@@ -491,7 +493,8 @@ class NormalEntrySession:
         payload=check_update_request(dict(schema=1,request_id=uuid4().hex,
             operation=operation,profile_sha256=profile_sha256,body=body))
         with self.wire.lock:
-            reply=self._exchange('manager-update-request',payload,{'manager-update-reply'})['payload']
+            reply=self._exchange('manager-update-request',payload,{'manager-update-reply'},
+                reply_timeout=MANAGER_UPDATE_REPLY_TIMEOUT,outstanding_kind='manager_update')['payload']
             try:
                 require(type(reply) is dict and set(reply)=={'schema','request_id','operation','profile_sha256','status','result'}
                     and reply['schema']==1 and type(reply['schema']) is int
@@ -501,6 +504,7 @@ class NormalEntrySession:
             except BaseException as error:
                 self.state,self.error='held',error
                 raise
+            self.manager_update_outstanding=None
         return reply
 
     def request_component_stage(self,operation,scope_id=None,*,component=None):
@@ -537,9 +541,11 @@ class NormalEntrySession:
             self.component_stage_outstanding=None
             return reply['scope']
 
-    def _exchange(self, kind, payload, expected, *, reply_timeout=None):
+    def _exchange(self, kind, payload, expected, *, reply_timeout=None, outstanding_kind='readiness'):
         require(self.helper_outstanding is None, 'helper_reply_outstanding')
         stage_request=kind=='component-stage-request'
+        require(outstanding_kind in {'readiness','manager_update'},'entry_reply_kind_required')
+        outstanding_slot=outstanding_kind+'_outstanding'
         if stage_request:
             require(getattr(self,'component_stage_outstanding',None) is None,
                     'original_component_stage_reply_required')
@@ -549,22 +555,22 @@ class NormalEntrySession:
         if reply_timeout is not None:
             require(type(reply_timeout) in {int,float} and math.isfinite(reply_timeout)
                     and 0<reply_timeout<=30,'bounded_entry_reply_deadline_required')
-            require(getattr(self,'readiness_outstanding',None) is None,'original_readiness_reply_required')
-            self.readiness_outstanding=dict(kind=kind,payload=payload,send_entered=False,
-                deadline=time.monotonic()+reply_timeout,reply=None)
+            require(getattr(self,outstanding_slot,None) is None,'original_'+outstanding_kind+'_reply_required')
+            setattr(self,outstanding_slot,dict(kind=kind,payload=payload,send_entered=False,
+                deadline=time.monotonic()+reply_timeout,reply=None))
         try:
             self._peer()
-            if reply_timeout is not None:self.readiness_outstanding['send_entered']=True
+            if reply_timeout is not None:getattr(self,outstanding_slot)['send_entered']=True
             if stage_request:self.component_stage_outstanding['send_entered']=True
             self.wire.send(kind, payload)
             while True:
                 try:
                     if reply_timeout is None and not stage_request:frame=self.wire.receive()
                     else:
-                        outstanding=self.component_stage_outstanding if stage_request else self.readiness_outstanding
+                        outstanding=self.component_stage_outstanding if stage_request else getattr(self,outstanding_slot)
                         remaining=outstanding['deadline']-time.monotonic()
                         require(remaining>0,'entry_component_stage_reply_deadline' if stage_request
-                                else 'entry_readiness_reply_deadline')
+                                else 'entry_'+outstanding_kind+'_reply_deadline')
                         frame=self.wire.receive(timeout=remaining)
                     break
                 except BaseException as error:
@@ -575,7 +581,7 @@ class NormalEntrySession:
                     self._peer()
             self._peer()
             require(frame['kind'] in expected, 'normal_rpc_not_accepted')
-            if reply_timeout is not None:self.readiness_outstanding['reply']=frame
+            if reply_timeout is not None:getattr(self,outstanding_slot)['reply']=frame
             if stage_request:self.component_stage_outstanding['reply']=frame
             return frame
         except BaseException as error:

@@ -12,6 +12,12 @@ complete folder together, and run **CollectiGen.exe**. Long installation paths
 can prevent Qt's Windows plugin from loading. Keep the previous package and
 separate data backups. Review and confirm each installation; restart when asked.
 
+## Unreleased update correction
+
+The a.0.6.2 source candidate fixes Apply abandoning a valid launcher reply
+after an empty pipe poll. Signed package delivery is pending; the a.0.6.1
+download above retains its original update qualification limits.
+
 ## Workspaces
 
 - **Dashboard** summarizes suite and saved generator readiness and links to the
