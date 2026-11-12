@@ -1,10 +1,29 @@
 """Typed Organizer creation over the original retained helper/Job lifecycle."""
 import os
+import sys
+import ntpath
 from core.encyclopedia_connection import OwnedEncyclopedia, native_reader, EncyclopediaHold
 from core.organizer_connection import OrganizerConnection
 
 _ENVIRONMENT_OVERRIDES=frozenset({'PYTHONHOME','PYTHONPATH','QT_PLUGIN_PATH',
                                 'QT_QPA_PLATFORM_PLUGIN_PATH','QML2_IMPORT_PATH'})
+
+
+def _organizer_environment():
+    """Keep the external app on its own Qt runtime, not the frozen host's DLLs."""
+    environment = {key: value for key, value in os.environ.items()
+                   if key.upper() not in _ENVIRONMENT_OVERRIDES}
+    bundle = getattr(sys, '_MEIPASS', None)
+    if getattr(sys, 'frozen', False) is True and bundle:
+        host = ntpath.normcase(ntpath.normpath(str(bundle))).rstrip('\\')
+        for key, value in tuple(environment.items()):
+            if key.upper() != 'PATH':
+                continue
+            def external(entry):
+                path = ntpath.normcase(ntpath.normpath(entry.strip('"')))
+                return path != host and not path.startswith(host + '\\')
+            environment[key] = ';'.join(entry for entry in value.split(';') if external(entry))
+    return environment
 
 
 class OwnedOrganizer(OwnedEncyclopedia):
@@ -41,7 +60,7 @@ class OwnedOrganizer(OwnedEncyclopedia):
             from suite_core.manager.bootstrap_entry import EntryHelperAdapter
             adapter=EntryHelperAdapter.for_organizer(self.normal_entry_session,native,selection)
             native.bind_helper_capability(adapter)
-            environment={key:value for key,value in os.environ.items() if key.upper() not in _ENVIRONMENT_OVERRIDES}
+            environment=_organizer_environment()
             self.child=native.spawn_command(selection.command,selected.directory,environment,helper_context=selection.context())
             self.identity=native.identity(self.child,selection.program)
             self.reason='Organizer process started. Close its window normally when finished.'

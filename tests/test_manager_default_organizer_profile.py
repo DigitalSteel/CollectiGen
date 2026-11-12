@@ -36,3 +36,23 @@ def test_default_organizer_factory_uses_published_offer_without_fetch_or_launch(
 def test_default_organizer_profile_keeps_original_session_requirement():
     with pytest.raises(ValueError, match="original_native_normal_session_required"):
         factory_for_session(object())
+
+
+@pytest.mark.parametrize('frozen', [False, True])
+def test_organizer_child_environment_excludes_only_frozen_bundle_paths(monkeypatch, frozen):
+    import core.organizer_native_owner as owner
+    bundle = r'C:\Disposable Suite\Apps\Manager\current\_internal'
+    entries = [bundle, '"' + bundle.upper() + r'\PySide6"', bundle + '-other',
+               r'C:\Windows\System32', r'C:\User Tools', '']
+    monkeypatch.setattr(owner.sys, 'frozen', frozen, raising=False)
+    monkeypatch.setattr(owner.sys, '_MEIPASS', bundle, raising=False)
+    monkeypatch.setenv('PATH', ';'.join(entries))
+    monkeypatch.setenv('QT_PLUGIN_PATH', 'host-plugin')
+    monkeypatch.setenv('PYTHONHOME', 'host-python')
+    monkeypatch.setenv('COLLECTIGEN_TEST_VALUE', 'preserved')
+    before = dict(owner.os.environ)
+    child = owner._organizer_environment()
+    assert 'QT_PLUGIN_PATH' not in child and 'PYTHONHOME' not in child
+    assert child['PATH'].split(';') == (entries[2:] if frozen else entries)
+    assert child['COLLECTIGEN_TEST_VALUE'] == 'preserved'
+    assert dict(owner.os.environ) == before

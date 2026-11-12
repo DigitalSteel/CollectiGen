@@ -1,5 +1,7 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Opening Organizer keeps Manager's bundled DLL paths out of the child
+  environment so Organizer can initialize its own packaged Qt runtime.
 - Dashboard refreshes the generator card when startup finishes and points to
   Organizer installation instead of calling the published app in development.
 - Manager startup accepts normal Windows casing for CollectiGen.exe and its
