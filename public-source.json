@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 849,
+  "allowlisted_source_file_count": 851,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -2022,8 +2022,8 @@
       "size_bytes": 18258
     },
     "qt_app/dataset_page.py": {
-      "sha256": "1b509235f20020eae86400606ee03e5393cd68ec998411ca19356df2c171c149",
-      "size_bytes": 502233
+      "sha256": "5632f5482be6e99b92fb773a0aa78cc834c8722e431d0a7e44d2211d49a608bb",
+      "size_bytes": 502261
     },
     "qt_app/dataset_preparation_queue.py": {
       "sha256": "0978e5838b13bf1872a93b671af7021183a4ce79db32ea554d299c0c9ca4afff",
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "b6f25fcd8c644daeffbd8f9f5c1d654bcb93d1aad63edb338cd596114dec293b",
-      "size_bytes": 27009
+      "sha256": "7a0eb1feebf1067401ec7434f69d11995ee8629620ba89bd4012928210a925d0",
+      "size_bytes": 27122
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3400,6 +3400,14 @@
     "docs/TRN02_ORGANIZER_GUIDANCE.md": {
       "sha256": "2444e08088468d36d0a2d58b441cd60a801cd7374e189e71a3b317a379b173bb",
       "size_bytes": 1064
+    },
+    "tests/test_organizer_dataset_close.py": {
+      "sha256": "e5e442cc2f61a89de90bb320c441b3045bc4e1461a2829c22e8abf461e622a40",
+      "size_bytes": 1480
+    },
+    "docs/BUG337_DATASET_CLOSE.md": {
+      "sha256": "13e6b9caba4b2ffffb6afad71bc7505d9c4b256204c294b6cc57c264b3f6dbd8",
+      "size_bytes": 583
     }
   },
   "fresh_history_required": true,

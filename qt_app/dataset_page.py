@@ -1427,7 +1427,7 @@ class DatasetPage(QWidget):
             self.update_selection_controls()
 
     def _start_conflict_preparation(self):
-        if self._conflict_task is not None:
+        if self._shutdown_requested or self._conflict_task is not None:
             return
         self._conflicts_ready=False
         knowledge=self.state.knowledge

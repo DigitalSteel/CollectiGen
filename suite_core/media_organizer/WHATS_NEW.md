@@ -1,5 +1,7 @@
 # Media Organizer a.0.5.0
 
+- Closing Dataset while its initial conflict checks are queued no longer starts background work after shutdown.
+
 - Training Dataset Models & Guidance includes its offline model catalog again, so reviewed model-specific planning profiles can return to the selected image scope.
 
 - Media review explains Refresh after a busy scan, shows ready feedback after playback closes, and stops cleanly when closed while opening.
