@@ -3708,8 +3708,8 @@
     },
     {
       "path": "suite_core/manager/compiled_organizer_config.py",
-      "bytes": 3096,
-      "sha256": "85d436eba86e3fe3375c1cbfa46b808713cf07e119dc2b5f98623c90e40d9f9f"
+      "bytes": 3093,
+      "sha256": "dd004bc3ef60253da5da48dbb8ee388d5379fc2a646e105cbc44b80798efc4a9"
     },
     {
       "path": "suite_core/manager/compiled_update_config.py",

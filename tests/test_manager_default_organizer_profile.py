@@ -25,7 +25,7 @@ def test_default_organizer_factory_uses_published_offer_without_fetch_or_launch(
         acquisition = service.acquisition
         assert acquisition._expected_offer is PROFILE.expected_offer
         assert acquisition._expected_offer.component_id == COMPONENT
-        assert acquisition._expected_offer.software_version == "0.4.23-alpha.1"
+        assert acquisition._expected_offer.software_version == "0.5.0-alpha.1"
         assert acquisition.manifest_name == "release-manifest.json"
         assert acquisition.signature_name == "release-manifest.json.sig"
         assert not ini.exists() and not ini.with_suffix(".json").exists()

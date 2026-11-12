@@ -1,4 +1,4 @@
-"""Exact published Organizer offer for the default Manager installer."""
+"""Exact release-bound Organizer offer for the default Manager installer."""
 from core.component_acquisition import ExactComponentOffer, ExactOfferAsset
 from suite_core.installation import ComponentId
 from suite_core.manager.organizer_acquisition_binding import CompiledOrganizerAcquisitionProfile
@@ -10,36 +10,36 @@ PROFILE = CompiledOrganizerAcquisitionProfile(
     transport_qualification_sha256='14518fac0111875bf1a4f97cdf67ff2db642d68d5c8c2d9c4d7d03a91140d9e4',
     expected_offer=ExactComponentOffer(
         component_id=ComponentId('collectigen.media-organizer'),
-        software_version='0.4.23-alpha.1',
+        software_version='0.5.0-alpha.1',
         channel='beta',
         os='windows',
         architecture='x86_64',
         key_id='tag-manager-release-2026',
         trust_sha256='ef58994610d2684cbfbb97ddb29b171d27e4d76aa51339a11a0964367a97b826',
         repository_id=1301951104,
-        release_id=434057072,
-        tag='collectigen.media-organizer/v0.4.23-alpha.1',
+        release_id=443215522,
+        tag='collectigen.media-organizer/v0.5.0-alpha.1',
         repository='DigitalSteel/CollectiGen',
         manifest=ExactOfferAsset(
             name='release-manifest.json',
-            size_bytes=1874,
-            sha256='cf26960230bfd8b0a977367400b03280c95c505143d600b3d16deb9d7c6066a2',
-            url='https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.4.23-alpha.1/release-manifest.json',
-            asset_id=709859342,
+            size_bytes=4577,
+            sha256='7442cd18c6e7eedc27616033701931e792cfa1da4a63ca715b032c7c4df1a7a1',
+            url='https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.0-alpha.1/release-manifest.json',
+            asset_id=740199839,
         ),
         signature=ExactOfferAsset(
             name='release-manifest.json.sig',
             size_bytes=731,
-            sha256='6e9a043b3d47f943a22be8c41802c31b20c1a21917b9111cf333b461d48b3e4a',
-            url='https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.4.23-alpha.1/release-manifest.json.sig',
-            asset_id=709859382,
+            sha256='727a0b35a22c65890278a3835670f0352005e36543cbbe50f7aa8c71578b7297',
+            url='https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.0-alpha.1/release-manifest.json.sig',
+            asset_id=740199861,
         ),
         artifact=ExactOfferAsset(
-            name='MediaOrganizer-a.0.4.23-windows-x64.zip',
-            size_bytes=117724240,
-            sha256='aad65a14a2b40008d9a6597250eb15b823fd2df0fd78700f2300edc27db48802',
-            url='https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.4.23-alpha.1/MediaOrganizer-a.0.4.23-windows-x64.zip',
-            asset_id=709858531,
+            name='MediaOrganizer-a.0.5.0-windows-x64.zip',
+            size_bytes=117719384,
+            sha256='b71539903738848b6062f89ed253f733dbf3c54dafa35e9be389798d39f478dd',
+            url='https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.0-alpha.1/MediaOrganizer-a.0.5.0-windows-x64.zip',
+            asset_id=740198996,
         ),
     ),
 )
