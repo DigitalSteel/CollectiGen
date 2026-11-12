@@ -3150,8 +3150,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "c560fdb12dd10e94a8716f78432fab6d3b1b2a582db3f8dcf3aa1a8f8503b03c",
-      "size_bytes": 24283
+      "sha256": "f9c73bddbb7f3dcc8803818c7299457daccafcff222d94c44bac8c2a60d93876",
+      "size_bytes": 24413
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3266,8 +3266,8 @@
       "size_bytes": 70736
     },
     "suite_core/manager/launcher_main.py": {
-      "sha256": "24f065bd2edbe71762e000c9c0725fc0d09598f854abe39cb5e6ddbd104b8065",
-      "size_bytes": 47306
+      "sha256": "d0d3294122c9c85c5de62c7516c66151e822e9726a1216cf6063e35de792de6a",
+      "size_bytes": 47317
     },
     "suite_core/manager/lifecycle_controller.py": {
       "sha256": "94d85571116b3f8a6bf8c529945a1b4311880e80028c6b0869cb46e3c5075924",
@@ -3822,8 +3822,8 @@
       "size_bytes": 28081
     },
     "tests/test_manager_production_stage.py": {
-      "sha256": "e7b22cba316e0c6ad0ee1ecbc13107fc2922b5c0671ddb5f671baa7486056838",
-      "size_bytes": 27749
+      "sha256": "eeda7a48966b863aa38b4ad6b8e67cd25213fc862475721fe934d418f3241509",
+      "size_bytes": 29250
     },
     "tests/test_organizer_portable_runtime.py": {
       "sha256": "cd9761acdfe29fa12a52f43dbfb20b682a02fb395f730b29d4aa0ddc305b9303",
@@ -3958,7 +3958,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "f3f1f2ac9f3794438c7927224f1451b0a83cfa25f1eed6a0d286388f79eed4d6",
+      "sha256": "7f5d6b78e934932b4dda04aa6905db6ec504c894a43fddda5eef72fee553168c",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {

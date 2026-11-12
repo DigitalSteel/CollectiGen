@@ -3788,8 +3788,8 @@
     },
     {
       "path": "suite_core/manager/launcher_main.py",
-      "bytes": 47306,
-      "sha256": "24f065bd2edbe71762e000c9c0725fc0d09598f854abe39cb5e6ddbd104b8065"
+      "bytes": 47317,
+      "sha256": "d0d3294122c9c85c5de62c7516c66151e822e9726a1216cf6063e35de792de6a"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",

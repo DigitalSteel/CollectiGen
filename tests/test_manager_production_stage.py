@@ -414,3 +414,29 @@ def test_training_baseline_is_offered_by_root_and_keeps_child_cohort_unchanged()
 def test_training_baseline_profile_refuses_nonboolean_enablement(flag):
     with pytest.raises(ValueError,match='explicit_training_baseline_flag_required'):
         candidate.render_compiled_update_config(dict(_signed_training_profile_input(),enable_training_baseline=flag),include_prior=True)
+
+
+@pytest.mark.skipif(__import__('os').name!='nt',reason='Windows executable filename aliases')
+@pytest.mark.parametrize('spelling',['collectigen.exe','COLLECTIGEN.EXE'])
+def test_normal_packaged_root_accepts_windows_filename_case(tmp_path,monkeypatch,spelling):
+    from suite_core.manager import launcher_main
+    root=tmp_path/'Suite';root.mkdir();(root/'CollectiGen.exe').write_bytes(b'Unexecuted synthetic entry')
+    (root/'_bootstrap').mkdir()
+    def stop_before_owner(selected_root,**options):
+        assert selected_root==root
+        raise RuntimeError('constructor_reached_without_launch')
+    monkeypatch.setattr(launcher_main,'PublicLaunch',stop_before_owner)
+    with pytest.raises(RuntimeError,match='constructor_reached_without_launch'):
+        launcher_main.main([],expected_package_sha256='a'*64,executable=root/spelling)
+    assert not (root/'Data').exists()
+
+
+def test_normal_packaged_root_still_refuses_a_renamed_executable(tmp_path,monkeypatch):
+    from suite_core.manager import launcher_main
+    root=tmp_path/'Suite';root.mkdir();entry=root/'Renamed.exe';entry.write_bytes(b'Unexecuted synthetic entry')
+    (root/'_bootstrap').mkdir()
+    def denied(*args,**kwargs):raise AssertionError('Wrong entry reached owner')
+    monkeypatch.setattr(launcher_main,'PublicLaunch',denied)
+    with pytest.raises(ValueError,match='exact_public_root_entry_required'):
+        launcher_main.main([],expected_package_sha256='a'*64,executable=entry)
+    assert not (root/'Data').exists()
