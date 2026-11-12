@@ -1,22 +1,16 @@
 # CollectiGen Suite Manager
 
-**Suite Manager a.0.6.0** provides component installation plus dedicated Generate
+**Suite Manager a.0.6.1** provides component installation plus dedicated Generate
 and Training workspaces. Use the complete Windows ZIP for a fresh installation.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.0-alpha.1) Â·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.0-alpha.1/SuiteManager-a.0.6.0-windows-x64.zip) Â·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.0-alpha.1/SuiteManager-a.0.6.0-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.1-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.1-alpha.1/SuiteManager-a.0.6.1-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.1-alpha.1/SuiteManager-a.0.6.1-windows-x64.zip.sha256)
 
 Extract into a new, short writable folder such as `C:\CollectiGen`, keep the
 complete folder together, and run **CollectiGen.exe**. Long installation paths
 can prevent Qt's Windows plugin from loading. Keep the previous package and
 separate data backups. Review and confirm each installation; restart when asked.
-
-## Unreleased source correction
-
-Using a saved setup can open a separate image draft while retaining the current
-draft. This correction is pending the next signed Manager package; it is not
-in the a.0.6.0 download linked above.
 
 ## Workspaces
 
@@ -27,7 +21,8 @@ in the a.0.6.0 download linked above.
   prompts, model choices, settings, alternatives, queues, results and recovery.
   The draft switcher retains multiple image and video requests. Model-guided
   planning opens a separate request without replacing another draft; Close
-  consults every retained request.
+  consults every retained request. Saved setups also open in a separate draft
+  while retaining the image and video work already open.
 - **Training** opens an Organizer data package, reviews a local trainer, and
   prepares SDXL or Anima training through the existing workflow controllers.
   The open-review selector returns to an exact retained run or setup review
