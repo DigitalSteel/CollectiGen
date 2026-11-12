@@ -3982,8 +3982,8 @@
       "size_bytes": 17252
     },
     "tools/prepare_manager_production_stage.py": {
-      "sha256": "050ba71368f8898faf8696c613ec3c303917b45b0bb6264825deda0997760968",
-      "size_bytes": 28515
+      "sha256": "5c4eea327f0fe0e6259f4eb20a8b4917acb2e0b9e54f2fbc2f65ef78e37d53fe",
+      "size_bytes": 28898
     },
     "tools/public-source-manifest.json": {
       "sha256": "6107a5e36a31f8a2aa1f781aa1afe415a8eb43e9bf21fd210222cb08132e3cd9",
