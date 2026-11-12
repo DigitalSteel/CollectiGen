@@ -12,6 +12,12 @@ complete folder together, and run **CollectiGen.exe**. Long installation paths
 can prevent Qt's Windows plugin from loading. Keep the previous package and
 separate data backups. Review and confirm each installation; restart when asked.
 
+## Unreleased window-fit correction
+
+The a.0.6.4 source candidate wraps Generate and update actions to the available
+width and restores Tab navigation from update notes. Downloads above remain
+the published a.0.6.3 release until this successor is qualified and delivered.
+
 ## Workspaces
 
 Use the **Help** group or **F1** in Generate and Training for the matching

@@ -13,6 +13,7 @@ from core.connected_version_observation import derive_version_status
 from datetime import datetime, timezone
 from core.component_acquisition import ComponentOffer
 from .resource_executor import ResourceExecutorOwner
+from .ui_cards import ResponsiveCardGrid
 
 
 class ManagerUpdateReviewPanel(QGroupBox):
@@ -50,18 +51,20 @@ class ManagerUpdateReviewPanel(QGroupBox):
         self.status = QLabel(); self.status.setObjectName('managerUpdateStatus')
         self.review = QPlainTextEdit(); self.review.setObjectName('managerUpdateReview')
         self.review.setReadOnly(True); self.review.setMaximumHeight(160)
+        self.review.setTabChangesFocus(True)
         self.review.setAccessibleName('Signed Manager update notes')
         for label in (self.scope, self.status):
             label.setWordWrap(True); label.setTextFormat(Qt.PlainText); layout.addWidget(label)
         layout.addWidget(self.review)
-        actions = QHBoxLayout()
+        self.action_grid = ResponsiveCardGrid(minimum_card_width=180, maximum_columns=4)
         self.check = QPushButton('Check for updates')
         self.stage = QPushButton('Stage reviewed update')
         self.apply = QPushButton('Apply staged update')
         self.cancel = QPushButton('Cancel')
         for name, button in (('Check', self.check), ('Stage', self.stage), ('Apply', self.apply), ('Cancel', self.cancel)):
-            button.setObjectName('managerUpdate' + name); actions.addWidget(button)
-        layout.addLayout(actions)
+            button.setObjectName('managerUpdate' + name)
+        self.action_grid.set_cards((self.check, self.stage, self.apply, self.cancel))
+        layout.addWidget(self.action_grid)
         consequence = QLabel('Staging verifies a package in the update cache. It does not replace Manager. '
             'Apply and repair require the launcher’s separately qualified closure and recovery authority.')
         consequence.setWordWrap(True); consequence.setTextFormat(Qt.PlainText); layout.addWidget(consequence)

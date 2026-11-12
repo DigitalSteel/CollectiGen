@@ -232,3 +232,101 @@ def test_workflow_help_ribbon_f1_and_close_keep_scope(manager_window, tmp_path, 
     from shiboken6 import isValid
     remaining = control._help_dialog
     assert remaining is None or not isValid(remaining) or not remaining.isVisible()
+
+
+@pytest.mark.parametrize("theme", ("dark", "light"))
+@pytest.mark.parametrize("size", ((900, 600), (1200, 800), (1920, 1080)))
+def test_responsive_workflow_actions_keep_scope_and_keyboard(tmp_path, monkeypatch, theme, size):
+    """Generated component UI only; no release, model, native actor or network work."""
+    from pathlib import Path
+    from hashlib import sha256
+    from PySide6.QtCore import QPoint
+    from PySide6.QtWidgets import QScrollArea
+    from qt_app.theme import apply_theme
+    from core.component_acquisition import ComponentAcquisition
+    from core.manager_update_service import ManagerUpdateService
+    from suite_core.manager.bootstrap_entry import NormalEntrySession
+    from suite_core.manager.version import VERSION
+    from test_manager_comparison_queue import app as configured_app
+    application = configured_app()
+    apply_theme(application, theme)
+    requests = []
+    def no_transport(*args, **kwargs):
+        requests.append((args, kwargs))
+        raise AssertionError("No network or acquisition is allowed during layout/focus checks")
+    trust = (Path(__file__).parents[1] / "suite_core/manager/public_release_trust.json").read_bytes()
+    (tmp_path / "component-cache").mkdir()
+    acquisition = ComponentAcquisition(cache_root=tmp_path / "component-cache", cache_owner="responsive-ui",
+        opener=no_transport, host_version=VERSION, trust_bytes=trust, trust_sha256=sha256(trust).hexdigest())
+    service = ManagerUpdateService(acquisition, current_version=VERSION, channel="beta")
+    # Same typed inert presentation seam as the existing update-review tests.
+    # This is not a native session/admission qualification.
+    session = NormalEntrySession.__new__(NormalEntrySession)
+    session.state = "ready"
+    session.update_profile = {"profile_sha256": "a" * 64}
+    session.admitted = NS(layout=NS(data_root=tmp_path / "manager-data"))
+    window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session,
+                           manager_update_service=service)
+    window.resize(*size)
+    window.show()
+    def settle():
+        for _ in range(8):
+            application.processEvents(); QTest.qWait(15)
+    def go(name):
+        item = window.navigation.item(window.page_rows[name])
+        QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
+                        pos=window.navigation.visualItemRect(item).center())
+        settle()
+    def inside(widget, viewport):
+        rect = widget.rect().translated(widget.mapTo(viewport, QPoint(0, 0)))
+        assert rect.left() >= 0 and rect.right() < viewport.width(), (widget.text(), rect, viewport.rect())
+        assert rect.top() >= 0 and rect.bottom() < viewport.height(), (widget.text(), rect, viewport.rect())
+        assert widget.width() >= widget.sizeHint().width(), widget.text()
+    out = Path(os.environ.get("CG_RESPONSIVE_CAPTURES", str(tmp_path / "captures")))
+    out.mkdir(parents=True, exist_ok=True)
+    try:
+        go("Generate")
+        grid = window.generation_actions_grid
+        controls = tuple(grid.cards)
+        assert len(controls) == 7 and controls[0] is window.generate_plan_button
+        assert controls[0].property("primary") is True
+        assert len({id(button) for button in controls}) == 7
+        assert window.generate_page.horizontalScrollBar().maximum() == 0
+        for control in controls:
+            assert control.isVisible()
+            inside(control, window.generate_page.viewport())
+        assert not hasattr(window, "state") and not requests
+        assert window.grab().save(str(out / ("generate-%sx%s-%s.png" % (*size, theme))))
+        # Layout changes keep the original source controls and never open drafts.
+        window.resize(size[0] + 28, size[1]); settle()
+        window.resize(*size); settle()
+        assert tuple(grid.cards) == controls and not hasattr(window, "state")
+        go("Settings")
+        panel = window.manager_update_panel
+        actions = (panel.check, panel.stage, panel.apply, panel.cancel)
+        assert tuple(panel.action_grid.cards) == actions
+        assert panel.apply.isVisible() and not panel.apply.isEnabled()
+        scroll, = [s for s in window.stack.currentWidget().findChildren(QScrollArea)
+                   if s.widget() is not None and s.widget().isAncestorOf(panel)]
+        assert scroll.horizontalScrollBar().maximum() == 0
+        # Use the visible standard scrollbar's End key; no private scrolling handler.
+        if scroll.verticalScrollBar().maximum():
+            assert scroll.verticalScrollBar().isVisible()
+            QTest.keyClick(scroll.verticalScrollBar(), Qt.Key_End)
+            settle()
+        for action in actions:
+            inside(action, scroll.viewport())
+        panel.review.setFocus(); application.processEvents()
+        QTest.keyClick(panel.review, Qt.Key_Tab); settle()
+        assert application.focusWidget() is panel.check
+        calls = []
+        monkeypatch.setattr(panel, "request", lambda operation: calls.append(operation))
+        QTest.mouseClick(panel.check, Qt.LeftButton); settle()
+        assert calls == ["discover"]  # Exactly the original button dispatch; no service work.
+        assert not requests and panel.future is None and panel.prepared is None
+        assert window.grab().save(str(out / ("settings-%sx%s-%s.png" % (*size, theme))))
+        window.resize(size[0] + 28, size[1]); settle()
+        assert tuple(panel.action_grid.cards) == actions and calls == ["discover"]
+    finally:
+        window.close(); settle()
+    assert not window.isVisible() and not requests

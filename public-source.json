@@ -3130,12 +3130,12 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "ea6f9d18c031c9e59f44bc61a45a3450bc1746ed0978d59f86f3f545dce4599d",
+      "sha256": "07f25c540aa46ff7835497f9c47652a788c4440a3967fe40c91dea9003e4a50b",
       "size_bytes": 44010
     },
     "suite_core/manager/README.md": {
-      "sha256": "3c07ee7caa9be25b3b6a8bcd7bb5732d5495084028ae2c0db853e4c0ac904081",
-      "size_bytes": 4761
+      "sha256": "4e57b8c185c2686344d426a47149b9329bd2134df222dbbd9afc5cb73b141b16",
+      "size_bytes": 5034
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
       "sha256": "badebcba4d4a74680550d58fa0b0ac80800b34cd80d71ec4b5ab098fa4fed45c",
@@ -3154,8 +3154,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "2c2636a4896d483418e7eb15ac5e7c90f168cd6be5e70b5861fe000eac23a56f",
-      "size_bytes": 25966
+      "sha256": "9907327435b170451b55cadd9340e2def3a78d4442b092b68618e1a6dc60f977",
+      "size_bytes": 26243
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3418,16 +3418,16 @@
       "size_bytes": 9149
     },
     "suite_core/manager/update_review_ui.py": {
-      "sha256": "7c7258b584f39270dc666285053d224772adcc8113bba2a12ecb092fc61e87b5",
-      "size_bytes": 14921
+      "sha256": "c18efc1ecbf16d2d54cedce9ca2a3aa77987af03461428609ff2cd57d6bc8aff",
+      "size_bytes": 15135
     },
     "suite_core/manager/version.py": {
-      "sha256": "6020213cff65c39c52b6fb8ec723461771c9e6db51f6dec40b602b4e3d9cc45d",
+      "sha256": "549687f0918892332c420b152810e9cc3133bcfa4a0cbd1aa0fd903debe672cc",
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "fa323249cef22e1cc1c812ca7dc20303be15a874a2f1423b49c130685de4564a",
-      "size_bytes": 281760
+      "sha256": "6319cf9c91f8d3be7d4cf63f01e221df7c4521f18ccbb6f500c5daa4e74e4a82",
+      "size_bytes": 282206
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3962,7 +3962,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "6042a8e3bad99c74026c76b5a8cc3b62a85b0c2e09622ed2a28614e199cd62bd",
+      "sha256": "f0be3ffe725a3895541b536046777cbd98d87e44b343a59101cb43b3f321f24d",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4698,8 +4698,8 @@
       "size_bytes": 1209
     },
     "tests/test_manager_workflow_navigation.py": {
-      "sha256": "341e1c0b26e8ae04a6480ec4df1ca2905499bb77c35f5645288f7676479b46e9",
-      "size_bytes": 11275
+      "sha256": "509c86d02030872c032f2c49e7a160e7a1a840f0e948d1b39757994ad2f8f66a",
+      "size_bytes": 16865
     },
     "tests/test_training_package_context_compatibility.py": {
       "sha256": "86df88293d717f933107355077f5fd4541a9e05bf29b30334fcac6160c2e09ca",

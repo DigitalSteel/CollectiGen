@@ -1,3 +1,9 @@
+# What's New - a.0.6.4 (embedded 0.6.4-alpha.1) - 2026-11-12
+
+- Generate and Manager update actions wrap to fit the available window width.
+- Tab leaves the read-only update notes for the next action.
+- Original draft, confirmation, update and recovery handlers are retained.
+
 # What's New - a.0.6.3 (embedded 0.6.3-alpha.1) - 2026-11-12
 
 - Restored contextual Generate and Training Help through the Help ribbon and F1.
