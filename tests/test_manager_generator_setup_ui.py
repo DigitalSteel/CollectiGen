@@ -287,3 +287,117 @@ def test_setup_failure_remains_retryable(tmp_path, monkeypatch):
     wait_until(app, lambda: panel._task is None)
     assert results == ["ready"]
     panel.close()
+
+
+@pytest.mark.parametrize("outcome", ["apply", "cancel-picker", "cancel-review", "changed"])
+def test_saved_setup_opens_separate_draft_and_preserves_retained_image(tmp_path, outcome):
+    from qt_app.generation_workflow import open_generation_workspace
+    from qt_app.generation_saved_work_dialog import SavedGenerationWorkDialog
+    from qt_app.generation_recipe_dialog import GenerationRecipeDialog
+    from core.generation_recipes import make_manual_recipe, save_recipe
+    from core.generation_planning import load_plan_with_digest
+    from PySide6.QtWidgets import QDialogButtonBox
+
+    app = application()
+    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
+    window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+    window.resize(1800, 960); window.show()
+    window.generation_state()
+    # Prepare one real saved draft; the tested route starts at Manager's visible control.
+    open_generation_workspace(window, force_new=True)
+    wait_until(app, lambda: getattr(window, "_generation_dialog", None) is not None)
+    original = window._generation_dialog
+    wait_until(app, lambda: not original._pending)
+    QTest.keyClicks(original.positive, "Original ceramic cup draft")
+    wait_until(app, lambda: original._draft_path.exists() and not original._pending
+        and load_plan_with_digest(original._draft_path)[0].request.positive_prompt
+            == "Original ceramic cup draft", timeout=30)
+    original_path = original._draft_path
+    original_bytes = original_path.read_bytes()
+    original_digest = original.plan.digest
+    recipe_path = tmp_path / "Manager/generation/recipes/separate-setup.json"
+    recipe_path.parent.mkdir(parents=True, exist_ok=True)
+    recipe = make_manual_recipe("Separate blue vase", [{"kind": "scene", "text": "A blue vase"}])
+    save_recipe(recipe_path, recipe)
+    recipe_bytes = recipe_path.read_bytes()
+    stage = {"value": "picker", "finished": False}
+    errors = []
+    deadline = monotonic() + 30
+
+    def drive():
+        try:
+            assert monotonic() < deadline, (stage, outcome)
+            browser = next((w for w in app.topLevelWidgets()
+                if isinstance(w, SavedGenerationWorkDialog) and w.isVisible()), None)
+            review = next((w for w in app.topLevelWidgets()
+                if isinstance(w, GenerationRecipeDialog) and w.isVisible()), None)
+            if stage["value"] == "picker" and browser is not None and browser._task is None:
+                capture(browser, "saved-setup-" + outcome + "-picker")
+                if outcome == "cancel-picker":
+                    stage["finished"] = True
+                    QTest.mouseClick(browser.close_button, Qt.LeftButton)
+                    return
+                assert browser.tree.topLevelItemCount() == 1
+                item = browser.tree.topLevelItem(0)
+                QTest.mouseClick(browser.tree.viewport(), Qt.LeftButton,
+                    pos=browser.tree.visualItemRect(item).center())
+                assert browser.open_button.isEnabled()
+                if outcome == "changed":
+                    # Change only synthetic authority after the displayed digest was read.
+                    changed = make_manual_recipe("Changed after selection", [{"kind": "scene", "text": "Changed"}])
+                    replacement = recipe_path.with_name("replacement.json")
+                    save_recipe(replacement, changed)
+                    recipe_path.write_bytes(replacement.read_bytes())
+                stage["value"] = "review"
+                QTest.mouseClick(browser.open_button, Qt.LeftButton)
+            elif stage["value"] == "review" and review is not None:
+                capture(review, "saved-setup-" + outcome + "-review")
+                stage["finished"] = True
+                if outcome == "cancel-review":
+                    button = review.findChild(QDialogButtonBox).button(QDialogButtonBox.Cancel)
+                    QTest.mouseClick(button, Qt.LeftButton)
+                else:
+                    review.prompts.setFocus()
+                    QTest.keyClick(review.prompts, Qt.Key_Space)
+                    assert review.prompts.isChecked()
+                    assert review.apply_button.isEnabled()
+                    QTest.mouseClick(review.apply_button, Qt.LeftButton)
+                return
+            elif outcome == "changed" and stage["value"] == "review" and window._generation_setup_dialog is None:
+                if "Setup could not be opened" in window.statusBar().currentMessage():
+                    stage["finished"] = True
+                    return
+            QTimer.singleShot(20, drive)
+        except BaseException as exc:
+            errors.append(exc); stage["finished"] = True
+            for widget in app.topLevelWidgets():
+                if isinstance(widget, (SavedGenerationWorkDialog, GenerationRecipeDialog)) and widget.isVisible():
+                    widget.reject()
+    QTimer.singleShot(20, drive)
+    try:
+        button = next(b for b in window.findChildren(QPushButton) if b.text() == "Use Saved Setup…")
+        assert button.isVisible() and button.isEnabled()
+        QTest.mouseClick(button, Qt.LeftButton)
+        wait_until(app, lambda: stage["finished"], timeout=35)
+        assert not errors, errors
+        wait_until(app, lambda: all(not d._pending for d in window.generation_page.retained_workspaces()))
+        assert original in window.generation_page.retained_workspaces()
+        assert original.plan.digest == original_digest
+        assert original_path.read_bytes() == original_bytes
+        assert original.positive.toPlainText() == "Original ceramic cup draft"
+        if outcome == "apply":
+            assert len(window.generation_page.retained_workspaces()) == 2
+            new = window.generation_page.active_workspace()
+            assert new is not original
+            wait_until(app, lambda: new._draft_path.exists() and not new._pending
+                and load_plan_with_digest(new._draft_path)[0].request.positive_prompt == "A blue vase", timeout=30)
+            capture(window, "saved-setup-separate-drafts-result")
+        else:
+            wait_until(app, lambda: window.generation_page.retained_workspaces() == (original,))
+        if outcome != "changed":
+            assert recipe_path.read_bytes() == recipe_bytes
+    finally:
+        for draft in tuple(window.generation_page.retained_workspaces()):
+            draft.close()
+        app.processEvents()
+        window.close(); app.processEvents()

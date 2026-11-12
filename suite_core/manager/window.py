@@ -1807,13 +1807,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from qt_app.generation_saved_work_dialog import SavedGenerationWorkDialog
             from qt_app.generation_workflow import _generation_model_registry, open_generation_workspace
 
-            current = getattr(self, "_generation_dialog", None)
-            if current is not None and not current._closed:
-                open_generation_workspace(self)
-                current.status.setText(
-                    "Close this image draft after saving any changes, then choose Use Saved Setup again.")
-                return
-
             browser = SavedGenerationWorkDialog(
                 state.jobs, state.generation_data_root / "generation", "recipes",
                 parent=self, selection_only=True, allow_setup_transfer=True,

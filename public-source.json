@@ -50,8 +50,8 @@
       "size_bytes": 9008
     },
     "README.md": {
-      "sha256": "083cb0120f6e7fc2bcb82807649e82094afa1b41b59160d1f0075fb7e53bd85e",
-      "size_bytes": 8108
+      "sha256": "1e2387d7b316e4d7491c93fee3dd5a6e9cc172f2940700c635ad0fe5b8578bee",
+      "size_bytes": 7223
     },
     "SUPPORT.md": {
       "sha256": "1cb1e9aea57477e1494bf8b89ff692c9342e9169c4af5b8292ece123788fb1f3",
@@ -3130,8 +3130,8 @@
       "size_bytes": 44010
     },
     "suite_core/manager/README.md": {
-      "sha256": "84322f8f511c87db9f36e03288d1ae76798d502a7c1bd0ce47af14f681970021",
-      "size_bytes": 3718
+      "sha256": "a02914198c2eca6d08a201494f43ddc2ee92e234c57b1be8d26c5ff6e2bd1123",
+      "size_bytes": 4647
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
       "sha256": "badebcba4d4a74680550d58fa0b0ac80800b34cd80d71ec4b5ab098fa4fed45c",
@@ -3422,8 +3422,8 @@
       "size_bytes": 281
     },
     "suite_core/manager/window.py": {
-      "sha256": "e92f669e67536805b5c34cd1607e6701bf37e41afba1c8628d9b608c602bda7a",
-      "size_bytes": 278826
+      "sha256": "669e481e5f5e198124b4056542c183d73ebdf56ef8900ae6d1475f8ffc7b937e",
+      "size_bytes": 278483
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3958,7 +3958,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "3652c3313bbdbecf1b4163ae03930ababe02cc7c913488c0b166d2254e9b970f",
+      "sha256": "20f90c2c98b1db04eecde15183bd300d68e37cca5f0511662c5f14ad4e4bf5b8",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4642,8 +4642,8 @@
       "size_bytes": 3808
     },
     "tests/test_manager_generator_setup_ui.py": {
-      "sha256": "c3f86251e2ed4daec574b87d4fffa25301a8f7faad4592637f95663e74eb33f0",
-      "size_bytes": 14313
+      "sha256": "f7ebcbc57a71fc28269e60cdf7787743ea6fc2fdc9dba82b267124defc6871b0",
+      "size_bytes": 20851
     },
     "docs/GEN09_MANAGER_GENERATOR_SETUP.md": {
       "sha256": "7084e84eba706333421224078ab918f184968e50ab5630888b402cb6908dd1c4",

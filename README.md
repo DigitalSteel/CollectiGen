@@ -1,35 +1,23 @@
 # CollectiGen
 
-> This branch is a Suite Manager source review. The downloads below are published releases. The review branch has no associated installer or update.
-
 CollectiGen is a developing suite for collecting, identifying and organizing media, preserving metadata and provenance, and preparing training data. Its longer-term direction includes connected training and image-generation workflows, with ordinary work primarily performed locally.
-
-The project is in alpha. Individual Windows components are available below; a complete installable suite is not yet published.
-
-## Current source review
-
-The next Manager candidate includes Generate and Training workflows, retained-result
-Validation, and full Generator Setup: connect/install, run/status, models/import,
-and maintenance. It reuses the original application services with Manager-scoped
-storage. This candidate is not yet a published update; download links below refer
-to the existing releases. See [Generator Setup](docs/GEN09_MANAGER_GENERATOR_SETUP.md).
 
 ## Downloads
 
-Choose the component you need. These are separate Windows x64 alpha downloads;
-a complete installable suite is not yet published. Each release page contains
-its matching source, checksums, notes and qualification limits.
+To organize images, [download Media Organizer](#media-organizer). To look up
+tags, [install Tag Encyclopedia Reader through Suite Manager](#install-apps-with-suite-manager).
+These are Windows x64 alpha releases. Each release page includes matching
+source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.5.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.5.1-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.5.1-alpha.1/SuiteManager-0.5.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.5.1-alpha.1/SuiteManager-0.5.1-alpha.1-windows-x64.zip.sha256). Windows launcher for reviewing available components. This published version can download and install Tag Encyclopedia Reader a.0.3.1 after confirmation. |
-| **Media Organizer** | [a.0.4.23](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.4.23-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.4.23-alpha.1/MediaOrganizer-a.0.4.23-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.4.23-alpha.1/MediaOrganizer-a.0.4.23-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars. |
-| **Tag Encyclopedia Reader** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). Managed Reader payload for the Manager route below; this is not the older standalone launcher. |
-| **Optional Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Experimental catalog data for a new, empty test catalog; no application or model is included. |
+| **Suite Manager** | [a.0.6.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.0-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.0-alpha.1/SuiteManager-a.0.6.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.0-alpha.1/SuiteManager-a.0.6.0-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
+| **Media Organizer** | [a.0.5.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.0-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.0-alpha.1/MediaOrganizer-a.0.5.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.0-alpha.1/MediaOrganizer-a.0.5.0-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars, plus Training dataset planning and offline image/video drafts. |
+| **Tag Encyclopedia** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). View and edit tags. |
+| **Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Catalog tag data for use with the Tag Encyclopedia. |
 
-Source/source-notices ZIPs are for development and licensing, not runnable apps.
-Use the exact source companions described on each release, including Organizer's
-unchanged native-library source companion. [All releases](https://github.com/DigitalSteel/CollectiGen/releases) remain available.
+Use the application ZIPs above to run the apps. Source and notices ZIPs are
+listed on each release page. [Browse all releases](https://github.com/DigitalSteel/CollectiGen/releases).
 
 ## Download and run
 
@@ -38,34 +26,41 @@ version 14.44.35211.0 or newer, is required separately. Extract the **complete**
 application ZIP into a new writable folder and keep its contents together.
 Retain your previous package and separate profile/image/catalog backups.
 
-### Suite Manager and current Reader
+### Install apps with Suite Manager
 
-1. Extract the Manager ZIP and start **CollectiGen.exe**.
-2. For a fresh installation, choose **Applications > Tag Encyclopedia > Find reader**.
-3. Review Reader **a.0.3.1**, choose **Install** and confirm deliberately.
-4. Close Manager normally and reopen it before the first **Launch** of Reader.
+1. Extract the complete Manager ZIP into a new, short writable folder, such as **C:\CollectiGen**, and start **CollectiGen.exe**.
+2. In **Applications**, choose **Get or update Media Organizer**, or **Tag Encyclopedia > Find reader**.
+3. Review the offered version, choose **Install**, and confirm.
+4. Restart Manager when requested, then open the installed app from its workspace.
 
-Manager a.0.5.1 has checksum sidecars but no signed Manager self-update envelope
-or Windows Authenticode signature. Its fresh-install Reader workflow does not
-qualify a Manager self-update or an upgrade of an existing installation.
-The Reader component ZIP is supplied for that reviewed installation path; do not
-treat it as a standalone launcher ZIP. Read the release's included guide first.
+Manager a.0.6.0 includes dedicated **Generate** and **Training** workspaces for
+image/video drafts, saved work, local setup, training preparation and retained
+reviews. Models and optional runtimes are configured separately.
+
+Use a short installation path: long paths can prevent the bundled Qt Windows
+plugin from loading. Keep the folder together. Existing component records are
+bound to their installation location; moving installations and migration from
+older portable Manager releases are not qualified by this release. Release
+metadata is signed; the Windows executable is not Authenticode-signed.
+
+The Reader component ZIP is supplied for Manager's reviewed installation path.
+Read the release's included guide before using component ZIPs directly.
 
 ### Media Organizer
 
 Extract its ZIP, then run **Start_MediaOrganizer.bat** at the ZIP root. Guided
 Setup saves selected locations/preferences without starting a scan. Evaluate
-with copied images and retain backups. See its [versioned notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.4.23-alpha.1)
+with copied images and retain backups. See its [versioned notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.0-alpha.1)
 and included README for the changes and supported scope.
 
-The older [standalone Tag Encyclopedia a.0.2.2](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.2.2-alpha.1)
-remains a separate legacy distribution. Follow its matching package/Reader notes;
-it is not required for the current Manager/Reader route above.
+Organizer a.0.5.0 adds Dataset Training plans and offline image/video drafts.
+Review transferred Training drafts in **Suite Manager a.0.6.0 or later > Training >
+Review a Dataset Draft**. The original Organizer plan remains separate.
 
 ### Optional catalog data
 
 No Tag Database, snapshot, image library or model is bundled into these app
-downloads. The optional Tag Database package is now publicly available, but
+downloads. The optional Tag Database is a separate download, and
 shared-consumer integration is experimental. Use a new empty test catalog;
 existing-catalog updates/merges remain unqualified. Downloading or verifying a
 data package does not apply it or authorize changing your normal catalog.
@@ -77,16 +72,12 @@ project landing/source checkpoint; use each component's tagged source or matchin
 source asset to reproduce that component. Unreleased code and roadmap plans do
 not describe the capabilities of the downloads.
 
-Organizer's recent patches have signed package, generated component, isolated
-offscreen host startup/reopen/Close and disposable update/recovery evidence.
-Live Manager-managed Organizer installation, active native editor/reader work,
-non-elevated/clean-machine/DPI/assistive-technology and independent novice
-acceptance remain unqualified. See each release's validation receipt.
-Reader/Manager have their own qualification boundaries in their release notes.
-Signatures and checksums establish integrity, not Windows publisher trust.
+Install Media Organizer through Manager or use its standalone download. Each
+release's notes and validation receipt describe its executed startup, update and
+recovery checks. Use the supplied checksums to verify downloaded files.
 
-Broader cross-app automatic updating, training, generation and model execution
-remain under development or require their own qualified releases. No models or
+Generate and Training have dedicated Manager workspaces; the release notes
+identify the supported runtime routes and qualification limits. No models or
 supported Linux builds are supplied. Your existing review, update-channel,
 installation and restart choices are not changed by downloading an update.
 

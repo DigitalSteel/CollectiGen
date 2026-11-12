@@ -1,9 +1,22 @@
 # CollectiGen Suite Manager
 
-The **a.0.6.0 development candidate** provides component setup, Generate and
-Training workspaces. The published Manager remains **a.0.5.1**. Use the main
-GitHub README download table for the version you can currently install; source
-capabilities described here do not update an older executable.
+**Suite Manager a.0.6.0** provides component installation plus dedicated Generate
+and Training workspaces. Use the complete Windows ZIP for a fresh installation.
+
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.0-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.0-alpha.1/SuiteManager-a.0.6.0-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.0-alpha.1/SuiteManager-a.0.6.0-windows-x64.zip.sha256)
+
+Extract into a new, short writable folder such as `C:\CollectiGen`, keep the
+complete folder together, and run **CollectiGen.exe**. Long installation paths
+can prevent Qt's Windows plugin from loading. Keep the previous package and
+separate data backups. Review and confirm each installation; restart when asked.
+
+## Unreleased source correction
+
+Using a saved setup can open a separate image draft while retaining the current
+draft. This correction is pending the next signed Manager package; it is not
+in the a.0.6.0 download linked above.
 
 ## Workspaces
 
@@ -42,14 +55,17 @@ checked local runtime and an explicit Start action. Verified generated output
 returns through Organizer's existing Add Images review; original output and
 raw generation lineage are preserved rather than promoted into confirmed tags.
 
-The candidate includes the existing signed Reader a.0.3.1 and Organizer a.0.4.23
-download offers. Review and confirm installation in each component workspace.
+This release offers signed Reader a.0.3.1 and Organizer a.0.5.0
+downloads. Review and confirm installation in each component workspace.
 Tag Database is reviewed content, rather than another application installer.
-Manager's first managed baseline and subsequent self-updates use their existing
-separate package and recovery contracts; this candidate is not a delivered
-self-update.
+Manager's first managed baseline uses a fresh folder. Its updater-compatible
+package and signed recovery bundle do not qualify migration or self-update
+from the older unsigned portable Manager releases.
 
 ## Source startup
+
+Use the release tag or its matching source asset to reproduce this version; the
+default branch may be a landing/source checkpoint.
 
 Run `python -B -m suite_core.manager` from a checkout with Python and PySide6.
 Use `--theme system|dark|light|midnight` and `--color-blind-mode` for presentation.
@@ -58,6 +74,6 @@ is needed. A normal host supplies its own admitted profile and component
 services; Demo does not authorize installations, execution or private data reads.
 
 Keep component versions, signed package identities and rollback artifacts with
-their release. See `WHATS_NEW.md` for current candidate changes. Historical
+their release. See `WHATS_NEW.md` for versioned release changes. Historical
 qualification receipts remain evidence for their exact original artifacts;
 they do not qualify a rebuilt candidate.
