@@ -218,3 +218,27 @@ def test_backend_dependency_chat_busy_then_idle_and_rejected_retry(tmp_path):
     finally:
         window.chat_host = original_chat; window.backend_setup_controller = original_flow
         window.reader_panel.timer.stop(); window.close(); app.processEvents()
+
+
+def test_dashboard_organizer_acquisition_replaces_development_without_install_claim():
+    from suite_core.manager.resource_dashboard import create_dashboard
+    from suite_core.manager.window import DEVELOPMENT_APPLICATIONS
+    app = QApplication.instance() or QApplication([])
+    report = unconfigured(datetime.now(timezone.utc)).report
+    present = create_dashboard(report, development_apps=DEVELOPMENT_APPLICATIONS,
+                               organizer_available=True)
+    supplied = SimpleNamespace(title='Media Organizer',
+        component_id=SimpleNamespace(value='collectigen.media-organizer'))
+    catalog = create_dashboard(report, development_apps=DEVELOPMENT_APPLICATIONS,
+        organizer_available=True, supported_apps=(supplied,))
+    try:
+        assert present.applications_summary.text().count('Media Organizer') == 1
+        assert 'Media Organizer · Get or update in Applications' in present.applications_summary.text()
+        assert 'Media Organizer · In development' not in present.applications_summary.text()
+        assert 'Everday · In development' in present.applications_summary.text()
+        assert 'Installed' not in present.applications_summary.text()
+        assert catalog.applications_summary.text().count('Media Organizer') == 1
+    finally:
+        for widget in (present, catalog):
+            widget.close(); widget.deleteLater()
+        app.processEvents()

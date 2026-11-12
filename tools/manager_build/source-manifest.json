@@ -3653,8 +3653,8 @@
     },
     {
       "path": "suite_core/manager/__main__.py",
-      "bytes": 32526,
-      "sha256": "317ab25b631cdf8befaf2bd72fd859b237b4d857f8748a44bc0c3d5313fe8a76"
+      "bytes": 32584,
+      "sha256": "cce0ab3586772786f6d702709573736ccbf4d6d230b0f56f6d01b8e279971058"
     },
     {
       "path": "suite_core/manager/assets/collectigen.ico",
@@ -3903,8 +3903,8 @@
     },
     {
       "path": "suite_core/manager/resource_dashboard.py",
-      "bytes": 6118,
-      "sha256": "0c72d0a5c3fbf0a676610ef5b89ffce14f1f78e5d2e531583bf4db3fab3a6776"
+      "bytes": 6432,
+      "sha256": "b2bdd0a25b4b11c876411788334348d6e4bea97f667fe3d1a885e8d078efea2d"
     },
     {
       "path": "suite_core/manager/resource_executor.py",
@@ -3983,8 +3983,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 278743,
-      "sha256": "566a301430bc58534b116b068bc5b8c708feaff2354604d1d2bb7c5755e31728"
+      "bytes": 278826,
+      "sha256": "e92f669e67536805b5c34cd1607e6701bf37e41afba1c8628d9b608c602bda7a"
     },
     {
       "path": "suite_core/media_examples.py",

@@ -551,7 +551,9 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
         entry_owner.organizer_acquisition_panel = getattr(window, "organizer_acquisition_panel", None)
         entry_owner.update_panel = getattr(window, "manager_update_panel", None)
         window.show()
-        if normal_entry_session is not None: normal_entry_session.ready()
+        if normal_entry_session is not None:
+            normal_entry_session.ready()
+            window.refresh_generator_card()
         if entry_probe is not None: entry_probe(window, app)
         result = app.exec()
         if not entry_owner.poll_cleanup(budget=1):

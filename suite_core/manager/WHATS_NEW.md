@@ -1,5 +1,7 @@
 # What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11
 
+- Dashboard refreshes the generator card when startup finishes and points to
+  Organizer installation instead of calling the published app in development.
 - Manager startup accepts normal Windows casing for CollectiGen.exe and its
   folder, keeping the canonical entry binding; renamed entries remain refused.
 - Training preparation can receive the signed packaged worker through the

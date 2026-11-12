@@ -3052,7 +3052,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from suite_core.manager.resource_dashboard import create_dashboard
             dashboard = create_dashboard(detached.report, detached.jobs, synthetic=detached.synthetic,
                 supported_apps=detached.supported_apps, development_apps=DEVELOPMENT_APPLICATIONS,
-                reader_available=self.reader_panel is not None)
+                reader_available=self.reader_panel is not None,
+                organizer_available=self.organizer_acquisition_panel is not None)
             while self.dashboard_slot.count():
                 old = self.dashboard_slot.takeAt(0).widget()
                 if old is not None: old.hide(); old.deleteLater()

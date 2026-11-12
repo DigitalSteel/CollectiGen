@@ -39,7 +39,7 @@ def server_views(report, jobs=()):
 
 
 def create_dashboard(report, jobs=(), *, synthetic=False, open_servers=None,
-                     supported_apps=(), development_apps=(), reader_available=False):
+                     supported_apps=(), development_apps=(), reader_available=False, organizer_available=False):
     """Concise supplied observations; no collectors, zero telemetry or launch claims."""
     from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea, QFrame
     from PySide6.QtCore import Qt
@@ -68,6 +68,10 @@ def create_dashboard(report, jobs=(), *, synthetic=False, open_servers=None,
     supplied_keys = {item.component_id.value for item in supported_apps}
     if reader_available and "collectigen.tag-encyclopedia" not in supplied_keys:
         app_lines.append("Tag Encyclopedia Reader · Browse in Applications")
+    if organizer_available and "collectigen.media-organizer" not in supplied_keys:
+        app_lines.append("Media Organizer · Get or update in Applications")
+    if organizer_available or "collectigen.media-organizer" in supplied_keys:
+        supplied_keys.add("media-organizer")
     app_lines += [item.title + " · In development" for item in development_apps if item.key not in supplied_keys]
     scroll.applications_summary = card("Applications", "\n".join(app_lines) or "No application catalog supplied",
          "Catalog entries describe applications. They do not prove installation, running state or readiness. "
