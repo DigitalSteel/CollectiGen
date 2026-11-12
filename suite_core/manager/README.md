@@ -57,6 +57,10 @@ Manager's first managed baseline uses a fresh folder. Its updater-compatible
 package and signed recovery bundle do not qualify migration or self-update
 from the older unsigned portable Manager releases.
 
+Manager self-update is not yet qualified: an isolated a.0.6.0 to a.0.6.1
+Apply attempt timed out. The a.0.6.1 Windows download remains qualified for
+fresh installations; the corrected update client is being packaged.
+
 ## Source startup
 
 Use the release tag or its matching source asset to reproduce this version; the
