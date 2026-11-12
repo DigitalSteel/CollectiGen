@@ -44,6 +44,10 @@ bound to their installation location; moving installations and migration from
 older portable Manager releases are not qualified by this release. Release
 metadata is signed; the Windows executable is not Authenticode-signed.
 
+Manager self-update is not yet qualified: an isolated a.0.6.0 to a.0.6.1
+Apply attempt timed out. The a.0.6.1 Windows download remains qualified for
+fresh installations; the corrected update client is being packaged.
+
 The Reader component ZIP is supplied for Manager's reviewed installation path.
 Read the release's included guide before using component ZIPs directly.
 
