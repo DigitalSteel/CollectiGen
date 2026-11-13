@@ -1,3 +1,9 @@
+# Unreleased source changes
+
+- Training Package Review explains the verified image counts, target and next preparation step while keeping unchecked trainer and model readiness explicit.
+- Return and recovery guidance name the Training workspace.
+- These changes are pending a versioned Manager package; the a.0.6.8 download is unchanged.
+
 # What's New - a.0.6.8 (embedded 0.6.8-alpha.1) - 2026-11-13
 
 - Saved Training and SDXL-preparation history controls use Manager's existing compact button sizing so Refresh, Forget and recovery captions fit the host fonts.

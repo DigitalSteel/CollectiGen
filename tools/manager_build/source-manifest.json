@@ -3783,8 +3783,8 @@
     },
     {
       "path": "suite_core/manager/krea_training_review.py",
-      "bytes": 70736,
-      "sha256": "c3a48ff753a72a479378bffc1624194f7c023bdeaa14aab4fafcace250c56e07"
+      "bytes": 72245,
+      "sha256": "6205f8cd472963ffc3c1cf974ac40aa3b9323e12f0cd923cef90274eadb56475"
     },
     {
       "path": "suite_core/manager/launcher_main.py",

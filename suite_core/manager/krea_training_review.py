@@ -161,7 +161,7 @@ class KreaTrainingReviewDialog(QDialog):
         actions.addWidget(self.retry_history_button)
         actions.addStretch()
         self.return_button = QPushButton("Cancel Check and Return")
-        self.return_button.setMinimumWidth(self.return_button.fontMetrics().horizontalAdvance('Return to Applications') + 32)
+        self.return_button.setMinimumWidth(self.return_button.fontMetrics().horizontalAdvance('Return to Training') + 32)
         self.return_button.clicked.connect(self.reject)
         actions.addWidget(self.return_button)
         layout.addLayout(actions)
@@ -191,7 +191,7 @@ class KreaTrainingReviewDialog(QDialog):
         if not verification.valid:
             raise ValueError(
                 "The selected package could not be verified. If any files changed or are missing, "
-                "export a fresh package from Training. Then return to Applications and select "
+                "export a fresh package from Training. Then return to Training and select "
                 "the package folder again."
             )
         if (self._expected_package_fingerprint is not None
@@ -206,7 +206,7 @@ class KreaTrainingReviewDialog(QDialog):
                 if registry_path is not None:
                     available.append("a Krea 2 LoRA package")
                 available.extend(("an SDXL LoRA package", "an Anima LoRA package"))
-                raise ValueError("Return to Applications and choose " + " or ".join(available) + ".")
+                raise ValueError("Return to Training and choose " + " or ".join(available) + ".")
             registration = None
             if configuration.target_model_family.casefold() == "anima" and configuration.output_kind == "lora":
                 registration = self._anima_registration(configuration, registry_path)
@@ -470,7 +470,7 @@ class KreaTrainingReviewDialog(QDialog):
         if self._cancel.is_set():
             super().reject()
             return
-        self.return_button.setText("Return to Applications")
+        self.return_button.setText("Return to Training")
         if self._checking_anima_setup:
             from core.training_anima import AnimaError
 
@@ -493,7 +493,7 @@ class KreaTrainingReviewDialog(QDialog):
                 self.anima_setup_button.setEnabled(False)
                 self.anima_button.setEnabled(False)
                 self._invalidate_package_review(
-                    "The Anima package changed or could not be rechecked. Return to Applications and review it again.")
+                    "The Anima package changed or could not be rechecked. Return to Training and review it again.")
             except _StaleAnimaInventory:
                 self.status.setText("Trainer files changed during preflight. Recheck Trainer Setup, then check Anima readiness again.")
             except _StaleAnimaSetup:
@@ -579,7 +579,7 @@ class KreaTrainingReviewDialog(QDialog):
                 if self._package_review_cancelled():
                     self.prepare_button.setEnabled(False)
                     self._invalidate_package_review(
-                        "The Manager session ended before preparation completed. Return to Applications to reopen the package.")
+                        "The Manager session ended before preparation completed. Return to Training to reopen the package.")
                 else:
                     self.status.setText("Preparation did not finish. Check the selected folders, then choose Prepare SDXL Dataset to retry.")
             else:
@@ -592,14 +592,14 @@ class KreaTrainingReviewDialog(QDialog):
         if self._checking_dataset:
             self._checking_dataset = False
             if self._package_review_cancelled():
-                self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+                self._invalidate_package_review("The Manager session ended. Return to Training to reopen the package.")
                 return
             self.adapter_button.setEnabled(True)
             self.folder_button.setEnabled(True)
             self._show_dataset_receipt()
             return
         if self._package_review_cancelled():
-            self.status.setText("The Manager session ended. Return to Applications to reopen the package.")
+            self.status.setText("The Manager session ended. Return to Training to reopen the package.")
             return
         try:
             verification, configuration, report = self._future.result()
@@ -607,7 +607,7 @@ class KreaTrainingReviewDialog(QDialog):
             self.status.setText(f"Compatibility review unavailable. {exc}")
             return
         except Exception:
-            self.status.setText("Compatibility review could not finish. Return to Applications and select a current package.")
+            self.status.setText("Compatibility review could not finish. Return to Training and select a current package.")
             return
         self._handoff_folder = verification.destination
         self._handoff_fingerprint = verification.package_fingerprint
@@ -714,6 +714,31 @@ class KreaTrainingReviewDialog(QDialog):
                     explanation = f"Anima adapter preview unavailable. {exc}"
                 self.sections[1].appendPlainText("\nAnima adapter preview\n" + explanation)
             self._append_companions(verification.manifest)
+            next_actions = []
+            for button in (self.dataset_button, self.adapter_button, self.prepare_button,
+                           self.anima_button, self.anima_setup_button):
+                if not button.isHidden():
+                    next_actions.append(button.text().rstrip(".\u2026"))
+            counts = verification.manifest["counts"]
+            overview = [
+                "Package files verified",
+                f"Target: {configuration.target_model_family} {configuration.output_kind}",
+                f"Included images: {counts['included_images']:,}",
+                f"Excluded images: {counts['excluded_images']:,}",
+                f"Training: {counts['training']:,} | Validation: {counts['validation']:,} | Holdout: {counts['holdout']:,}",
+                "",
+                "Trainer and model readiness have not been checked. Training has not started.",
+                "",
+                "Next step",
+                ("Choose " + " or ".join(next_actions) + " to review the next preparation step."
+                 if next_actions else
+                 "Review Settings, Dataset and Captions, then use the package in your external trainer."),
+                "Open Package Folder lets you inspect the verified export. Return to Training keeps the package unchanged.",
+                "",
+            ]
+            self.sections[0].setPlainText("\n".join(overview) + self.sections[0].toPlainText())
+            if anima and self._anima_base_id is not None:
+                self._anima_registration_overview = self.sections[0].toPlainText()
             self.sections[2].setPlainText(self._dataset_text(verification.manifest))
             captions = QPlainTextEdit()
             captions.setReadOnly(True)
@@ -844,7 +869,7 @@ class KreaTrainingReviewDialog(QDialog):
                 should_cancel=lambda: self._cancel.is_set() or (session_ready is not None and not session_ready()),
             ))
         except (RuntimeError, ValueError):
-            self.status.setText("Package recheck could not start. Return to Applications and review it again.")
+            self.status.setText("Package recheck could not start. Return to Training and review it again.")
             return
         self._checking_handoff = True
         for button in (self.folder_button, self.adapter_button, self.dataset_button):
@@ -891,7 +916,7 @@ class KreaTrainingReviewDialog(QDialog):
             return
         except (OSError, RuntimeError, ValueError):
             self._invalidate_package_review(
-                "Package changed or could not be rechecked. Return to Applications and review it again."
+                "Package changed or could not be rechecked. Return to Training and review it again."
             )
             return
         for button in (self.folder_button, self.adapter_button, self.dataset_button):
@@ -922,7 +947,7 @@ class KreaTrainingReviewDialog(QDialog):
                 or self._adapter_preview is not None or self._cancel.is_set()):
             return
         if self._package_review_cancelled():
-            self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+            self._invalidate_package_review("The Manager session ended. Return to Training to reopen the package.")
             return
         from core.model_resource_registry import ModelResourceRegistry
         from core.training_adapter_preview import SdScriptsSdxlLoraPreviewService
@@ -961,7 +986,7 @@ class KreaTrainingReviewDialog(QDialog):
                 or self._verification is None or self._preparation_setup is not None):
             return
         if self._package_review_cancelled():
-            self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+            self._invalidate_package_review("The Manager session ended. Return to Training to reopen the package.")
             return
         stop_load = Event()
         load_future = None
@@ -1043,7 +1068,7 @@ class KreaTrainingReviewDialog(QDialog):
             load.setEnabled(True)
             update_prepare()
             if self._package_review_cancelled() and not self._cancel.is_set():
-                self.status.setText("The Manager session ended. Return to Applications to reopen the package.")
+                self.status.setText("The Manager session ended. Return to Training to reopen the package.")
             if stop_load.is_set() or self._package_review_cancelled():
                 dialog.reject()
                 return
@@ -1097,7 +1122,7 @@ class KreaTrainingReviewDialog(QDialog):
             if self._cancel.is_set():
                 self.reject()
         if self._package_review_cancelled():
-            self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+            self._invalidate_package_review("The Manager session ended. Return to Training to reopen the package.")
             return
         try:
             self._future = self._executor.submit(partial(
@@ -1126,7 +1151,7 @@ class KreaTrainingReviewDialog(QDialog):
                 or self._verification is None):
             return
         if self._package_review_cancelled():
-            self._invalidate_package_review("The Manager session ended. Return to Applications to reopen the package.")
+            self._invalidate_package_review("The Manager session ended. Return to Training to reopen the package.")
             return
         overview = self.sections[0]
         if self._dataset_overview is None:
@@ -1209,13 +1234,13 @@ class KreaTrainingReviewDialog(QDialog):
             holds = summary.get("holds") if isinstance(summary, dict) else None
             if reason == "package_unavailable_or_changed":
                 self._invalidate_package_review(
-                    "The selected package changed or could not be read. Export a fresh package from Training if needed, then return to Applications and select its folder."
+                    "The selected package changed or could not be read. Export a fresh package from Training if needed, then return to Training and select its folder."
                 )
                 return
             elif reason == "policy_held" and isinstance(holds, dict):
                 detail = self._dataset_hold_details(holds)
             else:
-                detail = "Return to Applications and select a verified SDXL LoRA package."
+                detail = "Return to Training and select a verified SDXL LoRA package."
             self.sections[0].appendPlainText(f"\n{detail}")
         self.sections[0].appendPlainText(f"\nDataset inspection receipt: {digest}")
         self.tabs.setCurrentIndex(0)

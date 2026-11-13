@@ -3178,8 +3178,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "size_bytes": 28005,
-      "sha256": "e7a12df5e38687f8953093ed3d91c7bf67dc97cc7dcca1c92b89c96e7dc83066"
+      "size_bytes": 28350,
+      "sha256": "5e721a73d0ea5a9e24394c339cc39ec9d60962cec9fdfcae19162d904cb4e764"
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3290,8 +3290,8 @@
       "size_bytes": 3128
     },
     "suite_core/manager/krea_training_review.py": {
-      "sha256": "c3a48ff753a72a479378bffc1624194f7c023bdeaa14aab4fafcace250c56e07",
-      "size_bytes": 70736
+      "sha256": "6205f8cd472963ffc3c1cf974ac40aa3b9323e12f0cd923cef90274eadb56475",
+      "size_bytes": 72245
     },
     "suite_core/manager/launcher_main.py": {
       "sha256": "dd9dcd0e460d6c153231c55963a3b080d606057d513a14cec88c9ce4ec461b51",
@@ -4091,7 +4091,7 @@
     },
     "tools/manager_build/source-manifest.json": {
       "size_bytes": 163618,
-      "sha256": "ad30222a39586182c43faefd11b879773e012d5e395dca8433509ad16e7e9a51"
+      "sha256": "bf6fb76437d6681e2fc869f3c0748a2a60ac6ba6cbb21593ad5ca30b58d03825"
     },
     "tools/manager_build/tool-inputs.json": {
       "sha256": "e2c3f13d1cea4b42c2a65ae94379fd8d01658a38f81d1b4e869ce5d208c4480f",
