@@ -1,5 +1,7 @@
 # What's New - a.0.6.4 (embedded 0.6.4-alpha.1) - 2026-11-12
 
+- The default Organizer installer offer targets signed a.0.5.1, including changed-result recovery guidance.
+
 - Generate and Manager update actions wrap to fit the available window width.
 - Tab leaves the read-only update notes for the next action.
 - Original draft, confirmation, update and recovery handlers are retained.

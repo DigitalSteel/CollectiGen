@@ -3709,7 +3709,7 @@
     {
       "path": "suite_core/manager/compiled_organizer_config.py",
       "bytes": 3093,
-      "sha256": "85d284a5f5e4c39ac2e15b0684624434d076d33ea065e2c4c5218d2bf8a6c2ee"
+      "sha256": "cc4f0978f6b57e9c70e67961fc53f15d68f93f7a772fc6c0082d9b3fc6c1026a"
     },
     {
       "path": "suite_core/manager/compiled_update_config.py",
@@ -3983,8 +3983,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 282206,
-      "sha256": "6319cf9c91f8d3be7d4cf63f01e221df7c4521f18ccbb6f500c5daa4e74e4a82"
+      "bytes": 282271,
+      "sha256": "eb14844ae5918bc8d43cb4bc0f4cb7a1b298484879ee51684c90ce93f7631abc"
     },
     {
       "path": "suite_core/media_examples.py",
