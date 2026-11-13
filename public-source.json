@@ -3154,20 +3154,20 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "776d5006cf6930406ba0f6f8d6563da29bfd372bf2531fdb1f517cdb99416067",
-      "size_bytes": 44010
+      "size_bytes": 44010,
+      "sha256": "1a700d4cd271981f6e5a996936184a5938a2848bbdd9883dfe9521d5e9acf88b"
     },
     "suite_core/manager/README.md": {
       "sha256": "e1fbf11b053e5aa65457815bd0492ce165471c099911637eee40e124ad898a68",
       "size_bytes": 5536
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
-      "sha256": "e001be5c195d05db9b915a957964f64d2f5ffacb5502e91a9f5f54a6a9974c11",
-      "size_bytes": 10679
+      "size_bytes": 10997,
+      "sha256": "68ef11d9aaaba6191bbb44096e30ed5097c702a049f5dc6a62016ada8372c230"
     },
     "suite_core/manager/RELEASE_PRESENTATION.json": {
-      "sha256": "496902f38bb48f3d979664773ae00abaca8fdff1ab9af715a8ea3a49250df3ee",
-      "size_bytes": 246
+      "size_bytes": 246,
+      "sha256": "a3082bd6b645d6ea57cc4acbac5c9943d8bd36f0f771444a14a442863b9ddd55"
     },
     "suite_core/manager/RESOURCE_DASHBOARD_INTEGRATION.md": {
       "sha256": "a152121008b069f04b573fac4d7fd589c1c2b575f2b0bb5e437a16527b7778e7",
@@ -3178,8 +3178,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "118295bc67eeda4976073c5b30af2d742e97f99f16598b49e5931271060e93d4",
-      "size_bytes": 27397
+      "size_bytes": 28005,
+      "sha256": "e7a12df5e38687f8953093ed3d91c7bf67dc97cc7dcca1c92b89c96e7dc83066"
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3446,12 +3446,12 @@
       "size_bytes": 15135
     },
     "suite_core/manager/version.py": {
-      "sha256": "c25e745f7c523586109b4d0a9d78f4c991c32ad66f0934934a4d6559b50c567f",
-      "size_bytes": 274
+      "size_bytes": 274,
+      "sha256": "75ac321a9e536528b3ad95578680c64c9f97111e0d862b94fd398bdac6d7ee1a"
     },
     "suite_core/manager/window.py": {
-      "size_bytes": 283211,
-      "sha256": "df516c02265550a618e1f9c8bd1fcb3bcbe6f2135739464158c2e87c0d8d3a07"
+      "size_bytes": 283825,
+      "sha256": "6eea0f3689d5cafa8f215d14c91764621f25cfcf3ee7bdd5a0845972d7618693"
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -4091,7 +4091,7 @@
     },
     "tools/manager_build/source-manifest.json": {
       "size_bytes": 163618,
-      "sha256": "e6a333ea0a52308cd169e0578f126bdfa92cb7603d921dea16503aa78f6a5130"
+      "sha256": "ad30222a39586182c43faefd11b879773e012d5e395dca8433509ad16e7e9a51"
     },
     "tools/manager_build/tool-inputs.json": {
       "sha256": "e2c3f13d1cea4b42c2a65ae94379fd8d01658a38f81d1b4e869ce5d208c4480f",

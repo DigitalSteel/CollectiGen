@@ -3,6 +3,13 @@
   "module_id": "collectigen.suite-manager",
   "releases": [
     {
+      "software_version": "0.6.8-alpha.1",
+      "date": "2026-11-13",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "History action label-fit correction using existing Manager sizing; release candidate. Actual in-place update/rollback and full parity remain separate."
+    },
+    {
       "software_version": "0.6.7-alpha.1",
       "date": "2026-11-13",
       "date_timezone": "Etc/UTC",

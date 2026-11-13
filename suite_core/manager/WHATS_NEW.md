@@ -1,3 +1,9 @@
+# What's New - a.0.6.8 (embedded 0.6.8-alpha.1) - 2026-11-13
+
+- Saved Training and SDXL-preparation history controls use Manager's existing compact button sizing so Refresh, Forget and recovery captions fit the host fonts.
+- Saved-list transactions and retained review/output files stay with their existing owners. The published a.0.6.7 list actions already passed isolated recovery, Forget and saved-state reopening.
+- Older launchers a.0.6.6 and earlier still need the fresh full ZIP. In-place update and rollback qualification from the fixed a.0.6.7 baseline remains open until its actual checks finish.
+
 # What's New - a.0.6.7 (embedded 0.6.7-alpha.1) - 2026-11-13
 
 - Manager update admission checks SDK files at the locations used by the stock installer, while retaining every signed application-file check.
