@@ -1,3 +1,8 @@
+# What's New - a.0.7.4 (embedded 0.7.4-alpha.1) - 2026-11-13
+
+- Applications discovers newer signed Reader and Media Organizer releases from GitHub without requiring a new Manager build for each module update. Review the selected version and confirm installation.
+- Publisher signatures, compatible upgrade paths, exact review revalidation and existing installation/recovery ownership remain in effect.
+
 # What's New - a.0.7.3 (embedded 0.7.3-alpha.1) - 2026-11-13
 
 - Closing Manager can cancel Organizer app-status verification while retaining its original worker. If health publication has started, the existing transaction and readback finish before closing.

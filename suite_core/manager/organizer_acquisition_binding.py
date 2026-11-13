@@ -107,13 +107,15 @@ def factory_for_session(session):
         if Path(settings_path)!=expected:raise ValueError('original_organizer_settings_binding_required')
         cache=session.admitted.layout.data_root/'Manager'/'OrganizerAcquisition'/uuid4().hex
         guard(cache);cache.mkdir(parents=True,exist_ok=False)
+        # The compiled offer supplies qualified metadata names, not a release pin.
+        # Stock discovery authenticates the newest compatible offer; review
+        # revalidates its exact identity before any install transaction.
         acquisition=ComponentAcquisition(cache_root=cache,cache_owner=cache.name,
             opener=ComponentReleaseTransport(ReleaseTransportPolicy(profile.asset_redirect_origins)),
             host_version=VERSION,trust_bytes=profile.trust_bytes,trust_sha256=profile.trust_sha256,
             os_name='windows',architecture='x86_64',max_artifact_bytes=profile.max_artifact_bytes,
             manifest_name=profile.expected_offer.manifest.name,
-            signature_name=profile.expected_offer.signature.name,
-            expected_offer=profile.expected_offer)
+            signature_name=profile.expected_offer.signature.name)
         service=OrganizerInstallation(acquisition,OrganizerConnectionStore(settings_path),
             admission=ComponentStageAdmission(stage.hold),native_owner=native_owner)
         return service,ResourceExecutorOwner()

@@ -3154,7 +3154,7 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "a540e3a60759a994df9be78d69140b79109b7bdd1e684da7197cfb4483854d35",
+      "sha256": "fcc12f431062e6cf5d99190dd5474d227c120eb0c236911b860519437490ea64",
       "size_bytes": 44036
     },
     "suite_core/manager/README.md": {
@@ -3162,11 +3162,11 @@
       "size_bytes": 6209
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
-      "sha256": "a5b30677852363d4123141813cb90a5c940b9645a9e2542326cb788279aae506",
-      "size_bytes": 13063
+      "sha256": "7177afdcbbdf03eb4e2578d98dbc1ee55d0b4feb6f01bc1007c8353b82cdaecd",
+      "size_bytes": 13462
     },
     "suite_core/manager/RELEASE_PRESENTATION.json": {
-      "sha256": "b919db182b57e7f6c91406f78b919e40ee85e4cdb3c13d796eb79d6cea842e3f",
+      "sha256": "7d2dc40b6901845d5286f899af05981a85d424d1253f3235e6bac7b9ac75e7c8",
       "size_bytes": 246
     },
     "suite_core/manager/RESOURCE_DASHBOARD_INTEGRATION.md": {
@@ -3178,8 +3178,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "404a68fa6c14e6594c4f8690c25de49a99a524d5aad327d7c7baa5410ef146be",
-      "size_bytes": 31325
+      "sha256": "b23f34eafaec98f61c30032e6f766d4c01b7a94edaf43e500c153c1381610ced",
+      "size_bytes": 31729
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3226,12 +3226,12 @@
       "size_bytes": 4938
     },
     "suite_core/manager/compiled_encyclopedia_config.py": {
-      "sha256": "af681e64c78a0e86ca449b75ee195121b44416b27316768625a7e0635466e1c8",
-      "size_bytes": 3434
+      "sha256": "eeef514347692e703ff4b639baff3162fa651215f1df0995f780b32f1ec4cdd8",
+      "size_bytes": 3401
     },
     "suite_core/manager/compiled_organizer_config.py": {
-      "sha256": "b9650c08f66b8c035df2783ad92c10a01a211622594a7e13f60a782a574716cb",
-      "size_bytes": 3138
+      "sha256": "fcd4e1ad01a8ea9b368816b622c8e21e05a880a3e5d728ce97f2cbd59cd14f78",
+      "size_bytes": 3157
     },
     "suite_core/manager/compiled_update_config.py": {
       "sha256": "540dcdcfa934187836903aaf9883d3cffa12bf1ae1c3710edb8348e1597b27da",
@@ -3266,8 +3266,8 @@
       "size_bytes": 15081
     },
     "suite_core/manager/encyclopedia_acquisition_binding.py": {
-      "sha256": "5684849620e89929d46626ee3aed9a8ff706204e952804718de309af610d5f3e",
-      "size_bytes": 5245
+      "sha256": "6383e36b1fe606f8102a66eaa722696cd7f2a35c74950c570ad76671ad008ee5",
+      "size_bytes": 5428
     },
     "suite_core/manager/encyclopedia_acquisition_ui.py": {
       "sha256": "a84aca466e31e63c88b0333dea2b041c32e9aaceae6c53a5b59aaecab0163325",
@@ -3358,8 +3358,8 @@
       "size_bytes": 4240
     },
     "suite_core/manager/organizer_acquisition_binding.py": {
-      "sha256": "504396165a71ef920e1ec487bc0fcb89213cb6348b16cf998b7efac4d19e7bb3",
-      "size_bytes": 9623
+      "sha256": "1100ab65e938c32f74b9392a019bfb26bf2a92ff4a4843efa10b0e4f0cc10834",
+      "size_bytes": 9804
     },
     "suite_core/manager/organizer_acquisition_ui.py": {
       "sha256": "a141a322f89839c80cbaa3a8846a3d6873ef0acdd22b6d3b5068bbf1299c825d",
@@ -3446,7 +3446,7 @@
       "size_bytes": 15135
     },
     "suite_core/manager/version.py": {
-      "sha256": "62d8c2cb26d56dadf031cb5e320cf979e50cf2bf356ed6fd85b60541cfb08283",
+      "sha256": "c6f3e785f2b336d95f2ff9c543cb62e92ef28788e04e418c6a3032dedcf2788d",
       "size_bytes": 274
     },
     "suite_core/manager/window.py": {
@@ -4098,7 +4098,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "b53b1bc9501609185c709b49e1f1f271ece5246b1dea7dc8d0080b620a61b6fb",
+      "sha256": "d892db04e62719603351c6df3f3a29a540bcb2e5893d7b3c4db891fb2b283f19",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {

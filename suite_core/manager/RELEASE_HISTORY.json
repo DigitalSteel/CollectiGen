@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "module_id": "collectigen.suite-manager",
-  "releases": [{"software_version": "0.7.3-alpha.1", "numeric_version": "0.7.3", "maturity": "alpha", "date": "2026-11-13", "timezone": "America/New_York", "interface_version": 1, "status": "candidate;source/package qualification and publication recorded separately", "scope": "Cancellable original Organizer status verification until first health mutation;exact signed0.5.4 offer;preserve native ownership and atomic settlement"},
+  "releases": [{"software_version": "0.7.4-alpha.1", "numeric_version": "0.7.4", "maturity": "alpha", "date": "2026-11-13", "timezone": "America/New_York", "interface_version": 1, "status": "candidate;qualification and delivery recorded separately", "scope": "Discover newer signed Organizer/Reader releases through stock dynamic acquisition;retain explicit reviewed installation and original recovery ownership"},{"software_version": "0.7.3-alpha.1", "numeric_version": "0.7.3", "maturity": "alpha", "date": "2026-11-13", "timezone": "America/New_York", "interface_version": 1, "status": "candidate;source/package qualification and publication recorded separately", "scope": "Cancellable original Organizer status verification until first health mutation;exact signed0.5.4 offer;preserve native ownership and atomic settlement"},
     {
       "software_version": "0.7.2-alpha.1",
       "numeric_version": "0.7.2",

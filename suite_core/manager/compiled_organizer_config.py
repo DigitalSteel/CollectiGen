@@ -1,4 +1,4 @@
-"""Exact release-bound Organizer offer for the default Manager installer."""
+"""Qualified Organizer trust, transport and metadata-name baseline; releases are discovered."""
 from core.component_acquisition import ExactComponentOffer, ExactOfferAsset
 from suite_core.installation import ComponentId
 from suite_core.manager.organizer_acquisition_binding import CompiledOrganizerAcquisitionProfile

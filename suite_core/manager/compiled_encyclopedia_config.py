@@ -1,6 +1,4 @@
-"""Exact public Reader binding for this reviewed local build proposal.
-No adjacent file, settings or environment can enroll a different release.
-"""
+"""Qualified Reader trust, transport and metadata-name baseline; releases are discovered."""
 from core.component_acquisition import ExactComponentOffer, ExactOfferAsset
 from suite_core.installation import ComponentId
 from suite_core.manager.encyclopedia_acquisition_binding import CompiledEncyclopediaAcquisitionProfile

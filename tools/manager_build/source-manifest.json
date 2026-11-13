@@ -3639,12 +3639,12 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 44036,
-      "sha256": "a540e3a60759a994df9be78d69140b79109b7bdd1e684da7197cfb4483854d35"
+      "sha256": "fcc12f431062e6cf5d99190dd5474d227c120eb0c236911b860519437490ea64"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "b919db182b57e7f6c91406f78b919e40ee85e4cdb3c13d796eb79d6cea842e3f"
+      "sha256": "7d2dc40b6901845d5286f899af05981a85d424d1253f3235e6bac7b9ac75e7c8"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -3703,13 +3703,13 @@
     },
     {
       "path": "suite_core/manager/compiled_encyclopedia_config.py",
-      "bytes": 3434,
-      "sha256": "af681e64c78a0e86ca449b75ee195121b44416b27316768625a7e0635466e1c8"
+      "bytes": 3401,
+      "sha256": "eeef514347692e703ff4b639baff3162fa651215f1df0995f780b32f1ec4cdd8"
     },
     {
       "path": "suite_core/manager/compiled_organizer_config.py",
-      "bytes": 3138,
-      "sha256": "b9650c08f66b8c035df2783ad92c10a01a211622594a7e13f60a782a574716cb"
+      "bytes": 3157,
+      "sha256": "fcd4e1ad01a8ea9b368816b622c8e21e05a880a3e5d728ce97f2cbd59cd14f78"
     },
     {
       "path": "suite_core/manager/compiled_update_config.py",
@@ -3753,8 +3753,8 @@
     },
     {
       "path": "suite_core/manager/encyclopedia_acquisition_binding.py",
-      "bytes": 5245,
-      "sha256": "5684849620e89929d46626ee3aed9a8ff706204e952804718de309af610d5f3e"
+      "bytes": 5428,
+      "sha256": "6383e36b1fe606f8102a66eaa722696cd7f2a35c74950c570ad76671ad008ee5"
     },
     {
       "path": "suite_core/manager/encyclopedia_acquisition_ui.py",
@@ -3868,8 +3868,8 @@
     },
     {
       "path": "suite_core/manager/organizer_acquisition_binding.py",
-      "bytes": 9623,
-      "sha256": "504396165a71ef920e1ec487bc0fcb89213cb6348b16cf998b7efac4d19e7bb3"
+      "bytes": 9804,
+      "sha256": "1100ab65e938c32f74b9392a019bfb26bf2a92ff4a4843efa10b0e4f0cc10834"
     },
     {
       "path": "suite_core/manager/organizer_acquisition_ui.py",
@@ -3979,7 +3979,7 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "62d8c2cb26d56dadf031cb5e320cf979e50cf2bf356ed6fd85b60541cfb08283"
+      "sha256": "c6f3e785f2b336d95f2ff9c543cb62e92ef28788e04e418c6a3032dedcf2788d"
     },
     {
       "path": "suite_core/manager/window.py",
