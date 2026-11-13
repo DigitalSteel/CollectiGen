@@ -15,6 +15,7 @@ MAX_FRAME = 65536
 COMPONENT_STAGE_REPLY_TIMEOUT = 30
 MANAGER_UPDATE_REPLY_TIMEOUT = 30
 INITIAL_OFFER_TIMEOUT = 30
+ORGANIZER_HELPER_REPLY_TIMEOUT = 120
 FAST_HOOKS = frozenset({'--veloapp-install', '--veloapp-updated',
                         '--veloapp-obsolete', '--veloapp-uninstall'})
 MESSAGE_KINDS = frozenset({'offer','ready','helper-reserve','helper-grant',
@@ -1207,14 +1208,23 @@ class EntryHelperAdapter:
         require(slot['phase']=='reserved','helper_positive_non_grant')
         return slot['reservation']
 
-    def wait_for_original_reserve(self, attempt, *, cancelled=lambda:False, timeout=30):
+    def _retained_reply_budget(self, timeout):
+        # Full signed Organizer inventories are larger than the other helpers.
+        # Keep one deadline on the original request, not a fresh wait per poll.
+        maximum = (ORGANIZER_HELPER_REPLY_TIMEOUT
+                   if getattr(self, 'role_base', None) == 'owned-organizer' else 30)
+        timeout = maximum if timeout is None else timeout
+        require(type(timeout) in {int, float} and math.isfinite(timeout)
+                and 0 <= timeout <= maximum, 'bounded_retained_reply_wait_required')
+        return timeout
+
+    def wait_for_original_reserve(self, attempt, *, cancelled=lambda:False, timeout=None):
         """Read the same pre-birth RPC within one cancellable request budget.
 
         Native zero-byte idle is a poll tick, never a new reserve. Deadline,
         cancellation, partial/EOF and authentication faults retain the attempt.
         """
-        require(type(timeout) in {int,float} and math.isfinite(timeout) and 0<=timeout<=30,
-                'bounded_retained_reply_wait_required')
+        timeout = self._retained_reply_budget(timeout)
         with self.session.wire.lock:
             self._original_attempt(attempt)
             slot=self.attempts.get(attempt.identity)
@@ -1242,10 +1252,9 @@ class EntryHelperAdapter:
                     'helper_positive_non_grant')
             return slot['reservation']
 
-    def wait_for_original_transfer(self, reservation, *, cancelled=lambda:False, timeout=30):
+    def wait_for_original_transfer(self, reservation, *, cancelled=lambda:False, timeout=None):
         """Finish only the original suspended-child registration; never resend or Resume."""
-        require(type(timeout) in {int,float} and math.isfinite(timeout) and 0<=timeout<=30,
-                'bounded_retained_reply_wait_required')
+        timeout = self._retained_reply_budget(timeout)
         with self.session.wire.lock:
             slot=self._slot(reservation)
             require(self.accounting is None and slot['copy'] is not None and slot.get('witness') is not None,

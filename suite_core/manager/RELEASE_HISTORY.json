@@ -3,6 +3,13 @@
   "module_id": "collectigen.suite-manager",
   "releases": [
     {
+      "software_version": "0.7.1-alpha.1",
+      "date": "2026-11-13",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Fix installed Organizer retained startup reply deadline;candidate pending final validation and signed delivery."
+    },
+    {
       "software_version": "0.7.0-alpha.1",
       "date": "2026-11-13",
       "date_timezone": "Etc/UTC",

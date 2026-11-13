@@ -1,3 +1,8 @@
+# What's New - a.0.7.1 (embedded 0.7.1-alpha.1) - 2026-11-13
+
+- Opening an installed Media Organizer now allows its signed-package review to finish before the startup reply expires. The same startup request and recovery controls remain in use.
+- Existing Generate and Training workspaces and confirmed Reader/Organizer installation remain available. Full all-in-one parity and actual failed-update rollback remain incomplete.
+
 # What's New - a.0.7.0 (embedded 0.7.0-alpha.1) - 2026-11-13
 
 - Training can find interrupted packages by their intended save location and package name. Choose Review Interrupted Training Package, then Choose Package Location. Browse Exact Receipt remains available for advanced selection.

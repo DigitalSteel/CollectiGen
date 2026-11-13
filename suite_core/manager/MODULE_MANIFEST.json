@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "module_id": "collectigen.suite-manager",
-  "software_version": "0.7.0-alpha.1",
+  "software_version": "0.7.1-alpha.1",
   "manager_interface_version": 1,
   "runtime_files": [
     "core/__init__.py",
@@ -987,5 +987,5 @@
     "owned_ollama": "Exact host-admitted descriptor/publication/environment/binding and permission; worker teardown/reconciliation and retained-child Stop; default entry unconfigured; model/Hermes actions unavailable"
   },
   "entrypoint": "python -B -m suite_core.manager",
-  "scope": "Fresh Reader 0.3.1-only Windows x64 portable Alpha. Dashboard Reader visibility and first-run Find reader / Install clarity. Legacy Reader upgrade and rollback through Manager excluded; Organizer acquisition and Manager self-update inactive. Source and package qualification are recorded in the matching release evidence."
+  "scope": "Windows x64 portable Suite Manager with confirmed signed Reader and Organizer installation, Generate and Training workspaces, and Manager self-update from0.6.7. Installed Organizer startup uses a bounded retained-request wait. Full all-in-one parity and actual failed-update rollback remain incomplete;matching release evidence owns qualification."
 }
