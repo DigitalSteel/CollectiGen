@@ -3158,8 +3158,8 @@
       "size_bytes": 44010
     },
     "suite_core/manager/README.md": {
-      "sha256": "90a0d02bf235435ac3675d0750dd0ce0f69be06a7e89e7a162c2d8830b66117e",
-      "size_bytes": 5827
+      "sha256": "90a0d02bf235435ac3675d0750dd0ce0f69be06a7e89e7a162c2d8830b65827e",
+      "size_bytes": 6117
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
       "sha256": "d42e09e32d153ac6ae3803c0d7a79fd653f79f65ff49ae56fb556f94bfee59ef",
