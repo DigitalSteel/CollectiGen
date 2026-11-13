@@ -1,5 +1,10 @@
 # Unreleased
 
+# Media Organizer a.0.5.5
+
+- Rules & Automation can recover an interrupted related-rule repair or restore through **Review Interrupted Rule Recovery**. It restores only the recorded rule state and keeps Image Knowledge unchanged.
+- A rule repair now stops if its supporting rules or Knowledge changed after review. Reload and review the current rules before trying again.
+
 # Media Organizer a.0.5.4
 
 - Native Copy and recovery can return to a previously used path without mistaking a creation-time metadata change for a different file. The existing transfer still checks exact file identity, complete family bytes and no-overwrite publication.

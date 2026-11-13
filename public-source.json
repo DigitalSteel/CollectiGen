@@ -1110,8 +1110,8 @@
       "size_bytes": 7951
     },
     "core/projection_rule_repair.py": {
-      "sha256": "f2ab897a178b86c0c5cac197b2cfe1fd7ffccb9752589612d93c81bb34a937cb",
-      "size_bytes": 16440
+      "sha256": "74d233b6a94d958641e6d94d2dae0ce04f5e7f658c0d1e7b6c1cf72b53cfc804",
+      "size_bytes": 30788
     },
     "core/record_layout.py": {
       "sha256": "f1825b2ca3cb8c1839161a3a307fbcbf3b2fb24b9b42fd8755a1c81e3b5051ed",
@@ -1950,8 +1950,8 @@
       "size_bytes": 17418
     },
     "qt_app/automation_page.py": {
-      "sha256": "c9898ddc32df41c42fe258b0a478fdfeca89c7234dd1f3fc5e01801b169ef641",
-      "size_bytes": 287355
+      "sha256": "8da6883fff67f9026c0130640c770616c30a86ec8925475e1d6ce5daa9d9193f",
+      "size_bytes": 292058
     },
     "qt_app/brand.py": {
       "sha256": "a363af8f033131d0468c7fbc7a72c416e91c1b454a9e81c21c785f68d6785574",
@@ -3130,20 +3130,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "97f1a30b6376d47548a8be9490ad6de3b6a3dc7690f967b712c995cd60230e11",
-      "size_bytes": 5404
+      "sha256": "0d7c3345776614d91d89a617c7686050421da495f776a5bee0f43d54fb16dd70",
+      "size_bytes": 5221
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "5c5939a56c40796a0590d80df2da9a400845400674736fdfc02aa6bdee9c378b",
-      "size_bytes": 17601
+      "sha256": "3521bfe3909542ad5d76e53b3b565961382b66762550906860d6a37dc0a05f3d",
+      "size_bytes": 18027
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
-      "sha256": "946d107b28026733af33a19b84b61e587f4188cbe41f8f870e8a64ad0ff8bc13",
+      "sha256": "d8c148757d01178b90b1896be31c6682872588b03d8cca44edfbda6d47afd928",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "636cac0faf2c8191e094b3001fb016dfb7693f23f47b033d8d41c957845d085f",
-      "size_bytes": 30027
+      "sha256": "bffbb88fbf511f720e1704bb0b635ac4904407b7958cd6370790145eae5b2595",
+      "size_bytes": 30405
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3202,7 +3202,7 @@
       "size_bytes": 3136
     },
     "suite_core/media_organizer/version.py": {
-      "sha256": "7a586456f9034b4f02ad4914847ddba1a40e66461067c0e3d167a127c7d0b037",
+      "sha256": "e4c47f4baa5db69b3010288003fe7eafdda6fa04be19ba1fa475319143587f87",
       "size_bytes": 264
     },
     "suite_core/registry/__init__.py": {

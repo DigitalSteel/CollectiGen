@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.5.5-alpha.1",
+      "numeric_version": "0.5.5",
+      "maturity": "alpha",
+      "date": "2026-11-13",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate;not packaged or published",
+      "scope": "Restore canonical interrupted rule repair/Undo recovery and reviewed authority refusal;no new native enrollment or automatic write authority"
+    },
+    {
       "software_version": "0.5.4-alpha.1",
       "numeric_version": "0.5.4",
       "maturity": "alpha",

@@ -4671,8 +4671,29 @@ You review the complete suggestion first, then choose whether to add it. Saving 
         self.header.set_status("Restored the exact pre-migration rule records. Image Knowledge was unchanged.")
 
     def _refresh_projection_rule_repairs(self):
-        candidates=self.projection_repairs.candidates()
-        undoable=self.projection_repairs.undoable_operation()
+        try:pending=self.projection_repairs.pending_operations(); issue=""
+        except Exception as exc:pending=(); issue=str(exc)
+        held=bool(pending or issue)
+        candidates=() if held else self.projection_repairs.candidates()
+        undoable=None if held else self.projection_repairs.undoable_operation()
+        busy=getattr(self,"_task",None) is not None
+        self.projection_repair_review.setEnabled(not held and not busy)
+        self.projection_repair_undo.setEnabled(not busy)
+        self.projection_repair_undo.setText(
+            "Review Interrupted Rule Recovery…" if held else "Restore Last Rule Repair"
+        )
+        if self.projection_repair_undo.property("primary")!=held:
+            self.projection_repair_undo.setProperty("primary",held)
+            self.projection_repair_undo.style().unpolish(self.projection_repair_undo)
+            self.projection_repair_undo.style().polish(self.projection_repair_undo)
+        if held:
+            self.projection_repair_panel.show()
+            self.projection_repair_review.hide(); self.projection_repair_undo.show()
+            self.projection_repair_status.setText(
+                issue or "An interrupted rule repair or restore needs review. "
+                "Keep the recovery records and backups unchanged."
+            )
+            return
         self.projection_repair_panel.setVisible(bool(candidates or undoable))
         self.projection_repair_review.setVisible(bool(candidates))
         self.projection_repair_undo.setVisible(bool(undoable))
@@ -4689,7 +4710,11 @@ You review the complete suggestion first, then choose whether to add it. Saving 
             self.projection_repair_status.clear()
 
     def review_projection_rule_repairs(self):
-        candidates=self.projection_repairs.candidates()
+        try:review=self.projection_repairs.review()
+        except Exception as exc:
+            QMessageBox.critical(self,"Related rules could not be reviewed",str(exc))
+            return
+        candidates=review.candidates
         if not candidates:
             QMessageBox.information(
                 self,"No related rule repairs",
@@ -4700,7 +4725,7 @@ You review the complete suggestion first, then choose whether to add it. Saving 
         dialog=ProjectionRuleRepairDialog(candidates,self)
         if dialog.exec()!=QDialog.Accepted:return
         selected=dialog.selected_ids()
-        try:self.projection_repairs.apply(selected)
+        try:self.projection_repairs.apply(selected,review=review)
         except Exception as exc:
             QMessageBox.critical(
                 self,"Related rules were not repaired",str(exc)
@@ -4710,13 +4735,54 @@ You review the complete suggestion first, then choose whether to add it. Saving 
         self.knowledge_changed.emit(); self.refresh()
         self.header.set_status(
             f"Repaired {len(selected):,} related projection rule(s). "
-            "Image Knowledge was unchanged; exact restore remains available."
+            "Image Knowledge was unchanged. Review Restore Last Rule Repair for eligible saved records."
         )
 
     def undo_projection_rule_repair(self):
+        if getattr(self,"_task",None) is not None:
+            show_operation_in_progress(self,"Rule recovery")
+            return
+        try:pending=self.projection_repairs.pending_operations()
+        except Exception as exc:
+            QMessageBox.critical(self,"Rule recovery is held",str(exc)); return
+        if pending:
+            if QMessageBox.question(
+                self,"Review interrupted rule recovery",
+                "Return rule definitions to their saved state before the unfinished "
+                "repair or restore? The interrupted operation will be marked as stopped. "
+                "Newer or invalid data will not be overwritten. Keep the backups.\n\n"
+                "Recovery will check all records first, then finish verified writes "
+                "without cancellation. Image Knowledge will not change.",
+            )!=QMessageBox.Yes:return
+            if not self._start_rule_task(
+                "Checking interrupted rule records; no changes yet",
+                cancellable=False,context="Interrupted rule recovery",
+            ):return
+            self.projection_repair_review.setEnabled(False)
+            self.projection_repair_undo.setEnabled(False)
+            service=self.projection_repairs
+            # _start_rule_task already owns the app-wide visible reservation.
+            # Reuse its worker pattern rather than queueing behind that lease.
+            task=ProgressCallTask(lambda progress:service.recover_interrupted(progress))
+            self._task=task
+            task.signals.progress.connect(self._rule_task_progress)
+            task.signals.complete.connect(self._projection_recovery_complete)
+            task.signals.failed.connect(self._projection_recovery_failed)
+            try:
+                from .job_progress import bind_job_progress
+                task.manager=self.state.jobs
+                task.job_id=self.state._operation_gate["automation"]
+                self._projection_recovery_progress=bind_job_progress(
+                    self,task,title="Recovering interrupted rules",unit="stores",
+                    cancel_button=self.rule_cancel_button,
+                    cancel_tooltip="Verified recovery finishes safely before closing.",
+                )
+                self.pool.start(task)
+            except Exception as exc:self._projection_recovery_failed(str(exc))
+            return
         if QMessageBox.question(
             self,"Restore related rule definitions",
-            "Restore the exact rule records from before the last related-rule "
+            "Restore the matching saved rule records from before the last related-rule "
             "repair? Image Knowledge will remain unchanged.",
         )!=QMessageBox.Yes:return
         try:self.projection_repairs.undo_last()
@@ -4728,8 +4794,23 @@ You review the complete suggestion first, then choose whether to add it. Saving 
         self.state.events.publish("knowledge_changed")
         self.knowledge_changed.emit(); self.refresh()
         self.header.set_status(
-            "Restored the exact pre-repair rule records. Image Knowledge was unchanged."
+            "Restored the saved pre-repair rule records. Image Knowledge was unchanged."
         )
+
+    def _projection_recovery_complete(self,result):
+        message=("Interrupted rule work was rolled back. Review current rules before applying a new repair."
+                 if result else "No interrupted rule work remains. Review the current rules.")
+        self._finish_rule_task(message)
+        self.state.events.publish("knowledge_changed"); self.knowledge_changed.emit()
+        self.refresh(); self.header.set_status(message)
+        self._notify_background_work_finished()
+
+    def _projection_recovery_failed(self,message):
+        self._finish_rule_task("Rule recovery is held. Keep the recovery records and backups unchanged.")
+        self.refresh()
+        self.header.set_status("Rule recovery is held; review the error before retrying.")
+        QMessageBox.critical(self,"Rule recovery is held",str(message))
+        self._notify_background_work_finished()
 
     def edit_rule(self,new=False,suggested=None):
         key=None if new else self.selected_rule(); rule_type="Merge SDXL Tags"; sources=[]; target=""
