@@ -73,8 +73,9 @@ downloads. Review and confirm installation in each component workspace.
 Tag Database is reviewed content, rather than another application installer.
 For a.0.6.6 and earlier, use the full Windows ZIP in a new folder to receive
 the fixed launcher. The built-in update in those versions cannot replace it.
-Installed update and rollback testing remains incomplete. Keep your previous
-folder and separate data backups.
+The a.0.6.7 → a.0.6.8 update and reopening passed in an isolated installation.
+Rollback testing remains incomplete. Keep your previous folder and separate
+data backups.
 
 ## Source startup
 
