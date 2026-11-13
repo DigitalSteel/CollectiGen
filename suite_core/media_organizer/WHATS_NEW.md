@@ -1,3 +1,11 @@
+# Unreleased
+
+- A reviewed Manager result stays available for Retry Add Images Preview when another file task prevents Copy from starting. Retry rechecks the same source and asks for confirmation again.
+- Verified Manager result previews allow only Copy to Ingest, preserving the generated originals.
+- Copy review explains that Undo requires configured Ingest History and Recycle and unchanged source and copied files.
+- Copy-only recovery names Move Copies to Recycle, preserves originals, and explains the reviewed destination/privacy boundary.
+- Pending a versioned Organizer package and corresponding Manager offer update.
+
 # Media Organizer a.0.5.1
 
 - A generated image or sidecar changed after copy preview now explains why

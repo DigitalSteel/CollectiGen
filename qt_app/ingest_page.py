@@ -1325,7 +1325,7 @@ class IngestPage(QWidget):
         self._active_add_images_verified_versions=()
         ordinary=self._active_add_images_ordinary
         self._active_add_images_ordinary=False
-        dialog=IngestImportPreviewDialog(result,self)
+        dialog=IngestImportPreviewDialog(result,self,copy_only=bool(verified_versions))
         if dialog.exec()!=QDialog.Accepted:
             if request is not None and request[2]:
                 source_kind,paths,preserve_source=request
@@ -1336,16 +1336,23 @@ class IngestPage(QWidget):
                     ordinary_user_selection=ordinary,
                 )
             self._notify_background_work_finished(); return
-        self._apply_ingest_import(
+        started = self._apply_ingest_import(
             result,dialog.action(),dialog.boundary_confirmed(),
             ordinary_user_selection=ordinary,
         )
+        if ordinary and verified_versions and started is False and request is not None:
+            source_kind,paths,preserve_source=request
+            IngestPage._hold_ingest_import_selection(
+                self,source_kind,paths,preserve_source,
+                "The reviewed result was not copied because file work is busy. Wait for the current task to finish.",
+                verified_versions=verified_versions,ordinary_user_selection=ordinary,
+            )
         self._notify_background_work_finished()
 
     def _apply_ingest_import(self,plan,action,boundary_confirmed,*,ordinary_user_selection=False):
-        if IngestPage._file_work_blocked(self):return
+        if IngestPage._file_work_blocked(self):return False
         items=plan.ready(action)
-        if not items: return
+        if not items: return False
         if ordinary_user_selection:
             executor=getattr(self,"_saved_add_executor",None) or AddImagesBatchExecutor(self.state.moves)
             def operation(paths,progress,should_cancel=lambda:False):
@@ -1362,7 +1369,7 @@ class IngestPage(QWidget):
                         ]}
                 return _saved_add_result(result,
                     skipped=len(plan.duplicates)+len(plan.unsupported))
-            self._run_batch(
+            return self._run_batch(
                 operation,
                 "Copying verified image families into Ingest…" if action=="copy"
                 else "Moving verified image families into Ingest…",
@@ -1370,7 +1377,6 @@ class IngestPage(QWidget):
                 completion_context="add_images_saved_apply",progress_unit="image",
                 pause_after_current=True,
             )
-            return
         by_source={item.source:item for item in items}
         destination_profile=plan.destination_profile
         group_id="ingest-add-"+uuid4().hex
