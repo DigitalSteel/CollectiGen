@@ -11,7 +11,7 @@ source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.6.5](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.5-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.5-alpha.1/SuiteManager-a.0.6.5-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.5-alpha.1/SuiteManager-a.0.6.5-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
+| **Suite Manager** | [a.0.6.6](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.6-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.6-alpha.1/SuiteManager-a.0.6.6-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.6-alpha.1/SuiteManager-a.0.6.6-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
 | **Media Organizer** | [a.0.5.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.1-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.1-alpha.1/MediaOrganizer-a.0.5.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.1-alpha.1/MediaOrganizer-a.0.5.1-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars, plus Training dataset planning and offline image/video drafts. |
 | **Tag Encyclopedia** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). View and edit tags. |
 | **Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Catalog tag data for use with the Tag Encyclopedia. |
@@ -33,13 +33,16 @@ Retain your previous package and separate profile/image/catalog backups.
 3. Review the offered version, choose **Install**, and confirm.
 4. Restart Manager when requested, then open the installed app from its workspace.
 
-Manager a.0.6.5 includes dedicated **Generate** and **Training** workspaces for
+Manager a.0.6.6 includes dedicated **Generate** and **Training** workspaces for
 image/video drafts, saved work, local setup, training preparation and retained
 reviews. Models and optional runtimes are configured separately. Saved setups can
 open a separate image draft while preserving the work already open. Both Remix
 entries now do the same, retaining existing image and video drafts. Use the
 **Help** group or **F1** in Generate and Training for their workflow guides.
 Generate and update buttons fit smaller windows, and Tab moves out of update notes.
+Training history and saved SDXL preparations now offer **Forget From This List**
+and **Recover Saved List**. Forget keeps reviews, checkpoints and outputs intact;
+Recover finishes an interrupted saved-list update.
 This Manager release offers signed Reader a.0.3.1 and Organizer a.0.5.1.
 
 Use a short installation path: long paths can prevent the bundled Qt Windows
