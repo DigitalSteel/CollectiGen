@@ -59,7 +59,7 @@ def pending(monkeypatch, kind, role, elapsed):
 def test_organizer_retains_original_reply_after_large_package_review(monkeypatch, kind):
     case = pending(monkeypatch, kind, "owned-organizer", 61)
     assert case.wait() in ("reservation", True)
-    assert case.reads == [59]
+    assert case.reads == [30]
     assert case.slot["rpc"] is None
 
 
@@ -84,7 +84,7 @@ def test_idle_poll_never_restarts_organizer_deadline_or_request(monkeypatch, kin
         return case.receive(*args, **kwargs)
     case.adapter._wire_rpc = receive
     assert case.wait() in ("reservation", True)
-    assert calls == [60, 50]
+    assert calls == [30, 30]
 
 
 @pytest.mark.parametrize("kind", ["reserve", "transfer"])
@@ -129,3 +129,47 @@ def test_reader_cannot_request_organizer_budget(monkeypatch):
     with pytest.raises(entry.EntryHold, match="bounded_retained_reply_wait_required"):
         case.wait(timeout=120)
     assert case.reads == []
+
+
+@pytest.mark.parametrize("kind", ["reserve", "transfer"])
+def test_organizer_wait_uses_real_frame_read_with_original_channel_bound(monkeypatch, kind):
+    case = pending(monkeypatch, kind, "owned-organizer", 61)
+    wire = entry._NormalWire.__new__(entry._NormalWire)
+    wire.timeout = 1
+    wire.incoming = 0
+    wire.received_pending = None
+    wire.message_kinds = entry.MESSAGE_KINDS
+    wire.proof = SimpleNamespace(binding_sha256="a" * 64)
+    waits = []
+    payload = dict(protocol=entry.PROTOCOL, sequence=1,
+                   kind="helper-grant" if kind == "reserve" else "helper-registered",
+                   binding_sha256=wire.proof.binding_sha256,
+                   payload={"original_reply": True})
+    raw = entry._wire_bytes(payload)
+    def read_frame(*, timeout):
+        assert 0 < timeout <= 30
+        waits.append(timeout)
+        return len(raw).to_bytes(4, "little") + raw
+    wire.channel = SimpleNamespace(read_frame=read_frame)
+    def receive(value, request_kind, extra, expected, *, read_timeout):
+        assert value is case.slot and value["rpc"] is case.rpc and extra == {}
+        case.reads.append(read_timeout)
+        return wire.receive(timeout=read_timeout)["payload"]
+    case.adapter._wire_rpc = receive
+    assert case.wait() in ("reservation", True)
+    assert case.reads == [30] and waits == [1]
+    assert wire.incoming == 1
+
+
+@pytest.mark.parametrize("kind", ["reserve", "transfer"])
+def test_organizer_idle_read_stops_at_original_overall_deadline(monkeypatch, kind):
+    case = pending(monkeypatch, kind, "owned-organizer", 61)
+    def receive(value, request_kind, extra, expected, *, read_timeout):
+        assert value is case.slot and value["rpc"] is case.rpc and extra == {}
+        case.reads.append(read_timeout)
+        case.clock[0] = 121
+        raise LaunchHold("control_channel_idle_timeout")
+    case.adapter._wire_rpc = receive
+    with pytest.raises(entry.EntryHold, match="retained_helper_reply_deadline"):
+        case.wait()
+    assert case.reads == [30] and case.slot["rpc"] is case.rpc

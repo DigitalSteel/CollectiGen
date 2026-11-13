@@ -3678,8 +3678,8 @@
     },
     {
       "path": "suite_core/manager/bootstrap_entry.py",
-      "bytes": 104787,
-      "sha256": "5e0b8d258094552e0c60ea3fd66f4adeaffb791861aa7d429a3bd743749c2f39"
+      "bytes": 104805,
+      "sha256": "48962c63fbe38c228cf9ffe3b943d0e4e89d9f4b606baaf7231dede1da425cfe"
     },
     {
       "path": "suite_core/manager/candidate_inventory.py",

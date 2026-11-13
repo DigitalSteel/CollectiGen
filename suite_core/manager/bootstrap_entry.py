@@ -1241,7 +1241,7 @@ class EntryHelperAdapter:
                 remaining=deadline-time.monotonic()
                 require(remaining>0,'retained_helper_reply_deadline')
                 try:
-                    frame=self._wire_rpc(slot,'helper-reserve',{}, {'helper-grant'},read_timeout=remaining)
+                    frame=self._wire_rpc(slot,'helper-reserve',{}, {'helper-grant'},read_timeout=min(remaining, 30))
                     self._wire_apply(slot,frame)
                 except BaseException as error:
                     intact_idle=(type(error) is _native().LaunchHold and str(error)=='control_channel_idle_timeout'
@@ -1269,7 +1269,7 @@ class EntryHelperAdapter:
                 remaining=deadline-time.monotonic()
                 require(remaining>0,'retained_helper_reply_deadline')
                 try:
-                    frame=self._wire_rpc(slot,'helper-register',{}, {'helper-registered'},read_timeout=remaining)
+                    frame=self._wire_rpc(slot,'helper-register',{}, {'helper-registered'},read_timeout=min(remaining, 30))
                     self._wire_apply(slot,frame)
                 except BaseException as error:
                     intact_idle=(type(error) is _native().LaunchHold and str(error)=='control_channel_idle_timeout'

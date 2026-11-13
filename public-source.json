@@ -3206,8 +3206,8 @@
       "size_bytes": 5605
     },
     "suite_core/manager/bootstrap_entry.py": {
-      "sha256": "5e0b8d258094552e0c60ea3fd66f4adeaffb791861aa7d429a3bd743749c2f39",
-      "size_bytes": 104787
+      "sha256": "48962c63fbe38c228cf9ffe3b943d0e4e89d9f4b606baaf7231dede1da425cfe",
+      "size_bytes": 104805
     },
     "suite_core/manager/candidate_inventory.py": {
       "sha256": "2274b30218af9ccacdb3a030f241fa67e41170610269b77541a91238aa07cdd1",
@@ -3878,8 +3878,8 @@
       "size_bytes": 8389
     },
     "tests/test_manager_organizer_reply_budget.py": {
-      "sha256": "0d300ded11e8526e14888e931afb567670f17ba05cd1378703a23b2343d1e587",
-      "size_bytes": 5929
+      "sha256": "c1aa60759cf926ceb671ae2894375abd45ef4796b7600caab951538581f624a1",
+      "size_bytes": 7987
     },
     "tests/test_manager_payload_count.py": {
       "sha256": "8a64dbc51a49a459f8da31345042a9527aa25c205f128b60a6bfaa2a84ba64f0",
@@ -4098,7 +4098,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "9f4dae38dc18cd4bbe45b88f359057d66289774c677b371ab48735ff3aaef071",
+      "sha256": "c79dc631e90fc2cbc7ebe936131a7d938e6e03eca6722377d07378172ae6e44f",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {
