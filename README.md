@@ -19,7 +19,7 @@ and run **Start_MediaOrganizer.bat**. Retain your previous package and separate
 profile, image and catalog backups. Windows may report an unknown publisher:
 CollectiGen signs update metadata, while the executable has no Authenticode signature.
 
-Alternatively, use **Suite Manager a.0.6.10 > Applications > Get or update Media
+Alternatively, use **Suite Manager a.0.7.0 > Applications > Get or update Media
 Organizer**, review the offered version and confirm Install. Older Manager
 releases can retain an older exact Organizer offer.
 
