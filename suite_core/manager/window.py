@@ -1614,11 +1614,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 return
             from qt_app.generation_workflow import open_generation_workspace
 
-            current = getattr(self, "_generation_dialog", None)
-            if current is not None and not current._closed:
-                open_generation_workspace(self)
-                current.status.setText("Close this draft, then choose Plan Remix from Verified Result again.")
-                return
             paths, verifier, evidence = pending
 
             def opened(_dialog):
@@ -1637,13 +1632,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 return
             from PySide6.QtWidgets import QFileDialog
             from qt_app.generation_workflow import open_generation_workspace
-
-            current = getattr(self, "_generation_dialog", None)
-            if current is not None and not current._closed:
-                open_generation_workspace(self)
-                current.status.setText(
-                    "Close this image draft after saving any changes, then choose Plan a Remix again.")
-                return
 
             self._image_draft_picker_open = True
             try:

@@ -741,7 +741,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             if value["action"] == "remix" and not runtime_allowed and callable(retain_remix):
                 retain_remix(value["paths"], value["verified_source"], value["verified_source_evidence"])
                 dialog.status.setText(
-                    "Verified image selected. Close this draft, then choose Plan Remix from Verified Result in Applications."
+                    "Verified image selected. In Generate, choose Plan Remix from Verified Result to open a separate draft."
                 )
                 return
             if value["plan"] is not None:

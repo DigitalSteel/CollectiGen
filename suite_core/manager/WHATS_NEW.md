@@ -1,3 +1,7 @@
+# Unreleased
+
+- Plan a Remix and Plan Remix from Verified Result open separate image drafts while retaining existing image/video work. Source-change checks and cancellation still apply.
+
 # What's New - a.0.6.4 (embedded 0.6.4-alpha.1) - 2026-11-12
 
 - The default Organizer installer offer targets signed a.0.5.1, including changed-result recovery guidance.
