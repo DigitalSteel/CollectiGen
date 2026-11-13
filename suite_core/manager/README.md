@@ -1,11 +1,11 @@
 # CollectiGen Suite Manager
 
-**Suite Manager a.0.6.6** provides component installation plus dedicated Generate
+**Suite Manager a.0.6.7** provides component installation plus dedicated Generate
 and Training workspaces. Use the complete Windows ZIP for a fresh installation.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.6-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.6-alpha.1/SuiteManager-a.0.6.6-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.6-alpha.1/SuiteManager-a.0.6.6-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.7-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.7-alpha.1/SuiteManager-a.0.6.7-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.7-alpha.1/SuiteManager-a.0.6.7-windows-x64.zip.sha256)
 
 Extract into a new, short writable folder such as `C:\CollectiGen`, keep the
 complete folder together, and run **CollectiGen.exe**. Long installation paths
@@ -15,6 +15,9 @@ separate data backups. Review and confirm each installation; restart when asked.
 Generate and Manager update actions wrap to the available window width. Tab moves
 from update notes to the next action. Existing drafts, confirmation and recovery
 stay with their original owners.
+
+This version fixes Manager update checks and enables **Repair to prior Manager**
+when an update is rejected before startup.
 
 Training history and saved SDXL preparations now include **Forget From This List**
 and **Recover Saved List**. Forget removes only the saved-list entry; reviews,
@@ -67,9 +70,10 @@ raw generation lineage are preserved rather than promoted into confirmed tags.
 This release offers signed Reader a.0.3.1 and Organizer a.0.5.1
 downloads. Review and confirm installation in each component workspace.
 Tag Database is reviewed content, rather than another application installer.
-Use the full Windows ZIP in a new folder for a fresh installation. The signed
-updater package supports Manager a.0.6.2 or newer; the installed Apply and rollback
-path is still being evaluated. For older clients, use a fresh full ZIP.
+For a.0.6.6 and earlier, use the full Windows ZIP in a new folder to receive
+the fixed launcher. The built-in update in those versions cannot replace it.
+Installed update and rollback testing remains incomplete. Keep your previous
+folder and separate data backups.
 
 ## Source startup
 
