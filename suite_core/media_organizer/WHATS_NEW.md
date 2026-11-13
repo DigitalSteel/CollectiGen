@@ -1,5 +1,10 @@
 # Unreleased
 
+# Media Organizer a.0.5.3
+
+- Copied Manager results retain Undo after their first automatic saved-data initialization. Recovery uses the exact recorded file instances and moves the complete copied family to Recycle; originals stay unchanged.
+- Unrecorded edits, replaced files, interrupted or older unwitnessed saves still require review. Existing copy, history and recovery records are preserved.
+
 # Media Organizer a.0.5.2
 
 - A reviewed Manager result stays available for Retry Add Images Preview when another file task prevents Copy from starting. Retry rechecks the same source and asks for confirmation again.

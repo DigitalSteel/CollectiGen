@@ -418,6 +418,33 @@ class HistoryMoveCoordinator:
         with self._locked(intent,initial_copy=True) as stores:self._validate_before(intent,stores)
         return intent
 
+    def _initialized_copy_sidecar(self,original,stores,path,expected):
+        """Recognize only the witnessed first native initialization of a copy."""
+        image=Path(original["target"])
+        if path_key(path)!=path_key(image.with_suffix(".tags.json")):
+            return ""
+        store=stores[original["target_scope"]]
+        binding=store.binding(entity_id=original["entity_id"])
+        if not binding or binding.get("binding_state")!="active":
+            return ""
+        entity=HistoryEntityRef(store.scope.key,original["entity_id"],binding["locator"],binding["source_token"])
+        head=store.current_head(entity)
+        if (head is None or head.origin!="save" or head.operation_kind!="image_authority_initialization"
+                or head.producer!="collectigen" or head.provenance!="native" or head.restored_from
+                or not head.parent_id or head.record_before_token!=expected
+                or not head.record_after_token or _source_token(path)!=head.record_after_token):
+            return ""
+        parent=store.version(entity,head.parent_id)
+        if (parent.origin!="baseline" or parent.parent_id or parent.operation_id!=head.operation_id
+                or parent.operation_kind!=head.operation_kind or parent.producer!=head.producer):
+            return ""
+        member=next(item for item in original["transfer"]["files"] if path_key(item["target"])==path_key(path))
+        before=store.payload(entity,parent.snapshot);after=store.payload(entity,head.snapshot)
+        if (before is None or after is None or hashlib.sha256(before).hexdigest()!=member["sha256"]
+                or self._sha256(path)!=hashlib.sha256(after).hexdigest()):
+            return ""
+        return hashlib.sha256(after).hexdigest()
+
     def _validate_copy_recycle_source(self,intent,stores):
         selected=intent["copy_recycle_initial"];pointer=selected["pointer"]
         store=stores[selected["owner_scope"]]
@@ -433,12 +460,19 @@ class HistoryMoveCoordinator:
         if binding.get("receipt_id")!=original["receipt_id"]:
             rollback=self.linked_rollback(binding.get("receipt_id"),selected_pointer=selected["pointer"],
                 owner_path=original["target"],source=original["target"],entity_id=original["entity_id"],stores=stores)
+        initialized_sidecar={}
         for member in original["transfer"]["files"]:
             for endpoint in ("source","target"):
                 path=Path(member[endpoint]);_reject_reparse(path)
                 expected=self._expected_token(rollback,stores,"source",path) if rollback and endpoint=="target" else self._expected_token(original,stores,endpoint,path)
-                if _source_token(path)!=expected:raise HistoryError("The original source or copied file instance changed.")
-        if not all(self._family_state(original)[:2]):
+                if _source_token(path)!=expected:
+                    initialized=self._initialized_copy_sidecar(original,stores,path,expected) if endpoint=="target" and not rollback else ""
+                    if not initialized:raise HistoryError("The original source or copied file instance changed.")
+                    initialized_sidecar[path_key(path)]=initialized
+        source_ok,target_ok,*_=self._family_state(original)
+        if initialized_sidecar:
+            target_ok=all(self._sha256(Path(member["target"]))==initialized_sidecar.get(path_key(member["target"]),member["sha256"]) for member in original["transfer"]["files"])
+        if not source_ok or not target_ok:
             raise HistoryError("The original source or imported copy changed; removal is held.")
         for endpoint in ("source","target"):
             if {path_key(path) for path in VerifiedTransferEngine.related_files(Path(original[endpoint]))}!={path_key(member[endpoint]) for member in original["transfer"]["files"]}:

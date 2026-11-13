@@ -34,7 +34,7 @@
   "maturity": "alpha",
   "module_id": "collectigen.media-organizer",
   "native_activation_qualified": false,
-  "numeric_version": "0.5.2",
+  "numeric_version": "0.5.3",
   "optional_integrations": [
     "injected model-manager status",
     "borrowed Encyclopedia TagLookup interface 1"
@@ -114,11 +114,11 @@
   "scope": "Organizer Dataset Training-draft import and saved editable planning; existing native runtime and component authority. Reviewed original/trimmed Manager video receipts return through canonical Video Ingest; no Organizer generation execution. Optional Video playback uses the reviewed profile through Setup; existing native activation/distribution qualification remains separate.",
   "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
   "shell_owner": "qt_app.main_window.TagManagerWindow",
-  "software_version": "0.5.2-alpha.1",
+  "software_version": "0.5.3-alpha.1",
   "standalone_distribution_qualified": false,
   "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
   "startup_owner": "qt_main._start_application",
-  "status": "a.0.5.2 candidate; exact packaged qualification and publication recorded separately",
+  "status": "a.0.5.3 candidate; exact packaged qualification and publication recorded separately",
   "unavailable_product_workspaces": [
     "Generate",
     "Training"

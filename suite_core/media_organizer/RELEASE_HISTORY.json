@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.5.3-alpha.1",
+      "numeric_version": "0.5.3",
+      "maturity": "alpha",
+      "date": "2026-11-13",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate;source and packaged qualification pending",
+      "scope": "Retain exact automatic initialization publication evidence for copied Manager-result Undo;unrecorded edits and legacy unwitnessed copies remain held"
+    },
+    {
       "software_version": "0.5.2-alpha.1",
       "numeric_version": "0.5.2",
       "maturity": "alpha",

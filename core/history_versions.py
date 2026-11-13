@@ -182,6 +182,8 @@ class VersionRef:
     legacy_reference: str = ""
     legacy_operation_id: str = ""
     restored_units: tuple[str, ...] = ()
+    record_before_token: str = ""
+    record_after_token: str = ""
 
 
 @dataclass(frozen=True)
@@ -204,6 +206,7 @@ class CaptureIntent:
     reason: str = ""
     producer: str = ""
     restored_units: tuple[str, ...] = ()
+    record_before_token: str = ""
 
 
 def _reject_reparse(path: Path):
@@ -222,6 +225,11 @@ def _source_token(image: Path) -> str:
         raise HistoryError("History source is not a regular image file.")
     # Identity evidence, not content equivalence. A replaced/changed source is
     # held for an explicit future binding adapter, never silently merged.
+    return _stat_source_token(info)
+
+
+def _stat_source_token(info) -> str:
+    """Token from stat already tied to an owned publication."""
     return hashlib.sha256(_canonical_bytes([
         info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns,
         getattr(info, "st_birthtime_ns", info.st_ctime_ns),
@@ -557,7 +565,9 @@ class HistoryStore:
                           operation_kind=event.get("operation_kind", ""), reason=event.get("reason", ""),
                           producer=event.get("producer", ""), provenance=event.get("provenance", "native"),
                           source_timestamp=event.get("source_timestamp", ""), legacy_reference=event.get("legacy_reference", ""),
-                          legacy_operation_id=event.get("legacy_operation_id", ""), restored_units=tuple(event.get("restored_units", ())))
+                          legacy_operation_id=event.get("legacy_operation_id", ""), restored_units=tuple(event.get("restored_units", ())),
+                          record_before_token=event.get("record_before_token", ""),
+                          record_after_token=event.get("record_after_token", ""))
 
     def version(self, entity: HistoryEntityRef, version_id: str) -> VersionRef:
         with self.locked():
@@ -591,7 +601,7 @@ class HistoryStore:
             return HistoryPage(versions, versions[-1].sequence if len(rows) > limit else None)
 
     def _record_version(self, entity, snapshot, *, operation_id, parent_id="", origin="save", version_id=None, restored_from="", transaction_id="",
-                        operation_kind="", reason="", producer="", provenance="native", source_timestamp="", legacy_reference="", legacy_operation_id="", coverage=None, restored_units=()):
+                        operation_kind="", reason="", producer="", provenance="native", source_timestamp="", legacy_reference="", legacy_operation_id="", coverage=None, restored_units=(), record_before_token="", record_after_token=""):
         version_id = version_id or uuid4().hex
         raw = self.payload(entity, snapshot)
         try:
@@ -605,7 +615,9 @@ class HistoryStore:
                       "record_schema": schema, "coverage": coverage if coverage is not None else (["image-knowledge-record"] if raw is not None else ["record-absence"]),
                       "operation_kind": operation_kind, "reason": reason, "producer": producer,
                       "provenance": provenance, "source_timestamp": source_timestamp, "legacy_reference": legacy_reference,
-                      "legacy_operation_id": legacy_operation_id, "restored_units": list(restored_units)})
+                      "legacy_operation_id": legacy_operation_id, "restored_units": list(restored_units),
+                      **({"record_before_token": record_before_token} if record_before_token else {}),
+                      **({"record_after_token": record_after_token} if record_after_token else {})})
         return version_id
 
     @_entity_locked
@@ -645,20 +657,22 @@ class HistoryStore:
         # Semantic no-op preserves original saved bytes without fabricating a save.
         if before == after or (before is not None and after is not None and json.loads(before) == json.loads(after)):
             return None
+        record_before_token = _source_token(image.with_suffix(".tags.json")) if before is not None else ""
         after_ref = self.snapshot(entity, after)
-        intent = CaptureIntent(entity, uuid4().hex, operation_id, before_ref, after_ref, parent, uuid4().hex, restored_from, operation_kind, reason, producer, tuple(restored_units))
+        intent = CaptureIntent(entity, uuid4().hex, operation_id, before_ref, after_ref, parent, uuid4().hex, restored_from, operation_kind, reason, producer, tuple(restored_units), record_before_token)
         self._append({"event": "prepare", "entity_id": entity.entity_id, "transaction_id": intent.transaction_id,
                       "operation_id": operation_id, "before": before_ref, "after": after_ref,
                       "parent_id": parent, "version_id": intent.version_id, "restored_from": restored_from,
-                      "operation_kind": operation_kind, "reason": reason, "producer": producer, "restored_units": list(restored_units)})
+                      "operation_kind": operation_kind, "reason": reason, "producer": producer, "restored_units": list(restored_units),
+                      "record_before_token": record_before_token})
         return intent
 
-    def commit(self, intent: CaptureIntent):
+    def commit(self, intent: CaptureIntent, *, record_after_token=""):
         with self.locked(self.scope.library_root / intent.entity.locator):
             self._ready()
-            return self._commit(intent)
+            return self._commit(intent, record_after_token=record_after_token)
 
-    def _commit(self, intent: CaptureIntent):
+    def _commit(self, intent: CaptureIntent, *, record_after_token=""):
         image = self.validate_entity(intent.entity)
         prepared = self._find(kind="prepare", tx=intent.transaction_id)
         expected = {
@@ -668,6 +682,7 @@ class HistoryStore:
             "restored_from": intent.restored_from,
             "operation_kind": intent.operation_kind, "reason": intent.reason, "producer": intent.producer,
             "restored_units": list(intent.restored_units),
+            "record_before_token": intent.record_before_token,
         }
         if prepared is None or any(prepared.get(key, [] if key == "restored_units" else "") != value for key, value in expected.items()):
             raise HistoryError("Capture intent differs from its immutable journaled preparation.")
@@ -684,11 +699,14 @@ class HistoryStore:
         if read_record(image.with_suffix(".tags.json")) != self.payload(intent.entity, intent.after):
             raise HistoryError("Write/history commit interrupted or changed; reconciliation required.")
         self._verify_recovery_receipt(intent)
+        if record_after_token and _source_token(image.with_suffix(".tags.json")) != record_after_token:
+            raise HistoryError("Published sidecar instance changed before history completion.")
         self._record_version(intent.entity, intent.after, operation_id=intent.operation_id,
                              parent_id=intent.parent_id, origin="restore" if intent.restored_from else "save",
                              version_id=intent.version_id, restored_from=intent.restored_from,
                              transaction_id=intent.transaction_id, operation_kind=intent.operation_kind,
-                             reason=intent.reason, producer=intent.producer, restored_units=intent.restored_units)
+                             reason=intent.reason, producer=intent.producer, restored_units=intent.restored_units,
+                             record_before_token=intent.record_before_token, record_after_token=record_after_token)
 
     def attach_recovery_receipt(self, intent: CaptureIntent, manifest: Path):
         """Bind a canonical recovery descriptor before its storage mutation."""
@@ -775,7 +793,7 @@ class HistoryStore:
                 after = self.payload(entity, event["after"])
                 before = self.payload(entity, event["before"])
                 if current == after:
-                    self.commit(CaptureIntent(entity, event["transaction_id"], event["operation_id"], event["before"], event["after"], event["parent_id"], event["version_id"], event.get("restored_from", ""), event.get("operation_kind", ""), event.get("reason", ""), event.get("producer", ""), tuple(event.get("restored_units", ()))))
+                    self.commit(CaptureIntent(entity, event["transaction_id"], event["operation_id"], event["before"], event["after"], event["parent_id"], event["version_id"], event.get("restored_from", ""), event.get("operation_kind", ""), event.get("reason", ""), event.get("producer", ""), tuple(event.get("restored_units", ())), event.get("record_before_token", "")))
                 elif current == before:
                     self._append({"event": "abort", "entity_id": entity.entity_id, "transaction_id": event["transaction_id"]})
                 else:

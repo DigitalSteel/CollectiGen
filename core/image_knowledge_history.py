@@ -14,7 +14,7 @@ from .annotation import ImageAnnotation, SCHEMA_VERSION
 from .image_contexts import validate_image_contexts
 from .tag_collection import normalize_tag
 from .history_versions import (
-    HistoryEntityRef, HistoryError, HistoryStore, VersionRef, read_record, record_token,
+    HistoryEntityRef, HistoryError, HistoryStore, VersionRef, read_record, record_token, _source_token,
 )
 
 
@@ -73,7 +73,7 @@ class HistoryWriteContext:
                 raise HistoryError("Write context does not authorize this image.")
             yield
 
-    def write(self, image: Path, intended: bytes | None, writer: Callable[[], object], *, with_intent: bool = False):
+    def write(self, image: Path, intended: bytes | None, writer: Callable[[], object], *, with_intent: bool = False, published_instance=None):
         with self.locked(image):
             path = image.with_suffix(".tags.json")
             before = read_record(path)
@@ -85,6 +85,8 @@ class HistoryWriteContext:
             # If the writer raises, retain the intent. Restart can distinguish
             # unchanged, successfully written, and divergent authority exactly.
             try:
+                if intent.record_before_token and _source_token(path) != intent.record_before_token:
+                    raise HistoryError("Sidecar instance changed before the recorded write.")
                 result = writer(intent) if with_intent else writer()
             except Exception as exc:
                 from .image_record import ImageRecordStaleWriteError
@@ -99,7 +101,7 @@ class HistoryWriteContext:
                     ) from exc
                 raise
             try:
-                self.store.commit(intent)
+                self.store.commit(intent, record_after_token=published_instance() if published_instance is not None else "")
             except Exception as exc:
                 raise HistoryWriteInterrupted(
                     "Image Knowledge was written, but history completion is interrupted. "

@@ -20,7 +20,7 @@ from .confirmed_tag_identity import ConfirmedTagIdentityService
 from .tag_collection import TagCollection, normalize_tag
 
 
-def _atomic_write_text(path: Path, value: str) -> None:
+def _atomic_write_text(path: Path, value: str, *, retain_instance=False) -> str | None:
     """Replace a text projection only after its complete contents reach disk."""
     temporary = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
     try:
@@ -28,7 +28,18 @@ def _atomic_write_text(path: Path, value: str) -> None:
             stream.write(value)
             stream.flush()
             os.fsync(stream.fileno())
+        staged = temporary.stat() if retain_instance else None
         temporary.replace(path)
+        if staged is not None:
+            if not staged.st_ino:
+                return None  # No distinct file instance: preserve the write, not recovery authority.
+            from .history_versions import _stat_source_token
+            published = path.stat()
+            # Windows rename may tunnel creation time; staged inode/contents
+            # must still be the instance actually published by this writer.
+            if (published.st_dev, published.st_ino, published.st_size, published.st_mtime_ns) != (staged.st_dev, staged.st_ino, staged.st_size, staged.st_mtime_ns):
+                raise RuntimeError("Published sidecar instance changed during atomic replacement.")
+            return _stat_source_token(published)
     finally:
         if temporary.exists():
             temporary.unlink()
@@ -653,19 +664,25 @@ class ImageRecord:
         expected = self.annotation.to_dict()
         expected_text = json.dumps(expected, indent=2, ensure_ascii=False) + "\n"
         if self.history_context is not None:
+            self._published_sidecar_instance = ""
             return self.history_context.write(
                 self.image_path, expected_text.encode("utf-8"),
-                lambda: self._write_verified_sidecar(expected, expected_text, current_fingerprint),
+                lambda: self._write_verified_sidecar(expected, expected_text, current_fingerprint, retain_instance=True),
+                published_instance=lambda: self._published_sidecar_instance,
             )
         return self._write_verified_sidecar(expected, expected_text, current_fingerprint)
 
-    def _write_verified_sidecar(self, expected, expected_text, current_fingerprint) -> bool:
+    def _write_verified_sidecar(self, expected, expected_text, current_fingerprint, *, retain_instance=False) -> bool:
         # Snapshotting may take time. Repeat the stale guard immediately before
         # the canonical write, including noncooperating writers during capture.
         if _path_fingerprint(self.sidecar_path) != current_fingerprint:
             raise ImageRecordStaleWriteError("Image Knowledge changed before saving; the competing sidecar was preserved.")
+        published_instance = ""
         if current_fingerprint.get("exists"):
-            _atomic_write_text(self.sidecar_path, expected_text)
+            if retain_instance:
+                published_instance = _atomic_write_text(self.sidecar_path, expected_text, retain_instance=True) or ""
+            else:
+                _atomic_write_text(self.sidecar_path, expected_text)
         else:
             # A writer that appears after the final check wins; never replace it.
             try:
@@ -684,6 +701,11 @@ class ImageRecord:
         actual = json.loads(actual_raw.decode("utf-8"))
         if actual != expected:
             raise RuntimeError("Image Knowledge failed semantic read-back verification.")
+        if published_instance:
+            from .history_versions import _source_token
+            if _source_token(self.sidecar_path) != published_instance:
+                raise RuntimeError("Published sidecar instance changed before read-back completion.")
+        self._published_sidecar_instance = published_instance
         self._loaded_sidecar_fingerprint = actual_fingerprint
         self.imported_from_legacy = False
         return True
