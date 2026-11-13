@@ -19,7 +19,7 @@ and run **Start_MediaOrganizer.bat**. Retain your previous package and separate
 profile, image and catalog backups. Windows may report an unknown publisher:
 CollectiGen signs update metadata, while the executable has no Authenticode signature.
 
-Suite Manager installs the version offered in **Applications > Get or update Media Organizer**. The currently published Manager a.0.7.2 offers Organizer a.0.5.3; use the ZIP above for a.0.5.4 until that offer is updated.
+Alternatively, use **Suite Manager a.0.7.3 > Applications > Get or update Media Organizer**, review the offered version and confirm Install or Update. Restart Manager if prompted before opening the newly installed app.
 
 ## Work across components
 
@@ -36,4 +36,4 @@ Suite Manager installs the version offered in **Applications > Get or update Med
 Native Copy/recovery can now return to a previously used path while preserving exact file identity and family bytes. This update preserves Copy Undo after the first automatic initialization of a copied Manager result. It keeps a reviewed result available for explicit Retry after busy file work,
 limits verified result previews to Copy, and names the copied-family Recycle action.
 
-This alpha passed 48 focused source checks, bundled startup/reopen/Close, and four bundled recovery scenarios: initialization/Undo/restore, changed-copy refusal, transit return and copy after purge. The prior signed package is retained and authenticated. Installed Manager qualification, actual prior-version rollback, model execution, live-library behavior and full-suite parity remain separate.
+This alpha passed 48 focused source checks and four bundled recovery scenarios, plus isolated Manager update, native Open/Copy/Undo/Restore and normal Close. Status-check cancellation also passed the focused source tests; native busy-state timing was not observed. Original Manager files remain unchanged. Actual prior-version rollback, model execution, live-library behavior and full-suite parity remain separate unless named in an exact release receipt.
