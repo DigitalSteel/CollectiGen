@@ -54,8 +54,8 @@
       "size_bytes": 9008
     },
     "README.md": {
-      "sha256": "b3610b5de59a28b8db20660c2120d06f5c52cd57a75b74e3c9c4a075a8729f29",
-      "size_bytes": 7304
+      "sha256": "ab8adb007df90a7ffc20b1579e749c2f0fbbbed5d3fb983a9beb37813522f699",
+      "size_bytes": 7937
     },
     "SUPPORT.md": {
       "sha256": "1cb1e9aea57477e1494bf8b89ff692c9342e9169c4af5b8292ece123788fb1f3",
@@ -3134,8 +3134,8 @@
       "size_bytes": 44010
     },
     "suite_core/manager/README.md": {
-      "sha256": "4e57b8c185c2686344d426a47149b9329bd2134df222dbbd9afc5cb73b141b16",
-      "size_bytes": 5034
+      "sha256": "1c8d1ea791e820e1e8aa5254d4cc9d8c6b000c0eb71eac2a7cda50d77f345cc7",
+      "size_bytes": 4901
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
       "sha256": "badebcba4d4a74680550d58fa0b0ac80800b34cd80d71ec4b5ab098fa4fed45c",
