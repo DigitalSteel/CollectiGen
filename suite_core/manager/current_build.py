@@ -34,8 +34,9 @@ class BuildStatus:
             else 'External Python/Qt runtime required.')
         result=[title,runtime,f'Package {self.packaging_version}; Manager {display_component_version("suite-manager", self.software_version)}.']
         if self.target_os is not None:result.append(f'Declared build target: {self.target_os}/{self.architecture}.')
-        if self.unsigned is True:result.append('Unsigned developer build.')
-        elif self.unsigned is False:result.append('Signing declared by build metadata; publisher authentication not verified.')
+        if self.unsigned is True:result.append('Manager executable is not Windows code-signed.'
+            if self.kind == 'portable-runtime' else 'Source package; executable signing does not apply.')
+        elif self.unsigned is False:result.append('Windows code-signing declared by build metadata; not verified here.')
         result.append('Build metadata reports a clean-machine check; compatibility has not been independently checked here.'
             if self.clean_machine_qualified else 'Compatibility on a clean computer is not established.')
         return tuple(result)

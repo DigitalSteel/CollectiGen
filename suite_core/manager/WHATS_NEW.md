@@ -1,11 +1,8 @@
-## Unreleased source changes
+# What's New - a.0.7.5 (embedded 0.7.5-alpha.1) - 2026-11-13
 
-- If an update cannot save its startup record after creating the paused Manager,
-  the original launcher offers **Retry updated Manager startup**. Retry continues
-  that same process after the record is saved; it does not install again or open
-  a second instance. A failed startup retains the existing explicit repair route.
-- This is a source candidate. Signed-package delivery and native recovery checks
-  remain pending; the published 0.7.4 package does not include this change.
+- Settings can save your theme, color-blind status colors and tooltips, apply them now and remember them at the next launch. Other modules keep their own preferences.
+- The original launcher can retry an interrupted startup-record write for the same paused updated Manager. Existing prior-version repair remains available after a failed startup.
+- Current build identifies the bundled Python/Qt runtime and package version. Windows executable signing remains separate from verified release metadata.
 
 # What's New - a.0.7.4 (embedded 0.7.4-alpha.1) - 2026-11-13
 

@@ -308,6 +308,38 @@ def tree_inventory(folder):
     return inventory
 
 
+def write_current_build_metadata(folder, *, software_version, source_plan_sha256, tool_profile):
+    """Seal package-local display facts after freeze, before final child inventory.
+
+    The runtime digest covers the completed child tree before this resource is
+    added, avoiding a self-referential hash. It is provenance, not admission.
+    """
+    from suite_core.manager.current_build import parse_metadata
+    folder = unredirected(folder)
+    destination = folder / '_internal/suite_core/manager/CURRENT_BUILD.json'
+    require((folder / 'CollectiGenManager.exe').is_file() and destination.parent.is_dir()
+            and not destination.exists(), 'fresh_completed_manager_build_required')
+    inventory = tree_inventory(folder)
+    value = dict(schema_version=1, component_id='suite-manager', software_version=software_version,
+        packaging_version=software_version, distribution_kind='portable-runtime', runtime_bundled=True,
+        runtime_versions=dict(python=tool_profile.get('python', {}).get('version'),
+            qt=tool_profile.get('distributions', {}).get('PySide6-Essentials')),
+        unsigned=True, clean_machine_qualified=False,
+        target=dict(os='windows', architecture='x86_64'),
+        provenance=dict(source_plan_sha256=source_plan_sha256,
+            runtime_inventory_sha256=digest(json_bytes(inventory))))
+    require(parse_metadata(value, software_version).kind == 'portable-runtime',
+            'invalid_current_build_metadata')
+    raw = json_bytes(value)
+    write_new(destination, raw)
+    require(parse_metadata(decode(read(destination)), software_version).kind == 'portable-runtime',
+            'current_build_metadata_readback_failed')
+    return dict(resource=destination.relative_to(folder).as_posix(), bytes=len(raw), sha256=digest(raw),
+        runtime_inventory_scope='completed child tree before CURRENT_BUILD.json is added',
+        runtime_inventory=inventory, metadata=value, apps_launched=False,
+        native_qualified=False, clean_machine_qualified=False)
+
+
 def stage_training_worker(worker_root, expected_inventory_sha256, manager_root):
     """Stage a reviewed worker tree before sealing the Manager payload inventory."""
     worker = unredirected(worker_root)
@@ -415,6 +447,10 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         child_config = decode(json_bytes(config))  # Retain its unbound wrapper expectation.
         if training_worker_root is not None:
             stage_training_worker(training_worker_root, training_worker_inventory_sha256, child.parent)
+        build_metadata = write_current_build_metadata(child.parent,
+            software_version=receipt['software_version'], source_plan_sha256=stage_sha256,
+            tool_profile=profile)
+        write_new(output / 'CURRENT_BUILD_METADATA_RECEIPT.json', json_bytes(build_metadata))
         child_inventory = tree_inventory(child.parent)
         validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw)
         package = {'schema': 1, 'manager_version': receipt['software_version'], 'manager_sha256': digest(read(child)),

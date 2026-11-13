@@ -293,8 +293,8 @@
     },
     {
       "path": "core/component_release_identity.py",
-      "bytes": 8584,
-      "sha256": "20d4730db277ed2629391dcf64ee84ee4707151112f60608e4f24490e8b05b96"
+      "bytes": 8641,
+      "sha256": "8d39fb4cee97b83d8494ee11a9a6f2cda89569044b7324432ffb4a30c784c8a9"
     },
     {
       "path": "core/component_release_transport.py",
@@ -977,6 +977,11 @@
       "sha256": "3da4c7c60fadc3e04f5616ede6deb24a93c79e50f8b96019897dda8ac51bf032"
     },
     {
+      "path": "core/manager_appearance_settings.py",
+      "bytes": 4597,
+      "sha256": "7e5a8c3c6565f0ddcd17448889c030f1d530ebefd0debc2a1142bc7c499610bf"
+    },
+    {
       "path": "core/manager_dependency_status.py",
       "bytes": 4067,
       "sha256": "3f3e6aeaad8f648f3c465a5f62f169da83cd3722e7d32bfcd132bc7cf6061bc4"
@@ -1023,8 +1028,8 @@
     },
     {
       "path": "core/manager_self_update_recovery.py",
-      "bytes": 26216,
-      "sha256": "0da9d883168c61f532afc8ec066fc3cd67e31e18aae6081f34a704c2cfffcc61"
+      "bytes": 26669,
+      "sha256": "931dce4f1c2290b9670db72d334a99dbcddf5692471c2345f30844025f5bd44d"
     },
     {
       "path": "core/manager_server_inventory.py",
@@ -1048,8 +1053,8 @@
     },
     {
       "path": "core/manager_stock_hook_provider.py",
-      "bytes": 40678,
-      "sha256": "df7ad010855d0cb12fc8d2d9f431c9c8af30e25c37617cb629a2ab22775aee1f"
+      "bytes": 43476,
+      "sha256": "b9c66363401dc45fa18f726ca8684341e3604461a52e11ac95e2dc00bc438caf"
     },
     {
       "path": "core/manager_successor_admission.py",
@@ -1058,8 +1063,8 @@
     },
     {
       "path": "core/manager_update_host.py",
-      "bytes": 29949,
-      "sha256": "894820b8ddaa284894a833b7957f706bc917fa797d5b6c82dc549ef1368def55"
+      "bytes": 29703,
+      "sha256": "819c381352e36606e6ba53feccb908097f6c46639b50d90a20457c612491c2e5"
     },
     {
       "path": "core/manager_update_service.py",
@@ -2142,6 +2147,11 @@
       "sha256": "a7af158df7a0872b96271bf3de40071501b5086f356b19d41838477b7c1c761e"
     },
     {
+      "path": "core/training_reference_loading.py",
+      "bytes": 1848,
+      "sha256": "ddda42a5d7f309aa2f27f62dc0edde99f0fbe89e3485b3449f09d374876c6370"
+    },
+    {
       "path": "core/training_reference_tokenizers.py",
       "bytes": 8213,
       "sha256": "16092a54c0d91e1f18d7c3faf37554dc9869de9850484c1486d5d0751901acb5"
@@ -2175,6 +2185,11 @@
       "path": "core/training_retained_history.py",
       "bytes": 8517,
       "sha256": "75c14e1c0757c71d9dd750daebe52de7eb8b662fd5da83f4024b88e8cb80907c"
+    },
+    {
+      "path": "core/training_retained_result.py",
+      "bytes": 13280,
+      "sha256": "3331337d12706c56110bd092936809aedd9a007c10e206525e1ee10488318d37"
     },
     {
       "path": "core/training_run_index.py",
@@ -2255,6 +2270,11 @@
       "path": "core/training_validation.py",
       "bytes": 34444,
       "sha256": "c42a905a8984450b0336941c5727ecdba682032bd1912d09e33a160c79df5a8c"
+    },
+    {
+      "path": "core/training_validation_worker.py",
+      "bytes": 12619,
+      "sha256": "fe30736587537a78add0f29d928417530e56bc6d416be4ddf2a715d5c105624e"
     },
     {
       "path": "core/training_verification.py",
@@ -2400,6 +2420,11 @@
       "path": "core/workspace_record_storage.py",
       "bytes": 4298,
       "sha256": "94f0b6ba28f068bcaaea9474f980820f64e0dae006e482f27d0a1e3e4109969e"
+    },
+    {
+      "path": "data/model_workflow_baseline.json",
+      "bytes": 10578,
+      "sha256": "751df980a86705b89cabfda5d3f6c92f1b21ef4c36de3a1cb67722b0fc3fb683"
     },
     {
       "path": "licenses/sdxl-tokenizer-source-LICENSE.md",
@@ -3638,13 +3663,13 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 44036,
-      "sha256": "fcc12f431062e6cf5d99190dd5474d227c120eb0c236911b860519437490ea64"
+      "bytes": 44122,
+      "sha256": "8cc8337fe97c1c540bdc2cc72b4dc608ed2d4e6cfc3fd52766a7bc5299b3c508"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "7d2dc40b6901845d5286f899af05981a85d424d1253f3235e6bac7b9ac75e7c8"
+      "sha256": "027e0df68e77612fa70d2126651392bfeba35942f6998ca82137b24e5073d501"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -3653,8 +3678,13 @@
     },
     {
       "path": "suite_core/manager/__main__.py",
-      "bytes": 32584,
-      "sha256": "cce0ab3586772786f6d702709573736ccbf4d6d230b0f56f6d01b8e279971058"
+      "bytes": 33204,
+      "sha256": "1598f63611ca5c7dba3bf8c4f7bcff18946846019dbd92ca072f36f77f3bb5df"
+    },
+    {
+      "path": "suite_core/manager/appearance_ui.py",
+      "bytes": 6738,
+      "sha256": "affb04e5e2def8ea99668b1dc11b6e954ad7b022ab5277ad2d0d65b5d6944aa7"
     },
     {
       "path": "suite_core/manager/assets/collectigen.ico",
@@ -3718,8 +3748,8 @@
     },
     {
       "path": "suite_core/manager/current_build.py",
-      "bytes": 6547,
-      "sha256": "3d91833477b5e905279cbcaee2d625fd2482e47b95791824308493822e6cbab2"
+      "bytes": 6666,
+      "sha256": "5c5eb63e33c655886adb00dc6fac4ffe03dca9aab0382e286064bf27103261ef"
     },
     {
       "path": "suite_core/manager/database_presentation.py",
@@ -3788,8 +3818,8 @@
     },
     {
       "path": "suite_core/manager/launcher_main.py",
-      "bytes": 47638,
-      "sha256": "dd9dcd0e460d6c153231c55963a3b080d606057d513a14cec88c9ce4ec461b51"
+      "bytes": 54502,
+      "sha256": "bd6c6dfdced0f4d2b693be87713c6641261f427bd1fdf5705e8cf8fed165ac9b"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",
@@ -3979,12 +4009,12 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "c6f3e785f2b336d95f2ff9c543cb62e92ef28788e04e418c6a3032dedcf2788d"
+      "sha256": "14969bce128cea3edcb863fa2b10940ae11c386af9606021b23eaab07229bed9"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 295452,
-      "sha256": "4876da953ea95e9222827653c33ea2dbe63475d0bbda5b8810fbbefffb3eec58"
+      "bytes": 296263,
+      "sha256": "5560d97debd6a6ae22fe88c464d8d3662031a76cca157dc518730a7209353d25"
     },
     {
       "path": "suite_core/media_examples.py",
@@ -4775,26 +4805,6 @@
       "path": "version.py",
       "bytes": 324,
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48"
-    },
-    {
-      "path": "core/training_validation_worker.py",
-      "bytes": 12619,
-      "sha256": "fe30736587537a78add0f29d928417530e56bc6d416be4ddf2a715d5c105624e"
-    },
-    {
-      "path": "core/training_reference_loading.py",
-      "bytes": 1848,
-      "sha256": "ddda42a5d7f309aa2f27f62dc0edde99f0fbe89e3485b3449f09d374876c6370"
-    },
-    {
-      "path": "core/training_retained_result.py",
-      "bytes": 13280,
-      "sha256": "3331337d12706c56110bd092936809aedd9a007c10e206525e1ee10488318d37"
-    },
-    {
-      "path": "data/model_workflow_baseline.json",
-      "bytes": 10578,
-      "sha256": "751df980a86705b89cabfda5d3f6c92f1b21ef4c36de3a1cb67722b0fc3fb683"
     }
   ]
 }

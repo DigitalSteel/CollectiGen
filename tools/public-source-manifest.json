@@ -936,6 +936,7 @@
     "tests/test_knowledge_pack_records.py",
     "tests/test_manager_appearance_settings.py",
     "tests/test_manager_appearance_ui.py",
+    "tests/test_manager_build_metadata.py",
     "tests/test_manager_dependency_status.py",
     "tests/test_manager_distribution_builder.py",
     "tests/test_manager_production_stage.py",

@@ -1,6 +1,6 @@
 # Manager local appearance
 
-Development source feature; not included in the published Manager 0.7.4 package.
+Included in the Manager 0.7.5 source candidate; packaged delivery remains pending.
 
 ## Choose and remember your appearance
 
