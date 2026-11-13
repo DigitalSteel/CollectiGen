@@ -2026,8 +2026,8 @@
       "size_bytes": 2777
     },
     "docs/MANAGER_TRAINING_HISTORY.md": {
-      "sha256": "257fcf16a8056abbee6405b6b49e16b5e5ac674f1b0cfce2c274a2d1796236c5",
-      "size_bytes": 2867
+      "size_bytes": 3838,
+      "sha256": "9ce5cab2922c2340f5e5c4a2eb7f6810f93aa6620c75e731c6ccd4e847213909"
     },
     "docs/MOD01_MANAGER_MODELS.md": {
       "sha256": "e94baf0e9153e0f8b6781e1805bf1b1250c03ac15b638d4a1b994c64f6ed473c",
@@ -3450,8 +3450,8 @@
       "size_bytes": 274
     },
     "suite_core/manager/window.py": {
-      "sha256": "d9d5a2333d14e1af27b1c841a31053fb03365f0370e7a5438c2541bc96bb580d",
-      "size_bytes": 282951
+      "size_bytes": 283211,
+      "sha256": "df516c02265550a618e1f9c8bd1fcb3bcbe6f2135739464158c2e87c0d8d3a07"
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -4090,8 +4090,8 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "27e3bb7308ad26f4ad66bdec2dce046fd7f56a6bdb5d5e32e934f35ef0137912",
-      "size_bytes": 163618
+      "size_bytes": 163618,
+      "sha256": "e6a333ea0a52308cd169e0578f126bdfa92cb7603d921dea16503aa78f6a5130"
     },
     "tools/manager_build/tool-inputs.json": {
       "sha256": "e2c3f13d1cea4b42c2a65ae94379fd8d01658a38f81d1b4e869ce5d208c4480f",

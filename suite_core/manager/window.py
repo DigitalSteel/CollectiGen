@@ -2116,8 +2116,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if preparations:
                 dialog.setWindowTitle("Saved SDXL Preparations")
             dialog.open_button.setText("Review Selected Preparation")
-            dialog.open_button.setMinimumWidth(
-                dialog.fontMetrics().horizontalAdvance("Review Saved Process Outcome") + 32)
+            for button in (dialog.refresh_button, dialog.forget_button, dialog.recover_button,
+                           dialog.open_button, *dialog.buttons.buttons()):
+                compact_action(button)
+            dialog.open_button.setMinimumWidth(max(dialog.open_button.minimumWidth(),
+                dialog.open_button.fontMetrics().horizontalAdvance("Review Saved Process Outcome") + 32))
             self._training_history_dialog = dialog
             receipt_timer = QTimer(dialog)
             def receipt_activity():

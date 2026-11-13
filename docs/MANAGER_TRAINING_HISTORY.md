@@ -51,3 +51,19 @@ not a novice user study, live trainer run or installed package qualification.
 The existing manager-retained-training-review journey remains partial for the
 broader packaged workflow. Ship through the existing independently versioned,
 signed Suite Manager package and update public download links after publication.
+
+## Packaged list management and button fit
+
+Published Manager a.0.6.7 exercised Recover Saved List and Forget From This List
+for both run and preparation indexes through its original Windows launcher.
+A fresh synthetic installation recovered sealed interrupted list writes,
+removed the remaining pointers, preserved all review/output bytes, closed
+normally and reopened both empty lists without reseeding. No trainer, model,
+Reader, C3A or real library was exercised. This qualifies the bounded list
+management delta; the broader retained-run review journey remains separate.
+
+Native captures also exposed clipped Refresh/Forget labels with Manager fonts.
+The host now reuses its existing compact_action sizing for the list controls
+and Close, retaining the longest selected-review caption minimum. Index writes,
+recovery, readiness and task ownership are unchanged. Delivery of this visual
+fix uses the next real Manager patch; no version is bumped for evidence alone.
