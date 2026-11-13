@@ -1,12 +1,12 @@
 # CollectiGen Media Organizer
 
-**Media Organizer a.0.5.1** organizes images, preserves Image Knowledge and generation
+**Media Organizer a.0.5.2** organizes images, preserves Image Knowledge and generation
 lineage, and prepares Dataset captions and Training plans. Generate and Training
 execution belong to Suite Manager.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.1-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.1-alpha.1/MediaOrganizer-a.0.5.1-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.1-alpha.1/MediaOrganizer-a.0.5.1-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.2-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.2-alpha.1/MediaOrganizer-a.0.5.2-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.2-alpha.1/MediaOrganizer-a.0.5.2-windows-x64.zip.sha256)
 
 If a generated image or sidecar changes after the copy preview, Ingest now explains
 why it stopped and directs you to **Review Manager Result** with the current
@@ -19,9 +19,9 @@ and run **Start_MediaOrganizer.bat**. Retain your previous package and separate
 profile, image and catalog backups. Windows may report an unknown publisher:
 CollectiGen signs update metadata, while the executable has no Authenticode signature.
 
-Alternatively, use **Suite Manager a.0.6.4 > Applications > Get or update Media
-Organizer**, review the offered version and confirm Install. Older Manager releases
-can retain an older exact Organizer offer.
+Suite Manager a.0.6.9 currently offers Organizer a.0.5.1. Use this ZIP for
+a.0.5.2 while its matching Manager offer update is prepared; older Managers
+can retain an older exact offer.
 
 ## Work across components
 
@@ -35,6 +35,9 @@ can retain an older exact Organizer offer.
   Organizer, then import them in Manager. Organizer does not start a generator
   or training runtime.
 
-This alpha passed 10 focused synthetic checks, exact package/source readback and
+This update keeps a reviewed result available for explicit Retry after busy file work,
+limits verified result previews to Copy, and names the copied-family Recycle action.
+
+This alpha passed synthetic Copy/Retry/Undo and changed-copy refusal, exact package/source readback and
 bundled offscreen startup, saved-state reopen and normal Close. These checks do not establish model execution, live-library behavior,
 installed update/rollback or full-suite parity.
