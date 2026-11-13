@@ -1,16 +1,14 @@
 # CollectiGen Media Organizer
 
-**Media Organizer a.0.5.4** organizes images, preserves Image Knowledge and generation
+**Media Organizer a.0.5.5** organizes images, preserves Image Knowledge and generation
 lineage, and prepares Dataset captions and Training plans. Generate and Training
 execution belong to Suite Manager.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.4-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.4-alpha.1/MediaOrganizer-a.0.5.4-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.4-alpha.1/MediaOrganizer-a.0.5.4-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.5-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.5-alpha.1/MediaOrganizer-a.0.5.5-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.5-alpha.1/MediaOrganizer-a.0.5.5-windows-x64.zip.sha256)
 
-If a generated image or sidecar changes after the copy preview, Ingest now explains
-why it stopped and directs you to **Review Manager Result** with the current
-receipt. The Manager originals remain untouched; the changed family is not copied.
+Interrupted rule repair and Undo can now be reviewed and recovered from the Rules workspace. Repair also checks that the supporting data still matches what you reviewed. Existing Copy, Undo and reused-path recovery fixes remain included.
 
 ## Start
 
@@ -19,7 +17,7 @@ and run **Start_MediaOrganizer.bat**. Retain your previous package and separate
 profile, image and catalog backups. Windows may report an unknown publisher:
 CollectiGen signs update metadata, while the executable has no Authenticode signature.
 
-Alternatively, use **Suite Manager a.0.7.3 > Applications > Get or update Media Organizer**, review the offered version and confirm Install or Update. Restart Manager if prompted before opening the newly installed app.
+Suite Manager a.0.7.3 offers the previous Organizer a.0.5.4. Use the ZIP above to run a.0.5.5.
 
 ## Work across components
 
@@ -36,4 +34,4 @@ Alternatively, use **Suite Manager a.0.7.3 > Applications > Get or update Media 
 Native Copy/recovery can now return to a previously used path while preserving exact file identity and family bytes. This update preserves Copy Undo after the first automatic initialization of a copied Manager result. It keeps a reviewed result available for explicit Retry after busy file work,
 limits verified result previews to Copy, and names the copied-family Recycle action.
 
-This alpha passed 48 focused source checks and four bundled recovery scenarios, plus isolated Manager update, native Open/Copy/Undo/Restore and normal Close. Status-check cancellation also passed the focused source tests; native busy-state timing was not observed. Original Manager files remain unchanged. Actual prior-version rollback, model execution, live-library behavior and full-suite parity remain separate unless named in an exact release receipt.
+This release passed 93 focused source cases, 15 affected offscreen UI cases, four bundled rule-recovery scenarios, and bundled startup, saved-state reopen and normal Close. These checks use synthetic data. Earlier isolated Manager prior-version recovery is retained separately. Enrolled/native concurrent recovery, real libraries, model execution and full suite parity remain outside this release evidence.
