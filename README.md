@@ -11,7 +11,7 @@ source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.7.4](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.4-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.4-alpha.1/SuiteManager-a.0.7.4-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.4-alpha.1/SuiteManager-a.0.7.4-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
+| **Suite Manager** | [a.0.7.5](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.5-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.5-alpha.1/SuiteManager-a.0.7.5-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.5-alpha.1/SuiteManager-a.0.7.5-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
 | **Media Organizer** | [a.0.5.5](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.5-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.5-alpha.1/MediaOrganizer-a.0.5.5-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.5-alpha.1/MediaOrganizer-a.0.5.5-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars, plus Training dataset planning and offline image/video drafts. |
 | **Tag Encyclopedia** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). View and edit tags. |
 | **Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Catalog tag data for use with the Tag Encyclopedia. |
@@ -33,7 +33,7 @@ Retain your previous package and separate profile/image/catalog backups.
 3. Review the offered version, choose **Install**, and confirm.
 4. Restart Manager when requested, then open the installed app from its workspace.
 
-Manager a.0.7.4 includes dedicated **Generate** and **Training** workspaces for
+Manager a.0.7.5 includes dedicated **Generate** and **Training** workspaces for
 image/video drafts, saved work, local setup, training preparation and retained
 reviews. Models and optional runtimes are configured separately. Saved setups can
 open a separate image draft while preserving the work already open. Both Remix
@@ -41,13 +41,15 @@ entries now do the same, retaining existing image and video drafts. Use the
 **Help** group or **F1** in Generate and Training for their workflow guides.
 Generate and update buttons fit smaller windows, and Tab moves out of update notes.
 
+Manager a.0.7.5 saves your theme, color-blind colors and tooltip choices in **Settings**, and restores them at the next launch. **Current build** identifies the bundled Python/Qt runtime and package version. The complete Windows ZIP also includes the launcher startup-record retry; a component-only update keeps the existing launcher.
+
 Find interrupted Training packages from **Training > Review Interrupted Training Package**. Use **Choose Package Location** to list packages by name, or **Browse Exact Receipt** for advanced selection. Search shows elapsed activity and **Cancel Safely**;review leaves package files unchanged.
 
-Manager a.0.7.4 checks GitHub for newer compatible signed Reader and Organizer releases. Ordinary module updates no longer require a new Manager build. Review and confirm each installation in Applications. Generate and Training remain in Manager.
+Manager a.0.7.5 checks GitHub for newer compatible signed Reader and Organizer releases. Ordinary module updates no longer require a new Manager build. Review and confirm each installation in Applications. Generate and Training remain in Manager.
 
 Training Package Review now shows the target, image counts and next preparation
 action. It distinguishes package verification from unchecked trainer readiness
-and returns to **Training**. History management and the a.0.6.7 launcher fixes remain included.
+and returns to **Training**. History management remains included.
 
 Training history and saved SDXL preparations now offer **Forget From This List**
 and **Recover Saved List**. Forget keeps reviews, checkpoints and outputs intact;
@@ -60,11 +62,7 @@ bound to their installation location; moving installations and migration from
 older portable Manager releases are not qualified by this release. Release
 metadata is signed; the Windows executable is not Authenticode-signed.
 
-For a.0.6.6 and earlier, use the full Windows ZIP in a new folder to receive
-the fixed launcher. The built-in update in those versions cannot replace it.
-The a.0.6.7 → a.0.6.8 update and reopening passed in an isolated installation.
-Rollback testing remains incomplete. Keep your previous folder and separate
-data backups.
+For a.0.6.6 and earlier, use the complete ZIP; their built-in update cannot replace the launcher. Component-only updates on newer installations also keep the existing launcher. Download the full ZIP to receive launcher fixes. Fresh 0.7.5 startup, saved appearance and reopening passed in isolated installations. Failed-start rollback remains unverified. Keep your previous folder and separate data backups.
 
 The Reader component ZIP is supplied for Manager's reviewed installation path.
 Read the release's included guide before using component ZIPs directly.
