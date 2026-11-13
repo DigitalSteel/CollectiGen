@@ -1,6 +1,6 @@
 # CollectiGen
 
-CollectiGen is a developing suite for collecting, identifying and organizing media, preserving metadata and provenance, and preparing training data. Its longer-term direction includes connected training and image-generation workflows, with ordinary work primarily performed locally.
+CollectiGen is a developing suite for collecting, identifying and organizing media, preserving metadata and provenance, and preparing training data. Suite Manager includes connected Generate and Training workspaces for configured local tools, with ordinary work primarily performed locally.
 
 ## Downloads
 
@@ -11,7 +11,7 @@ source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.6.6](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.6-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.6-alpha.1/SuiteManager-a.0.6.6-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.6-alpha.1/SuiteManager-a.0.6.6-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
+| **Suite Manager** | [a.0.6.7](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.7-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.7-alpha.1/SuiteManager-a.0.6.7-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.7-alpha.1/SuiteManager-a.0.6.7-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
 | **Media Organizer** | [a.0.5.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.1-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.1-alpha.1/MediaOrganizer-a.0.5.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.1-alpha.1/MediaOrganizer-a.0.5.1-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars, plus Training dataset planning and offline image/video drafts. |
 | **Tag Encyclopedia** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). View and edit tags. |
 | **Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Catalog tag data for use with the Tag Encyclopedia. |
@@ -33,13 +33,17 @@ Retain your previous package and separate profile/image/catalog backups.
 3. Review the offered version, choose **Install**, and confirm.
 4. Restart Manager when requested, then open the installed app from its workspace.
 
-Manager a.0.6.6 includes dedicated **Generate** and **Training** workspaces for
+Manager a.0.6.7 includes dedicated **Generate** and **Training** workspaces for
 image/video drafts, saved work, local setup, training preparation and retained
 reviews. Models and optional runtimes are configured separately. Saved setups can
 open a separate image draft while preserving the work already open. Both Remix
 entries now do the same, retaining existing image and video drafts. Use the
 **Help** group or **F1** in Generate and Training for their workflow guides.
 Generate and update buttons fit smaller windows, and Tab moves out of update notes.
+
+This version fixes Manager update checks and enables **Repair to prior Manager**
+when an update is rejected before startup.
+
 Training history and saved SDXL preparations now offer **Forget From This List**
 and **Recover Saved List**. Forget keeps reviews, checkpoints and outputs intact;
 Recover finishes an interrupted saved-list update.
@@ -51,9 +55,10 @@ bound to their installation location; moving installations and migration from
 older portable Manager releases are not qualified by this release. Release
 metadata is signed; the Windows executable is not Authenticode-signed.
 
-Use the full Windows ZIP in a new folder for a fresh installation. The signed
-updater package supports Manager a.0.6.2 or newer; the installed Apply and rollback
-path is still being evaluated. For older clients, use a fresh full ZIP.
+For a.0.6.6 and earlier, use the full Windows ZIP in a new folder to receive
+the fixed launcher. The built-in update in those versions cannot replace it.
+Installed update and rollback testing remains incomplete. Keep your previous
+folder and separate data backups.
 
 The Reader component ZIP is supplied for Manager's reviewed installation path.
 Read the release's included guide before using component ZIPs directly.
