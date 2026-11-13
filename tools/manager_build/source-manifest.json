@@ -1053,13 +1053,13 @@
     },
     {
       "path": "core/manager_successor_admission.py",
-      "bytes": 15832,
-      "sha256": "1a8b3a9dd61927f66cd38b18876c036a5c46312e2614f7f054e0b10c6472514b"
+      "bytes": 17095,
+      "sha256": "c7316dafdc0f75e20d3ef2c8634e03edba0fccc825a165f25165f810ed222b5d"
     },
     {
       "path": "core/manager_update_host.py",
-      "bytes": 29674,
-      "sha256": "7e99ae6d566794cffbbef31da68c1e9f07893e38952a6fcc8794fddf49a69e68"
+      "bytes": 29813,
+      "sha256": "4d5d3b7c6c97cb11722641c32441e96cb1be2e23ef6ec13aa52c83151489b3da"
     },
     {
       "path": "core/manager_update_service.py",

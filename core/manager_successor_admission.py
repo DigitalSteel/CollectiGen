@@ -20,6 +20,29 @@ from suite_core.discovery.manager_runtime_detached_admission import (
 from suite_core.manager.entry_binding import validate_normal_launch
 
 
+def installed_manager_payload_path(root, relative, *, stock_applied=True):
+    """Map signed SDK package members to their fixed stock installation homes.
+
+    Fresh assembled ZIPs retain the unused stub in current; the original host
+    supplies that lifecycle explicitly, never guesses from file existence.
+    Squirrel consumes/renames these two members during Apply. Application files
+    remain under current; the signed archive still pins all installed bytes.
+    """
+    from pathlib import PurePosixPath
+    from suite_core.discovery.manager_runtime_detached_admission import PACKAGE_STUB, PORTABLE_LAUNCHER
+    part = PurePosixPath(relative)
+    require(isinstance(relative, str) and relative and not part.is_absolute()
+        and part.as_posix() == relative and not any(x in {'.', '..'} for x in part.parts)
+        and not any(x in relative for x in ('\\', ':')), 'installed_manager_payload_path')
+    manager = Path(root) / 'Apps/Manager'
+    fixed = {'Squirrel.exe': manager / 'Update.exe',
+        PACKAGE_STUB: manager / PORTABLE_LAUNCHER if stock_applied else manager / 'current' / PACKAGE_STUB}
+    path = fixed.get(relative, manager / 'current' / relative)
+    guard(path)
+    require(path.is_relative_to(manager), 'installed_manager_payload_path')
+    return path
+
+
 @dataclass(frozen=True)
 class SignedSuccessorSelection:
     owner: object
@@ -137,9 +160,8 @@ def admit_successor_selection(owner, recovery, request, *, release_side, argv):
     current = owner.root / 'Apps/Manager/current'
     installed = []
     for row in rows:
-        path = current / row['path']
-        guard(path)
-        require(path.is_relative_to(current) and observe(path) == dict(exists=True,
+        path = installed_manager_payload_path(owner.root, row['path'])
+        require(observe(path) == dict(exists=True,
             size=row['size_bytes'], sha256=row['sha256']), 'successor_installed_payload_changed')
         installed.append((row['path'], row['size_bytes'], row['sha256']))
     by_name = {name: pin for name, size, pin in installed}
@@ -265,7 +287,7 @@ def _ordinary_successor_evidence(root, initial, *, initial_contract_sha256,
         'ordinary_successor_signed_artifact_changed')
     rows=manager_inventory_json(proof)['files'];by_name={}
     for row in rows:
-        path=root/'Apps/Manager/current'/row['path'];guard(path)
+        path=installed_manager_payload_path(root,row['path'])
         require(observe(path)==dict(exists=True,size=row['size_bytes'],sha256=row['sha256']),
             'ordinary_successor_installed_payload_changed')
         by_name[row['path']]=row['sha256']

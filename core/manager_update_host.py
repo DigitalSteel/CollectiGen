@@ -356,8 +356,9 @@ class CompiledManagerUpdateProfile:
         require(prior_release['version']==host.service.current_version,'compiled_current_prior_version_changed')
         current=owner.root/'Apps/Manager/current';updater=owner.root/'Apps/Manager/Update.exe'
         prior_proof=read_manager_inventory_proof(prior_release['files']['proof'])
+        from core.manager_successor_admission import installed_manager_payload_path
         for row in manager_inventory_json(prior_proof)['files']:
-            path=current/row['path'];guard(path)
+            path=installed_manager_payload_path(owner.root,row['path'],stock_applied=prior is not None)
             require(observe(path)==dict(exists=True,size=row['size_bytes'],sha256=row['sha256']),
                 'compiled_installed_prior_payload_changed')
         require(observe(updater)['sha256']==self.updater_sha256,'compiled_stock_updater_changed')
