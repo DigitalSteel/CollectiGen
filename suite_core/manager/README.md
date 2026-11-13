@@ -1,11 +1,11 @@
 # CollectiGen Suite Manager
 
-**Suite Manager a.0.6.7** provides component installation plus dedicated Generate
+**Suite Manager a.0.6.8** provides component installation plus dedicated Generate
 and Training workspaces. Use the complete Windows ZIP for a fresh installation.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.7-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.7-alpha.1/SuiteManager-a.0.6.7-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.7-alpha.1/SuiteManager-a.0.6.7-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.8-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.8-alpha.1/SuiteManager-a.0.6.8-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.8-alpha.1/SuiteManager-a.0.6.8-windows-x64.zip.sha256)
 
 Extract into a new, short writable folder such as `C:\CollectiGen`, keep the
 complete folder together, and run **CollectiGen.exe**. Long installation paths
@@ -16,8 +16,9 @@ Generate and Manager update actions wrap to the available window width. Tab move
 from update notes to the next action. Existing drafts, confirmation and recovery
 stay with their original owners.
 
-This version fixes Manager update checks and enables **Repair to prior Manager**
-when an update is rejected before startup.
+This version fixes clipped action labels in Training history and saved SDXL
+preparations. It retains the update-check and **Repair to prior Manager** fixes
+from a.0.6.7.
 
 Training history and saved SDXL preparations now include **Forget From This List**
 and **Recover Saved List**. Forget removes only the saved-list entry; reviews,
