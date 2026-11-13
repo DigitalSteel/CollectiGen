@@ -58,8 +58,9 @@ metadata is signed; the Windows executable is not Authenticode-signed.
 
 For a.0.6.6 and earlier, use the full Windows ZIP in a new folder to receive
 the fixed launcher. The built-in update in those versions cannot replace it.
-Installed update and rollback testing remains incomplete. Keep your previous
-folder and separate data backups.
+The a.0.6.7 → a.0.6.8 update and reopening passed in an isolated installation.
+Rollback testing remains incomplete. Keep your previous folder and separate
+data backups.
 
 The Reader component ZIP is supplied for Manager's reviewed installation path.
 Read the release's included guide before using component ZIPs directly.
