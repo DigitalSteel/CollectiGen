@@ -1,11 +1,11 @@
 # CollectiGen Suite Manager
 
-**Suite Manager a.0.6.4** provides component installation plus dedicated Generate
+**Suite Manager a.0.6.5** provides component installation plus dedicated Generate
 and Training workspaces. Use the complete Windows ZIP for a fresh installation.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.4-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.4-alpha.1/SuiteManager-a.0.6.4-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.4-alpha.1/SuiteManager-a.0.6.4-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.6.5-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.5-alpha.1/SuiteManager-a.0.6.5-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.6.5-alpha.1/SuiteManager-a.0.6.5-windows-x64.zip.sha256)
 
 Extract into a new, short writable folder such as `C:\CollectiGen`, keep the
 complete folder together, and run **CollectiGen.exe**. Long installation paths
@@ -29,7 +29,9 @@ workflow guide. Reading Help preserves your open work and starts no operation.
   The draft switcher retains multiple image and video requests. Model-guided
   planning opens a separate request without replacing another draft; Close
   consults every retained request. Saved setups also open in a separate draft
-  while retaining the image and video work already open.
+  while retaining the image and video work already open. Plan a Remix and
+  Plan Remix from Verified Result now open separate drafts as well; cancelling
+  source selection or refusing a changed result preserves existing work.
 - **Training** opens an Organizer data package, reviews a local trainer, and
   prepares SDXL or Anima training through the existing workflow controllers.
   The open-review selector returns to an exact retained run or setup review
