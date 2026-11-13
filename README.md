@@ -11,7 +11,7 @@ source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.7.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.0-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.0-alpha.1/SuiteManager-a.0.7.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.0-alpha.1/SuiteManager-a.0.7.0-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
+| **Suite Manager** | [a.0.7.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.1-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.1-alpha.1/SuiteManager-a.0.7.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.1-alpha.1/SuiteManager-a.0.7.1-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
 | **Media Organizer** | [a.0.5.2](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.2-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.2-alpha.1/MediaOrganizer-a.0.5.2-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.2-alpha.1/MediaOrganizer-a.0.5.2-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars, plus Training dataset planning and offline image/video drafts. |
 | **Tag Encyclopedia** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). View and edit tags. |
 | **Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Catalog tag data for use with the Tag Encyclopedia. |
@@ -33,7 +33,7 @@ Retain your previous package and separate profile/image/catalog backups.
 3. Review the offered version, choose **Install**, and confirm.
 4. Restart Manager when requested, then open the installed app from its workspace.
 
-Manager a.0.7.0 includes dedicated **Generate** and **Training** workspaces for
+Manager a.0.7.1 includes dedicated **Generate** and **Training** workspaces for
 image/video drafts, saved work, local setup, training preparation and retained
 reviews. Models and optional runtimes are configured separately. Saved setups can
 open a separate image draft while preserving the work already open. Both Remix
@@ -42,6 +42,8 @@ entries now do the same, retaining existing image and video drafts. Use the
 Generate and update buttons fit smaller windows, and Tab moves out of update notes.
 
 Find interrupted Training packages from **Training > Review Interrupted Training Package**. Use **Choose Package Location** to list packages by name, or **Browse Exact Receipt** for advanced selection. Search shows elapsed activity and **Cancel Safely**;review leaves package files unchanged.
+
+Manager a.0.7.1 fixes opening an installed Organizer when its signed-package startup review takes longer. Existing Generate and Training workspaces remain available.
 
 Training Package Review now shows the target, image counts and next preparation
 action. It distinguishes package verification from unchecked trainer readiness
