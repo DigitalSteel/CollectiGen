@@ -1,3 +1,7 @@
+# Unreleased
+
+- Manage Manager-owned Training history with Forget From This List and Recover Saved List. Forget preserves run files; list recovery retains the original guarded transaction.
+
 # What's New - a.0.6.5 (embedded 0.6.5-alpha.1) - 2026-11-12
 
 - Plan a Remix and Plan Remix from Verified Result open separate image drafts while retaining existing image/video work. Source-change checks and cancellation still apply.

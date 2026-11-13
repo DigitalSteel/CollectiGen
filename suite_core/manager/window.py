@@ -2087,9 +2087,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from qt_app.training_history_dialog import TrainingHistoryDialog
             from qt_app.workers import CoordinatedCallTask
 
-            history = (ScopedPreparationHistory(state.generation_data_root / "TrainingReview") if preparations
+            write_allowed = lambda: self.generation_state() is state
+            history = (ScopedPreparationHistory(state.generation_data_root / "TrainingReview", write_allowed=write_allowed) if preparations
                        else ScopedTrainingHistory(state.generation_data_root / "training",
-                           model_registry_path=state.generation_data_root / MODEL_RESOURCES_PATH.name))
+                           model_registry_path=state.generation_data_root / MODEL_RESOURCES_PATH.name,
+                           write_allowed=write_allowed))
             task = None
             closing_review = False
             receipt_started = 0.0
@@ -2110,7 +2112,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                         return
                     super().done(result)
 
-            dialog = ManagerTrainingHistoryDialog(history, state.jobs, self, read_only=True)
+            dialog = ManagerTrainingHistoryDialog(history, state.jobs, self)
             if preparations:
                 dialog.setWindowTitle("Saved SDXL Preparations")
             dialog.open_button.setText("Review Selected Preparation")

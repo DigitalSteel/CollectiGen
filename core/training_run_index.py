@@ -628,12 +628,40 @@ class TrainingRunIndex:
 
 
 class ScopedTrainingHistory:
-    """Read-only history for a host whose run state is confined to one root."""
+    """Host-confined history; list management needs an explicit live writer."""
 
-    def __init__(self, root, *, model_registry_path=None):
+    def __init__(self, root, *, model_registry_path=None, write_allowed=None):
         self._root = Path(root).absolute()
         self._index = TrainingRunIndex(self._root / "training-runs.json")
         self._model_registry_path = model_registry_path
+        if write_allowed is not None and not callable(write_allowed):
+            raise ValueError("An explicit Training history write capability is required.")
+        self._write_allowed = write_allowed
+
+    def _require_list_writer(self):
+        if self._write_allowed is None or self._write_allowed() is not True:
+            raise TrainingRunIndexError("This Training list is read-only in the current workspace.")
+
+    def forget(self, run_id, expected_revision):
+        """Remove a reviewed pointer only; never open or delete its run files."""
+        self._require_list_writer()
+        _, revision = self.snapshot()
+        if revision != expected_revision:
+            raise TrainingRunIndexError("Saved runs changed. Refresh before forgetting this entry.")
+        self._require_list_writer()
+        return self._index.forget(run_id, expected_revision)
+
+    def recover(self):
+        """Finish the original index transaction after checking both scoped states."""
+        self._require_list_writer()
+
+        def validate(_pending, before, after):
+            self._require_list_writer()
+            self._check_records(before.records)
+            self._check_records(after.records)
+            self._require_list_writer()
+
+        return self._index._recover(validate=validate)
 
     def _check_records(self, records):
         for record in records:
@@ -906,8 +934,8 @@ class ScopedTrainingHistory:
 class ScopedPreparationHistory(ScopedTrainingHistory):
     """Manager preparation pointers in their own rollback-compatible index."""
 
-    def __init__(self, root):
-        super().__init__(root)
+    def __init__(self, root, *, write_allowed=None):
+        super().__init__(root, write_allowed=write_allowed)
         self._index = TrainingRunIndex(self._root / "sdxl-preflight-runs.json")
 
     def _check_records(self, records):

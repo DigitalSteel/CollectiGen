@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1174,
+  "allowlisted_source_file_count": 1176,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -1842,8 +1842,8 @@
       "size_bytes": 8517
     },
     "core/training_run_index.py": {
-      "sha256": "e5f79068fe9db15bd1b48e5c09cfdc1a23d7bcf856c02c18ad7f05326598b49a",
-      "size_bytes": 50962
+      "sha256": "f27e744f70a5b153917ef8e5e2ef17cd2af109f2257085fe7d136ffd1646f13c",
+      "size_bytes": 52354
     },
     "core/training_run_recovery.py": {
       "sha256": "a395ff456edb00c6976cf1d30780dcca42dcdc80aad3f0c93ca43db4fa8d2c43",
@@ -3154,8 +3154,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "50083ee323844fabc93cdf5e364745e7b9a3a30108010e466e8e453558fe0535",
-      "size_bytes": 26591
+      "sha256": "e7f8410ac9b84337cd57bfb274d7654cf32e03d1984b021398bacd86ca408e5e",
+      "size_bytes": 26785
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3426,8 +3426,8 @@
       "size_bytes": 274
     },
     "suite_core/manager/window.py": {
-      "sha256": "c8eda8f12516543fb0727adb58d37e6bae6cc7ae8c0b2077c774f4f8a3c80ca0",
-      "size_bytes": 281891
+      "sha256": "b3e08fa9ad2344821809e1706c02c5c61c088fac1aa7bc49f55641582ae2c787",
+      "size_bytes": 282029
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3962,7 +3962,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "ab4bdaffe4ed4e809f624163c489d2ccf9bdd0ce731f7c49d6946f80f020bd34",
+      "sha256": "6747edbfa7c5d717033f3cbef18045bbec78127d9269a5c7bfd5154aaf625b71",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4708,6 +4708,14 @@
     "tests/test_manager_remix_retention.py": {
       "sha256": "083fb04a6f7ae541261765d3ec58d7480c36b0954c4849bb2aca65c1dc1ea0a4",
       "size_bytes": 5002
+    },
+    "docs/MANAGER_TRAINING_HISTORY.md": {
+      "sha256": "517c0f3171ec9e5b457336207867f61bdaa23b3d35d1311802875ee3b0851512",
+      "size_bytes": 2846
+    },
+    "tests/test_manager_training_history_management.py": {
+      "sha256": "c9f267e4e6a28e408d7b98bf64c7e3ec846ef3ed129b6dd93c861dcd33de6aa7",
+      "size_bytes": 10104
     }
   },
   "fresh_history_required": true,
