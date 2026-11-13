@@ -460,14 +460,11 @@ class CompiledManagerUpdateProfile:
         except Exception:
             if launcher.state == 'update_repair_available':return launcher
             raise
-        provider.start_successor(launcher,(str(current/'CollectiGenManager.exe'),*admitted.restart_arguments))
         try:
-            while provider.successor_route.state!='local_accepted':provider.successor_route.handle_next()
-            provider.finish_successor_close()
-            return launcher.retire_update(verify_terminal=provider.verify_terminal,settle_resources=provider.settle_terminal_resources)
-        except BaseException as error:
-            process=owner.children['replacement']
-            if launcher.state!='update_target_health_pending' or process.poll() is None:raise
-            launcher.error=error
-            launcher.update_target_failed()
-            return launcher
+            provider.start_successor(launcher,(str(current/'CollectiGenManager.exe'),*admitted.restart_arguments))
+        except OSError:
+            if (launcher.state == 'update_target_start_record_held'
+                    and provider.state == 'successor_start_record_held'):
+                return launcher  # Original Root presents an explicit same-actor retry.
+            raise
+        return provider.supervise_successor(launcher)

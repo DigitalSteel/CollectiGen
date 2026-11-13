@@ -497,7 +497,6 @@ class WindowsStockHookProvider:
     def start_successor(self, launch, argv):
         """Select signed B, register suspended child, offer fresh normal channel."""
         from core.manager_successor_admission import admit_successor_selection
-        from suite_core.manager.bootstrap_entry import NormalOwnerRoute
         self._original()
         if self.state != 'closed_observed' or launch.owner is not self.owner:
             raise LaunchHold('observed_stock_closure_before_successor_required')
@@ -515,7 +514,26 @@ class WindowsStockHookProvider:
         def create(arguments, **options):
             self.selection.revalidate()
             return self.successor_member.create(arguments, environment=self.environment, **options)
-        process = launch.start_update_target(argv, admit_entry=admit, create_process=create)
+        try:
+            process = launch.start_update_target(argv, admit_entry=admit, create_process=create)
+        except OSError:
+            if (launch.state == 'update_target_start_record_held'
+                    and self.successor_member.state == 'suspended'
+                    and self.owner.children.get('replacement') is self.successor_member.process):
+                self.state = 'successor_start_record_held'
+            raise
+        return self._resume_successor(launch, process)
+
+    def _resume_successor(self, launch, process):
+        from suite_core.manager.bootstrap_entry import NormalOwnerRoute
+        self._original()
+        if (launch.owner is not self.owner or launch.state != 'update_target_health_pending'
+                or process is not self.successor_member.process
+                or self.owner.children.get('replacement') is not process
+                or process.poll() is not None or self.successor_member.state != 'suspended'):
+            raise LaunchHold('same_recorded_suspended_successor_required')
+        self.selection.revalidate()
+        self.state = 'successor_resume_uncertain'
         self.successor_route = NormalOwnerRoute(self.owner, self.successor_member.channel,
             self.selection.admitted, manager_sha256=self.selection.executable_sha256,
             helper_pins={}, successor_selection=self.selection, peer_role='replacement',
@@ -523,6 +541,39 @@ class WindowsStockHookProvider:
         self.successor_member.resume_registered()
         self.state = 'successor_running'
         return process
+
+    def retry_start_successor(self, launch, *, explicitly_requested):
+        """No creation path: reconcile the record, then resume the same child."""
+        self._original()
+        if (explicitly_requested is not True or self.state != 'successor_start_record_held'
+                or launch.owner is not self.owner
+                or launch.state != 'update_target_start_record_held'
+                or self.successor_member.state != 'suspended'
+                or self.owner.children.get('replacement') is not self.successor_member.process
+                or self.successor_member.process.poll() is not None
+                or not self.transport.includes(self.successor_member.process)):
+            raise LaunchHold('explicit_same_suspended_successor_retry_required')
+        self.selection.revalidate()
+        process = launch.retry_update_target_start_record(explicitly_requested=True)
+        return self._resume_successor(launch, process)
+
+    def supervise_successor(self, launch):
+        """Original readiness, normal closure and failed-start repair handoff."""
+        try:
+            while self.successor_route.state != 'local_accepted': self.successor_route.handle_next()
+            self.finish_successor_close()
+            return launch.retire_update(verify_terminal=self.verify_terminal,
+                settle_resources=self.settle_terminal_resources)
+        except BaseException as error:
+            process = self.owner.children['replacement']
+            if launch.state != 'update_target_health_pending' or process.poll() is None: raise
+            launch.error = error
+            launch.update_target_failed()
+            return launch
+
+    def run_start_record_retry(self, launch):
+        self.retry_start_successor(launch, explicitly_requested=True)
+        return self.supervise_successor(launch)
 
     def successor_healthy(self, launch, route):
         """Root owns health transition before fresh-entry readiness ACK."""

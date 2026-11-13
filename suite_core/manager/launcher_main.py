@@ -124,6 +124,8 @@ class PublicLaunch:
         self.update_after_close = update_after_close
         self.successor_trust_sha256 = successor_trust_sha256
         self.update_service = self.update_prepared = self.update_request = self.update_recovery = None
+        self._update_target_start_pending = None
+        self._update_start_record_failure = None
         self.update_lease = None
         self.update_owner = self.update_recovery_gate = None
         self.update_terminal_receipt = None
@@ -457,13 +459,48 @@ class PublicLaunch:
             with self.update_owner.dispatch_lock:
                 process = self.owner.spawn_replacement(self.update_request, argv,
                     admit_entry=admit_entry, create_process=create_process)
-                self.update_recovery.starting(dict(owner_token=self.owner.record['owner'],
+                proof = dict(owner_token=self.owner.record['owner'],
                     attempt_identity_sha256=self.update_request.attempt_identity_sha256,
-                    original_process=deepcopy(self.owner.record['children']['replacement'])))
+                    original_process=deepcopy(self.owner.record['children']['replacement']))
+                self._update_target_start_pending = (process, proof)
+                self.update_recovery.starting(proof)
+                self._update_target_start_pending = None
             self.state = 'update_target_health_pending'
             return process
         except BaseException as error:
             self.error, self.state = error, 'update_held'
+            if isinstance(error, OSError) and self._update_target_start_pending is not None:
+                self._update_start_record_failure = error
+                self.state = 'update_target_start_record_held'
+                try: self.record('update-start-record-held', error_type=type(error).__name__)
+                except BaseException as report_error: self._update_start_record_report_error = report_error
+            raise
+
+    def retry_update_target_start_record(self, *, explicitly_requested):
+        """Retry only the durable record for the original registered process."""
+        self._update_owned()
+        if (explicitly_requested is not True or self.state != 'update_target_start_record_held'
+                or self._update_target_start_pending is None):
+            raise ValueError('explicit_original_start_record_retry_required')
+        try:
+            with self.update_owner.dispatch_lock:
+                self._update_owned()
+                process, proof = self._update_target_start_pending
+                current = dict(owner_token=self.owner.record['owner'],
+                    attempt_identity_sha256=self.update_request.attempt_identity_sha256,
+                    original_process=deepcopy(self.owner.record['children']['replacement']))
+                if (self.owner.record['phase'] != 'replacement_wait_health'
+                        or self.owner.record['maintenance']['replacement_dispatch'] != 'created'
+                        or self.owner.children.get('replacement') is not process
+                        or process.poll() is not None or current != proof):
+                    raise ValueError('same_registered_live_start_target_required')
+                self.update_recovery.starting(proof)
+                self._update_target_start_pending = None
+            self.state = 'update_target_health_pending'
+            return process
+        except BaseException as error:
+            self.error = error
+            self.state = 'update_target_start_record_held' if isinstance(error, OSError) else 'update_held'
             raise
 
     def update_target_failed(self):
@@ -631,7 +668,7 @@ class PublicLaunch:
         layout = QVBoxLayout(dialog)
         label = QLabel('Manager could not complete startup. Its original startup state is retained. '
             'Keep this window open while closure is unresolved. No runner or helper is stopped automatically.')
-        label.setWordWrap(True); layout.addWidget(label)
+        label.setObjectName("startupRecoveryOverview"); label.setWordWrap(True); layout.addWidget(label)
         recorded_reason = type(self.error).__name__ + ': ' + str(self.error)[:256]
         status = QLabel('Checking whether Manager can finish recovery. Keep this review open until closure is confirmed.')
         status.setObjectName('startupRecoveryStatus'); status.setWordWrap(True); status.setTextFormat(Qt.PlainText)
@@ -656,7 +693,11 @@ class PublicLaunch:
             if confirmed:
                 if held.state == 'update_closed':
                     status.setText('Recovery verified and all owned resources closed. Choose Close to finish.')
-                    label.setText('The prior Manager reopened successfully in a distinct fresh process. Recovery evidence is retained.')
+                    if getattr(held, '_update_continued_startup', False):
+                        status.setText('Updated Manager startup and closure verified. Choose Close to finish.')
+                        label.setText('The updated Manager opened and closed normally. The original startup-record failure is retained.')
+                    else:
+                        label.setText('The prior Manager reopened successfully in a distinct fresh process. Recovery evidence is retained.')
                     reason.setText('Original update failure: ' + recorded_reason)
                 else:
                     status.setText('Closure confirmed. Choose Close to finish this failed startup review.')
@@ -669,45 +710,88 @@ class PublicLaunch:
                 location.setText('Startup details: ' + str(held.report_paths[-1]))
         check.clicked.connect(refresh); close.clicked.connect(dialog.close)
         close.setEnabled(self.can_close()); layout.addWidget(check); layout.addWidget(close)
-        if self.state == 'update_repair_available':
+        if self.state in {'update_repair_available', 'update_target_start_record_held'}:
             from core.manager_stock_hook_provider import WindowsStockHookProvider
             from .resource_executor import ResourceExecutorOwner
             provider = getattr(self.owner.native_transport,'stock_hook_provider',None)
             if type(provider) is WindowsStockHookProvider and provider.owner is self.owner:
                 dialog.resize(660,460)
-                status.setText('Repair is available for this exact failed update. The deployment remains held until recovery and closure are verified.')
-                label.setText('The updated Manager failed to start. The original launcher still holds this deployment. '
-                    'Repair restores the verified prior Manager and its declared settings backup. '
-                    'The failed update and recovery evidence stay available.')
-                consequence = QLabel('Choose Repair once. Close each restored Manager window when finished; '
-                    'the launcher opens a distinct fresh Manager to verify recovery. Keep this review open until recovery and closure are confirmed.')
+                retrying_record = self.state == 'update_target_start_record_held'
+                if retrying_record:
+                    label.setText('The update is installed, but the launcher could not save its startup record. '
+                        'The updated Manager is still paused. Retry continues that same process; it does not install again or open a second instance.')
+                    status.setText('Restore access to the update records, then retry updated Manager startup.')
+                else:
+                    status.setText('Repair is available for this exact failed update. The deployment remains held until recovery and closure are verified.')
+                    label.setText('The updated Manager failed to start. The original launcher still holds this deployment. '
+                        'Repair restores the verified prior Manager and its declared settings backup. '
+                        'The failed update and recovery evidence stay available.')
+                retry_consequence = ('Retry saves the startup record and opens the updated Manager. Close that Manager normally when finished. '
+                    'Keep this review open until closure is confirmed.')
+                repair_consequence = ('Choose Repair once. Close each restored Manager window when finished; '
+                    'the launcher also opens a distinct fresh Manager to verify recovery. Keep this review open until closure is confirmed.')
+                consequence = QLabel(retry_consequence if retrying_record else repair_consequence)
                 consequence.setWordWrap(True);layout.addWidget(consequence)
+                retry = QPushButton('Retry updated Manager startup');retry.setObjectName('managerUpdateRetryStartup')
                 repair = QPushButton('Repair to prior Manager');repair.setObjectName('managerUpdateRepair')
-                layout.addWidget(repair)
+                layout.addWidget(retry);layout.addWidget(repair)
+                retry.setVisible(retrying_record);repair.setVisible(not retrying_record)
+                retry.setProperty("primary", True);repair.setProperty("primary", True)
+                retry.setDefault(retrying_record);repair.setDefault(not retrying_record)
                 self.update_worker = ResourceExecutorOwner()
                 self.update_repair_future = None
-                def request_repair():
-                    repair.setEnabled(False);check.setEnabled(False);close.setEnabled(False)
-                    status.setText('Repair requested. The original launcher is verifying and restoring this exact transaction.')
-                    held.update_repair_future = held.update_worker.submit(provider.run_explicit_repair,held)
+                operation = [None]
+                def request_action(kind):
+                    retry.setEnabled(False);repair.setEnabled(False);check.setEnabled(False);close.setEnabled(False)
+                    operation[0] = kind
+                    if kind == 'retry':
+                        status.setText('Retrying the original startup record. The same updated Manager will open after the record is saved. Close it normally when finished.')
+                        held.update_repair_future = held.update_worker.submit(provider.run_start_record_retry,held)
+                    else:
+                        status.setText('Repair requested. The original launcher is verifying and restoring this exact transaction.')
+                        held.update_repair_future = held.update_worker.submit(provider.run_explicit_repair,held)
                     repair_timer.start()
                 def poll_repair():
                     future = held.update_repair_future
-                    if future is None or not future.done() or held.update_worker.close_held:return
+                    if future is None:return
+                    if not future.done() or held.update_worker.close_held:
+                        if operation[0] == 'retry' and provider.state == 'successor_running':
+                            label.setText('The startup record is saved. The updated Manager is continuing under the original launcher.')
+                            status.setText('Updated Manager is open. Close it normally when finished; this review will confirm closure.'
+                                if held.state == 'update_target_healthy' else 'The updated Manager is starting. Keep this review open.')
+                        return
                     repair_timer.stop();check.setEnabled(True)
                     try:
                         result=future.result()
-                        if result is not held.update_terminal_receipt or not held.can_close():
+                        if result is held and held.state == 'update_repair_available':
+                            status.setText('The updated Manager could not finish startup. Repair to the verified prior Manager is now available.')
+                            label.setText('The updated Manager exited before completing startup. The original launcher still holds this update. '
+                                'Repair restores the verified prior Manager and its declared settings backup.')
+                            consequence.setText(repair_consequence)
+                        elif result is held.update_terminal_receipt and held.can_close():
+                            held._update_continued_startup = operation[0] == 'retry'
+                            status.setText('Updated Manager startup and closure verified. Choose Close to finish.'
+                                if operation[0] == 'retry' else 'Recovery verified and all owned resources closed. Choose Close to finish.')
+                            reason.setText('Updated Manager opened and closed normally; the original record failure is retained.'
+                                if operation[0] == 'retry' else 'Prior Manager reopened successfully in a distinct fresh process.')
+                        else:
                             raise RuntimeError('original_recovery_terminal_receipt_required')
-                        status.setText('Recovery verified and all owned resources closed. Choose Close to finish.')
-                        reason.setText('Prior Manager reopened successfully in a distinct fresh process.')
                     except BaseException as error:
                         held.error = error
-                        status.setText('Repair is held. Retained recovery evidence requires review before another action.')
+                        status.setText('Startup recording is still unavailable. Restore access and retry the same paused Manager.'
+                            if held.state == 'update_target_start_record_held' else
+                            'Recovery is held. Retained recovery evidence requires review before another action.')
                         reason.setText(type(error).__name__+': '+str(error)[:256])
+                    retry.setVisible(held.state == 'update_target_start_record_held')
+                    retry.setEnabled(held.state == 'update_target_start_record_held')
+                    repair.setVisible(held.state == 'update_repair_available')
+                    repair.setEnabled(held.state == 'update_repair_available')
+                    retry.setDefault(held.state == 'update_target_start_record_held')
+                    repair.setDefault(held.state == 'update_repair_available')
                     close.setEnabled(held.can_close())
                 repair_timer = QTimer(dialog);repair_timer.setInterval(50);repair_timer.timeout.connect(poll_repair)
-                repair.clicked.connect(request_repair)
+                retry.clicked.connect(lambda:request_action('retry'))
+                repair.clicked.connect(lambda:request_action('repair'))
         if self.abort_action_admission is not None:
             consequence = QLabel('Abort ends this exact failed Manager process. Unsaved changes may be lost. '
                 'This action does not stop a runner, external instance or process tree.')

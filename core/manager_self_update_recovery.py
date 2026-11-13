@@ -357,14 +357,20 @@ class ManagerRecovery:
     def starting(self, owner):
         with self.owned():
             j = self.load()
-            require(j["phase"] == "launch_ready", "startup_phase")
             require(isinstance(owner, dict) and owner, "exact_native_owner_required")
+            already_recorded = j["phase"] == "awaiting_health"
+            require(j["phase"] == "launch_ready" or already_recorded, "startup_phase")
+            if already_recorded:
+                require(j.get("startup_owner") == owner, "original_startup_owner_required")
             j["startup_owner"] = owner
             self.current_code(j["binding"]["target"])
             self.gate("target_starting", j)
             self.current_code(j["binding"]["target"])
             self.check_data(j, "expected_b")
-            return self.save(j, "awaiting_health", "target_starting", owner=owner)
+            # Atomic publication can succeed before a readback IO error. The
+            # same retained owner may reconcile that record, never append a
+            # second startup event or authorize another process.
+            return j if already_recorded else self.save(j, "awaiting_health", "target_starting", owner=owner)
 
     def startup_rejected(self):
         """Original SDK completed, but no target process was admitted or born."""

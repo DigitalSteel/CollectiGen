@@ -939,6 +939,7 @@
     "tests/test_manager_dependency_status.py",
     "tests/test_manager_distribution_builder.py",
     "tests/test_manager_production_stage.py",
+    "tests/test_manager_start_record_retry.py",
     "tests/test_manager_training_experiments.py",
     "tests/test_organizer_portable_runtime.py",
     "tests/test_organizer_startup_navigation.py",

@@ -1,3 +1,12 @@
+## Unreleased source changes
+
+- If an update cannot save its startup record after creating the paused Manager,
+  the original launcher offers **Retry updated Manager startup**. Retry continues
+  that same process after the record is saved; it does not install again or open
+  a second instance. A failed startup retains the existing explicit repair route.
+- This is a source candidate. Signed-package delivery and native recovery checks
+  remain pending; the published 0.7.4 package does not include this change.
+
 # What's New - a.0.7.4 (embedded 0.7.4-alpha.1) - 2026-11-13
 
 - Applications discovers newer signed Reader and Media Organizer releases from GitHub without requiring a new Manager build for each module update. Review the selected version and confirm installation.
