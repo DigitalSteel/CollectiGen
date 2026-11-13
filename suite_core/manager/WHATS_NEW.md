@@ -1,3 +1,9 @@
+# What's New - a.0.7.0 (embedded 0.7.0-alpha.1) - 2026-11-13
+
+- Training can find interrupted packages by their intended save location and package name. Choose Review Interrupted Training Package, then Choose Package Location. Browse Exact Receipt remains available for advanced selection.
+- Searches show activity and elapsed time with Cancel Safely. Close or an ended session cannot reopen a late review. The existing receipt review changes no package files; recovery writes stay with the original package workspace.
+- Applications continues to offer signed Reader a.0.3.1 and Organizer a.0.5.2. Automatic Manager updates support a.0.6.7 and newer;older launchers need the full ZIP in a fresh folder. Full all-in-one parity and actual failed-update rollback remain incomplete.
+
 # What's New - a.0.6.10 (embedded 0.6.10-alpha.1) - 2026-11-13
 
 - Applications offers signed Media Organizer a.0.5.2 through the existing confirmed installer. It includes copy-only Manager result previews, explicit Retry after busy file work, and clearer copied-family Undo through Recycle.

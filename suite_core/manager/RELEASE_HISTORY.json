@@ -3,6 +3,13 @@
   "module_id": "collectigen.suite-manager",
   "releases": [
     {
+      "software_version": "0.7.0-alpha.1",
+      "date": "2026-11-13",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Find interrupted Training packages by location/name through existing canonical read-only review;release candidate. Actual recovery writes,full parity and failed-update rollback remain separate."
+    },
+    {
       "software_version": "0.6.10-alpha.1",
       "date": "2026-11-13",
       "date_timezone": "Etc/UTC",
