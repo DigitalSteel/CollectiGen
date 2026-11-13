@@ -3639,12 +3639,12 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 44036,
-      "sha256": "dd3fabdc9a9c861ce53468ede5130292b82e155d00c2a61a1ed87abbb6d00c17"
+      "sha256": "ba483e47f68b428d13cb5300cbeedd8e8f29a2e6b9b65fb89b686d725cd90c9d"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "cafe10967ea54907cb88971f9b2cec5f9ff36c721d1e5efc049957d905c72b69"
+      "sha256": "e38f2b41c42c31dff97417687e448e6533faadfac08c6a6effec5e0f204322ed"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -3709,7 +3709,7 @@
     {
       "path": "suite_core/manager/compiled_organizer_config.py",
       "bytes": 3138,
-      "sha256": "947cfd1520099a1e28cc59d07506145c8b3ac14739f52fdb8c0eddaed162160a"
+      "sha256": "cb4509727f26c2e1694eb88d08419668a85072ac14cb66877dfc93735364458a"
     },
     {
       "path": "suite_core/manager/compiled_update_config.py",
@@ -3979,12 +3979,12 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "7461fbab097d62d6dd54343bf099422ab5b027e79c128d88d5c6eb3fea3190a1"
+      "sha256": "7ce3f2b4561bf76b51ae3f9a8c9c5bc61c57085c2630affbad217341ea4f0c31"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 294054,
-      "sha256": "63163c96968907589c8eafdf51b0b04201e5289f5f0be92b6f5682232f9d7e4e"
+      "bytes": 294933,
+      "sha256": "ce5418559cb64d069e760343e51c1d0fb1d769d7d53dde8c417a1cd3c795a290"
     },
     {
       "path": "suite_core/media_examples.py",

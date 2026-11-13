@@ -3,6 +3,16 @@
   "module_id": "collectigen.suite-manager",
   "releases": [
     {
+      "software_version": "0.7.2-alpha.1",
+      "numeric_version": "0.7.2",
+      "maturity": "alpha",
+      "date": "2026-11-13",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "candidate;qualification and publication recorded separately",
+      "scope": "Offer exact signed Organizer0.5.3 through existing confirmed installer;retain original Manager startup and recovery ownership"
+    },
+    {
       "software_version": "0.7.1-alpha.1",
       "date": "2026-11-13",
       "date_timezone": "Etc/UTC",

@@ -1,3 +1,8 @@
+# What's New - a.0.7.2 (embedded 0.7.2-alpha.1) - 2026-11-13
+
+- Applications now offers signed Media Organizer a.0.5.3, which retains Copy Undo after the first automatic saved-data initialization of a Manager result. Review and confirm the update before installing it.
+- The installed-Organizer startup fix and existing Generate and Training workspaces remain included. Full suite parity and actual failed-update rollback remain incomplete.
+
 # What's New - a.0.7.1 (embedded 0.7.1-alpha.1) - 2026-11-13
 
 - Opening an installed Media Organizer now allows its signed-package review to finish before the startup reply expires. The same startup request and recovery controls remain in use.
