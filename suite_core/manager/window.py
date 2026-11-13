@@ -141,7 +141,7 @@ def view_for_candidate(observation):
             dict(observation.release_dates).get(observation.software_version), "Unsigned developer candidate", observation.notes),))
 
 
-def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None, dataset_verifier=None, training_draft_settings_path=None, training_caption_review_factory=None):
+def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None, dataset_verifier=None, training_draft_settings_path=None, training_caption_review_factory=None, appearance_store=None, appearance_snapshot=None, appearance_error=None, show_tooltips=True):
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtGui import QIcon
     if organizer_connection_host is not None:
@@ -719,12 +719,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.backend_settings_layout.addWidget(self.ollama_widget)
             self.backends.setMaximumHeight(180)
             connection_layout.addWidget(disclosure_panel("Connection details", self.backends))
-            appearance_group = QGroupBox("Appearance and accessibility"); appearance_layout = QVBoxLayout(appearance_group)
-            appearance = QLabel(f"Theme: {theme}\nColor-blind status palette: {'On' if color_blind_mode else 'Off'}")
-            appearance.setWordWrap(True); appearance_layout.addWidget(appearance)
-            appearance_hint = QLabel("Launch preferences only; these values are not saved by Manager.")
-            appearance_hint.setWordWrap(True); appearance_hint.setObjectName("mutedLabel"); appearance_layout.addWidget(appearance_hint)
-            settings_layout.addWidget(appearance_group)
+            from .appearance_ui import AppearancePanel
+            self.appearance_panel = AppearancePanel(appearance_store, appearance_snapshot,
+                error=appearance_error, theme=theme, color_blind_mode=color_blind_mode,
+                show_tooltips=show_tooltips, parent=settings_body)
+            settings_layout.addWidget(self.appearance_panel)
             build_group = QGroupBox("Current build"); build_layout = QVBoxLayout(build_group)
             build_label = QLabel("\n".join(self.current_build.lines())); build_label.setWordWrap(True); build_layout.addWidget(build_label)
             settings_layout.addWidget(build_group)

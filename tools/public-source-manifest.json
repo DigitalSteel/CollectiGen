@@ -5,6 +5,7 @@
     "collectigen.suite-manager"
   ],
   "files": [
+    "docs/MANAGER_LOCAL_APPEARANCE.md",
     "LICENSE",
     "LICENSES.md",
     "PRIVACY.md",
@@ -208,6 +209,7 @@
     "core/logging_setup.py",
     "core/managed_model_identity.py",
     "core/managed_settings_protection.py",
+    "core/manager_appearance_settings.py",
     "core/manager_dependency_status.py",
     "core/manager_direct_admission.py",
     "core/manager_launch_owner.py",
@@ -770,6 +772,7 @@
     "suite_core/manager/WHATS_NEW.md",
     "suite_core/manager/__init__.py",
     "suite_core/manager/__main__.py",
+    "suite_core/manager/appearance_ui.py",
     "suite_core/manager/assets/collectigen.ico",
     "suite_core/manager/async_lifecycle_bridge.py",
     "suite_core/manager/backend_setup_controller.py",
@@ -931,6 +934,8 @@
     "tests/test_encyclopedia_update_check.py",
     "tests/test_image_data_editor_first_save.py",
     "tests/test_knowledge_pack_records.py",
+    "tests/test_manager_appearance_settings.py",
+    "tests/test_manager_appearance_ui.py",
     "tests/test_manager_dependency_status.py",
     "tests/test_manager_distribution_builder.py",
     "tests/test_manager_production_stage.py",

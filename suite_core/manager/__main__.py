@@ -402,10 +402,8 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
         from .window import create_window, synthetic_demo, unconfigured
         from .async_lifecycle_bridge import AsyncLifecycleBridge
         from PySide6.QtWidgets import QApplication
-        from qt_app.theme import apply_theme
         app = QApplication.instance() or QApplication(sys.argv[:1])
         entry_owner.app = app
-        apply_theme(app, args.theme, args.color_blind_mode)
         now = datetime.now(timezone.utc)
         from suite_core.manager.current_build import load_current_build
         build_status = load_current_build(Path(__file__).resolve().parent, VERSION)
@@ -417,6 +415,13 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
         app_settings_path = settings_path
         if settings_path is not None and Path(settings_path).suffix.casefold() == ".ini":
             app_settings_path = Path(settings_path).with_suffix(".json")
+        appearance_store = None
+        if not args.demo and disposable_module_binding is None and app_settings_path is not None:
+            from core.manager_appearance_settings import ManagerAppearanceSettings
+            appearance_store = ManagerAppearanceSettings(app_settings_path)
+        from .appearance_ui import restore_appearance
+        appearance_snapshot, appearance_error, args.theme, args.color_blind_mode, show_tooltips = restore_appearance(
+            app, appearance_store, theme=args.theme, color_blind_mode=args.color_blind_mode)
         connection_settings = app_settings_path
         if connection_settings is None and not args.demo:
             from core.paths import SETTINGS_PATH
@@ -524,7 +529,9 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
                 raise ValueError("reviewed_training_dataset_verifier_required")
         if before_window_probe is not None: before_window_probe(entry_owner)
         window = create_window(synthetic_demo(now) if args.demo else unconfigured(now), theme=args.theme,
-            color_blind_mode=args.color_blind_mode, current_build=build_status, resource_route=resource_route, diagnostics_provider=diagnostics_provider, metadata_setup=metadata_setup, lifecycle_bridge=lifecycle_bridge,
+            color_blind_mode=args.color_blind_mode, appearance_store=appearance_store,
+            appearance_snapshot=appearance_snapshot, appearance_error=appearance_error,
+            show_tooltips=show_tooltips, current_build=build_status, resource_route=resource_route, diagnostics_provider=diagnostics_provider, metadata_setup=metadata_setup, lifecycle_bridge=lifecycle_bridge,
             owned_runtime=None if admission is None else admission.binding,
             owned_descriptor=None if admission is None else admission.descriptor,
             owned_runtime_allowed=admission is not None and admission.allowed,
