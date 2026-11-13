@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "module_id": "collectigen.suite-manager",
-  "software_version": "0.6.8-alpha.1",
+  "software_version": "0.6.9-alpha.1",
   "manager_interface_version": 1,
   "runtime_files": [
     "core/__init__.py",

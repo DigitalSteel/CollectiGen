@@ -1,8 +1,8 @@
-# Unreleased source changes
+# What's New - a.0.6.9 (embedded 0.6.9-alpha.1) - 2026-11-13
 
-- Training Package Review explains the verified image counts, target and next preparation step while keeping unchecked trainer and model readiness explicit.
-- Return and recovery guidance name the Training workspace.
-- These changes are pending a versioned Manager package; the a.0.6.8 download is unchanged.
+- Training Package Review now shows the target model, included and excluded image counts, training/validation/holdout split, and the available next preparation action.
+- The review distinguishes verified package files from unchecked trainer and model readiness. Return and recovery guidance now name the Training workspace.
+- Uses the existing Manager update route from a.0.6.7 and newer. Full suite parity and actual failed-update rollback remain unqualified.
 
 # What's New - a.0.6.8 (embedded 0.6.8-alpha.1) - 2026-11-13
 
