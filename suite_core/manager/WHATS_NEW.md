@@ -1,3 +1,8 @@
+# What's New - a.0.6.10 (embedded 0.6.10-alpha.1) - 2026-11-13
+
+- Applications offers signed Media Organizer a.0.5.2 through the existing confirmed installer. It includes copy-only Manager result previews, explicit Retry after busy file work, and clearer copied-family Undo through Recycle.
+- Existing Reader installation, Generate/Training workspaces and the Manager update route from a.0.6.7 remain available. Older launchers need the full ZIP in a fresh folder. Full suite parity and actual failed-update rollback remain incomplete.
+
 # What's New - a.0.6.9 (embedded 0.6.9-alpha.1) - 2026-11-13
 
 - Training Package Review now shows the target model, included and excluded image counts, training/validation/holdout split, and the available next preparation action.

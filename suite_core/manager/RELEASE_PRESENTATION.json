@@ -2,8 +2,8 @@
   "schema": 1,
   "purpose": "presentation only; not signed release/update metadata",
   "component": "SuiteManager",
-  "numeric_version": "0.6.9",
+  "numeric_version": "0.6.10",
   "maturity": "alpha",
-  "display_version": "a.0.6.9",
-  "legacy_wire_version": "0.6.9-alpha.1"
+  "display_version": "a.0.6.10",
+  "legacy_wire_version": "0.6.10-alpha.1"
 }
