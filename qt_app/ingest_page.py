@@ -5893,6 +5893,10 @@ class IngestPage(QWidget):
         )
         if completion_context=="preparation" and runtime_recovery is None:
             self.preparation_controls.discard_setup_return()
+        stale_add_preview = completion_context == "add_images_saved_apply" and message in {
+            "A selected image family changed after preview.",
+            "A selected image family changed while sealing its identity.",
+        }
         self.batch_summary.setText(
             "AI Tags could not start. Repair the shared AI Tag runtime in Setup, "
             "then retry the selected images."
@@ -5900,7 +5904,10 @@ class IngestPage(QWidget):
             "Add Images preview cancelled safely. Selection retained; choose Retry Add Images Preview for a fresh check."
             if preview_cancelled and preview_retry else
             "Add Images preview stopped. Selection retained; choose Retry Add Images Preview."
-            if preview_retry else "Batch stopped before completion"
+            if preview_retry else
+            "A selected image or sidecar changed after preview. Review the current files again. "
+            "For a Manager result, choose Review Manager Result and select the current receipt."
+            if stale_add_preview else "Batch stopped before completion"
         )
         self.batch_summary.setToolTip("" if preview_cancelled else message)
         if preview_retry:self.batch_summary.hide()

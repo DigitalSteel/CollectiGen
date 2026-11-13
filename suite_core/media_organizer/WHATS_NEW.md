@@ -1,3 +1,9 @@
+# Media Organizer a.0.5.1
+
+- A generated image or sidecar changed after copy preview now explains why
+  the copy stopped and how to review the current Manager result again.
+- Existing copy-only checks, source preservation and recovery are unchanged.
+
 # Media Organizer a.0.5.0
 
 - Dataset status stays owned by its page during first startup, so background

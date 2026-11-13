@@ -2198,8 +2198,8 @@
       "size_bytes": 14920
     },
     "qt_app/ingest_page.py": {
-      "sha256": "9c0a1c5c41c62cf32fb0e0e6a5b291b5f9db411cdeee8fff72deb223821b0653",
-      "size_bytes": 367700
+      "sha256": "6ff5d581f3a84b07c3add014995bef94a489482d07c852e57441770de9deb11f",
+      "size_bytes": 368179
     },
     "qt_app/ingest_preparation_queue.py": {
       "sha256": "82870eaf359ff7108e51ca2d0bd91d95f422abb404d96c42f411f10cac2f6d6b",
@@ -3130,7 +3130,7 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "97474bb47e85e6027a574167b590781a2464ddfe67cbaf6ffeddeec1df93badf",
+      "sha256": "48c666023fc259832589bb53ece0ac858f5f08403a89e13426a3f9489adc4b1e",
       "size_bytes": 5404
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "ec8bc976253b705b4ddb8671087831e5141a78193e1874763029df17468b13c0",
-      "size_bytes": 28363
+      "sha256": "5cae191810a300d62f8cc5b71bf43be87b0dad95db7defe460fafce793f4155d",
+      "size_bytes": 28620
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3202,7 +3202,7 @@
       "size_bytes": 3136
     },
     "suite_core/media_organizer/version.py": {
-      "sha256": "a941937b7b388ac4df20b5d0b68f46bb8057faa318ede572003bd598fb806074",
+      "sha256": "b475a527b47cbcb68c834f6c4ecc7f72a54f39721a5749453c4c9ca40cde1f7c",
       "size_bytes": 264
     },
     "suite_core/registry/__init__.py": {
@@ -3326,8 +3326,8 @@
       "size_bytes": 3801
     },
     "tests/test_manager_result_ingest.py": {
-      "sha256": "d1635c7cd8f50db4c5dfdbf9fcc2381412b2876db3241a1e9937827c9cdb1949",
-      "size_bytes": 5775
+      "sha256": "643951bcb83e17e7d1ebb3e6bf329f1caebb8aa14fa07bed69bd202d0a83abc2",
+      "size_bytes": 10603
     },
     "docs/GEN06_MANAGER_RESULT_INGEST.md": {
       "sha256": "5b7cf8905aadd0fc03cffc9cae9744dbfa3562ee11936e3f93b4ef6f583f47c8",

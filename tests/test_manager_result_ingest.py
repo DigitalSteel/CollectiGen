@@ -117,3 +117,86 @@ def test_cancelled_preview_keeps_original_result(tmp_path):
         planner(tmp_path, handoff).preview_files([handoff.output], should_cancel=lambda: True)
     assert handoff.output.read_bytes() == before
     assert not list((tmp_path / "Incoming Images").iterdir())
+
+
+# GEN-06A: current production planner/executor refusal and failure-summary component.
+@pytest.fixture
+def failed_copy_summary(monkeypatch, tmp_path):
+    from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QProgressBar, QWidget, QVBoxLayout
+    from PySide6.QtGui import QFont, QFontDatabase
+    from qt_app import ingest_page as ui
+    app = QApplication.instance() or QApplication([])
+    for font in ('segoeui.ttf', 'segoeuib.ttf'):
+        assert QFontDatabase.addApplicationFont('C:/Windows/Fonts/' + font) >= 0
+    app.setFont(QFont('Segoe UI', 10)); app.setStyle('Fusion')
+    window = QWidget(); window.setWindowTitle('Changed Manager result - source component')
+    layout = QVBoxLayout(window)
+    summary = QLabel(); summary.setWordWrap(True); layout.addWidget(summary)
+    calls = []
+    owner = SimpleNamespace(_batch_completion_context='add_images_saved_apply',
+        _batch_task=object(), _batch_paths=['synthetic'],
+        state=SimpleNamespace(finish_long_operation=lambda scope:calls.append(scope)),
+        batch_actions=QPushButton(), refresh_button=QPushButton(),
+        batch_progress=QProgressBar(), cancel_batch_button=QPushButton(),
+        batch_summary=summary, _finish_preparation_editor=lambda:None,
+        update_selection=lambda:calls.append('selection'),
+        _notify_background_work_finished=lambda:calls.append('finished'))
+    monkeypatch.setattr(ui.IngestPage, '_refresh_saved_add_batch_state', lambda self:None)
+    monkeypatch.setattr(ui.QMessageBox, 'critical', lambda *args,**kwargs:calls.append('error_dialog'))
+    def render(message, name='stale'):
+        ui.IngestPage._batch_failed(owner, message)
+        window.resize(1200, 200); window.show(); app.processEvents()
+        assert summary.isVisible() and owner._batch_task is None
+        assert calls == ['ingest', 'selection', 'error_dialog', 'finished']
+        assert summary.toolTip() == message
+        import os
+        output = os.environ.get('CG_GEN06A_CAPTURES')
+        if output:
+            target=Path(output);target.mkdir(parents=True,exist_ok=True)
+            assert window.grab().save(str(target/(name+'.png')))
+        return summary.text()
+    yield render
+    window.close(); app.processEvents()
+
+
+@pytest.mark.parametrize('changed', ['image', 'sidecar'])
+def test_changed_after_preview_shows_current_manager_receipt_recovery(tmp_path, failed_copy_summary, changed):
+    from core.ingest_add_execution import AddImagesBatchExecutor
+    selected, receipt = generated_receipt(tmp_path)
+    handoff = GenerationIngestHandoff.from_selected_manager_receipt(selected)
+    service = planner(tmp_path, handoff)
+    plan = service.preview_files([handoff.output])
+    assert plan.ready('copy') and not plan.ready('move')
+    family = (selected, handoff.output, handoff.output.with_suffix('.tags.json'))
+    before = {p:p.read_bytes() for p in family}
+    target = handoff.output if changed == 'image' else handoff.output.with_suffix('.tags.json')
+    target.write_bytes(before[target] + b' ')
+    with pytest.raises(ValueError) as failure:
+        AddImagesBatchExecutor(service.transfers).run_initial(plan, 'copy',
+            origin='ordinary_files', boundary_confirmed=True,
+            progress=lambda *args:None, should_pause=lambda:False)
+    message = failed_copy_summary(str(failure.value), changed)
+    assert 'image or sidecar changed after preview' in message
+    assert 'Review Manager Result and select the current receipt' in message
+    assert not list((tmp_path/'Incoming Images').iterdir())
+    assert all(p.read_bytes() == before[p] + (b' ' if p == target else b'') for p in family)
+
+
+def test_current_manager_result_copies_through_saved_add_executor(tmp_path):
+    from core.ingest_add_execution import AddImagesBatchExecutor
+    selected, receipt = generated_receipt(tmp_path)
+    handoff = GenerationIngestHandoff.from_selected_manager_receipt(selected)
+    service = planner(tmp_path, handoff)
+    family = (selected, handoff.output, handoff.output.with_suffix('.tags.json'))
+    before = {p:p.read_bytes() for p in family}
+    plan = service.preview_files([handoff.output])
+    result = AddImagesBatchExecutor(service.transfers).run_initial(plan, 'copy',
+        origin='ordinary_files', boundary_confirmed=True,
+        progress=lambda *args:None, should_pause=lambda:False)
+    assert result.status == 'complete' and result.completed == 1
+    assert all(p.read_bytes() == before[p] for p in family)
+    assert (tmp_path/'Incoming Images'/handoff.output.name).read_bytes() == before[handoff.output]
+
+
+def test_unrelated_copy_failure_keeps_original_summary(failed_copy_summary):
+    assert failed_copy_summary('Destination is unavailable.', 'unrelated') == 'Batch stopped before completion'
