@@ -1,4 +1,4 @@
-# Unreleased
+# What's New - a.0.6.6 (embedded 0.6.6-alpha.1) - 2026-11-13
 
 - Manage Manager-owned Training history with Forget From This List and Recover Saved List. Forget preserves run files; list recovery retains the original guarded transaction.
 

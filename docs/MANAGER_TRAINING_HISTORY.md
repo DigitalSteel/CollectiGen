@@ -1,7 +1,7 @@
 # Manager Training history management
 
-Unreleased source contract for SUITE-10C. The published build remains a.0.6.5
-until this change receives its own signed Manager package.
+Implementation contract for SUITE-10C. Runtime delivery uses independently
+versioned signed Manager packages; source and package qualifications are distinct.
 
 ## User workflow
 

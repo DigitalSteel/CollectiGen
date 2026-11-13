@@ -3130,7 +3130,7 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "859d9cdbcf49d54c37db81a5f400a65b415fd0faf2df6de20715c76494175f9f",
+      "sha256": "54afe0569260c84fab4352fa9fe75ce02d2f5af34618a124640a777677ebbda2",
       "size_bytes": 44010
     },
     "suite_core/manager/README.md": {
@@ -3138,11 +3138,11 @@
       "size_bytes": 5070
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
-      "sha256": "51bb1d114fae668fe2ee6dec98e858b874ee0102a58964a58e0c965f5cf0112f",
-      "size_bytes": 10033
+      "sha256": "18886ce6b535858e7a20cb2ab5a017626013a58e0388f543e30e316446d85121",
+      "size_bytes": 10353
     },
     "suite_core/manager/RELEASE_PRESENTATION.json": {
-      "sha256": "793c002009138ec4a42a411bc028dc6f4bae3b1765faa33d5f8160d7a09a2cf2",
+      "sha256": "3c3e233a1339ba8a7216e4d614804fff892c02bbb56fcafdb1322f0c1d989e6b",
       "size_bytes": 246
     },
     "suite_core/manager/RESOURCE_DASHBOARD_INTEGRATION.md": {
@@ -3154,8 +3154,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "e7f8410ac9b84337cd57bfb274d7654cf32e03d1984b021398bacd86ca408e5e",
-      "size_bytes": 26785
+      "sha256": "69114a5cf5f879469873195b051857756fe8b295015a6ae1a57e7310e5de00c4",
+      "size_bytes": 26833
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3422,12 +3422,12 @@
       "size_bytes": 15135
     },
     "suite_core/manager/version.py": {
-      "sha256": "a7f7a74410341f26898f60c775e35df9ae3344d3b92c2f29222713624b177d11",
+      "sha256": "2f69e81d1a311e086f638bbdadbd8f5682a4e11554c0ab736b28af596ed1e6ec",
       "size_bytes": 274
     },
     "suite_core/manager/window.py": {
-      "sha256": "b3e08fa9ad2344821809e1706c02c5c61c088fac1aa7bc49f55641582ae2c787",
-      "size_bytes": 282029
+      "sha256": "fc5796b1f6570395bcc160e48229dff62d5ef6e70829c3b5bf3083434e2fd0c5",
+      "size_bytes": 282381
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -3962,7 +3962,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "6747edbfa7c5d717033f3cbef18045bbec78127d9269a5c7bfd5154aaf625b71",
+      "sha256": "f98b228bd017e9470513a5ed0c2e94d2656f52af3b51d1e356804959a2b38c21",
       "size_bytes": 163618
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4710,8 +4710,8 @@
       "size_bytes": 5002
     },
     "docs/MANAGER_TRAINING_HISTORY.md": {
-      "sha256": "517c0f3171ec9e5b457336207867f61bdaa23b3d35d1311802875ee3b0851512",
-      "size_bytes": 2846
+      "sha256": "257fcf16a8056abbee6405b6b49e16b5e5ac674f1b0cfce2c274a2d1796236c5",
+      "size_bytes": 2867
     },
     "tests/test_manager_training_history_management.py": {
       "sha256": "c9f267e4e6a28e408d7b98bf64c7e3ec846ef3ed129b6dd93c861dcd33de6aa7",
