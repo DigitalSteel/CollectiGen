@@ -3,6 +3,13 @@
   "module_id": "collectigen.suite-manager",
   "releases": [
     {
+      "software_version": "0.6.7-alpha.1",
+      "date": "2026-11-13",
+      "date_timezone": "Etc/UTC",
+      "notes": "WHATS_NEW.md",
+      "status": "Stock installed-layout and original-owner pre-start rejection recovery fixes; release candidate. Actual installed update/rollback and full parity remain open."
+    },
+    {
       "software_version": "0.6.6-alpha.1",
       "date": "2026-11-13",
       "date_timezone": "Etc/UTC",

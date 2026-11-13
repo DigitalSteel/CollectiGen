@@ -2704,12 +2704,34 @@ class DeploymentOwner:
         attempt = self._maintenance_context(request, allow_pending=True)
         return 'repair_updater' if attempt is self.record['maintenance'].get('repair') else 'updater'
 
+    def rejected_replacement_before_start(self, request):
+        """Authenticate original successful drain and a never-started successor."""
+        maintenance = self._maintenance_context(request, allow_pending=True)
+        ref = maintenance.get('replacement_rejected')
+        if (ref is None or maintenance['replacement_dispatch'] != 'not_started'
+                or 'replacement' in self.children or self.pending):
+            raise LaunchHold('original_unstarted_replacement_rejection_required')
+        proof = self._read_record(ref)
+        if (proof.get('transaction_id') != request.transaction_id
+                or proof.get('binding_sha256') != request.binding_sha256
+                or set(proof['children']) != set(self.children)):
+            raise LaunchHold('original_rejected_replacement_drain_changed')
+        for role, row in proof['children'].items():
+            binding, code = self._bound_native_exit(role)
+            if code != 0 or row != dict(identity=binding.identity(), exit_code=code):
+                raise LaunchHold('original_rejected_replacement_actor_changed')
+        return proof
+
     @_serialized
     def prepare_repair_attempt(self, original, fields):
         """One distinct repair attempt; original approval/request never rebased."""
         self._maintenance_context(original)
-        if ('repair' in self.record['maintenance'] or self.record['phase'] != 'replacement_wait_health'
-                or 'replacement' not in self.children or self.children['replacement'].poll() is None
+        rejected = self.record['phase'] == 'replacement_rejected'
+        if rejected:
+            self.rejected_replacement_before_start(original)
+        if ('repair' in self.record['maintenance']
+                or (not rejected and (self.record['phase'] != 'replacement_wait_health'
+                    or 'replacement' not in self.children or self.children['replacement'].poll() is None))
                 or any(child.poll() is None for child in self.children.values())):
             raise LaunchHold('distinct_closed_failed_target_repair_required')
         exits = {}
@@ -2718,7 +2740,7 @@ class DeploymentOwner:
             if binding.process is not child:
                 raise LaunchHold('original_native_repair_drain_required')
             exits[role] = dict(identity=binding.identity(),exit_code=code)
-        if exits['replacement']['exit_code'] == 0:
+        if not rejected and exits['replacement']['exit_code'] == 0:
             raise LaunchHold('failed_target_native_exit_required')
         supplied = deepcopy(fields)
         supplied['original_owner_tokens'] = self._original_tokens(self.record)
@@ -2949,7 +2971,25 @@ class DeploymentOwner:
             self._scope("maintenance_closed", request)
             if any(self.children[role].poll() != 0 for role in m["roles"]):
                 raise LaunchHold("stock_apply_or_hook_failed")
-            proof = verify_payload(self, request)
+            try:
+                proof = verify_payload(self, request)
+            except Exception as error:
+                if m['replacement_dispatch'] != 'not_started' or 'replacement' in self.children or self.pending:
+                    raise
+                exits = {}
+                for role, child in self.children.items():
+                    binding, code = self._bound_native_exit(role)
+                    if binding.process is not child or code != 0:
+                        raise LaunchHold('successful_original_apply_drain_before_rejection_required')
+                    exits[role] = dict(identity=binding.identity(), exit_code=code)
+                rejected = self._commit_record('replacement_rejected', dict(
+                    transaction_id=request.transaction_id, binding_sha256=request.binding_sha256,
+                    children=exits, reason=type(error).__name__), request.transaction_id)
+                record = deepcopy(self.record)
+                record['maintenance']['replacement_rejected'] = rejected
+                record['phase'] = 'replacement_rejected'
+                self._persist(record)
+                raise
             if (type(proof) is not dict or proof.get("status") != "code_data_verified" or
                     proof.get("transaction_id") != request.transaction_id or
                     proof.get("binding_sha256") != request.binding_sha256 or
@@ -2965,7 +3005,8 @@ class DeploymentOwner:
             self._persist(next_record)
             return deepcopy(proof)
         except BaseException as exc:
-            self._maintenance_failed(type(exc).__name__)
+            if self.record['phase'] != 'replacement_rejected':
+                self._maintenance_failed(type(exc).__name__)
             raise
 
     @_serialized
@@ -3068,12 +3109,13 @@ class DeploymentOwner:
                 or not callable(verify_terminal) or not callable(settle_resources)
                 or not callable(retire_transaction)):
             raise LaunchHold('verified_maintenance_terminal_required')
-        if ticket is None and (maintenance['dispatch'] != 'created' or 'apply_verified' not in maintenance
+        rejected_recovery = terminal['phase'] == 'recovery_verified' and 'replacement_rejected' in maintenance
+        if ticket is None and (maintenance['dispatch'] != 'created' or ('apply_verified' not in maintenance and not rejected_recovery)
                 or self.record['phase'] not in {'replacement_normal','replacement_wait_health','cleanup_hold'}
                 or (terminal['phase']=='healthy' and ('health' not in maintenance
                     or self.record['phase'] not in {'replacement_normal','cleanup_hold'}))):
             raise LaunchHold('observed_original_apply_terminal_required')
-        self._read_record(maintenance['apply_verified'])
+        self._read_record(maintenance['replacement_rejected' if rejected_recovery else 'apply_verified'])
         if terminal['phase']=='healthy':self._read_record(maintenance['health'])
         if ticket is None:
             if any(process.poll() is None for process in self.children.values()):

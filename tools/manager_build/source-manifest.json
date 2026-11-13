@@ -988,8 +988,8 @@
     },
     {
       "path": "core/manager_launch_owner.py",
-      "bytes": 263009,
-      "sha256": "ea68d64cebb4288723d65596bac2fddf50f23078a756f38cb27d0301ee6d7286"
+      "bytes": 265737,
+      "sha256": "6817ccf867ba80dd85954804fb16b308bd10102b6a8d81688ae46e383ef8cb5e"
     },
     {
       "path": "core/manager_llamacpp_provider.py",
@@ -1023,8 +1023,8 @@
     },
     {
       "path": "core/manager_self_update_recovery.py",
-      "bytes": 25673,
-      "sha256": "40188225c6961b6469f7cee7770f8de819bf564ca13a94a9b8bf7c039ab3ae2c"
+      "bytes": 26216,
+      "sha256": "0da9d883168c61f532afc8ec066fc3cd67e31e18aae6081f34a704c2cfffcc61"
     },
     {
       "path": "core/manager_server_inventory.py",
@@ -1048,8 +1048,8 @@
     },
     {
       "path": "core/manager_stock_hook_provider.py",
-      "bytes": 39889,
-      "sha256": "f7275b571d0335b3e8b55f74f7176662ed9a4e1442eca71e8c80bf8bb4d52846"
+      "bytes": 40678,
+      "sha256": "df7ad010855d0cb12fc8d2d9f431c9c8af30e25c37617cb629a2ab22775aee1f"
     },
     {
       "path": "core/manager_successor_admission.py",
@@ -1058,8 +1058,8 @@
     },
     {
       "path": "core/manager_update_host.py",
-      "bytes": 29813,
-      "sha256": "4d5d3b7c6c97cb11722641c32441e96cb1be2e23ef6ec13aa52c83151489b3da"
+      "bytes": 29949,
+      "sha256": "894820b8ddaa284894a833b7957f706bc917fa797d5b6c82dc549ef1368def55"
     },
     {
       "path": "core/manager_update_service.py",
@@ -3639,12 +3639,12 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 44010,
-      "sha256": "54afe0569260c84fab4352fa9fe75ce02d2f5af34618a124640a777677ebbda2"
+      "sha256": "776d5006cf6930406ba0f6f8d6563da29bfd372bf2531fdb1f517cdb99416067"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "3c3e233a1339ba8a7216e4d614804fff892c02bbb56fcafdb1322f0c1d989e6b"
+      "sha256": "496902f38bb48f3d979664773ae00abaca8fdff1ab9af715a8ea3a49250df3ee"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -3788,8 +3788,8 @@
     },
     {
       "path": "suite_core/manager/launcher_main.py",
-      "bytes": 47354,
-      "sha256": "258a7e5078292215298b10d87464734b0bdf80f879fc6a5413654fbb76f76924"
+      "bytes": 47638,
+      "sha256": "dd9dcd0e460d6c153231c55963a3b080d606057d513a14cec88c9ce4ec461b51"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",
@@ -3979,12 +3979,12 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "2f69e81d1a311e086f638bbdadbd8f5682a4e11554c0ab736b28af596ed1e6ec"
+      "sha256": "c25e745f7c523586109b4d0a9d78f4c991c32ad66f0934934a4d6559b50c567f"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 282381,
-      "sha256": "fc5796b1f6570395bcc160e48229dff62d5ef6e70829c3b5bf3083434e2fd0c5"
+      "bytes": 282951,
+      "sha256": "d9d5a2333d14e1af27b1c841a31053fb03365f0370e7a5438c2541bc96bb580d"
     },
     {
       "path": "suite_core/media_examples.py",

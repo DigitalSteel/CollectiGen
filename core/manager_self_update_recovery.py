@@ -366,6 +366,16 @@ class ManagerRecovery:
             self.check_data(j, "expected_b")
             return self.save(j, "awaiting_health", "target_starting", owner=owner)
 
+    def startup_rejected(self):
+        """Original SDK completed, but no target process was admitted or born."""
+        with self.owned():
+            j = self.load()
+            require(j['phase'] == 'launch_ready' and 'startup_owner' not in j, 'unstarted_target_phase')
+            evidence = self.gate('target_rejected_before_start', j)
+            self.current_code(j['binding']['target'])
+            self.check_data(j, 'expected_b')
+            return self.save(j, 'startup_failed', 'target_rejected_before_start', evidence=evidence)
+
     def startup_failed(self):
         with self.owned():
             j = self.load()

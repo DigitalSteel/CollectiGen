@@ -442,6 +442,11 @@ class PublicLaunch:
             return result
         except BaseException as error:
             self.error, self.state = error, 'update_held'
+            if self.owner.record['phase'] == 'replacement_rejected':
+                with self.update_owner.dispatch_lock:
+                    self._update_owned()
+                    self.update_recovery.startup_rejected()
+                self.state = 'update_repair_available'
             raise
 
     def start_update_target(self, argv, *, admit_entry, create_process):

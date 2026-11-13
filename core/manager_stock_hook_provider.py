@@ -180,7 +180,8 @@ class WindowsStockHookProvider:
                     or any(pipe.handle or pipe.operation for pipe in (*self.pipes.values(),*getattr(self,'repair_pipes',{}).values()))
                     or any(member.channel.reader is not None or member.channel.writer is not None
                         for member in getattr(self,'recovered_members',{}).values())
-                    or self.successor_member.channel.reader is not None or self.successor_member.channel.writer is not None):
+                    or (hasattr(self, 'successor_member') and (self.successor_member.channel.reader is not None
+                        or self.successor_member.channel.writer is not None))):
                 raise LaunchHold('positive_original_terminal_resources_required')
             return dict(owner_token=owner.record['owner'], attempt_identity_sha256=request.attempt_identity_sha256,
                 stage=stage, qualified=True, unknown_owners=0)
@@ -250,11 +251,20 @@ class WindowsStockHookProvider:
                 raise LaunchHold('live_original_stock_target_required')
             if name == 'target_healthy' and getattr(getattr(self, 'successor_route', None), 'state', None) != 'ready':
                 raise LaunchHold('actual_successor_readiness_required')
+        elif name == 'target_rejected_before_start':
+            self.owner.rejected_replacement_before_start(self.request)
+            if self.state != 'closed_observed' or self.transport.job_active_count() != 0:
+                raise LaunchHold('closed_original_apply_before_rejection_required')
         elif name == 'recovery_admission':
             self.verify_prior_release(journal)
-            binding, code = self.owner._bound_native_exit('replacement')
-            if code == 0 or self.transport.job_active_count() != 0:
-                raise LaunchHold('closed_failed_native_target_before_repair_required')
+            if 'startup_owner' not in journal:
+                self.owner.rejected_replacement_before_start(self.request)
+                if self.state != 'repair_prepared' or self.transport.job_active_count() != 0:
+                    raise LaunchHold('closed_original_rejected_target_before_repair_required')
+            else:
+                binding, code = self.owner._bound_native_exit('replacement')
+                if code == 0 or self.transport.job_active_count() != 0:
+                    raise LaunchHold('closed_failed_native_target_before_repair_required')
         elif name == 'prior_reopened_healthy_and_closed':
             if self.state != 'recovered_closed' or self.transport.job_active_count() != 0:
                 raise LaunchHold('distinct_fresh_recovered_entries_closed_required')
@@ -315,7 +325,7 @@ class WindowsStockHookProvider:
         from dataclasses import asdict
         from uuid import uuid4
         from core.manager_stock_apply import readback
-        from core.manager_self_update_recovery import digest
+        from core.manager_self_update_recovery import digest, observe
         from suite_core.discovery.component_staging import guard
         import os
         self._original()
@@ -341,7 +351,7 @@ class WindowsStockHookProvider:
         fields.update(package=str(destination),package_size=release.artifact.size_bytes,package_sha256=release.artifact.sha256,
             current_version=self.request.target_version,target_version=self.request.current_version,
             current_executable_sha256=journal['binding']['target']['files']['executable']['sha256'],
-            current_manifest_sha256=self.selection.manifest_sha256,release_sha256=release.manifest_sha256,
+            current_manifest_sha256=observe(self.owner.root/'Apps/Manager/current/sq.version')['sha256'],release_sha256=release.manifest_sha256,
             inventory_sha256=release.artifact.portable_manifest_sha256,stale_token=uuid4().hex*2)
         self.repair_request = self.owner.prepare_repair_attempt(self.request, fields)
         self.repair_pipes,self.repair_contexts,self.repair_sessions = {},{},{}
@@ -597,7 +607,7 @@ class WindowsStockHookProvider:
         for pipe in self.pipes.values():
             pipe.close()
         for pipe in getattr(self,'repair_pipes',{}).values():pipe.close()
-        self.successor_member.channel.close()
+        if hasattr(self, 'successor_member'):self.successor_member.channel.close()
         for member in getattr(self,'recovered_members',{}).values():member.channel.close()
         self.transport.settle_normal_resources(self.resource_terminal)
         self.terminal_resources_closed = True

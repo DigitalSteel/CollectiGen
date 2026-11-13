@@ -1,3 +1,9 @@
+# What's New - a.0.6.7 (embedded 0.6.7-alpha.1) - 2026-11-13
+
+- Manager update admission checks SDK files at the locations used by the stock installer, while retaining every signed application-file check.
+- If the installed update is rejected before Manager starts, the original launcher can offer Repair to prior Manager after confirming its processes closed.
+- Older Suite Manager launchers need the fresh full ZIP to receive these launcher fixes. Full all-in-one parity and actual installed-update/rollback qualification remain open until their checks finish.
+
 # What's New - a.0.6.6 (embedded 0.6.6-alpha.1) - 2026-11-13
 
 - Manage Manager-owned Training history with Forget From This List and Recover Saved List. Forget preserves run files; list recovery retains the original guarded transaction.

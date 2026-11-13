@@ -455,7 +455,11 @@ class CompiledManagerUpdateProfile:
             return dict(status='code_data_verified',transaction_id=transaction,binding_sha256=request.binding_sha256,
                 target_version=selection.version,data_unchanged=True,current_executable_sha256=selection.executable_sha256,
                 current_manifest_sha256=selection.manifest_sha256)
-        launcher.finish_update(verify_payload=payload)
+        try:
+            launcher.finish_update(verify_payload=payload)
+        except Exception:
+            if launcher.state == 'update_repair_available':return launcher
+            raise
         provider.start_successor(launcher,(str(current/'CollectiGenManager.exe'),*admitted.restart_arguments))
         try:
             while provider.successor_route.state!='local_accepted':provider.successor_route.handle_next()
