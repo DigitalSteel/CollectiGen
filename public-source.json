@@ -3134,11 +3134,11 @@
       "size_bytes": 5404
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "2ba4b45dc291ec58e8a5f445f17fa11a25d41e2427108ea201a70465696c96a0",
-      "size_bytes": 15894
+      "sha256": "234bef495c1fb30712bdbbf690b53c999b2221805eea010f17077cb04ef8e9f0",
+      "size_bytes": 16302
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
-      "sha256": "d0ab1b1139c6525e5e768227373076887854abd2770f476d294b2cf7fe86b87e",
+      "sha256": "9519d58946232da7a4bd3e0e231979a56bd41dc7aab72edc24919446a348b6e8",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
