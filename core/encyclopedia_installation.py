@@ -74,9 +74,9 @@ class EncyclopediaInstallation:
         require(self.admission is not None, "Installation awaits the original Manager root's qualified transaction admission.")
         return self.admission.transaction(self.component)
 
-    def _observe(self, root, base, owner):
+    def _observe(self, root, base, owner, *, checkpoint=None):
         platform = {"os": "windows", "architecture": "x86_64"}
-        reference = active(root, base, self.component, platform, payload_policy=self.payload_policy)
+        reference = active(root, base, self.component, platform, payload_policy=self.payload_policy, **({"checkpoint":checkpoint} if checkpoint is not None else {}))
         journal_path = base / "transaction.json"
         pending = (base / "pending-transaction.json").exists()
         journal = read_json(journal_path) if journal_path.exists() else None
@@ -96,7 +96,7 @@ class EncyclopediaInstallation:
         selected = None if reference is None else self.connection_type(
             root / reference["directory"], reference["inventory_sha256"], reference["version"])
         if selected is not None:
-            self.review_selected(selected.directory, expected=selected)
+            self.review_selected(selected.directory, expected=selected, **({"checkpoint":checkpoint} if checkpoint is not None else {}))
         return InstalledEncyclopedia(selected, phase, active_token(reference),
             sha256(canonical(journal)).hexdigest(), pending, (base / "connection-pending.json").exists())
 
@@ -264,7 +264,7 @@ class EncyclopediaInstallation:
             restoring = (base / "connection-pending.json").exists()
         return self._publish_connection(expected=self.store.observe(), restoring=restoring)
 
-    def confirm_health(self):
+    def confirm_health(self, *, checkpoint=None, on_mutation=None):
         require(callable(self.native_health), "Qualified native launch/drain evidence is required before accepting health.")
         installed = self.observe()
         require(not installed.pending and installed.phase == "activated", "activated_health_phase_required")
@@ -274,7 +274,8 @@ class EncyclopediaInstallation:
         require(self.native_health(installed.selected) is True, "native_reader_health_held")
         finish_or_recover_admitted(self.admission, component=self.component,
             trust_bytes=self.acquisition.trust, health_verified=True,
-            preflight=lambda root, base, owner: require(self._observe(root, base, owner) == installed, "changed_health_selection"), payload_policy=self.payload_policy)
+            preflight=lambda root, base, owner: require(self._observe(root, base, owner) == installed, "changed_health_selection"), payload_policy=self.payload_policy,
+            **({"checkpoint":checkpoint,"on_mutation":on_mutation} if checkpoint is not None or on_mutation is not None else {}))
         return self.observe()
 
     def reconcile_launch(self):

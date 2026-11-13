@@ -503,8 +503,8 @@
     },
     {
       "path": "core/encyclopedia_installation.py",
-      "bytes": 21529,
-      "sha256": "5dcf15da05ebf9b92a79f931dd1de56dc3ad54104334e6ffe3a70a242563f5e1"
+      "bytes": 21848,
+      "sha256": "513686e9a5a4204e4c3dda7f9be0026adaeb98ec3ff55e488b8b9b776864083a"
     },
     {
       "path": "core/encyclopedia_read_admission.py",
@@ -988,8 +988,8 @@
     },
     {
       "path": "core/manager_launch_owner.py",
-      "bytes": 265737,
-      "sha256": "6817ccf867ba80dd85954804fb16b308bd10102b6a8d81688ae46e383ef8cb5e"
+      "bytes": 265822,
+      "sha256": "94d0a085ac3180747f11df4a4c949294a2087e37c43bbf9b96ccd19201761a24"
     },
     {
       "path": "core/manager_llamacpp_provider.py",
@@ -1338,8 +1338,8 @@
     },
     {
       "path": "core/organizer_connection.py",
-      "bytes": 4905,
-      "sha256": "1de608636ac64f9cd8bb0c857f685f79a70bdb0ca298f4958375b7a3c40c6990"
+      "bytes": 4987,
+      "sha256": "bea25040bba244ee39a1abcc86e07d3be286a7a3e9f7aa31e999743f0ec2fe4c"
     },
     {
       "path": "core/organizer_connection_settings.py",
@@ -1363,13 +1363,13 @@
     },
     {
       "path": "core/organizer_installation.py",
-      "bytes": 8569,
-      "sha256": "90c4799502b23f779ccdc52bdff5d31897c35eb9924acad2cfb2e1d7a1f6f90f"
+      "bytes": 9658,
+      "sha256": "b5a5034a1e514f4f42dacb9ce9f5a1f4f417d90ae86b4eea1100ea42dde9829f"
     },
     {
       "path": "core/organizer_native_owner.py",
-      "bytes": 6583,
-      "sha256": "f40d39e26b358af5a2bc231e47378637c09ba2ac70e3b8381f934f9d8ca66904"
+      "bytes": 6748,
+      "sha256": "cba2f4ff27bd03562d8971d6473fdbe1cd3bf1fb19e440da1eb6b9294d015df7"
     },
     {
       "path": "core/organizer_scan_observation_join.py",
@@ -3423,8 +3423,8 @@
     },
     {
       "path": "suite_core/discovery/component_staging.py",
-      "bytes": 31767,
-      "sha256": "c23c0d7f5151bd39ce2ecf9af27ad29b1c6bd35eb06fa5888174e3f66897966d"
+      "bytes": 32955,
+      "sha256": "acae906e62239e2ca147b72329de6e6b50a17cf85679425b300599365069c85a"
     },
     {
       "path": "suite_core/discovery/github_component_releases.py",
@@ -3639,12 +3639,12 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 44036,
-      "sha256": "ba483e47f68b428d13cb5300cbeedd8e8f29a2e6b9b65fb89b686d725cd90c9d"
+      "sha256": "a540e3a60759a994df9be78d69140b79109b7bdd1e684da7197cfb4483854d35"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "e38f2b41c42c31dff97417687e448e6533faadfac08c6a6effec5e0f204322ed"
+      "sha256": "b919db182b57e7f6c91406f78b919e40ee85e4cdb3c13d796eb79d6cea842e3f"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -3709,7 +3709,7 @@
     {
       "path": "suite_core/manager/compiled_organizer_config.py",
       "bytes": 3138,
-      "sha256": "cb4509727f26c2e1694eb88d08419668a85072ac14cb66877dfc93735364458a"
+      "sha256": "b9650c08f66b8c035df2783ad92c10a01a211622594a7e13f60a782a574716cb"
     },
     {
       "path": "suite_core/manager/compiled_update_config.py",
@@ -3758,8 +3758,8 @@
     },
     {
       "path": "suite_core/manager/encyclopedia_acquisition_ui.py",
-      "bytes": 29416,
-      "sha256": "e296882695d29bac693e40c5bc44a0567263abc15812f493531adba1fbdf49fd"
+      "bytes": 29620,
+      "sha256": "a84aca466e31e63c88b0333dea2b041c32e9aaceae6c53a5b59aaecab0163325"
     },
     {
       "path": "suite_core/manager/encyclopedia_connection_ui.py",
@@ -3873,8 +3873,8 @@
     },
     {
       "path": "suite_core/manager/organizer_acquisition_ui.py",
-      "bytes": 13966,
-      "sha256": "7d6794c270aabc9ece5e78df3a4ccf577c18cd181ff1fd28ed0e4e0f2a4a5ff2"
+      "bytes": 14079,
+      "sha256": "a141a322f89839c80cbaa3a8846a3d6873ef0acdd22b6d3b5068bbf1299c825d"
     },
     {
       "path": "suite_core/manager/organizer_cached_binding.py",
@@ -3979,12 +3979,12 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "7ce3f2b4561bf76b51ae3f9a8c9c5bc61c57085c2630affbad217341ea4f0c31"
+      "sha256": "62d8c2cb26d56dadf031cb5e320cf979e50cf2bf356ed6fd85b60541cfb08283"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 294933,
-      "sha256": "ce5418559cb64d069e760343e51c1d0fb1d769d7d53dde8c417a1cd3c795a290"
+      "bytes": 295452,
+      "sha256": "4876da953ea95e9222827653c33ea2dbe63475d0bbda5b8810fbbefffb3eec58"
     },
     {
       "path": "suite_core/media_examples.py",

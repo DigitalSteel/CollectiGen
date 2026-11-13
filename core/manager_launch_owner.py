@@ -249,7 +249,7 @@ class RootOrganizerSelection:
                 '--profile-root', str(self.profile_root), '--runtime-profile', 'organizer-image',
                 '--runtime-root', str(self.selected.directory / 'Runtime'))
 
-    def validate(self):
+    def validate(self, *, checkpoint=None):
         from core.organizer_connection import review_existing_package
         from core.organizer_connection_settings import OrganizerConnectionStore
         from suite_core.discovery.component_staging import guard
@@ -264,7 +264,7 @@ class RootOrganizerSelection:
         return review_existing_package(self.selected.directory,manifest_bytes=self.manifest_bytes,
             signature_bytes=self.signature_bytes,trust_bytes=self.trust_bytes,
             expected_version=self.selected.version,binding_revision=self.selected.binding_revision,
-            expected=self.selected)
+            expected=self.selected, **({"checkpoint":checkpoint} if checkpoint is not None else {}))
 
     def context(self):
         self.validate()

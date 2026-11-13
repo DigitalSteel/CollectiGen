@@ -129,7 +129,7 @@ def read_json(path):
     return _json(read_metadata_bytes(path), "component state")
 
 
-def payload(root, reference, component, platform=None, *, payload_policy=None):
+def payload(root, reference, component, platform=None, *, payload_policy=None, checkpoint=None):
     require(type(reference) is dict and set(reference) == {"component_id", "version", "directory", "inventory_sha256"}, "reference_schema")
     _version(reference["version"])
     require(reference["component_id"] == component.value
@@ -137,7 +137,7 @@ def payload(root, reference, component, platform=None, *, payload_policy=None):
     _relative(reference["directory"])
     directory = root / reference["directory"]
     guard(directory)
-    profile = verify_directory(directory, reference["inventory_sha256"], component, reference["version"], payload_policy=payload_policy)
+    profile = verify_directory(directory, reference["inventory_sha256"], component, reference["version"], payload_policy=payload_policy, **({"checkpoint":checkpoint} if checkpoint is not None else {}))
     if platform is not None:
         require(profile["platform"] == platform, "retained_inventory_platform")
     return directory
@@ -204,11 +204,11 @@ def verify_directory(directory, expected_hash, component, version, *, payload_po
     return profile
 
 
-def active(root, base, component, platform=None, *, payload_policy=None):
+def active(root, base, component, platform=None, *, payload_policy=None, checkpoint=None):
     path = base / "active.json"
     value = read_json(path) if path.exists() else None
     if value is not None:
-        payload(root, value, component, platform, payload_policy=payload_policy)
+        payload(root, value, component, platform, payload_policy=payload_policy, **({"checkpoint":checkpoint} if checkpoint is not None else {}))
     return value
 
 
@@ -469,16 +469,28 @@ def finish_or_recover(root, *, component, trust_bytes, health_verified=False, ro
 
 
 def finish_or_recover_admitted(admission, *, component, trust_bytes,
-        health_verified=False, rollback_approved=False, preflight=lambda root, base, owner: None, payload_policy=None):
+        health_verified=False, rollback_approved=False, preflight=lambda root, base, owner: None, payload_policy=None, checkpoint=None, on_mutation=None):
     require(type(admission) is ComponentStageAdmission, "original_root_admission_required")
     with admission.transaction(component) as (root, base, owner, check):
         preflight(root, base, owner)
         check()
         return _finish_or_recover(root, base, owner, component=component, trust_bytes=trust_bytes,
-            health_verified=health_verified, rollback_approved=rollback_approved, payload_policy=payload_policy)
+            health_verified=health_verified, rollback_approved=rollback_approved, payload_policy=payload_policy,
+            **({"checkpoint":checkpoint,"on_mutation":on_mutation} if checkpoint is not None or on_mutation is not None else {}))
 
 
-def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_verified, rollback_approved, payload_policy=None):
+def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_verified, rollback_approved, payload_policy=None, checkpoint=None, on_mutation=None):
+    require(checkpoint is None and on_mutation is None or health_verified is True and rollback_approved is not True,
+            "health_checkpoint_scope_required")
+    # Only the admitted health observation is cancellable. Once a durable
+    # handoff/write starts, the original transaction and readback must settle.
+    live_checkpoint=checkpoint
+    def begin_health_mutation():
+        nonlocal live_checkpoint,on_mutation
+        if live_checkpoint is not None:live_checkpoint()
+        if on_mutation is not None:on_mutation()
+        live_checkpoint=on_mutation=None
+    if live_checkpoint is not None:live_checkpoint()
     policy = require_payload_policy(payload_policy, component)
     with lock(base):
         current_journal_path = base / "transaction.json"
@@ -511,6 +523,7 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
                 prior_journal_bytes(base, current_record, component, owner, trust_bytes)
         prior_bytes = prior_journal_bytes(base, j, component, owner, trust_bytes)
         if completed_handoff:
+            if health_verified is True:begin_health_mutation()
             pending_path.unlink()  # validated exact current bytes prove metadata handoff occurred
         if j["phase"] == "healthy":
             require(current == j["target"], "healthy_reference_mismatch")
@@ -518,7 +531,7 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
             require(current == j["before"], "recovered_reference_mismatch")
         if health_verified is True:
             require(j["phase"] == "activated" and current == j["target"], "health_phase")
-            payload(root, current, component, payload_policy=policy)
+            payload(root, current, component, payload_policy=policy, **({"checkpoint":live_checkpoint} if live_checkpoint is not None else {}))
             j["phase"] = "healthy"
         elif j["phase"] == "healthy" and rollback_approved is not True:
             payload(root, current, component, payload_policy=policy)
@@ -541,6 +554,7 @@ def _finish_or_recover(root, base, owner, *, component, trust_bytes, health_veri
             else:
                 atomic(current_path, j["before"])
             j["phase"] = "abandoned" if current == j["before"] else "rolled_back"
+        if health_verified is True:begin_health_mutation()
         atomic(journal_path, j)
         result = active(root, base, component, payload_policy=policy)
         require(result == (j["target"] if j["phase"] == "healthy" else j["before"]), "recovery_readback")

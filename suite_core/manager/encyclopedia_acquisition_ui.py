@@ -229,6 +229,9 @@ class EncyclopediaAcquisitionPanel(QWidget):
         self.recovery_confirm.setChecked(False)
         self._start("Recovering installation", lambda: self.service.recover(confirmed=True))
 
+    def _check_app_status(self):
+        return self.service.reconcile_launch()
+
     def reconcile_launch(self):
         if not self.service.install_available or self.closing:
             return
@@ -236,7 +239,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
             self.reconcile_queued = True
             return
         self.reconcile_queued = False
-        self._start("Checking app status", self.service.reconcile_launch)
+        self._start("Checking app status", self._check_app_status)
 
     def request_cancel(self):
         self.reconcile_queued = False
@@ -330,7 +333,8 @@ class EncyclopediaAcquisitionPanel(QWidget):
             if operation in ("Checking app status", "Refreshing releases"):
                 self.observation_stale = self.installed is not None
             if operation == "Checking app status":
-                self.status.setText("App status is unavailable. Close the reader if it is running, then Check app status.")
+                self.status.setText("App status check cancelled. Your saved installation is retained." if isinstance(error,InterruptedError) else
+                    "App status is unavailable. Close the reader if it is running, then Check app status.")
             elif isinstance(error, ExactOfferHold) and operation in (
                     "Refreshing releases", "Reviewing installation", "Installing reviewed package"):
                 self.offer = None

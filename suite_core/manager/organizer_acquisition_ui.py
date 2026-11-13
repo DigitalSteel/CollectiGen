@@ -126,6 +126,9 @@ class OrganizerAcquisitionPanel(EncyclopediaAcquisitionPanel):
                                 'Organizer startup needs recovery. Choose Stop retained Organizer and wait for cleanup.' if failed else
                                 'Organizer is running. Close its window normally when you finish; Manager keeps your setup safe until it closes.')
 
+    def _check_app_status(self):
+        return self.service.reconcile_launch(should_cancel=self.cancel.is_set)
+
     def poll(self):
         owner=self.service.native_owner
         if owner is not None and self.future is None:

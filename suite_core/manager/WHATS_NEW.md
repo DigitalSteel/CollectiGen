@@ -1,3 +1,9 @@
+# What's New - a.0.7.3 (embedded 0.7.3-alpha.1) - 2026-11-13
+
+- Closing Manager can cancel Organizer app-status verification while retaining its original worker. If health publication has started, the existing transaction and readback finish before closing.
+- Applications offers signed Media Organizer a.0.5.4, including native Copy and recovery to reused paths. Review and confirm the offered update.
+- Generate and Training remain available. Full suite parity and actual failed-update rollback remain incomplete.
+
 # What's New - a.0.7.2 (embedded 0.7.2-alpha.1) - 2026-11-13
 
 - Applications now offers signed Media Organizer a.0.5.3, which retains Copy Undo after the first automatic saved-data initialization of a Manager result. Review and confirm the update before installing it.

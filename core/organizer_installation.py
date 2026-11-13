@@ -92,13 +92,35 @@ class OrganizerInstallation(EncyclopediaInstallation):
             try:yield binding
             finally:self._scope_local.binding=None
 
-    def review_selected(self, directory, *, expected):
+    def _status_checkpoint(self):
+        self._cancel(getattr(self._scope_local,'status_cancel',None))
+
+    def _status_verification(self):
+        return {"checkpoint":self._status_checkpoint} if getattr(self._scope_local,'status_cancel',None) is not None else {}
+
+    def reconcile_launch(self, *, should_cancel=None):
+        previous=getattr(self._scope_local,'status_cancel',None)
+        self._scope_local.status_cancel=should_cancel
+        try:
+            self._status_checkpoint()
+            return super().reconcile_launch()
+        finally:
+            self._scope_local.status_cancel=previous
+
+    def confirm_health(self):
+        verification=self._status_verification()
+        if not verification:return super().confirm_health()
+        def settlement_started():
+            self._scope_local.status_cancel=None
+        return super().confirm_health(**verification,on_mutation=settlement_started)
+
+    def review_selected(self, directory, *, expected, checkpoint=None):
         require(Path(directory)==expected.directory, 'organizer_directory_changed')
-        verify_directory(expected.directory,expected.inventory_sha256,COMPONENT,expected.version,payload_policy=POLICY)
+        verify_directory(expected.directory,expected.inventory_sha256,COMPONENT,expected.version,payload_policy=POLICY, **({"checkpoint":checkpoint} if checkpoint is not None else {}))
         return expected
 
     def _observe(self, root, base, owner):
-        installed=super()._observe(root,base,owner)
+        installed=super()._observe(root,base,owner,**self._status_verification())
         self._observed_connection=self.original_store.selected(self.original_store.observe())
         return installed
 
@@ -123,7 +145,7 @@ class OrganizerInstallation(EncyclopediaInstallation):
                     (saved.directory,saved.version,saved.inventory_sha256)==
                     (selected.directory,selected.version,selected.inventory_sha256) else str(uuid4()))
                 result=review_existing_package(selected.directory,manifest_bytes=message,signature_bytes=signature,
-                    trust_bytes=self.acquisition.trust,expected_version=selected.version,binding_revision=revision)
+                    trust_bytes=self.acquisition.trust,expected_version=selected.version,binding_revision=revision,**self._status_verification())
                 check();return result
             raw=prior_journal_bytes(base,journal,COMPONENT,owner,self.acquisition.trust)
             require(raw is not None,'signed_organizer_origin_unavailable')
@@ -137,7 +159,7 @@ class OrganizerInstallation(EncyclopediaInstallation):
             signed=self.signed_selection(selected)
             require(self.original_store.selected(self.original_store.observe())==signed,
                     'saved_organizer_changed_review_again')
-            result=self.native_owner.native_health(signed)
+            result=self.native_owner.native_health(signed,**self._status_verification())
             check();return result
 
     def launch(self, *, confirmed=False, should_cancel=None):

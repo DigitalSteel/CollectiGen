@@ -36,14 +36,14 @@ class OwnedOrganizer(OwnedEncyclopedia):
         self.reader_owner=reader_owner
         self.reason='No Organizer is running.'
 
-    def selection_for(self, selected):
+    def selection_for(self, selected, *, checkpoint=None):
         from core.manager_launch_owner import RootOrganizerSelection
         session=self.normal_entry_session
         selection=getattr(session,'organizer_selection',None)
         if (type(selected) is not OrganizerConnection or type(selection) is not RootOrganizerSelection
                 or selection.selected!=selected):
             raise EncyclopediaHold('Restart Manager to admit this saved Organizer connection.')
-        selection.validate()
+        selection.validate(**({"checkpoint":checkpoint} if checkpoint is not None else {}))
         return selection
 
     @property
@@ -76,12 +76,12 @@ class OwnedOrganizer(OwnedEncyclopedia):
         self.reason=self.reason.replace('Reader','Organizer').replace('reader','Organizer')
         return result
 
-    def native_health(self,selected):
+    def native_health(self,selected,*,checkpoint=None):
         self.poll()
         if (self.close_held or self._health is None
                 or self._health is not getattr(self.normal_entry_session,'organizer_selection',None)
                 or self._health.selected!=selected):return False
-        selection=self.selection_for(selected)
+        selection=self.selection_for(selected,**({"checkpoint":checkpoint} if checkpoint is not None else {}))
         return self._health is selection
 
     def begin_close(self):

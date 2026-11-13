@@ -49,7 +49,7 @@ class OrganizerConnection:
 
 
 def review_existing_package(directory, *, manifest_bytes, signature_bytes, trust_bytes,
-                            expected_version, binding_revision, expected=None):
+                            expected_version, binding_revision, expected=None, checkpoint=None):
     """Recheck one explicitly selected package; preserve stock verifier failures.
 
     No directory discovery or profile/data read. Optional expected binds a second
@@ -71,7 +71,7 @@ def review_existing_package(directory, *, manifest_bytes, signature_bytes, trust
     if expected is not None and (type(expected) is not OrganizerConnection or selected != expected):
         raise OrganizerConnectionHold("connected_package_changed_review_required")
     profile = verify_directory(root, selected.inventory_sha256, COMPONENT,
-                               expected_version, payload_policy=POLICY)
+                               expected_version, payload_policy=POLICY, **({"checkpoint":checkpoint} if checkpoint is not None else {}))
     if profile["platform"] != {"os": "windows", "architecture": "x86_64"}:
         raise OrganizerConnectionHold("organizer_windows_x64_required")
     if not REQUIRED_ENTRIES <= {row["path"] for row in profile["files"]}:
