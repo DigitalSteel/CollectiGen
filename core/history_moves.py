@@ -15,7 +15,7 @@ import re
 from uuid import uuid4
 
 from .history_configuration import HistoryBindingResult,HistoryConfigurationError,path_key
-from .history_versions import HistoryStore,HistoryEntityRef,HistoryError,MAX_RECORD_BYTES,MAX_SNAPSHOT_BYTES,_source_token,_reject_reparse,history_lock
+from .history_versions import HistoryStore,HistoryEntityRef,HistoryError,MAX_RECORD_BYTES,MAX_SNAPSHOT_BYTES,_source_token,_stat_source_token,_reject_reparse,history_lock
 from .image_record import _atomic_write_text
 from .operation_journal import _canonical_bytes
 from .verified_transfer import TransferRecoveryOutcome,TransferRecoveryRequired,VerifiedTransferEngine
@@ -579,6 +579,27 @@ class HistoryMoveCoordinator:
     def _observer(self,intent,stores):
         store=self._instance_store(intent,stores)
         def observe(event,intended,staged,copied_identity=None):
+            if event in {"published","rollback-published"}:
+                phase="target" if event=="published" else "source"
+                member=next((member for member in intent["transfer"]["files"] if path_key(member[phase])==path_key(intended)),None)
+                if member is None or path_key(intended)!=path_key(staged):
+                    raise HistoryError("Unexpected published move endpoint.")
+                path=Path(staged);_reject_reparse(path)
+                expected=self._expected_token(intent,stores,phase,intended)
+                if copied_identity is None or _digest(copied_identity)!=expected:
+                    raise HistoryError("Move publication omitted its exact prior instance witness.")
+                info=path.stat();after=(info.st_dev,info.st_ino,info.st_size,info.st_mtime_ns,
+                    getattr(info,"st_birthtime_ns",info.st_ctime_ns))
+                if (copied_identity[:4]!=after[:4]
+                        or (not copied_identity[1] and copied_identity!=after)):
+                    raise HistoryError("Published move instance changed; retain exact recovery.")
+                token=_stat_source_token(info)
+                if self._sha256(path)!=member["sha256"] or _source_token(path)!=token:
+                    raise HistoryError("Published move bytes or instance changed during verification.")
+                store._append({"event":"move-instance","entity_id":intent["entity_id"],
+                    "version_id":intent["receipt_id"],"transaction_id":phase+":"+_digest(str(path_key(intended))),
+                    "source_token":token})
+                return
             cleanup_phases={"discard":"target","remove-source":"source","discard-staged":"staging","discard-restore":"source",
                 "undo-stage":"target","undo-restore":"target","undo-discard":"target","undo-source":"source"}
             if event in cleanup_phases:

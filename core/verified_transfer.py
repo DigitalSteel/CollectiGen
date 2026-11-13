@@ -546,6 +546,25 @@ class VerifiedTransferEngine:
             target.unlink(missing_ok=True)
             raise
 
+    @staticmethod
+    def _instance_identity(path: Path):
+        info=path.stat()
+        return (info.st_dev,info.st_ino,info.st_size,info.st_mtime_ns,
+            getattr(info,"st_birthtime_ns",info.st_ctime_ns))
+
+    def _publish_no_replace(self,source: Path,target: Path,*,identity_observer=None,phase="target"):
+        """Observe the same published instance after the no-overwrite rename.
+
+        A rename can change creation-time metadata at a reused destination.
+        The native observer retains the complete before/after tokens and only
+        accepts that change when the file ID and content witness still agree.
+        """
+        before=self._instance_identity(source) if identity_observer is not None else None
+        self._rename_no_replace(source,target)
+        if identity_observer is not None:
+            event="published" if phase=="target" else "rollback-published"
+            identity_observer(event,target,target,before)
+
     def _copy_verified(self, source: Path, target: Path, expected_hash: str):
         digest = hashlib.sha256()
         with source.open("rb") as reader, target.open("xb") as writer:
@@ -627,7 +646,7 @@ class VerifiedTransferEngine:
                 if should_cancel():
                     raise InterruptedError("Transfer cancelled safely before the next family member.")
                 if identity_observer is not None:identity_observer("publish",member.target,member.source)
-                self._rename_no_replace(member.source, member.target)
+                self._publish_no_replace(member.source,member.target,identity_observer=identity_observer)
                 moved.append(member)
             for member in plan.members:
                 if self._sha256(member.target) != hashes[str(member.source)]:
@@ -644,7 +663,7 @@ class VerifiedTransferEngine:
                         raise OSError("the moved file changed before rollback")
                     member.source.parent.mkdir(parents=True, exist_ok=True)
                     if identity_observer is not None:identity_observer("rollback",member.source,member.target)
-                    self._rename_no_replace(member.target, member.source)
+                    self._publish_no_replace(member.target,member.source,identity_observer=identity_observer,phase="source")
                 except Exception as rollback_exc:
                     rollback_errors.append(f"{member.source.name}: {rollback_exc}")
             if rollback_errors:
@@ -695,7 +714,7 @@ class VerifiedTransferEngine:
                     raise FileExistsError(f"The destination is now occupied: {member.target}")
             for member in plan.members:
                 if identity_observer is not None:identity_observer("publish",member.target,temps[member])
-                self._rename_no_replace(temps[member], member.target)
+                self._publish_no_replace(temps[member],member.target,identity_observer=identity_observer)
                 promoted.append(member)
             for member in plan.members:
                 if self._sha256(member.target) != hashes[str(member.source)]:
@@ -732,7 +751,7 @@ class VerifiedTransferEngine:
                         if identity_observer is None:restore.unlink(missing_ok=True)
                         identity=self._copy_verified(member.target, restore, expected)
                         if identity_observer is not None:identity_observer("rollback",member.source,restore,identity)
-                        self._rename_no_replace(restore, member.source)
+                        self._publish_no_replace(restore,member.source,identity_observer=identity_observer,phase="source")
                     if member.source.exists() and self._sha256(member.source) != expected:
                         raise OSError("the source no longer matches the verified family")
                 except Exception as rollback_exc:
@@ -844,7 +863,7 @@ class VerifiedTransferEngine:
                     if target_ok and not source_ok:
                         source.parent.mkdir(parents=True, exist_ok=True)
                         if identity_observer is not None:identity_observer("rollback",source,target)
-                        self._rename_no_replace(target, source)
+                        self._publish_no_replace(target,source,identity_observer=identity_observer,phase="source")
             except OSError as exc:
                 return TransferRecoveryOutcome("attention", f"Same-volume rollback failed: {exc}")
             return TransferRecoveryOutcome("rolled_back", "The interrupted same-volume family move was rolled back.")

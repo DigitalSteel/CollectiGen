@@ -1,5 +1,10 @@
 # Unreleased
 
+# Media Organizer a.0.5.4
+
+- Native Copy and recovery can return to a previously used path without mistaking a creation-time metadata change for a different file. The existing transfer still checks exact file identity, complete family bytes and no-overwrite publication.
+- Replaced files, unrecorded changes and ambiguous interrupted publication remain held for recovery. Original Manager results are preserved.
+
 # Media Organizer a.0.5.3
 
 - Copied Manager results retain Undo after their first automatic saved-data initialization. Recovery uses the exact recorded file instances and moves the complete copied family to Recycle; originals stay unchanged.
