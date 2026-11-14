@@ -20,6 +20,8 @@ def test_frozen_training_sources_match_the_reviewed_public_bytes():
     rows={r["path"]:r for r in json.loads((ROOT/"tools/manager_build/source-manifest.json").read_bytes())["source_rows"]}
     public=json.loads((ROOT/"public-source.json").read_bytes())["files"]
     required=required_sources()
+    declared=set(json.loads((ROOT/"suite_core/manager/MODULE_MANIFEST.json").read_bytes())["runtime_files"])
+    assert required<=declared,sorted(required-declared)
     assert required<=rows.keys(),sorted(required-rows.keys())
     for name in required:
         data=(ROOT/name).read_bytes();digest=hashlib.sha256(data).hexdigest()
