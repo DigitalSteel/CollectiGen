@@ -1221,7 +1221,36 @@ class DeploymentOwner:
                 stream.flush()
                 os.fsync(stream.fileno())
             _assert_unredirected(self.directory)
-            os.replace(temp, self.marker)
+            # Windows readers/filters can briefly deny an otherwise unchanged
+            # marker replacement. Retry only this atomic operation; never replay
+            # writes, uncertain readback or an owner/maintenance action.
+            original_lease = self.fd
+            original_raw = self.raw
+            replace_deadline = time.monotonic() + .250
+            replace_attempts = 0
+            while True:
+                try:
+                    os.replace(temp, self.marker)
+                    break
+                except PermissionError as error:
+                    if (original_raw is None or getattr(error, "winerror", None) not in (5, 32)
+                            or replace_attempts >= 8 or time.monotonic() >= replace_deadline):
+                        raise
+                    time.sleep(min(.025, max(0, replace_deadline - time.monotonic())))
+                    if time.monotonic() >= replace_deadline:
+                        raise
+                    _assert_unredirected(self.directory)
+                    _assert_unredirected(self.marker)
+                    _assert_unredirected(temp)
+                    if original_lease is None or self.fd != original_lease:
+                        raise LaunchHold("owner_lease_changed_during_replace")
+                    if self.raw != original_raw or self.marker.read_bytes() != original_raw:
+                        raise LaunchHold("owner_marker_changed")
+                    if temp.read_bytes() != raw:
+                        raise LaunchHold("owner_candidate_changed_during_replace")
+                    if time.monotonic() >= replace_deadline:
+                        raise
+                    replace_attempts += 1
             if self.marker.read_bytes() != raw:
                 raise LaunchHold("owner_readback_failed")
             temp.unlink(missing_ok=True)

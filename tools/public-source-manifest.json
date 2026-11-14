@@ -994,7 +994,9 @@
     "tools/test_suites.py",
     "version.py",
     "tests/test_manager_workflow_navigation.py",
-    "tests/test_training_package_context_compatibility.py"
+    "tests/test_training_package_context_compatibility.py",
+    "docs/MANAGER_OWNER_RECORD_REPLACEMENT.md",
+    "tests/test_manager_owner_record_replace.py"
   ],
   "reviewed_defaults": [],
   "required_provenance": []

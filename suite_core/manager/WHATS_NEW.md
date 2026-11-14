@@ -1,3 +1,8 @@
+# Unreleased - original launcher owner-record reliability
+
+- Original launcher ownership-record replacement now tolerates a bounded Windows access/sharing denial using the same flushed candidate and original lease. Changed state, uncertain readback and permanent failures retain the original hold.
+- Source-only SUITE-10B2 candidate. A corrected full Windows ZIP and connected signed update/rollback qualification are still required; component-only updates cannot replace an older launcher. The original Windows denial cause is not established.
+
 # What's New - a.0.7.8 (embedded 0.7.8-alpha.1) - 2026-11-14
 
 - Training restores the original trainer software lifecycle: reviewed managed installation, existing software verification, offline import/export, repair, activation and rollback. Setup uses Manager-local stock queue, generations, health and recovery services; training still needs its own review.

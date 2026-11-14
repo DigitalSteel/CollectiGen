@@ -997,7 +997,9 @@
     "tests/test_manager_description_settings.py",
     "tests/test_manager_description_setup_return_ui.py",
     "docs/MANAGER_DESCRIPTION_SETUP.md",
-    "tests/test_manager_protected_setup_preview_ui.py"
+    "tests/test_manager_protected_setup_preview_ui.py",
+    "docs/MANAGER_OWNER_RECORD_REPLACEMENT.md",
+    "tests/test_manager_owner_record_replace.py"
   ],
   "reviewed_defaults": [],
   "required_provenance": []
