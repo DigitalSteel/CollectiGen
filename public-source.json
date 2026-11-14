@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1203,
+  "allowlisted_source_file_count": 1208,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -912,6 +912,10 @@
     "core/manager_successor_admission.py": {
       "sha256": "c7316dafdc0f75e20d3ef2c8634e03edba0fccc825a165f25165f810ed222b5d",
       "size_bytes": 17095
+    },
+    "core/manager_trainer_setup.py": {
+      "sha256": "936c99e486b94c69c63358c81865d8e70a8951e2f7cbe217f7d68500d88b6e66",
+      "size_bytes": 6353
     },
     "core/manager_update_host.py": {
       "sha256": "819c381352e36606e6ba53feccb908097f6c46639b50d90a20457c612491c2e5",
@@ -2057,6 +2061,10 @@
       "sha256": "7ef21f06f4773e02728558a0e69ff7006fabf4fc9099e30b76bc32cf5c5e947f",
       "size_bytes": 2174
     },
+    "docs/MANAGER_TRAINER_SETUP.md": {
+      "sha256": "b4f6d89cada6434b2d3b1ed45008d605217bb25d44dd2087b303e82dd5c2e1be",
+      "size_bytes": 3548
+    },
     "docs/MANAGER_TRAINING_HISTORY.md": {
       "sha256": "9ce5cab2922c2340f5e5c4a2eb7f6810f93aa6620c75e731c6ccd4e847213909",
       "size_bytes": 3838
@@ -2830,8 +2838,8 @@
       "size_bytes": 49445
     },
     "qt_app/training_setup_queue_controller.py": {
-      "sha256": "328b501cd8e7dda9abb6590a4876d2e02ccde592b01b3b368b10544c8945e04a",
-      "size_bytes": 12552
+      "sha256": "db5851b772e86bc2ee67e198230caf1a2f87b089ff97a176fdc022405e8c605c",
+      "size_bytes": 16321
     },
     "qt_app/training_setup_resources_dialog.py": {
       "sha256": "5b3c9dfc158bed68be06fb500a8ee3e1ea002aa03a148bf61839ca11b4e5a3f4",
@@ -3186,19 +3194,19 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "47eaec02edaf94c0cef7dc8c0045a4748041e1914381e9ad78e9831bfa1d1889",
-      "size_bytes": 44385
+      "sha256": "2c00f75cd29943173f664aa3bca4c20d1d440be2542d55b56cddaa0923902f55",
+      "size_bytes": 44468
     },
     "suite_core/manager/README.md": {
       "sha256": "03a212d6564f1f68c3a867e6f4eef20790df07a7d95f36e91f09d83cb3f3d1b6",
       "size_bytes": 7277
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
-      "sha256": "b48a943599e186b98669a9182ae70149b4d4ae6da2fc8b0f6089ee343b7d380c",
-      "size_bytes": 14771
+      "sha256": "9639139ef73131c6e5860bd48d47587d843a15418f9382c3bd08ea5f2087c088",
+      "size_bytes": 15205
     },
     "suite_core/manager/RELEASE_PRESENTATION.json": {
-      "sha256": "b269be635dcd4a7dba6609d622e5d9ef9cf6c37989ddf9e566a38e2514960c54",
+      "sha256": "56ae92181783d0ab3d3e58868750610640f1b5ae4a921afa9b64420c78c9caba",
       "size_bytes": 246
     },
     "suite_core/manager/RESOURCE_DASHBOARD_INTEGRATION.md": {
@@ -3210,8 +3218,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "171415ef8d688ee37a77894df4fd4317efcd0905325e726b5e13833653fcdb83",
-      "size_bytes": 34319
+      "sha256": "4fe48299769fc317e0bffef91886c4fb4158874e4bea0445cf71d174d05cef4b",
+      "size_bytes": 35287
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3481,6 +3489,10 @@
       "sha256": "8caf43f70a6e16b7031f5e58b56743f49d0d61a6347e321623a3e03a60932e2d",
       "size_bytes": 3087
     },
+    "suite_core/manager/trainer_setup_ui.py": {
+      "sha256": "4be385405a21ce3c96cdb29c4ff0f579b105b24538108ae3f572d92140d5dbd8",
+      "size_bytes": 12056
+    },
     "suite_core/manager/ui_cards.py": {
       "sha256": "043e79b9c86c3ec1e837a3f2e298a3a0543e2ba11b585d03ed0eed6fe1bfba38",
       "size_bytes": 9149
@@ -3490,12 +3502,12 @@
       "size_bytes": 15135
     },
     "suite_core/manager/version.py": {
-      "sha256": "b31d3bfa60ea96c6e2a7096a6e0f64f60eb163be14f27462a148b0b8f41d97bd",
+      "sha256": "09bcf67f3f5e0b4e7e045716130cb548e2ab3634f1ebe84eb94727f56b3a705e",
       "size_bytes": 274
     },
     "suite_core/manager/window.py": {
-      "sha256": "a2ce6c3ba603b51e8645665e31367e70d6d546cfe989d476769b1ab630a1949d",
-      "size_bytes": 302701
+      "sha256": "9ed5157063ff97b18c6bda732107d09ddeecdba9705b7ff46dcabd560f709a1b",
+      "size_bytes": 300588
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -4005,6 +4017,14 @@
       "sha256": "e33fad64017f5513b1c78a42026e99a2bbe562e4817df2f901b1c9ed7c3931ed",
       "size_bytes": 13913
     },
+    "tests/test_manager_trainer_setup.py": {
+      "sha256": "9c6a724f5af6ed68103e8f6aedefb2df6fc842a04aa424dd7cfa6e32e3ce456f",
+      "size_bytes": 20233
+    },
+    "tests/test_manager_trainer_setup_ui.py": {
+      "sha256": "00a294dd003865070f097f22aa4b456255371dd07e7d322289554464aa5d2621",
+      "size_bytes": 17478
+    },
     "tests/test_manager_training_experiments.py": {
       "sha256": "6c5bdd48af5b887cb3bfc4fb7baf01737aa01d12c225a740f27889418ef162e5",
       "size_bytes": 7727
@@ -4190,8 +4210,8 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "a501d4cf18c7801f25d72723bc28ce5d7368cae860a489aa576fe58a7a26de05",
-      "size_bytes": 165144
+      "sha256": "467016c92985981ce33d43dc9a99a8de11bb6512aaf1f33b8bfb09fc8605d3b0",
+      "size_bytes": 165434
     },
     "tools/manager_build/tool-inputs.json": {
       "sha256": "e2c3f13d1cea4b42c2a65ae94379fd8d01658a38f81d1b4e869ce5d208c4480f",

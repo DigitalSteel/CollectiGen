@@ -140,6 +140,71 @@ class ExistingTrainerSetupController(TrainerSetupQueueController):
         return VerifiedExistingTrainerSetup(reference, result)
 
 
+class ManagerTrainerSetupController(TrainerSetupQueueController):
+    """Stock lifecycle presentation with one retained Manager queue/session."""
+    def __init__(self, owner, profile, *, managed_available):
+        super().__init__(profile, owner.executor, owner.queue, managed_available=managed_available)
+        self.owner = owner
+        self._resume = {}
+
+    def _callbacks(self, should_cancel):
+        self.owner.check(should_cancel)
+        return self.owner.cancelled(should_cancel)
+
+    def prepare(self, action, selection, *, should_cancel, progress):
+        cancel = self._callbacks(should_cancel)
+        if any(row.state in {'waiting', 'running'} for row in self.queue.snapshot()):
+            raise ValueError('Review or cancel the retained Trainer Setup operation before starting another.')
+        self.owner.validate_selection(action, selection)
+        self._resume.clear()
+        return super().prepare(action, selection, should_cancel=cancel, progress=progress)
+
+    def apply(self, preview, *, should_cancel, progress):
+        cancel = self._callbacks(should_cancel)
+        value, _ = self.executor._review(dict(preview.payload), cancel)
+        self.owner.validate_selection(value['action'], value['selection'])
+        if cancel():
+            raise InterruptedError('Trainer Setup confirmation was cancelled.')
+        if not self.supports(preview.action) or preview.profile_sha256 != self.profile.sha256:
+            raise ValueError('The trainer profile changed. Review Setup again.')
+        if value['action'] != preview.action:
+            raise ValueError('The reviewed trainer action changed. Review Setup again.')
+        resume = self._resume.pop(id(preview), None)
+        if resume is not None:
+            identity, reference = resume
+            row = self.operation(identity)
+            if row is None or row.params != reference or row.state not in {'waiting', 'failed', 'cancelled'}:
+                raise ValueError('The retained Trainer Setup operation changed. Review it again.')
+            # A new confirmed stock review supersedes only this non-running queue
+            # row; its original executor recovery records are never removed.
+            if row.state == 'waiting':
+                accepted, message = self.queue.cancel_operation(identity)
+                if not accepted:
+                    raise ValueError(message)
+        if any(row.state in {'waiting', 'running'} for row in self.queue.snapshot()):
+            raise ValueError('The original Trainer Setup queue is still busy.')
+        return super().apply(preview, should_cancel=cancel, progress=progress)
+
+    def completed(self, pending, *, should_cancel, progress):
+        return self.owner.completed(pending.reference, should_cancel=should_cancel)
+
+    def review_retained(self, identity, *, should_cancel, progress):
+        cancel = self._callbacks(should_cancel)
+        row = self.operation(identity)
+        if row is None:
+            raise ValueError('The retained Trainer Setup operation is unavailable.')
+        value, _ = self.executor._review(dict(row.params), cancel)
+        self.owner.validate_selection(value['action'], value['selection'])
+        if row.state == 'running' or row.state == 'complete':
+            return QueuedTrainerSetup(value['action'], row.id, dict(row.params), row.detail)
+        if any(other.id != row.id and other.state in {'waiting', 'running'} for other in self.queue.snapshot()):
+            raise ValueError('Review the original pending Trainer Setup operation first.')
+        preview = super().prepare(value['action'], value['selection'], should_cancel=cancel, progress=progress)
+        self._resume.clear()
+        self._resume[id(preview)] = (row.id, dict(row.params))
+        return preview
+
+
 def open_trainer_setup(state,parent,*,return_review=None):
     """Load only reviewed trainer metadata off the GUI thread, then show Setup."""
     from pathlib import Path

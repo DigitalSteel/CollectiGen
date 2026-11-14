@@ -1,3 +1,11 @@
+# What's New - a.0.7.8 (embedded 0.7.8-alpha.1) - 2026-11-14
+
+- Training restores the original trainer software lifecycle: reviewed managed installation, existing software verification, offline import/export, repair, activation and rollback. Setup uses Manager-local stock queue, generations, health and recovery services; training still needs its own review.
+- Saved Setup Operations reconnects retained work or prepares an explicit retry review. Opening Setup starts no downloads or recovery work; Cancel targets only the selected original operation.
+- Closing a setup review can leave confirmed work in the same Manager queue. Manager Close cancels and waits for that queue and retained native owners. Local resource choices are saved only after verified existing software or explicit activation.
+
+Candidate implementation; final checks and signed package delivery remain pending. No model, trainer, Reader/C3A or real-library trial was run during implementation.
+
 # What's New - a.0.7.7 (embedded 0.7.7-alpha.1) - 2026-11-14
 
 - Local Description Settings can save your choices and open Manager caption component setup. Check readiness, then explicitly review component installation or the selected model download. Opening the review starts no download or image analysis.

@@ -3273,8 +3273,8 @@
     },
     {
       "path": "qt_app/training_setup_queue_controller.py",
-      "bytes": 12552,
-      "sha256": "328b501cd8e7dda9abb6590a4876d2e02ccde592b01b3b368b10544c8945e04a"
+      "bytes": 16321,
+      "sha256": "db5851b772e86bc2ee67e198230caf1a2f87b089ff97a176fdc022405e8c605c"
     },
     {
       "path": "qt_app/training_setup_resources_dialog.py",
@@ -3663,13 +3663,13 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 44385,
-      "sha256": "47eaec02edaf94c0cef7dc8c0045a4748041e1914381e9ad78e9831bfa1d1889"
+      "bytes": 44468,
+      "sha256": "2c00f75cd29943173f664aa3bca4c20d1d440be2542d55b56cddaa0923902f55"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "b269be635dcd4a7dba6609d622e5d9ef9cf6c37989ddf9e566a38e2514960c54"
+      "sha256": "56ae92181783d0ab3d3e58868750610640f1b5ae4a921afa9b64420c78c9caba"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -4009,12 +4009,12 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "b31d3bfa60ea96c6e2a7096a6e0f64f60eb163be14f27462a148b0b8f41d97bd"
+      "sha256": "09bcf67f3f5e0b4e7e045716130cb548e2ab3634f1ebe84eb94727f56b3a705e"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 302701,
-      "sha256": "a2ce6c3ba603b51e8645665e31367e70d6d546cfe989d476769b1ab630a1949d"
+      "bytes": 300588,
+      "sha256": "9ed5157063ff97b18c6bda732107d09ddeecdba9705b7ff46dcabd560f709a1b"
     },
     {
       "path": "suite_core/media_examples.py",
@@ -4840,6 +4840,8 @@
       "path": "tools/runtime-pins.json",
       "bytes": 1017,
       "sha256": "10134b91d387b32c345f6af0f18941ee2abbad27a3b751a2ce3bbe807d5d9407"
-    }
+    },
+    {"path": "core/manager_trainer_setup.py", "bytes": 6353, "sha256": "936c99e486b94c69c63358c81865d8e70a8951e2f7cbe217f7d68500d88b6e66"},
+    {"path": "suite_core/manager/trainer_setup_ui.py", "bytes": 12056, "sha256": "4be385405a21ce3c96cdb29c4ff0f579b105b24538108ae3f572d92140d5dbd8"}
   ]
 }
