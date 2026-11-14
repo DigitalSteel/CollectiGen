@@ -34,7 +34,7 @@
   "maturity": "alpha",
   "module_id": "collectigen.media-organizer",
   "native_activation_qualified": false,
-  "numeric_version": "0.5.5",
+  "numeric_version": "0.5.6",
   "optional_integrations": [
     "injected model-manager status",
     "borrowed Encyclopedia TagLookup interface 1"
@@ -113,14 +113,14 @@
   "runtime_kind": "interpreter-portable",
   "runtime_profile": "organizer-image",
   "schema_version": 1,
-  "scope": "Existing Rules & Automation interrupted repair/Undo recovery and exact reviewed-authority Apply;original enrolled/native/concurrent recovery holds remain. Dataset and Manager handoffs unchanged.",
+  "scope": "Explicit reviewed prompt Tag/alias and Character/Outfit export to Manager through the canonical image-draft save; original Knowledge/data authority and recoverable Close retained.",
   "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
   "shell_owner": "qt_app.main_window.TagManagerWindow",
-  "software_version": "0.5.5-alpha.1",
+  "software_version": "0.5.6-alpha.1",
   "standalone_distribution_qualified": false,
   "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
   "startup_owner": "qt_main._start_application",
-  "status": "a.0.5.5 candidate; exact packaged qualification and publication recorded separately",
+  "status": "a.0.5.6 candidate; exact packaged qualification and publication recorded separately",
   "unavailable_product_workspaces": [
     "Generate",
     "Training"

@@ -1,6 +1,10 @@
-# Unreleased
+# Media Organizer a.0.5.6
 
-- Knowledge Actions can export reusable prompt Tag names/aliases and Character/Outfit choices as a normal image draft for Manager. Review its local-only scope; existing destinations are preserved and Close retains an active save until it settles. Paired Manager/Organizer package delivery is pending.
+- Export reusable Tag names and aliases plus Character and Outfit prompt choices from Knowledge Actions > Export Prompt Catalog for Generate.
+- Review exactly what will be shared, save a new local image draft, then choose Use Organizer Prompt Catalog in the matching Suite Manager update. Existing files are preserved; an active export settles before Close.
+- Image files, library paths, model paths and unreviewed Outfit text are excluded from the catalog.
+
+This update adds a local prompt-catalog handoff. It does not execute generation or training. Existing Organizer installation, data and recovery boundaries remain unchanged.
 
 # Media Organizer a.0.5.5
 
