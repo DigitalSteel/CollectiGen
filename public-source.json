@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 856,
+  "allowlisted_source_file_count": 858,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -2226,8 +2226,8 @@
       "size_bytes": 20680
     },
     "qt_app/knowledge_page.py": {
-      "sha256": "c8dc2eeb161cfbc9ca4594303d12f36c801d25a04cac07f9a4f1732a1a20d6db",
-      "size_bytes": 413988
+      "sha256": "0bd36b2093ad7da04892d5a96ad967eeb246ac3ae8f52ab5dd42bedba6cc2a34",
+      "size_bytes": 414689
     },
     "qt_app/library_move_dialog.py": {
       "sha256": "946f120c2f125a50ed6c0d61c60b8ae8b596de278566526e76ed725ac8d735d7",
@@ -3130,8 +3130,8 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "0d7c3345776614d91d89a617c7686050421da495f776a5bee0f43d54fb16dd70",
-      "size_bytes": 5221
+      "sha256": "58430fe3caf45f42777a87f9e0a55dfeac9869b9ade890479a9f6d0551b49e20",
+      "size_bytes": 5313
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
       "sha256": "3521bfe3909542ad5d76e53b3b565961382b66762550906860d6a37dc0a05f3d",
@@ -3142,8 +3142,8 @@
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "bffbb88fbf511f720e1704bb0b635ac4904407b7958cd6370790145eae5b2595",
-      "size_bytes": 30405
+      "sha256": "862cbc42be074992072c74beb23bf0f4414f313081507d193682daffe9e8e26f",
+      "size_bytes": 30707
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3334,20 +3334,20 @@
       "size_bytes": 1367
     },
     "tests/test_organizer_generation_planning.py": {
-      "size_bytes": 10856,
-      "sha256": "84885d0171b768ac0675956d4b76ddfadbe76cc782a60be9e6eac9b8bcda3f94"
+      "sha256": "84885d0171b768ac0675956d4b76ddfadbe76cc782a60be9e6eac9b8bcda3f94",
+      "size_bytes": 10856
     },
     "docs/GEN06_ORGANIZER_OFFLINE_PLANNING.md": {
-      "size_bytes": 1735,
-      "sha256": "2b343f29ab5dee7e3c358ffae1ccb3c16b2d5374cfaaa587bc99d86ded704d4d"
+      "sha256": "2b343f29ab5dee7e3c358ffae1ccb3c16b2d5374cfaaa587bc99d86ded704d4d",
+      "size_bytes": 1735
     },
     "docs/GEN13_ORGANIZER_SETUP_EXPORT.md": {
-      "size_bytes": 2318,
-      "sha256": "a8453c2a698b915ab9e6a659b5aba2daf38a136dcdd753aba8480bede5e23e26"
+      "sha256": "a8453c2a698b915ab9e6a659b5aba2daf38a136dcdd753aba8480bede5e23e26",
+      "size_bytes": 2318
     },
     "tests/test_organizer_character_setup_export.py": {
-      "size_bytes": 15400,
-      "sha256": "b32d51942250f02673c86f19f7453392aa45e8ec5286f63ed70dcf1eb51762e4"
+      "sha256": "b32d51942250f02673c86f19f7453392aa45e8ec5286f63ed70dcf1eb51762e4",
+      "size_bytes": 15400
     },
     "tests/test_manager_video_result_ingest.py": {
       "sha256": "42cd2d8ddc19b6148cb86362b5feafe3754eb520a91f92561f7b642f293ef331",
@@ -3428,6 +3428,26 @@
     "tests/test_training_package_context_compatibility.py": {
       "sha256": "86df88293d717f933107355077f5fd4541a9e05bf29b30334fcac6160c2e09ca",
       "size_bytes": 3636
+    },
+    "core/generation_prompt_catalog.py": {
+      "sha256": "d9955b90889cdbf19a9398003868c634b92ce4ad002016f5eb5276a2b71070f0",
+      "size_bytes": 6346
+    },
+    "docs/GENERATION_PROMPT_CATALOG.md": {
+      "sha256": "f1c118ad23f910d8319d3f31caecd08c383a174d309f7890be69eb85450ee1d0",
+      "size_bytes": 2292
+    },
+    "qt_app/generation_prompt_catalog_actions.py": {
+      "sha256": "900b704317058c71cacd5e348b057e02caf0c3ddb3b5718a30d8f9c6e10eb4c2",
+      "size_bytes": 7890
+    },
+    "tests/test_generation_prompt_catalog.py": {
+      "sha256": "1e1e8c1a84110be332813583d8ed7f6c75704cd10182252b837fba3e788d5b29",
+      "size_bytes": 4190
+    },
+    "tests/test_generation_prompt_catalog_export_ui.py": {
+      "sha256": "cdc1a51b8567f36e4ecc1e5ee8a57de27aec96b30a56d8ba079c8b1072c0cd44",
+      "size_bytes": 4651
     }
   },
   "fresh_history_required": true,
@@ -3442,6 +3462,6 @@
   "reviewed_defaults_digest": "156fa5ec75dd4ef3a5f7c36bcb80cbb9084151c0ee0c313cb863ae3270e5f4e5",
   "reviewed_defaults_ref": "working-tree",
   "schema_version": 1,
-  "source_ref": "review-proposal-a046-from-published-76641598; exact accepted runtime plus canonical release body; no public commit yet",
+  "source_ref": "working-tree",
   "working_tree_reviewed_defaults": []
 }

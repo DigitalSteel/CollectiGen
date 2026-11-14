@@ -2222,6 +2222,8 @@ class KnowledgePage(QWidget):
                 "Propose Local Changes as Future Defaults…",
                 self.show_knowledge_promotion,
             )
+        if not self.editor_context.standalone:
+            menu.addAction("Export Prompt Catalog for Generate…", self._export_generation_prompt_catalog)
         menu.addAction("Manage Tag Colors…",self._open_tag_color_workspace)
         menu.addAction("Manage Relationships…",lambda:self.show_relationship_workspace())
         menu.addAction("Review Removed Vocabulary…",self.show_removed_vocabulary)
@@ -2230,6 +2232,10 @@ class KnowledgePage(QWidget):
         menu.addSeparator(); menu.addAction("Save Current View…",self._save_current_view)
         current=str(self.knowledge_review_view.currentData() or "")
         remove=menu.addAction("Delete Current Saved View…",self._remove_current_saved_view); remove.setEnabled(self._saved_view(current) is not None)
+
+    def _export_generation_prompt_catalog(self):
+        from .generation_prompt_catalog_actions import export_prompt_catalog
+        return export_prompt_catalog(self)
 
     def _request_find_new_knowledge(self):
         if self.has_active_background_work():
@@ -2648,6 +2654,9 @@ class KnowledgePage(QWidget):
         self.maintenance_applied.emit()
 
     def has_active_background_work(self):
+        prompt_export=getattr(self,"_prompt_catalog_export_dialog",None)
+        if prompt_export is not None and prompt_export.has_active_background_work():
+            return True
         from .history_workflow import history_dialogs_busy
         workspace=getattr(self,"category_workspace",None)
         return bool(self._tag_save_task is not None or getattr(self,"_tag_identity_setup_task",None) is not None
@@ -2670,7 +2679,9 @@ class KnowledgePage(QWidget):
         removal_busy=workspace.request_tag_removal_shutdown() if workspace is not None else False
         maintenance_busy=(self.system_knowledge_maintenance.request_background_shutdown()
                           if hasattr(self,"system_knowledge_maintenance") else False)
-        return bool(history_busy or removal_busy or maintenance_busy)
+        prompt_export=getattr(self,"_prompt_catalog_export_dialog",None)
+        export_busy=(prompt_export.request_background_shutdown() if prompt_export is not None else False)
+        return bool(history_busy or removal_busy or maintenance_busy or export_busy)
 
     def allow_external_knowledge_action(self,action):
         if getattr(self,"_category_refresh_pending",False):

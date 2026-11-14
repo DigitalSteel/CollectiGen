@@ -1,5 +1,7 @@
 # Unreleased
 
+- Knowledge Actions can export reusable prompt Tag names/aliases and Character/Outfit choices as a normal image draft for Manager. Review its local-only scope; existing destinations are preserved and Close retains an active save until it settles. Paired Manager/Organizer package delivery is pending.
+
 # Media Organizer a.0.5.5
 
 - Rules & Automation can recover an interrupted related-rule repair or restore through **Review Interrupted Rule Recovery**. It restores only the recorded rule state and keeps Image Knowledge unchanged.
