@@ -8,9 +8,10 @@ def with_dataset_recovery(window_type):
     from .encyclopedia_handoff_entry import with_encyclopedia_handoff_settlement
     class RecoveryMediaOrganizerWindow(with_encyclopedia_handoff_settlement(window_type)):
         def workspace_extra_commands(self, index):
-            if index not in (0,2):return []
+            inherited = getattr(super(), "workspace_extra_commands", None)
+            commands = list(inherited(index)) if callable(inherited) else []
+            if index not in (0,2):return commands
             from qt_app.command_bar import UiCommand
-            commands=[]
             if index==2:
                 _label_dataset_training_resume(self)
                 from qt_app.command_bar import bind_source

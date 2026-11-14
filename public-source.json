@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 858,
+  "allowlisted_source_file_count": 859,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -3282,8 +3282,8 @@
       "size_bytes": 8711
     },
     "suite_core/media_organizer/organizer_recovery_entry.py": {
-      "sha256": "91901cfbf8c502a2dc32a1bf7dcdd875e5f2d3bfcb6f843ae4d2e68b05e3ab8c",
-      "size_bytes": 14443
+      "sha256": "e5a70c2038f6ef8e3778e31f21a59ec9e9ace4d117a587fbf59a64781060a12d",
+      "size_bytes": 14578
     },
     "suite_core/media_organizer/organizer_workflow_corrections.py": {
       "sha256": "bfd31d9c64eed7b68d4dbb2ce66eaf2e519577a6e604b467be6ed270370e0d4e",
@@ -3368,6 +3368,10 @@
     "tests/test_organizer_generation_planning.py": {
       "sha256": "84885d0171b768ac0675956d4b76ddfadbe76cc782a60be9e6eac9b8bcda3f94",
       "size_bytes": 10856
+    },
+    "tests/test_organizer_prompt_catalog_command_composition.py": {
+      "sha256": "2985d4b273b37ce2e456637e3c4654ba37f75ed0b000c0ec1a5266663d3e8ba9",
+      "size_bytes": 1417
     },
     "tests/test_organizer_training_commands.py": {
       "sha256": "aa489867c91515efbb79d4003b2f6174a5610620468fa20c04792751ebf81a69",
