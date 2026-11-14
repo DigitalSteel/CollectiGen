@@ -1993,8 +1993,8 @@
     },
     {
       "path": "suite_core/manager/version.py",
-      "bytes": 274,
-      "sha256": "f61f648965b65d0cb802b3e19a536c85b17abe2b6c08dff97b44b4a6537fde89"
+      "bytes": 277,
+      "sha256": "3a4f64ddc35f2ae0385da71baf5365fb9f61b8cfe54f3ae93b499db6053797c4"
     },
     {
       "path": "suite_core/manager/window.py",

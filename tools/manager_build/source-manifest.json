@@ -3664,12 +3664,12 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 44469,
-      "sha256": "2e68d90e5f409530e1e80bafdf3cfcd5dde5cfc5d035c953d4d39c3e8843b88c"
+      "sha256": "891a97546e1792467fa8196b1e62ca9887363bee2f0e30f2ce1c2e80345bc93d"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 249,
-      "sha256": "41ccbd20bbd5f7b2abd19c33d58a8f69a177424cb29ee3af36e6c18ffb48a32d"
+      "sha256": "da9490a0d702cca15fd9a4bfc374902b6c3bcb2f241b06d70914073890a206f6"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -4009,7 +4009,7 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 277,
-      "sha256": "cb94c05be8fdeed5ef8b3d7a5380309714072624e4168bb223740dc9591dfbe1"
+      "sha256": "3a4f64ddc35f2ae0385da71baf5365fb9f61b8cfe54f3ae93b499db6053797c4"
     },
     {
       "path": "suite_core/manager/window.py",
@@ -4850,6 +4850,16 @@
       "path": "suite_core/manager/trainer_setup_ui.py",
       "bytes": 12056,
       "sha256": "4be385405a21ce3c96cdb29c4ff0f579b105b24538108ae3f572d92140d5dbd8"
+    },
+    {
+      "path": "core/training_anima_worker.py",
+      "bytes": 11169,
+      "sha256": "b93e018d3b2168bb4ef9f23044ea5d00e39a8f9439c145e7c01c408300504db8"
+    },
+    {
+      "path": "core/training_resume_experiment.py",
+      "bytes": 16025,
+      "sha256": "88e1b2de859ba9e08e97bbdd1e78d10c10170d92b98a7b297eda78c5364ca546"
     }
   ]
 }

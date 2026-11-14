@@ -1170,7 +1170,10 @@
     "core/manager_caption_worker.py",
     "suite_core/manager/caption_components_ui.py",
     "core/manager_trainer_setup.py",
-    "suite_core/manager/trainer_setup_ui.py"
+    "suite_core/manager/trainer_setup_ui.py",
+    "core/training_anima_worker.py",
+    "tests/test_manager_training_runtime_sources.py",
+    "docs/releases/collectigen.suite-manager-v0.7.11-alpha.1.md"
   ],
   "reviewed_defaults": [],
   "required_provenance": []
