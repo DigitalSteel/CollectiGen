@@ -11,7 +11,7 @@ source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.7.6](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.6-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.6-alpha.1/SuiteManager-a.0.7.6-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.6-alpha.1/SuiteManager-a.0.7.6-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
+| **Suite Manager** | [a.0.7.7](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.7-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.7-alpha.1/SuiteManager-a.0.7.7-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.7-alpha.1/SuiteManager-a.0.7.7-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
 | **Media Organizer** | [a.0.5.6](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.6-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.6-alpha.1/MediaOrganizer-a.0.5.6-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.6-alpha.1/MediaOrganizer-a.0.5.6-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars, plus Training dataset planning and offline image/video drafts. |
 | **Tag Encyclopedia** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). View and edit tags. |
 | **Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Catalog tag data for use with the Tag Encyclopedia. |
@@ -33,7 +33,7 @@ Retain your previous package and separate profile/image/catalog backups.
 3. Review the offered version, choose **Install**, and confirm.
 4. Restart Manager when requested, then open the installed app from its workspace.
 
-Manager a.0.7.6 includes dedicated **Generate** and **Training** workspaces for
+Manager a.0.7.7 includes dedicated **Generate** and **Training** workspaces for
 image/video drafts, saved work, local setup, training preparation and retained
 reviews. Models and optional runtimes are configured separately. Saved setups can
 open a separate image draft while preserving the work already open. Both Remix
@@ -41,13 +41,13 @@ entries now do the same, retaining existing image and video drafts. Use the
 **Help** group or **F1** in Generate and Training for their workflow guides.
 Generate and update buttons fit smaller windows, and Tab moves out of update notes.
 
-In **Generate > Use Organizer Prompt Catalog**, import Organizer’s export to start an image draft with searchable Tags and Character/Outfit prompt choices. Saving and reopening the draft retains that catalog. **Create Generation Setup** offers manual text or a selected image; local description settings return to the unfinished setup. Optional image suggestions require a compatible local caption runtime and model; opening the setup starts no analysis.
+In **Generate > Use Organizer Prompt Catalog**, import Organizer’s export to start an image draft with searchable Tags and Character/Outfit prompt choices. Saving and reopening the draft retains that catalog. **Create Generation Setup** offers manual text or a selected image; local description settings return to the unfinished setup. For optional image suggestions, **Review Local Description Setup** can save the model choices and open **Set Up Components**. Check readiness, review any required caption-component or model download, then return and choose Suggest. Opening or returning starts no download or analysis; manual authoring stays available.
 
-Manager a.0.7.6 saves your theme, color-blind colors and tooltip choices in **Settings**, and restores them at the next launch. **Current build** identifies the bundled Python/Qt runtime and package version. The complete Windows ZIP also includes the launcher startup-record retry; a component-only update keeps the existing launcher.
+Manager a.0.7.7 saves your theme, color-blind colors and tooltip choices in **Settings**, and restores them at the next launch. **Current build** identifies the bundled Python/Qt runtime and package version. The complete Windows ZIP also includes the launcher startup-record retry; a component-only update keeps the existing launcher.
 
 Find interrupted Training packages from **Training > Review Interrupted Training Package**. Use **Choose Package Location** to list packages by name, or **Browse Exact Receipt** for advanced selection. Search shows elapsed activity and **Cancel Safely**;review leaves package files unchanged.
 
-Manager a.0.7.6 checks GitHub for newer compatible signed Reader and Organizer releases. Ordinary module updates no longer require a new Manager build. Review and confirm each installation in Applications. Generate and Training remain in Manager.
+Manager a.0.7.7 checks GitHub for newer compatible signed Reader and Organizer releases. Ordinary module updates no longer require a new Manager build. Review and confirm each installation in Applications. Generate and Training remain in Manager.
 
 Training Package Review now shows the target, image counts and next preparation
 action. It distinguishes package verification from unchecked trainer readiness
@@ -64,7 +64,7 @@ bound to their installation location; moving installations and migration from
 older portable Manager releases are not qualified by this release. Release
 metadata is signed; the Windows executable is not Authenticode-signed.
 
-For a.0.6.6 and earlier, use the complete ZIP; their built-in update cannot replace the launcher. Component-only updates on newer installations also keep the existing launcher. Download the full ZIP to receive launcher fixes. Fresh 0.7.6 startup and prompt-catalog draft saving/reopening passed in isolated installations. Saved appearance was checked in 0.7.5. Failed-start rollback remains unverified. Keep your previous folder and separate data backups.
+For a.0.6.6 and earlier, use the complete ZIP; their built-in update cannot replace the launcher. Component-only updates on newer installations also keep the existing launcher. Download the full ZIP to receive launcher fixes. Fresh 0.7.7 startup, Generate workspace and normal Close passed in an isolated installation. Prompt-catalog draft saving/reopening was checked in 0.7.6. Caption source/UI/readiness checks passed; actual model downloads and inference have not been run for 0.7.7. Saved appearance was checked in 0.7.5. Failed-start rollback remains unverified. Keep your previous folder and separate data backups.
 
 The Reader component ZIP is supplied for Manager's reviewed installation path.
 Read the release's included guide before using component ZIPs directly.
