@@ -112,7 +112,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
             policy=content_safety_policy(), settings=settings,
         )
         self.source_preview.setAccessibleName("Selected image for generation setup")
-        self.source_preview.setFixedSize(210, 165)
+        self.source_preview.setFixedSize(340, 220)
         self.source_preview.clear("Loading selected image…")
         source_row = QHBoxLayout()
         source_row.addWidget(self.source_preview)
@@ -862,6 +862,35 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         field = self.part_fields[kind]
         return field.toPlainText() if isinstance(field, QTextEdit) else field.text()
 
+    def resume_description_setup(self):
+        """Return to this exact review; never restart analysis or discard its edits."""
+        if self._suggestion_task is not None or self.save_in_progress:
+            self.suggestion_status.setText("Finish the current image setup operation before returning from Settings.")
+            return False
+        self.refresh_suggestion_goals()
+        self.review_description_setup_button.hide()
+        try:
+            current = (self.source_current_provider() if callable(self.source_current_provider)
+                       else self.source_identity)
+            if current != self.source_identity:
+                self.suggest_button.setEnabled(False)
+                self.save_button.setEnabled(False)
+                self.suggestion_status.setText(
+                    "The selected image changed while Setup was open. Close this review, "
+                    "reselect the image, and start a fresh setup. Your unsaved choices were not applied.")
+                return False
+            self.suggestion_status.setText(
+                "Returned from Setup with your choices retained. Choose Suggest Text from Image "
+                "for a fresh local check, or continue with manual and saved text.")
+        except Exception as error:
+            self.suggest_button.setEnabled(False)
+            self.save_button.setEnabled(False)
+            self.suggestion_status.setText(
+                f"The selected image could not be rechecked: {error} Reselect it before saving.")
+            return False
+        self.suggest_button.setFocus()
+        return True
+
     def _request_description_setup(self):
         if self._suggestion_task is None and not self.save_in_progress:
             self.setup_requested.emit()
@@ -1060,9 +1089,12 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         if self.suggestion_source is None:
             self.source_preview.clear("No source image available")
             return
-        if self.source_preview.policy is None:
+        if self.source_preview.policy is None and self.settings is None:
             self.source_preview.clear("Preview unavailable until content safety is ready")
             return
+        # The standalone host has no global library policy. ProtectedImageView
+        # already protects an unknown rating using the explicit Settings object;
+        # retain its local Reveal/Hide controls instead of disabling the preview.
         path = Path(self.suggestion_source)
         identity = deepcopy(self.source_identity)
         provider = self.source_current_provider

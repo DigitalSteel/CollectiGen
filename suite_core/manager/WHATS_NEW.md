@@ -1,5 +1,9 @@
 # Unreleased
 
+- Image-derived Setup shows its selected reference with the shared unknown-rating blur and temporary Reveal/Hide controls; preview controls fit beside the source.
+
+- Create Generation Setup offers a one-image source as well as manual authoring. Image suggestions can return through saved local description settings to the same unfinished review, with source recheck and no automatic analysis. Package delivery remains pending.
+
 - Generate can import a read-only Organizer prompt catalog through the existing image-draft browser. Search exported Tag names/aliases and browse Character-associated, other and generic Outfit text; save/reopen retains those choices. Other drafts and the export stay unchanged. Paired Manager/Organizer package delivery is pending.
 
 # What's New - a.0.7.5 (embedded 0.7.5-alpha.1) - 2026-11-13

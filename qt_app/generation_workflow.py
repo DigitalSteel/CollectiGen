@@ -182,33 +182,7 @@ def _connect_setup_return(window, dialog, *, generator_setup_allowed=True):
             window.navigation.setCurrentRow(origin)
             dialog.show(); review.show()
             review.raise_(); review.activateWindow()
-            review.refresh_suggestion_goals()
-            review.review_description_setup_button.hide()
-            try:
-                source_current=(
-                    review.source_current_provider()
-                    if callable(review.source_current_provider)
-                    else review.source_identity
-                )
-                if source_current!=review.source_identity:
-                    review.suggest_button.setEnabled(False)
-                    review.save_button.setEnabled(False)
-                    review.suggestion_status.setText(
-                        "The selected image changed while Setup was open. Close this review, "
-                        "reselect the image, and start a fresh setup. Your unsaved choices were not applied."
-                    )
-                else:
-                    review.suggestion_status.setText(
-                        "Returned from Setup with your choices retained. Choose Suggest Text from Image "
-                        "for a fresh local check, or continue with manual and saved text."
-                    )
-            except Exception as exc:
-                review.suggest_button.setEnabled(False)
-                review.save_button.setEnabled(False)
-                review.suggestion_status.setText(
-                    f"The selected image could not be rechecked: {exc} Reselect it before saving."
-                )
-            review.suggest_button.setFocus()
+            review.resume_description_setup()
             return True
 
         window._image_setup_return=resume
@@ -645,6 +619,10 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             dialog._refresh_from_plan("Created an independent iteration. Review its seed and prepare it before submitting.")
         if setup_window is not None:
             _connect_setup_return(setup_window, dialog, generator_setup_allowed=runtime_allowed)
+        else:
+            description_setup = getattr(state, "review_image_description_setup", None)
+            if callable(description_setup):
+                dialog.image_setup_requested.connect(lambda review: description_setup(dialog, review))
         if resource is not None:
             resources = [item.to_dict() for item in dialog.plan.request.resources
                          if item.hashes.get("sha256") != resource.hashes["sha256"]]

@@ -1551,6 +1551,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     generation_session_state=self.generation_state,
                     checked_image_connection=self.checked_image_connection,
                     review_generator_connection=self.review_generator_connection,
+                    review_image_description_setup=self.review_image_description_setup,
                     checked_image_submission=True,
                     offline_generation_alternatives=True,
                     retain_verified_result_remix=self.retain_verified_result_remix,
@@ -1783,7 +1784,54 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self._generation_setup_dialog = None
                 dialog.deleteLater()
 
+        def review_image_description_setup(self, owner, review):
+            from shiboken6 import isValid
+            state = self.generation_state()
+            if state is None or self._generation_setup_dialog is not None:
+                return
+            def allowed():
+                return (self.generation_state() is state and isValid(owner) and isValid(review)
+                        and getattr(owner, "_image_setup_dialog", None) is review
+                        and not getattr(owner, "_closed", True))
+            if not allowed():
+                return
+            from .description_setup_ui import DescriptionSetupDialog
+            dialog = DescriptionSetupDialog(state.generation_settings_path, review, allowed=allowed)
+            accepted = self.run_generation_setup_dialog(dialog)
+            if not allowed():
+                return
+            if accepted and dialog.saved_snapshot is not None:
+                for key, value in dialog.saved_snapshot.values.items():
+                    setattr(state.settings, key, value)
+            review.resume_description_setup()
+            review.raise_(); review.activateWindow()
+
         def create_generation_setup(self):
+            state = self.generation_state()
+            if state is None or self._generation_setup_dialog is not None or self._image_draft_picker_open:
+                return
+            from qt_app.generation_setup_source_dialog import GenerationSetupSourceDialog
+            choice = GenerationSetupSourceDialog(parent=self, allow_image=True, allow_entities=False)
+            if not self.run_generation_setup_dialog(choice) or self.generation_state() is not state:
+                return
+            if choice.source_kind == "manual":
+                self.create_manual_generation_setup()
+                return
+            from PySide6.QtWidgets import QFileDialog
+            self._image_draft_picker_open = True
+            try:
+                path, _ = QFileDialog.getOpenFileName(
+                    self, "Choose an image for a Generation Setup", "", "Images (*.png *.jpg *.jpeg *.webp)")
+            finally:
+                self._image_draft_picker_open = False
+                if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:
+                    self.statusBar().clearMessage()
+            if path and self.generation_state() is state:
+                from qt_app.generation_workflow import open_generation_workspace
+                open_generation_workspace(self, paths=(Path(path),), force_new=True, setup_from_image=True,
+                    source_result_allowed=lambda: self.generation_state() is state)
+
+        def create_manual_generation_setup(self):
             state = self.generation_state()
             if state is None or self._generation_setup_dialog is not None:
                 return

@@ -11,7 +11,7 @@ from .components import BoundedSearchableComboBox
 class GenerationSetupSourceDialog(QDialog):
     """Keep the first decision small; exact identities are an optional route."""
 
-    def __init__(self, characters, parent=None):
+    def __init__(self, characters=None, parent=None, *, allow_image=False, allow_entities=True):
         super().__init__(parent)
         self.setWindowTitle("Create a Generation Setup")
         self.resize(540, 230)
@@ -21,13 +21,19 @@ class GenerationSetupSourceDialog(QDialog):
             "from images tagged with a known Character or Outfit. "
             "Suggestions are optional and reviewed before saving."
         )
+        if allow_image and not allow_entities:
+            intro.setText("Write a reusable setup yourself, or review saved text and optional suggestions from one image. No analysis or generation starts when you choose the image.")
         intro.setWordWrap(True)
         layout.addWidget(intro)
         self.manual = QRadioButton("Write a setup manually")
+        self.image = QRadioButton("Start from one image")
+        self.image.setVisible(allow_image)
         self.character = QRadioButton("Suggest from a Character")
         self.outfit = QRadioButton("Suggest from an Outfit")
         self.manual.setChecked(True)
-        for option in (self.manual, self.character, self.outfit):
+        self.character.setVisible(allow_entities)
+        self.outfit.setVisible(allow_entities)
+        for option in (self.manual, self.image, self.character, self.outfit):
             layout.addWidget(option)
             option.toggled.connect(self._update_choice)
         self.identity = BoundedSearchableComboBox(
@@ -52,7 +58,7 @@ class GenerationSetupSourceDialog(QDialog):
 
     def _update_choice(self):
         kind = self.source_kind
-        if (kind != "manual" and self._characters is None
+        if (kind in {"character", "outfit"} and self._characters is None
                 and self._load_characters is not None and not self._identity_error):
             try:
                 self._characters = self._load_characters()
@@ -71,9 +77,11 @@ class GenerationSetupSourceDialog(QDialog):
             label = (self._characters.character_label(record.id) or record.name
                      if kind == "character" else record.name)
             self.identity.addItem(label, record.id, search_terms=record.aliases)
-        self.identity.setVisible(kind != "manual")
+        self.identity.setVisible(kind in {"character", "outfit"})
         if kind == "manual":
             note = "You can add prompts, LoRAs, models and settings without an image source."
+        elif kind == "image":
+            note = "Choose one image next. Review its recorded settings or saved text, and keep any local suggestions optional."
         elif self._identity_error:
             note = "Character and Outfit choices could not be read. You can still write a setup manually."
         elif not records:
@@ -86,18 +94,20 @@ class GenerationSetupSourceDialog(QDialog):
 
     def _update_continue(self):
         self.buttons.button(QDialogButtonBox.Ok).setEnabled(
-            self.source_kind == "manual" or bool(self.identity.currentData())
+            self.source_kind in {"manual", "image"} or bool(self.identity.currentData())
         )
 
     @property
     def source_kind(self):
+        if self.image.isChecked():
+            return "image"
         return "character" if self.character.isChecked() else (
             "outfit" if self.outfit.isChecked() else "manual"
         )
 
     @property
     def selected_identity(self):
-        return self.identity.currentData() if self.source_kind != "manual" else None
+        return self.identity.currentData() if self.source_kind in {"character", "outfit"} else None
 
     @property
     def characters(self):

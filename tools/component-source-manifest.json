@@ -991,7 +991,13 @@
     "core/generation_prompt_catalog.py",
     "docs/GENERATION_PROMPT_CATALOG.md",
     "tests/test_generation_prompt_catalog.py",
-    "tests/test_generation_prompt_catalog_ui.py"
+    "tests/test_generation_prompt_catalog_ui.py",
+    "core/manager_description_settings.py",
+    "suite_core/manager/description_setup_ui.py",
+    "tests/test_manager_description_settings.py",
+    "tests/test_manager_description_setup_return_ui.py",
+    "docs/MANAGER_DESCRIPTION_SETUP.md",
+    "tests/test_manager_protected_setup_preview_ui.py"
   ],
   "reviewed_defaults": [],
   "required_provenance": []

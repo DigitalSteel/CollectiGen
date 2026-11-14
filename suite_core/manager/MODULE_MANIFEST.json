@@ -964,7 +964,9 @@
     "core/training_validation_worker.py",
     "core/training_retained_result.py",
     "data/model_workflow_baseline.json",
-    "core/generation_prompt_catalog.py"
+    "core/generation_prompt_catalog.py",
+    "core/manager_description_settings.py",
+    "suite_core/manager/description_setup_ui.py"
   ],
   "support_files": [
     "suite_core/manager/README.md",

@@ -2648,8 +2648,8 @@
     },
     {
       "path": "qt_app/generation_image_setup_dialog.py",
-      "bytes": 59076,
-      "sha256": "7a6c91b39aeba796ef6958b26b1f7b7b8918698ea71f6cca8a02fa6ba6d48af9"
+      "bytes": 60951,
+      "sha256": "4632ef3e52659c1ff8b643024d851d178cf74a2b6f1ecd713d20f93a1082cb05"
     },
     {
       "path": "qt_app/generation_manual_setup_dialog.py",
@@ -2693,13 +2693,13 @@
     },
     {
       "path": "qt_app/generation_setup_source_dialog.py",
-      "bytes": 4593,
-      "sha256": "9b5abda78cf6ba92de21209275b6dfa9988a1a83c051b0a73b11b5e113d973cb"
+      "bytes": 5359,
+      "sha256": "05ccd3e020554a5f18c5c3eaecb138945f5d3afc1fa54075f7b99df3a0ce9d5e"
     },
     {
       "path": "qt_app/generation_workflow.py",
-      "bytes": 45139,
-      "sha256": "d1556fc7aafa49e49201fc339d57e45a6425717b80f6203c321000a635c700ca"
+      "bytes": 43986,
+      "sha256": "e777ae6d2a5a9d3660b0e497b027f8a4d8f7e9bd8a848348f044746fe117bcaa"
     },
     {
       "path": "qt_app/guided_review_dialog.py",
@@ -3663,8 +3663,8 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 44163,
-      "sha256": "adcef7b2819b17db4e12b23aefadd77b048a8a9c8d6f16d0bed87ba235ca2605"
+      "bytes": 44257,
+      "sha256": "3e5ec931b0293a40a8254bb19cc72fd1355bfdb68a0712fcb1bf15781c7c0e3a"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -4013,8 +4013,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 296796,
-      "sha256": "0d3957c84d0aaae1f2cf3965e78fca1c2b064c623d691a5f30eac4a9d7bb6548"
+      "bytes": 299532,
+      "sha256": "375da153da42a009e77a888873ef2a14c4b4f8dc928b4eaac611ed6f1fd7156b"
     },
     {
       "path": "suite_core/media_examples.py",
@@ -4810,6 +4810,16 @@
       "path": "core/generation_prompt_catalog.py",
       "bytes": 6346,
       "sha256": "d9955b90889cdbf19a9398003868c634b92ce4ad002016f5eb5276a2b71070f0"
+    },
+    {
+      "path": "core/manager_description_settings.py",
+      "bytes": 6355,
+      "sha256": "9effd654afc26d62f1dc27fb1ea30f127ce5ee0e1edd672249fd47e673d439ac"
+    },
+    {
+      "path": "suite_core/manager/description_setup_ui.py",
+      "bytes": 8572,
+      "sha256": "c4ac202a8cd65c671eeb441c331d45c18466074c6170397fad194f58207356e0"
     }
   ]
 }
