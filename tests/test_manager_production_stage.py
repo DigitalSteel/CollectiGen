@@ -441,3 +441,37 @@ def test_normal_packaged_root_still_refuses_a_renamed_executable(tmp_path,monkey
     with pytest.raises(ValueError,match='exact_public_root_entry_required'):
         launcher_main.main([],expected_package_sha256='a'*64,executable=entry)
     assert not (root/'Data').exists()
+
+
+@pytest.mark.parametrize('declared', [True, False])
+def test_caption_runtime_pins_require_explicit_public_declaration(public_inputs, declared):
+    kw = public_inputs
+    root = kw['source_root']
+    name = 'tools/runtime-pins.json'
+    path = root / name
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b'{"schema_version": 1}\n')
+    manifest = root / 'suite_core/manager/MODULE_MANIFEST.json'
+    value = json.loads(manifest.read_bytes())
+    if declared:
+        value['runtime_files'].append(name)
+    manifest.write_text(json.dumps(value), encoding='utf-8')
+    kw['manifest_sha256'] = H(manifest)
+    inventory = root / 'public-source.json'
+    value = json.loads(inventory.read_bytes())
+    for item in (name, 'suite_core/manager/MODULE_MANIFEST.json'):
+        value['files'][item] = {'size_bytes': (root/item).stat().st_size, 'sha256': H(root/item)}
+    inventory.write_text(json.dumps(value), encoding='utf-8')
+    kw['public_inventory_sha256'] = H(inventory)
+    subset = kw['frozen_sources']
+    value = json.loads(subset.read_bytes())
+    value['source_rows'].append({'path': name, 'bytes': path.stat().st_size, 'sha256': H(path)})
+    subset.write_text(json.dumps(value), encoding='utf-8')
+    kw['frozen_sources_sha256'] = H(subset)
+    if declared:
+        stage = candidate.prepare_public_stage(**kw)
+        assert (stage/'source'/name).read_bytes() == path.read_bytes()
+    else:
+        with pytest.raises(ValueError, match='frozen_subset_not_declared_public_source'):
+            candidate.prepare_public_stage(**kw)
+        assert not kw['output'].exists()

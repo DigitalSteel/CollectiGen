@@ -111,6 +111,7 @@ def render_qualification_update_config(value, *, include_prior=False, mapping_sh
         "transport_id='sealed-local-qualification', opener=SealedLocalQualificationOpener("+repr(mapping_sha256)+"),")
 
 _PUBLIC_TRAINING_INPUTS = frozenset({
+    'tools/runtime-pins.json',
     'tools/optional-ai-profiles.json',
     'tools/training_dataset_package.json',
     'tools/training_dataset_profile_worker.py',
