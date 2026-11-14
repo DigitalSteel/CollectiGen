@@ -3005,6 +3005,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             records, self.plan.knowledge_fragments, parent=self, jobs=self.jobs,
             settings=self.settings,
             suggestion_source=getattr(self, "setup_suggestion_source", None),
+            suggestion_provider=getattr(self, "image_setup_suggestion_provider", None),
             source_identity=deepcopy(self.source_identity),
             source_current_provider=self.source_current_provider,
             registry=self.registry,

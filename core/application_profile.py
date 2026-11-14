@@ -73,8 +73,10 @@ def default_organizer_profile():
     return Path(base) / "CollectiGen" / "MediaOrganizer"
 
 
-def bind_profile_root(root, *, program_root):
+def bind_profile_root(root, *, program_root, initialize_defaults=True):
     global _selected_root
+    if type(initialize_defaults) is not bool:
+        raise ValueError("Catalog-default initialization must be explicit.")
     if "core.paths" in sys.modules or _selected_root is not None:
         raise RuntimeError("Choose the profile before storage services are loaded.")
     from .profile_paths import unredirected_directory
@@ -89,7 +91,8 @@ def bind_profile_root(root, *, program_root):
     defaults = unredirected_directory(data / "defaults")
     root.mkdir(parents=True, exist_ok=True)
     data.mkdir(exist_ok=True)
-    if not defaults.exists():
+    # Component-only workers own no catalog or Knowledge defaults.
+    if initialize_defaults and not defaults.exists():
         manifest_path = program / "DEFAULT_ASSETS.json"
         if not manifest_path.is_file():
             raise RuntimeError("An existing CollectiGen profile with defaults is required by this source entry.")

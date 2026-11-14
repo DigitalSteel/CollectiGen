@@ -623,6 +623,7 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
             description_setup = getattr(state, "review_image_description_setup", None)
             if callable(description_setup):
                 dialog.image_setup_requested.connect(lambda review: description_setup(dialog, review))
+        dialog.image_setup_suggestion_provider = getattr(state, "image_setup_suggestion_provider", None)
         if resource is not None:
             resources = [item.to_dict() for item in dialog.plan.request.resources
                          if item.hashes.get("sha256") != resource.hashes["sha256"]]

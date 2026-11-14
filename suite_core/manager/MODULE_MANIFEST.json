@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "module_id": "collectigen.suite-manager",
-  "software_version": "0.7.6-alpha.1",
+  "software_version": "0.7.7-alpha.1",
   "manager_interface_version": 1,
   "runtime_files": [
     "core/__init__.py",
@@ -966,7 +966,10 @@
     "data/model_workflow_baseline.json",
     "core/generation_prompt_catalog.py",
     "core/manager_description_settings.py",
-    "suite_core/manager/description_setup_ui.py"
+    "suite_core/manager/description_setup_ui.py",
+    "core/manager_caption_runtime.py",
+    "core/manager_caption_worker.py",
+    "suite_core/manager/caption_components_ui.py"
   ],
   "support_files": [
     "suite_core/manager/README.md",

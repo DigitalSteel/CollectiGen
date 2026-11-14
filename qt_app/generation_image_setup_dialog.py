@@ -78,7 +78,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
 
     def __init__(self, records, fragments, parent=None, *, jobs=None, settings=None,
                  suggestion_source=None, source_identity=None, source_current_provider=None,
-                 registry=None, protected_model_roots=()):
+                 registry=None, protected_model_roots=(), suggestion_provider=None):
         super().__init__(parent)
         self.setWindowTitle("Create Generation Setup from Image")
         self.resize(900, 760)
@@ -90,6 +90,9 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         self.notes = ()
         self.jobs = jobs
         self.settings = settings
+        if suggestion_provider is not None and not callable(suggestion_provider):
+            raise ValueError("An image suggestion provider must be callable.")
+        self.suggestion_provider = suggestion_provider
         self.registry = registry
         self.protected_model_roots = tuple(protected_model_roots)
         self.suggestion_source = suggestion_source
@@ -345,13 +348,13 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
             "Its answers are uncertain and will not be selected automatically."
         )
         self.suggestion_status.setWordWrap(True); parts_layout.addWidget(self.suggestion_status)
-        self.review_description_setup_button = QPushButton("Review Local Description Setup…")
+        self.review_description_setup_button = QPushButton("Review Local Description Setup…", self.parts_panel)
         self.review_description_setup_button.setAccessibleDescription(
             "Open the existing AI Description model settings while keeping this unsaved Generation Setup. "
             "Returning does not start analysis automatically."
         )
         self.review_description_setup_button.clicked.connect(self._request_description_setup)
-        self.review_description_setup_button.hide()
+        self.review_description_setup_button.setVisible(self.suggestion_provider is not None)
         parts_layout.addWidget(self.review_description_setup_button, 0, Qt.AlignLeft)
         self.suggestion_source_detail = QLabel()
         self.suggestion_source_detail.setTextFormat(Qt.PlainText)
@@ -868,7 +871,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
             self.suggestion_status.setText("Finish the current image setup operation before returning from Settings.")
             return False
         self.refresh_suggestion_goals()
-        self.review_description_setup_button.hide()
+        self.review_description_setup_button.setVisible(self.suggestion_provider is not None)
         try:
             current = (self.source_current_provider() if callable(self.source_current_provider)
                        else self.source_identity)
@@ -908,6 +911,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         identity = deepcopy(self.source_identity)
         provider = self.source_current_provider
         selected_kinds = tuple(self.suggestion_goal.currentData() or ("other",))
+        suggest = self.suggestion_provider or suggest_image_setup_parts
         self.suggest_button.setEnabled(False)
         self.suggestion_goal.setEnabled(False)
         self.review_description_setup_button.hide()
@@ -915,7 +919,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         def work(job):
             if callable(provider) and provider() != identity:
                 raise ValueError("The selected image changed. Reselect it before requesting suggestions.")
-            result = suggest_image_setup_parts(
+            result = suggest(
                 self.suggestion_source, self.settings, selected_kinds=selected_kinds,
                 cancelled=lambda: job.cancel_requested,
             )
@@ -940,7 +944,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         self.suggest_button.setEnabled(self.jobs is not None and self.settings is not None
                                        and self.suggestion_source is not None)
         self.suggestion_goal.setEnabled(True)
-        self.review_description_setup_button.hide()
+        self.review_description_setup_button.setVisible(self.suggestion_provider is not None)
         proposals = getattr(result, "proposals", ())
         valid = tuple(part for part in proposals
                       if getattr(part, "kind", None) in self.part_fields
@@ -984,7 +988,8 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
             "Suggestion unavailable: " + error + " Saved text and manual parts remain usable."
         )
         self.review_description_setup_button.setVisible(
-            "cancel" not in error.lower() and "selected image changed" not in error.lower()
+            (self.suggestion_provider is not None or "cancel" not in error.lower())
+            and "selected image changed" not in error.lower()
         )
 
     def review(self):

@@ -1,6 +1,6 @@
 # Manager image-derived Setup and description settings
 
-Unreleased GEN-06 / SUITE-10B source; not in the Manager a.0.7.5 download.
+Manager a.0.7.7 candidate for GEN-06 / SUITE-10B; package delivery pending.
 
 In Manager **Generate > Create Generation Setup**, choose manual authoring or
 **Start from one image**. The image choice uses the existing one-image draft
@@ -46,3 +46,41 @@ has no library content-policy service. Its rating stays unknown and follows the
 explicit unknown-rating blur preference. Reveal Temporarily affects only this
 preview; Hide protects it again. No System Knowledge or rating is invented.
 Without both settings and a policy the reference remains unavailable.
+
+## Caption worker and explicit component setup
+
+Save Choices and Set Up Components returns through the same guarded settings writer,
+then opens a focused component review. Opening it runs no checks or downloads.
+Check Readiness observes the selected model and Manager's admitted worker. Install
+Caption Components and Download Selected Model each require an explicit review;
+the latter may also install missing caption components. Neither runs inference.
+Cancel/Return retain the original coordinated operation until its process and all
+contained download descendants stop; an unconfirmed stop retains the owner.
+
+The original DependencyService owns profile hashes, wheel acquisition, staged
+readback/swap/recovery and pinned model transactions inside that same Python.
+Manager's Descriptions/data/optional-components store is separate from the existing
+Video environment. bind_profile_root(initialize_defaults=False) explicitly selects
+this component-only profile before storage imports; it creates no catalog defaults.
+No test environment override or mutable global path replacement is used.
+
+The finite child calls the whole suggest_image_setup_parts service without a
+backend override, preserving purpose prompts, original image rechecks, caption
+adapter release and uncertain proposal semantics. The shared image setup dialog
+adopts a host provider only when supplied; the all-in-one application retains its
+original in-process provider. Returning never automatically restarts suggestions.
+
+Owners: core/manager_caption_runtime.py retains the admitted invocation/review and
+contained lifetime; core/manager_caption_worker.py invokes canonical services;
+suite_core/manager/entry_binding.py supplies signed source/worker/session identity;
+suite_core/manager/caption_components_ui.py presents deliberate acquisition;
+qt_app/generation_workflow.py and generation_dialog.py carry the provider to the
+existing generation_image_setup_dialog.py. Caption settings remain in the same
+Manager generation-settings.json; the child never loads or saves another settings
+file. The next worker package must include tools/runtime-pins.json and the exact
+already reviewed pip wheel; the retained 0.7.6 worker omitted that wheel.
+
+These implementation descriptions do not prove model/GPU inference or packaged
+acceptance. Final evidence distinguishes synthetic transport/UI cases, actual
+contained generated child cancellation, and any executed package checks. Reader,
+C3A, model/trainer and real-library restrictions remain unchanged.

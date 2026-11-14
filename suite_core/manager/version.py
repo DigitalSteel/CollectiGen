@@ -1,7 +1,7 @@
 MODULE_ID = "collectigen.suite-manager"
-VERSION = MODULE_VERSION = "0.7.6-alpha.1"
-NUMERIC_VERSION = "0.7.6"
+VERSION = MODULE_VERSION = "0.7.7-alpha.1"
+NUMERIC_VERSION = "0.7.7"
 MATURITY = "alpha"
-DISPLAY_VERSION = "a.0.7.6"  # Inert metadata; canonical identity parity is checked separately.
-DATE = "2026-11-13"
+DISPLAY_VERSION = "a.0.7.7"  # Inert metadata; canonical identity parity is checked separately.
+DATE = "2026-11-14"
 MANAGER_INTERFACE_VERSION = 1

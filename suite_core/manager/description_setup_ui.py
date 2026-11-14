@@ -12,12 +12,13 @@ from core.manager_description_settings import (DescriptionSettingsError, Manager
 
 
 class DescriptionSetupDialog(QDialog):
-    def __init__(self, path, parent=None, *, allowed=lambda: True):
+    def __init__(self, path, parent=None, *, allowed=lambda: True, components_available=False):
         super().__init__(parent)
         self.service = ManagerDescriptionSettings(path)
         self.allowed = allowed
         self.snapshot = self.saved_snapshot = None
         self._picker_open = False
+        self.components_requested = False
         self.setWindowTitle("Local Image Description Settings")
         self.resize(720, 580)
         layout = QVBoxLayout(self)
@@ -26,8 +27,10 @@ class DescriptionSetupDialog(QDialog):
         note = QLabel(
             "Reuse your installed caption model. Save returns to the same unfinished Generation Setup. "
             "Opening, saving and returning do not download a model or start analysis. "
-            "These choices do not install missing caption components. "
-            "If suggestions remain unavailable, use saved text or manual authoring.")
+            + ("To install missing components or download the selected model, save these choices "
+               "and open component setup below. Each download requires a separate confirmation."
+               if components_available else "Caption component setup is unavailable in this session. "
+               "Saved text and manual authoring remain available."))
         note.setWordWrap(True); layout.addWidget(note)
         body = QWidget(); form = QFormLayout(body)
         form.setSizeConstraint(QLayout.SetMinAndMaxSize)
@@ -46,6 +49,10 @@ class DescriptionSetupDialog(QDialog):
         self.directory.textChanged.connect(self.refresh_location)
         self.quantization = QComboBox(); self.quantization.addItem("BF16 — full precision", "bf16"); self.quantization.addItem("NF4 — lower memory", "nf4")
         form.addRow("JoyCaption precision", self.quantization)
+        self.components_button = QPushButton("Save Choices and Set Up Components...")
+        self.components_button.setVisible(components_available)
+        self.components_button.clicked.connect(self.save_for_components)
+        form.addRow(self.components_button)
         self.expert_button = QPushButton("Advanced Description Controls")
         self.expert_button.setCheckable(True); form.addRow(self.expert_button)
         self.expert = QWidget(); expert_form = QFormLayout(self.expert)
@@ -69,6 +76,10 @@ class DescriptionSetupDialog(QDialog):
         self.save_button = QPushButton("Save and Return"); self.save_button.setProperty("primary",True); self.save_button.clicked.connect(self.save)
         actions.addWidget(self.save_button); layout.addLayout(actions)
         self.reload()
+
+    def save_for_components(self):
+        self.components_requested = True
+        self.save()
 
     def refresh_location(self):
         item = PLAIN_LANGUAGE_MODELS.get(self.model.currentData())

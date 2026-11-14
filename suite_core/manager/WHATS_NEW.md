@@ -1,3 +1,11 @@
+# What's New - a.0.7.7 (embedded 0.7.7-alpha.1) - 2026-11-14
+
+- Local Description Settings can save your choices and open Manager caption component setup. Check readiness, then explicitly review component installation or the selected model download. Opening the review starts no download or image analysis.
+- Image-derived Setup suggestions use the original JoyCaption/Florence service in Manager's admitted Python worker. The caption store is separate from Video and Organizer; saved model choices, purpose prompts, source checks and reviewable uncertain proposals remain with the original workflow.
+- Caption setup and analysis retain their contained process and download descendants through Cancel/Close. The package includes the already pinned pip wheel required by worker setup; no new updater or module is introduced.
+
+Candidate implementation: final source/package validation and delivery are recorded separately. No model/trainer, Reader/C3A or real-library execution is authorized by opening these tools.
+
 # What's New - a.0.7.6 (embedded 0.7.6-alpha.1) - 2026-11-13
 
 - Use Organizer Prompt Catalog in Generate to import reusable Tag names, aliases and Character/Outfit prompt choices exported by Organizer a.0.5.6. Search Tags on Request or browse associated, other and generic Outfits in Advanced; saving a draft retains those choices.

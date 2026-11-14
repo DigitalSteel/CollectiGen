@@ -302,6 +302,56 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
     return admit, review, install, recover
 
 
+def _bind_manager_caption_runtime(session, verifier, signed_worker):
+    """Reuse the exact signed worker; caption storage never replaces Video."""
+    import sys
+    from hashlib import sha256
+    from core.manager_caption_runtime import CaptionWorkerBinding, ManagerCaptionRuntime
+    from core.paths import PROGRAM_ROOT
+    from core.training_file_inventory import SoftwareInventoryService
+    from core.training_source_io import read_stable_training_source
+    from suite_core.discovery.manager_runtime_detached_admission import manager_inventory_json
+
+    admitted = session.admitted
+    plan, proof = signed_worker
+    inventory = verifier.inventory
+    rows = plan.training_worker_file_rows(proof)
+    interpreter = Path(inventory.root) / verifier.python_relative
+    interpreter_pin = rows[verifier.python_relative]['sha256']
+    source = Path(PROGRAM_ROOT)
+    code = admitted.layout.code_root / 'Apps/Manager/current'
+    bindings = CaptionWorkerBinding(source, Path(inventory.root), interpreter, interpreter_pin,
+                                   sys.version.split()[0], admitted.layout.data_root / 'Manager/Descriptions')
+    def check(check_interrupt):
+        check_interrupt()
+        if session.state != 'ready' or session.admitted is not admitted:
+            raise InterruptedError('The original Manager caption session ended.')
+        def cancelled():
+            check_interrupt()
+            return False
+        summary = SoftwareInventoryService().verify(inventory.root, inventory.manifest_path, should_cancel=cancelled)
+        if (summary['inventory_sha256'] != inventory.manifest_sha256
+                or summary['files'] != inventory.file_count or summary['bytes'] != inventory.byte_count):
+            raise RuntimeError('The admitted Manager caption worker changed.')
+        if sha256(proof).hexdigest() != plan.inventory_sha256:
+            raise RuntimeError('The signed caption source inventory changed.')
+        prefix = source.relative_to(code).as_posix() + '/'
+        declared = {row['path'][len(prefix):]: row for row in manager_inventory_json(proof)['files']
+                    if row['path'].startswith(prefix) and
+                    (row['path'].endswith('.py')
+                     or row['path'][len(prefix):] in {'version.py', 'tools/runtime-pins.json', 'tools/optional-ai-profiles.json'})}
+        if not {'core/manager_caption_worker.py', 'core/generation_image_suggestions.py',
+                'tools/runtime-pins.json', 'tools/optional-ai-profiles.json'} <= set(declared):
+            raise RuntimeError('This Manager package does not include the admitted caption source closure.')
+        for relative, pin in declared.items():
+            check_interrupt()
+            raw, _ = read_stable_training_source(source / relative, max_bytes=4 * 1024 * 1024)
+            if sha256(raw).hexdigest() != pin['sha256']:
+                raise RuntimeError('The admitted caption source changed; reinstall the verified Manager package.')
+        check_interrupt()
+    return ManagerCaptionRuntime(bindings, check)
+
+
 def launch_manager(*, normal_entry_session=None, argv=None, executable=None, manager_update_service=None, tag_database_controller=None, tag_encyclopedia=None, signed_training_worker=None):
     """Enter managed normal UI only with the already native-qualified session."""
     from .bootstrap_entry import EntryHold, NormalEntrySession
@@ -343,6 +393,9 @@ def launch_manager(*, normal_entry_session=None, argv=None, executable=None, man
              normal_entry_session.review_manager_video_setup,
              normal_entry_session.install_manager_video_setup,
              normal_entry_session.recover_manager_video_setup) = _bind_manager_video_runtime(
+                normal_entry_session, verifier, signed_training_worker,
+            )
+            normal_entry_session.caption_runtime = _bind_manager_caption_runtime(
                 normal_entry_session, verifier, signed_training_worker,
             )
     direct=selected_direct_runtime(admitted)

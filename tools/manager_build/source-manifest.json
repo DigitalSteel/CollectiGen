@@ -58,8 +58,8 @@
     },
     {
       "path": "core/application_profile.py",
-      "bytes": 5789,
-      "sha256": "da742878518a23e36b8316c3edcf4e289d1df7f2db410220f44442c820e34262"
+      "bytes": 6029,
+      "sha256": "559bd72026453693dce9af6dcdd302703f31f74328edc77c7a6ff2843ca0bf82"
     },
     {
       "path": "core/application_update.py",
@@ -2633,8 +2633,8 @@
     },
     {
       "path": "qt_app/generation_dialog.py",
-      "bytes": 289791,
-      "sha256": "20a8de5b1f01d4a4c8947593e289c3b17af4487948a73902ba012410958c7152"
+      "bytes": 289879,
+      "sha256": "f14659d4a014128158a59e2aa71ef62e2545d4ebfebf9fa250e527647adfab46"
     },
     {
       "path": "qt_app/generation_experiment_dialog.py",
@@ -2648,8 +2648,8 @@
     },
     {
       "path": "qt_app/generation_image_setup_dialog.py",
-      "bytes": 60951,
-      "sha256": "4632ef3e52659c1ff8b643024d851d178cf74a2b6f1ecd713d20f93a1082cb05"
+      "bytes": 61445,
+      "sha256": "1b2da5aed1ddf8da6b27ed1a6b58d7568a609168ada05bb14895e5cde78f0db1"
     },
     {
       "path": "qt_app/generation_manual_setup_dialog.py",
@@ -2698,8 +2698,8 @@
     },
     {
       "path": "qt_app/generation_workflow.py",
-      "bytes": 43986,
-      "sha256": "e777ae6d2a5a9d3660b0e497b027f8a4d8f7e9bd8a848348f044746fe117bcaa"
+      "bytes": 44091,
+      "sha256": "195819d5c41ba0f5e5ec657d61ece8cf7035cd0c8dfc1d210e5d8870fac84601"
     },
     {
       "path": "qt_app/guided_review_dialog.py",
@@ -3663,13 +3663,13 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 44257,
-      "sha256": "e9bfed70c903f619e95a23db2cd1cf3704085e9275e3b060006032b061676840"
+      "bytes": 44385,
+      "sha256": "47eaec02edaf94c0cef7dc8c0045a4748041e1914381e9ad78e9831bfa1d1889"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "fd2237390677607699bd3dcbed579a999d43f8dc89249903d7143606247dde79"
+      "sha256": "b269be635dcd4a7dba6609d622e5d9ef9cf6c37989ddf9e566a38e2514960c54"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -3798,8 +3798,8 @@
     },
     {
       "path": "suite_core/manager/entry_binding.py",
-      "bytes": 18530,
-      "sha256": "1712763d5987d7a6c3a41710adeaaa40a17c9cb717f74cb06a37feeb7e6ca422"
+      "bytes": 21756,
+      "sha256": "8cc7bd0c4e7309ee74febeb5d0d3509547dd639799709a3054232843b119f521"
     },
     {
       "path": "suite_core/manager/frozen_entry.py",
@@ -4009,12 +4009,12 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "7f0da9c819abaf40afcff4ad045a55552b116f92fbeec05d488aaf9045d33af3"
+      "sha256": "b31d3bfa60ea96c6e2a7096a6e0f64f60eb163be14f27462a148b0b8f41d97bd"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 300553,
-      "sha256": "990aebeeff3d679dcc009e4082253ae472b53a57d5b5316f377a99657107700c"
+      "bytes": 302701,
+      "sha256": "a2ce6c3ba603b51e8645665e31367e70d6d546cfe989d476769b1ab630a1949d"
     },
     {
       "path": "suite_core/media_examples.py",
@@ -4818,8 +4818,28 @@
     },
     {
       "path": "suite_core/manager/description_setup_ui.py",
-      "bytes": 8613,
-      "sha256": "5f6d399435bc4c5dcdec0f3b8513dc8876e1b9f84a7b4d76fe81689c63b1bce2"
+      "bytes": 9257,
+      "sha256": "3826d6d8f4e3d326bdb414116b283697cd8d8b1f4fb949d015ec35bd360f450a"
+    },
+    {
+      "path": "core/manager_caption_runtime.py",
+      "bytes": 13852,
+      "sha256": "26ee29efbd52a6a623ba9ceefcadab7dc6788fe8e4b8fccaba727c4586347369"
+    },
+    {
+      "path": "core/manager_caption_worker.py",
+      "bytes": 14469,
+      "sha256": "a5a4c1829b4b17f076a600db8da89bbeda4293634e67c854e77ba1ad0e9dfae3"
+    },
+    {
+      "path": "suite_core/manager/caption_components_ui.py",
+      "bytes": 13148,
+      "sha256": "b318eb9711c8ef565e92775a07e1e40a6496a7e10dc0aefab70160c16083e7b9"
+    },
+    {
+      "path": "tools/runtime-pins.json",
+      "bytes": 1017,
+      "sha256": "10134b91d387b32c345f6af0f18941ee2abbad27a3b751a2ce3bbe807d5d9407"
     }
   ]
 }
