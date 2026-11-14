@@ -647,7 +647,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             open_training_reviews.addWidget(self.training_open_reviews, 1)
             open_training_reviews.addWidget(self.training_open_review_button)
             training_layout.addLayout(open_training_reviews)
-            self.trainer_setup_button = compact_action(QPushButton("Review Existing Trainer…"))
+            self.trainer_setup_button = compact_action(QPushButton("Set Up Trainer…"))
             self.trainer_setup_button.clicked.connect(self.open_existing_trainer_setup)
             self.trainer_setup_button.setVisible(self.krea_training_review_button.isVisibleTo(self)
                                                  and training_draft_settings_path is not None)

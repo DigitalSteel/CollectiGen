@@ -3506,8 +3506,8 @@
       "size_bytes": 274
     },
     "suite_core/manager/window.py": {
-      "sha256": "9ed5157063ff97b18c6bda732107d09ddeecdba9705b7ff46dcabd560f709a1b",
-      "size_bytes": 300588
+      "sha256": "d7a97d9d8aa732176bb63ea98f4055254ab0e30ef540bddabeffba22424de395",
+      "size_bytes": 300579
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -4022,8 +4022,8 @@
       "size_bytes": 20233
     },
     "tests/test_manager_trainer_setup_ui.py": {
-      "sha256": "00a294dd003865070f097f22aa4b456255371dd07e7d322289554464aa5d2621",
-      "size_bytes": 17478
+      "sha256": "f980167d922e02b6e77cad860f674010d78905a69b09c4cd3e979ede860b5a0d",
+      "size_bytes": 17610
     },
     "tests/test_manager_training_experiments.py": {
       "sha256": "6c5bdd48af5b887cb3bfc4fb7baf01737aa01d12c225a740f27889418ef162e5",
@@ -4210,7 +4210,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "467016c92985981ce33d43dc9a99a8de11bb6512aaf1f33b8bfb09fc8605d3b0",
+      "sha256": "2bccbae2b9e3eb30233bbe840279f5a10c628222ff379ef8b50168217e166325",
       "size_bytes": 165434
     },
     "tools/manager_build/tool-inputs.json": {

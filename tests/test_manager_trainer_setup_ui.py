@@ -230,6 +230,8 @@ def test_normal_manager_training_control_invokes_bound_current_session(trainer, 
     window_jobs = window.state.jobs
     try:
         window.navigation.setCurrentRow(window.page_rows['Training'])
+        assert window.trainer_setup_button.text() == 'Set Up Trainer\u2026'
+        capture(window, 'trainer-manager-normal-entry')
         click(h, window.trainer_setup_button)
         assert len(calls) == 1 and calls[0][0] is window and calls[0][1] is window.state
         assert calls[0][2] == h.tmp / 'manager' / 'generation-settings.json' and calls[0][3]
