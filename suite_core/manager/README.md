@@ -1,11 +1,11 @@
 # CollectiGen Suite Manager
 
-**Suite Manager a.0.7.7** provides component installation plus dedicated Generate
+**Suite Manager a.0.7.8** provides component installation plus dedicated Generate
 and Training workspaces. Use the complete Windows ZIP for a fresh installation.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.7-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.7-alpha.1/SuiteManager-a.0.7.7-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.7-alpha.1/SuiteManager-a.0.7.7-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.8-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.8-alpha.1/SuiteManager-a.0.7.8-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.8-alpha.1/SuiteManager-a.0.7.8-windows-x64.zip.sha256)
 
 Extract into a new, short writable folder such as `C:\CollectiGen`, keep the
 complete folder together, and run **CollectiGen.exe**. Long installation paths
@@ -16,9 +16,11 @@ Generate and Manager update actions wrap to the available window width. Tab move
 from update notes to the next action. Existing drafts, confirmation and recovery
 stay with their original owners.
 
+**Training > Set Up Trainer** can install the reviewed trainer software or verify an existing installation. **Other Setup Options** includes offline packs, repair, activation and rollback. Saved operations appear when work is available to review, resume or cancel. Installing software, activating it and starting training require separate reviews.
+
 Find interrupted Training packages from **Training > Review Interrupted Training Package**. Use **Choose Package Location** to list packages by name, or **Browse Exact Receipt** for advanced selection. Search shows elapsed activity and **Cancel Safely**;review leaves package files unchanged.
 
-Manager a.0.7.7 checks GitHub for newer compatible signed Reader and Organizer releases. Ordinary module updates no longer require a new Manager build. Review and confirm each installation in Applications. Generate and Training remain in Manager.
+Manager a.0.7.8 checks GitHub for newer compatible signed Reader and Organizer releases. Ordinary module updates no longer require a new Manager build. Review and confirm each installation in Applications. Generate and Training remain in Manager.
 
 Training Package Review now shows the target, image counts and next preparation
 action. It distinguishes package verification from unchecked trainer readiness
@@ -29,7 +31,7 @@ and **Recover Saved List**. Forget removes only the saved-list entry; reviews,
 checkpoints, outputs and registrations remain in place. Recovery finishes the
 original pending list transaction within the active Manager session.
 
-Manager a.0.7.7 saves your theme, color-blind colors and tooltip choices in **Settings**, and restores them at the next launch. **Current build** identifies the bundled Python/Qt runtime and package version. The complete Windows ZIP also includes the launcher startup-record retry; a component-only update keeps the existing launcher.
+Manager a.0.7.8 saves your theme, color-blind colors and tooltip choices in **Settings**, and restores them at the next launch. **Current build** identifies the bundled Python/Qt runtime and package version. The complete Windows ZIP also includes the launcher startup-record retry; a component-only update keeps the existing launcher.
 
 ## Workspaces
 
