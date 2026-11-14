@@ -3198,6 +3198,7 @@ def _normal_native_api():
     api = _api()
     signatures = {
         "GetCurrentProcess": ([], W.HANDLE),
+        "CreateFileW": ([W.LPCWSTR,W.DWORD,W.DWORD,W.LPVOID,W.DWORD,W.DWORD,W.HANDLE],W.HANDLE),
         "GetProcessId": ([W.HANDLE], W.DWORD),
         "DuplicateHandle": ([W.HANDLE,W.HANDLE,W.HANDLE,ctypes.POINTER(W.HANDLE),W.DWORD,W.BOOL,W.DWORD],W.BOOL),
         "QueryFullProcessImageNameW": ([W.HANDLE,W.DWORD,W.LPWSTR,ctypes.POINTER(W.DWORD)],W.BOOL),
@@ -3338,6 +3339,77 @@ class NativeChannelProof:
     source: str = "original_inherited_native_handles"
 
 
+class _RetainedChannelImage:
+    """Hash one write-denied image handle for this original channel lifetime.
+
+    Every use still queries process birth/image and compares the named file to
+    the retained file. Rename/delete sharing preserves normal updater recovery;
+    write sharing is deliberately absent, so cached bytes cannot change in place.
+    This object is never serialized or accepted from a peer.
+    """
+    def __init__(self, api, process_handle, epoch):
+        import msvcrt
+        from ctypes import wintypes as W
+        self.api, self.process_handle, self.epoch = api, process_handle, epoch
+        self.stream = None
+        self.path, self.pid, self.birth = self._process()
+        _assert_unredirected(self.path)
+        handle = api.CreateFileW(str(self.path), 0x80000000, 1 | 4, None, 3, 0x80, None)
+        if handle in (None, 0, ctypes.c_void_p(-1).value):
+            raise LaunchHold('control_image_read_lease_failed') from ctypes.WinError(ctypes.get_last_error())
+        try:
+            fd = msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+        except BaseException:
+            api.CloseHandle(handle)
+            raise
+        try:
+            self.stream = os.fdopen(fd, 'rb')
+        except BaseException:
+            os.close(fd)
+            raise
+        try:
+            self.file_identity = self._file_identity(os.fstat(self.stream.fileno()))
+            if self.file_identity[2] > 256 * 1024 * 1024:
+                raise LaunchHold('owned_native_image_bound')
+            digest = hashlib.sha256()
+            for chunk in iter(lambda: self.stream.read(1024 * 1024), b''):
+                digest.update(chunk)
+            self.digest = digest.hexdigest()
+            self.identity(api, process_handle, epoch)
+        except BaseException:
+            self.stream.close()
+            raise
+
+    @staticmethod
+    def _file_identity(info):
+        return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns
+
+    def _process(self):
+        from ctypes import wintypes as W
+        from types import SimpleNamespace
+        pid = self.api.GetProcessId(self.process_handle)
+        if not pid:
+            raise LaunchHold('native_get_process_id_failed')
+        size = W.DWORD(32768)
+        image = ctypes.create_unicode_buffer(size.value)
+        if not self.api.QueryFullProcessImageNameW(self.process_handle, 0, image, ctypes.byref(size)):
+            raise LaunchHold('native_image_query_failed')
+        return Path(image.value), pid, _creation(SimpleNamespace(_handle=self.process_handle))
+
+    def identity(self, api, process_handle, epoch):
+        if (api is not self.api or process_handle != self.process_handle or epoch != self.epoch
+                or self.stream.closed or self._process() != (self.path, self.pid, self.birth)):
+            raise LaunchHold('original_control_image_process_changed')
+        _assert_unredirected(self.path)
+        if (self._file_identity(self.path.stat()) != self.file_identity
+                or self._file_identity(os.fstat(self.stream.fileno())) != self.file_identity):
+            raise LaunchHold('original_control_image_file_changed')
+        return dict(pid=self.pid, creation_filetime=self.birth, executable_sha256=self.digest)
+
+    def close(self):
+        self.stream.close()
+
+
 class WindowsControlChannel:
     """Two explicit anonymous pipes; entry owns schema/sequence/RPC admission."""
     def __init__(self, api, reader, writer, peer_handle, *, transport=None, owns_peer=False, epoch=None):
@@ -3349,6 +3421,7 @@ class WindowsControlChannel:
         self.write_fault = None
         self.read_fault = None
         self._read_progress = 0
+        self._image_witnesses = {}
 
     @staticmethod
     def _bounded(raw):
@@ -3434,8 +3507,18 @@ class WindowsControlChannel:
         self._bounded(raw)
         return raw
 
-    def local_witness(self): return _native_witness(self.api,self.api.GetCurrentProcess())
-    def peer_witness(self): return _native_witness(self.api,self.peer_handle)
+    @_serialized
+    def _image_witness(self, role, handle):
+        if self.reader is None or self.writer is None:
+            raise LaunchHold('live_original_control_channel_required')
+        image = self._image_witnesses.get(role)
+        if image is None:
+            image = _RetainedChannelImage(self.api, handle, self.epoch)
+            self._image_witnesses[role] = image
+        return image.identity(self.api, handle, self.epoch)
+
+    def local_witness(self): return self._image_witness('local', self.api.GetCurrentProcess())
+    def peer_witness(self): return self._image_witness('peer', self.peer_handle)
 
     @_serialized
     def qualify_binding(self, document, admitted, *, expected_peer_image_sha256):
@@ -3534,6 +3617,9 @@ class WindowsControlChannel:
 
     @_serialized
     def close(self):
+        for role, image in tuple(getattr(self, "_image_witnesses", {}).items()):
+            image.close()
+            del self._image_witnesses[role]
         for name in ("reader","writer"):
             fd = getattr(self,name)
             if fd is not None: os.close(fd); setattr(self,name,None)

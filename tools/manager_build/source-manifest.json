@@ -993,8 +993,8 @@
     },
     {
       "path": "core/manager_launch_owner.py",
-      "bytes": 267507,
-      "sha256": "4cddf66dd8ce1e98ac518640889a3598747b461d3d3805ad423f00f302386049"
+      "bytes": 271617,
+      "sha256": "0ce690a9e7c3bbbcabff38e0f2a534d40d66ed127a113b68e0c09c3ed44da87e"
     },
     {
       "path": "core/manager_llamacpp_provider.py",
@@ -3663,13 +3663,13 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 44468,
-      "sha256": "4ea53e71c8800ddd2bb4be40809e744233c0ee9c2ab67dbf1885187f33b9d8cb"
+      "bytes": 44469,
+      "sha256": "2e68d90e5f409530e1e80bafdf3cfcd5dde5cfc5d035c953d4d39c3e8843b88c"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
-      "bytes": 246,
-      "sha256": "a489744c36c5f178f57ce78b78930123eee5ef9ac4f3d17d078b06801a85511e"
+      "bytes": 249,
+      "sha256": "41ccbd20bbd5f7b2abd19c33d58a8f69a177424cb29ee3af36e6c18ffb48a32d"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -4008,8 +4008,8 @@
     },
     {
       "path": "suite_core/manager/version.py",
-      "bytes": 274,
-      "sha256": "f61f648965b65d0cb802b3e19a536c85b17abe2b6c08dff97b44b4a6537fde89"
+      "bytes": 277,
+      "sha256": "cb94c05be8fdeed5ef8b3d7a5380309714072624e4168bb223740dc9591dfbe1"
     },
     {
       "path": "suite_core/manager/window.py",
@@ -4841,7 +4841,15 @@
       "bytes": 1017,
       "sha256": "10134b91d387b32c345f6af0f18941ee2abbad27a3b751a2ce3bbe807d5d9407"
     },
-    {"path": "core/manager_trainer_setup.py", "bytes": 6353, "sha256": "936c99e486b94c69c63358c81865d8e70a8951e2f7cbe217f7d68500d88b6e66"},
-    {"path": "suite_core/manager/trainer_setup_ui.py", "bytes": 12056, "sha256": "4be385405a21ce3c96cdb29c4ff0f579b105b24538108ae3f572d92140d5dbd8"}
+    {
+      "path": "core/manager_trainer_setup.py",
+      "bytes": 6353,
+      "sha256": "936c99e486b94c69c63358c81865d8e70a8951e2f7cbe217f7d68500d88b6e66"
+    },
+    {
+      "path": "suite_core/manager/trainer_setup_ui.py",
+      "bytes": 12056,
+      "sha256": "4be385405a21ce3c96cdb29c4ff0f579b105b24538108ae3f572d92140d5dbd8"
+    }
   ]
 }

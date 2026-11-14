@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 1211,
+  "allowlisted_source_file_count": 1217,
   "component_ids": [
     "collectigen.suite-manager"
   ],
@@ -858,8 +858,8 @@
       "size_bytes": 7431
     },
     "core/manager_launch_owner.py": {
-      "sha256": "4cddf66dd8ce1e98ac518640889a3598747b461d3d3805ad423f00f302386049",
-      "size_bytes": 267507
+      "sha256": "0ce690a9e7c3bbbcabff38e0f2a534d40d66ed127a113b68e0c09c3ed44da87e",
+      "size_bytes": 271617
     },
     "core/manager_llamacpp_provider.py": {
       "sha256": "c49337020d7ee8e858a84aea638a2c20d266334e02902e7959ab3f57cf4e147a",
@@ -3202,20 +3202,20 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "4ea53e71c8800ddd2bb4be40809e744233c0ee9c2ab67dbf1885187f33b9d8cb",
-      "size_bytes": 44468
+      "sha256": "2e68d90e5f409530e1e80bafdf3cfcd5dde5cfc5d035c953d4d39c3e8843b88c",
+      "size_bytes": 44469
     },
     "suite_core/manager/README.md": {
       "sha256": "03a212d6564f1f68c3a867e6f4eef20790df07a7d95f36e91f09d83cb3f3d1b6",
       "size_bytes": 7277
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
-      "sha256": "fe9628dffb4bcccac5bb637786f9f84b9d7c86ab0b6aedd3e98371a5c9474453",
-      "size_bytes": 15616
+      "sha256": "0deb389dbceae98b867ccc49c7d215390357e3ecfcb8c370f40eb97385f6e7ac",
+      "size_bytes": 16056
     },
     "suite_core/manager/RELEASE_PRESENTATION.json": {
-      "sha256": "a489744c36c5f178f57ce78b78930123eee5ef9ac4f3d17d078b06801a85511e",
-      "size_bytes": 246
+      "sha256": "41ccbd20bbd5f7b2abd19c33d58a8f69a177424cb29ee3af36e6c18ffb48a32d",
+      "size_bytes": 249
     },
     "suite_core/manager/RESOURCE_DASHBOARD_INTEGRATION.md": {
       "sha256": "a152121008b069f04b573fac4d7fd589c1c2b575f2b0bb5e437a16527b7778e7",
@@ -3226,8 +3226,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "802e8627a29f1ce88429f83f06741db81a2a175a0ec748e838317fe5d5b55309",
-      "size_bytes": 35944
+      "sha256": "ff0aa0cbc6ad8f56cec6d23dde0ba1ad12a9d4a7f4643ec018a143fd9de059b1",
+      "size_bytes": 36610
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3510,8 +3510,8 @@
       "size_bytes": 15135
     },
     "suite_core/manager/version.py": {
-      "sha256": "f61f648965b65d0cb802b3e19a536c85b17abe2b6c08dff97b44b4a6537fde89",
-      "size_bytes": 274
+      "sha256": "cb94c05be8fdeed5ef8b3d7a5380309714072624e4168bb223740dc9591dfbe1",
+      "size_bytes": 277
     },
     "suite_core/manager/window.py": {
       "sha256": "d7a97d9d8aa732176bb63ea98f4055254ab0e30ef540bddabeffba22424de395",
@@ -4174,8 +4174,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "f4d64fa9128ef5e8990653c437b8f125fc5b6fd7898476732d454801f0940a46",
-      "size_bytes": 41125
+      "sha256": "858ddf5eb06f7e8e8b1b3f936e4747a486680212122bd4a6448a462eeefdad40",
+      "size_bytes": 41283
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",
@@ -4198,7 +4198,7 @@
       "size_bytes": 18369
     },
     "tools/encyclopedia_build/source-manifest.json": {
-      "sha256": "c98b6544753d291a79612cbcf29933223964f80967101bfedfb59c57c429bdc8",
+      "sha256": "7d858f049e4c0a4eae06476669bc64e2690f553d7f3d62ee721f8438649641a3",
       "size_bytes": 69146
     },
     "tools/manager_build/CollectiGen.spec": {
@@ -4222,8 +4222,8 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "4d1ffa2b267563a1cdf5fd4b67caed07a4b82762510fdefe3adf0313c7403799",
-      "size_bytes": 165434
+      "sha256": "9f61ab01722d28d5ed05de85e817f44356bcfb937e69e1289459ce9f419f2d09",
+      "size_bytes": 165482
     },
     "tools/manager_build/tool-inputs.json": {
       "sha256": "e2c3f13d1cea4b42c2a65ae94379fd8d01658a38f81d1b4e869ce5d208c4480f",
@@ -4250,8 +4250,8 @@
       "size_bytes": 28930
     },
     "tools/public-source-manifest.json": {
-      "sha256": "f88f119954f4d761f40eefe3d6ad92686dbaa7193f270436a9c6942a8c6da8df",
-      "size_bytes": 40949
+      "sha256": "086bcfb26618570324ccfaa0c359c29cbe4c432f1245ef395ccf48b8dbe4b146",
+      "size_bytes": 41107
     },
     "tools/public_source.py": {
       "sha256": "d9e968c7bac07a44cdabf74f92bf865edef4260093f620ffa594de989e41ba18",
@@ -4860,6 +4860,18 @@
     "version.py": {
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48",
       "size_bytes": 324
+    },
+    "docs/MANAGER_CHANNEL_IMAGE_REUSE.md": {
+      "sha256": "5f63e4eb1fce474c3e65dd62d26f94347ee756c72c7c3593dce58d2babebfe20",
+      "size_bytes": 1417
+    },
+    "docs/releases/collectigen.suite-manager-v0.7.10-alpha.1.md": {
+      "sha256": "79d1cf3047ff8a1d5cc530cefaee2ae4c6ab4da681a7da00f1919e65873c39ec",
+      "size_bytes": 665
+    },
+    "tests/test_manager_channel_image_reuse.py": {
+      "sha256": "5022b333c11571424488c116d3b25e6265105953afe69c35749bf1bcea63f850",
+      "size_bytes": 4504
     }
   },
   "fresh_history_required": true,
