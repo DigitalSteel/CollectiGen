@@ -2094,8 +2094,8 @@
       "size_bytes": 18258
     },
     "qt_app/dataset_page.py": {
-      "sha256": "991b5069dfe0da618eda2631b6d31b7c2623cdf63383c46d912fa0411fd8754c",
-      "size_bytes": 503474
+      "sha256": "21bd83a6b5c053d34a46c5740aa0ee7b8de6011a7c4c2aee90ab45d3b2bd6e2e",
+      "size_bytes": 503524
     },
     "qt_app/dataset_preparation_queue.py": {
       "sha256": "0978e5838b13bf1872a93b671af7021183a4ce79db32ea554d299c0c9ca4afff",
@@ -3222,20 +3222,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "0b15d1ac614a3d53603898eba28d9d434f412cfa04752300b594154b30ed77e6",
-      "size_bytes": 5298
+      "sha256": "2ca13dd81ba1766e5f3ab10c0c79de64c1d89de178c583135d2abc8270ff54f9",
+      "size_bytes": 5308
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "6418e1e36397a7a241c009f0f5a670fc4c557c5c283df809aff42317ef5d997a",
-      "size_bytes": 18412
+      "sha256": "be499e4e431b285325324270797d5ed9d4dbb358f9124e7d653b13cf2d58ae8b",
+      "size_bytes": 18868
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
-      "sha256": "23a7ab0b8fdbf77cf7f8838940be5662d247cdd81ab27ff76bea7946bb732384",
+      "sha256": "f393ac992fbf476bc623f1810ef1e01ffb7d676c0ccf4c89120882dab663f4f9",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "b052dc2e157bf5b0772837641cc180e0f1c2cf3e7daf008f3a41b201713010d2",
-      "size_bytes": 31082
+      "sha256": "ad3a2597e0f0940fcaf89236b2c1d044c82ff78d1b18eb20c35870a617c9b904",
+      "size_bytes": 31682
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3294,7 +3294,7 @@
       "size_bytes": 3136
     },
     "suite_core/media_organizer/version.py": {
-      "sha256": "4919e2e0aaa511544d9dfae48472f17a77f0b578914bdfcaf3a656aaaae0e593",
+      "sha256": "9ff2a438f823e48c1b4d1aabd7b811391fc62b7e1ad167bf7a118524dc7e48a7",
       "size_bytes": 264
     },
     "suite_core/registry/__init__.py": {
@@ -3452,6 +3452,14 @@
     "version.py": {
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48",
       "size_bytes": 324
+    },
+    "tests/test_dataset_inspector_selection.py": {
+      "sha256": "dde1600735708aac27aa1267454836ef31d313930534f76b9668bab8969d0724",
+      "size_bytes": 2545
+    },
+    "docs/releases/collectigen.media-organizer-v0.5.7-alpha.1.md": {
+      "sha256": "55acd83cb15201a9ae142a159171c8b4af981cc2f9fd19883e67f01e640879fc",
+      "size_bytes": 599
     }
   },
   "fresh_history_required": true,

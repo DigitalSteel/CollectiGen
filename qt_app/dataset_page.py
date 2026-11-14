@@ -4197,6 +4197,7 @@ class DatasetPage(QWidget):
             self.browser.show()
             self.inspector.setVisible(
                 self._summary_visible and has_library and not full_workflow
+                and self.current_path is not None
                 and getattr(self,"_has_dataset_images",False)
             )
         self.inspect_current_button.setVisible(
