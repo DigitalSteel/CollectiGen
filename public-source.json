@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 859,
+  "allowlisted_source_file_count": 866,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -1118,8 +1118,8 @@
       "size_bytes": 7951
     },
     "core/projection_rule_repair.py": {
-      "sha256": "74d233b6a94d958641e6d94d2dae0ce04f5e7f658c0d1e7b6c1cf72b53cfc804",
-      "size_bytes": 30788
+      "sha256": "b1d8c9366f166855233d7c4f1203ab8cf7c633a652d22f3c2093caf639b0850a",
+      "size_bytes": 31215
     },
     "core/record_layout.py": {
       "sha256": "f1825b2ca3cb8c1839161a3a307fbcbf3b2fb24b9b42fd8755a1c81e3b5051ed",
@@ -3222,20 +3222,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "2ca13dd81ba1766e5f3ab10c0c79de64c1d89de178c583135d2abc8270ff54f9",
-      "size_bytes": 5308
+      "sha256": "4180b9a6fe5e08be9cfa27227d63405187696c3ff6d23a0e948b86bd44406062",
+      "size_bytes": 5341
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "be499e4e431b285325324270797d5ed9d4dbb358f9124e7d653b13cf2d58ae8b",
-      "size_bytes": 18868
+      "sha256": "2c786b380ba08c28836772cf564b78018cb343c86e3bc6de55c9be433351fe35",
+      "size_bytes": 19341
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
-      "sha256": "f393ac992fbf476bc623f1810ef1e01ffb7d676c0ccf4c89120882dab663f4f9",
+      "sha256": "f9d553387e311b974ac23d8772c4372d9c93f10b70add71ad792b43f314e447d",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "ad3a2597e0f0940fcaf89236b2c1d044c82ff78d1b18eb20c35870a617c9b904",
-      "size_bytes": 31682
+      "sha256": "6d53f784e1758bea044e570ddc3b238f676f3512eb787eb8be17f46dcc009f68",
+      "size_bytes": 32369
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3294,7 +3294,7 @@
       "size_bytes": 3136
     },
     "suite_core/media_organizer/version.py": {
-      "sha256": "9ff2a438f823e48c1b4d1aabd7b811391fc62b7e1ad167bf7a118524dc7e48a7",
+      "sha256": "c28e94adf7c4f423777bbf4f477a38fbd9ce4c85c50e8216f70975f968a60ba0",
       "size_bytes": 264
     },
     "suite_core/registry/__init__.py": {
@@ -3460,6 +3460,14 @@
     "docs/releases/collectigen.media-organizer-v0.5.7-alpha.1.md": {
       "sha256": "55acd83cb15201a9ae142a159171c8b4af981cc2f9fd19883e67f01e640879fc",
       "size_bytes": 599
+    },
+    "tests/test_projection_rule_repair_optional_defaults.py": {
+      "sha256": "a473e53a48e7111705f7c44dbf0f957927da0c6ed9d2ca7252cb00546eae7cc8",
+      "size_bytes": 3520
+    },
+    "docs/releases/collectigen.media-organizer-v0.5.8-alpha.1.md": {
+      "sha256": "dc73d60ce14c33abed31bfc171d2899028427577edbb2aa44c65396a89cfcb76",
+      "size_bytes": 686
     }
   },
   "fresh_history_required": true,

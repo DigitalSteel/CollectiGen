@@ -1,7 +1,7 @@
-SOFTWARE_VERSION = "0.5.7-alpha.1"
-NUMERIC_VERSION = "0.5.7"
+SOFTWARE_VERSION = "0.5.8-alpha.1"
+NUMERIC_VERSION = "0.5.8"
 MATURITY = "alpha"
-DISPLAY_VERSION = "a.0.5.7"  # Inert metadata; canonical identity parity is checked separately.
+DISPLAY_VERSION = "a.0.5.8"  # Inert metadata; canonical identity parity is checked separately.
 INTERFACE_VERSION = 1
 RELEASE_DATE = "2026-11-14"
 RELEASE_TIMEZONE = "America/New_York"

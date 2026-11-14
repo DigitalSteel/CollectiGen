@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.5.8-alpha.1",
+      "numeric_version": "0.5.8",
+      "maturity": "alpha",
+      "date": "2026-11-14",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "Source checkpoint; exact final package/publication evidence recorded separately",
+      "scope": "Related rule-repair review retains loaded absence of optional legacy defaults, with unchanged stale-source checks, writer and Restore ownership"
+    },
+    {
       "software_version": "0.5.7-alpha.1",
       "numeric_version": "0.5.7",
       "maturity": "alpha",

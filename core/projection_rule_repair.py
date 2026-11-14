@@ -72,7 +72,7 @@ class ProjectionRuleRepairCandidate:
 @dataclass(frozen=True)
 class _RepairAuthority:
     path: str
-    source: bytes
+    source: bytes | None
     payload: str
 
 
@@ -220,14 +220,22 @@ class ProjectionRuleRepairService:
             if error:
                 raise RuntimeError(error)
             try:
-                source = store.path.read_bytes()
-                decoded = json.loads(source.decode("utf-8"))
+                try:
+                    source = store.path.read_bytes()
+                except FileNotFoundError:
+                    if store is not self.repository.defaults:
+                        raise
+                    # The repository permits an absent optional legacy layer.
+                    # Retain that absence as review proof, including stale checks.
+                    source = None
+                if source is not None:
+                    decoded = json.loads(source.decode("utf-8"))
             except (OSError, UnicodeDecodeError, ValueError) as exc:
                 raise RuntimeError(
                     "Rules or supporting knowledge are unavailable or invalid. "
                     "Restore access, then reload and review the current rules."
                 ) from exc
-            if not isinstance(decoded, dict):
+            if source is not None and not isinstance(decoded, dict):
                 raise RuntimeError(
                     "Rules or supporting knowledge are invalid. "
                     "Reload and review the current rules before retrying."
