@@ -4174,8 +4174,8 @@
       "size_bytes": 5645
     },
     "tools/component-source-manifest.json": {
-      "sha256": "858ddf5eb06f7e8e8b1b3f936e4747a486680212122bd4a6448a462eeefdad40",
-      "size_bytes": 41283
+      "sha256": "5673592f4aee904be904633838a91b9e4a57f48bfdbae5104e702094a64fe866",
+      "size_bytes": 51327
     },
     "tools/encyclopedia_build/README.md": {
       "sha256": "c24e0ce0e3cfbdb8722ba361607617fc77c62e97b54fd511cd8cb0c4376bb6de",
@@ -4250,8 +4250,8 @@
       "size_bytes": 28930
     },
     "tools/public-source-manifest.json": {
-      "sha256": "086bcfb26618570324ccfaa0c359c29cbe4c432f1245ef395ccf48b8dbe4b146",
-      "size_bytes": 41107
+      "sha256": "44610c9c39d26d3ee67cd188bb9f00c69a05d139af912e5d8e527c72b85b918a",
+      "size_bytes": 51200
     },
     "tools/public_source.py": {
       "sha256": "d9e968c7bac07a44cdabf74f92bf865edef4260093f620ffa594de989e41ba18",
