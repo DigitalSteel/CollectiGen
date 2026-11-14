@@ -2633,8 +2633,8 @@
     },
     {
       "path": "qt_app/generation_dialog.py",
-      "bytes": 287444,
-      "sha256": "fb25b044d004864eba01701b2c540b16d3dae3a73ae6605f31bdfde96cd475a2"
+      "bytes": 289791,
+      "sha256": "20a8de5b1f01d4a4c8947593e289c3b17af4487948a73902ba012410958c7152"
     },
     {
       "path": "qt_app/generation_experiment_dialog.py",
@@ -2683,8 +2683,8 @@
     },
     {
       "path": "qt_app/generation_saved_work_dialog.py",
-      "bytes": 38814,
-      "sha256": "17fd6c0e9e0d42a9b114b0d70ccc90c324330c4594e0b3644a1e7661d4890fcd"
+      "bytes": 39376,
+      "sha256": "749de2d3ce484eb15d4a8173d3279decf20ff31c05c162bb951954c957278ca5"
     },
     {
       "path": "qt_app/generation_setup_save.py",
@@ -2698,8 +2698,8 @@
     },
     {
       "path": "qt_app/generation_workflow.py",
-      "bytes": 44654,
-      "sha256": "42f5e110d097d715d643e9c9eb917c5f4ab568d41d86e17dbfa804ac7cc489dd"
+      "bytes": 45139,
+      "sha256": "d1556fc7aafa49e49201fc339d57e45a6425717b80f6203c321000a635c700ca"
     },
     {
       "path": "qt_app/guided_review_dialog.py",
@@ -3663,8 +3663,8 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 44122,
-      "sha256": "8cc8337fe97c1c540bdc2cc72b4dc608ed2d4e6cfc3fd52766a7bc5299b3c508"
+      "bytes": 44163,
+      "sha256": "adcef7b2819b17db4e12b23aefadd77b048a8a9c8d6f16d0bed87ba235ca2605"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -4013,8 +4013,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 296263,
-      "sha256": "5560d97debd6a6ae22fe88c464d8d3662031a76cca157dc518730a7209353d25"
+      "bytes": 296796,
+      "sha256": "0d3957c84d0aaae1f2cf3965e78fca1c2b064c623d691a5f30eac4a9d7bb6548"
     },
     {
       "path": "suite_core/media_examples.py",
@@ -4805,6 +4805,11 @@
       "path": "version.py",
       "bytes": 324,
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48"
+    },
+    {
+      "path": "core/generation_prompt_catalog.py",
+      "bytes": 6346,
+      "sha256": "d9955b90889cdbf19a9398003868c634b92ce4ad002016f5eb5276a2b71070f0"
     }
   ]
 }

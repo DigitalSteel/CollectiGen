@@ -119,7 +119,7 @@ class SavedGenerationWorkDialog(QDialog):
 
     def __init__(self, jobs, storage_root, kind, parent=None, *, settings=None,
                  settings_path=None, registry=None, protected_model_roots=(),
-                 selection_only=False, allow_draft_transfer=False, allow_setup_transfer=False,
+                 selection_only=False, allow_draft_transfer=False, allow_setup_transfer=False, prompt_catalog=False,
                  file_transfer_allowed=None):
         super().__init__(parent)
         if kind not in {"groups", "recipes", "drafts", "prompt_presets"}:
@@ -165,6 +165,13 @@ class SavedGenerationWorkDialog(QDialog):
             "These are local saved items. Open one to review it; no generation starts here. "
             "Import and Export work on one explicitly chosen file at a time."
         )
+        if prompt_catalog:
+            self.setWindowTitle("Use Organizer Prompt Catalog")
+            heading.setText("Start an image with your Organizer prompt choices")
+            explanation.setText(
+                "In Organizer, choose Knowledge Actions > Export Prompt Catalog for Generate. "
+                "Use Import File here, then choose the imported draft. A local copy opens as a new image draft; "
+                "your other drafts and the exported file stay unchanged. No generation starts here.")
         explanation.setWordWrap(True); layout.addWidget(explanation)
         self.swarm_setup_button = QPushButton("Create from SwarmUI Preset…")
         self.swarm_setup_button.setVisible(kind == "recipes" and (not self.selection_only or self._allow_setup_transfer))
@@ -221,7 +228,7 @@ class SavedGenerationWorkDialog(QDialog):
         self.create_setup_button = QPushButton("Create Setup…")
         if self.selection_only and kind == "drafts":
             self.create_setup_button.setText("Start New Image…")
-        self.create_setup_button.setVisible(self.selection_only)
+        self.create_setup_button.setVisible(self.selection_only and not prompt_catalog)
         self.create_setup_button.clicked.connect(self.create_setup)
         self.recovery_button = QPushButton("Review Recovery…")
         self.recovery_button.setVisible(kind == "prompt_presets")

@@ -159,6 +159,7 @@ class GenerationDialog(FeedbackEnabledDialog):
         initial_fragments = tuple(_fragment(item) for item in knowledge_fragments)
         self.characters = tuple(_mapping(item) for item in characters)
         self.outfits = tuple(_mapping(item) for item in outfits)
+        self._native_prompt_catalog = (self.prompt_knowledge, self.characters, self.outfits)
         self._outfit_scope_cache: dict[str, dict[str, Any]] = {}
         self.plan = GenerationPlan.create(
             self.source_record, intent="reproduce" if source_record else "new",
@@ -1177,6 +1178,34 @@ class GenerationDialog(FeedbackEnabledDialog):
         self.size_width.valueChanged.connect(self._edit); self.size_height.valueChanged.connect(self._edit); self.steps.valueChanged.connect(self._edit)
         return page
 
+    def _adopt_prompt_catalog(self, catalog):
+        """Use detached prompt choices; never import them into native Knowledge."""
+        had_characters = bool(self.characters)
+        if catalog is None:
+            self.prompt_knowledge, self.characters, self.outfits = self._native_prompt_catalog
+        else:
+            self.prompt_knowledge = catalog
+            self.characters, self.outfits = catalog.characters, catalog.outfits
+        self._outfit_scope_cache.clear()
+        selected = self.wearer_choice.currentData()
+        self.wearer_choice.blockSignals(True)
+        try:
+            self.wearer_choice.clear()
+            self.wearer_choice.addItem("Choose a character", "")
+            for character in self.characters:
+                identity = str(character.get("id") or character.get("character_id") or "")
+                self.wearer_choice.addItem(str(character.get("name") or character.get("label") or identity), identity)
+            self.wearer_choice.setCurrentIndex(max(0, self.wearer_choice.findData(selected)))
+        finally:
+            self.wearer_choice.blockSignals(False)
+        if not self.characters:
+            self.outfit_scope_choice.setCurrentIndex(self.outfit_scope_choice.findData("generic"))
+        elif not had_characters:
+            self.outfit_scope_choice.setCurrentIndex(self.outfit_scope_choice.findData("associated"))
+        if catalog is not None and self.outfits:
+            self.advanced_tasks.setCurrentIndex(0)
+        self._refresh_prompt_tags()
+
     def _refresh_prompt_tags(self) -> None:
         while self.prompt_tag_grid.count():
             item = self.prompt_tag_grid.takeAt(0)
@@ -1184,7 +1213,12 @@ class GenerationDialog(FeedbackEnabledDialog):
                 item.widget().deleteLater()
         query = self.prompt_tag_search.text().strip().casefold()
         knowledge = self.prompt_knowledge
-        if len(query) < 2 or knowledge is None:
+        if knowledge is None:
+            self.prompt_tag_status.setText(
+                "No prompt catalog is attached. In Organizer, choose Knowledge Actions > Export Prompt Catalog for Generate. "
+                "In Manager Generate, choose Use Organizer Prompt Catalog. Manual prompts remain available.")
+            return
+        if len(query) < 2:
             self.prompt_tag_status.setText("Type at least two characters to search the shared Tag vocabulary. Suggestions do not change Image Knowledge.")
             return
         matches = []
@@ -4094,6 +4128,8 @@ class GenerationDialog(FeedbackEnabledDialog):
             checked, digest = load_plan_with_digest(target)
             if checked.digest != plan.digest:
                 raise ValueError("The draft changed while loading. Open it again before editing.")
+        from core.generation_prompt_catalog import catalog_from_plan
+        catalog = catalog_from_plan(plan)  # Refuse malformed imported choices before replacing the open draft.
         if not self.runtime_allowed:
             self.source_record = None
             self.source_identity = deepcopy(plan.source_identity)
@@ -4105,6 +4141,7 @@ class GenerationDialog(FeedbackEnabledDialog):
             self._primary_current_provider = None
             self._additional_references = []
         self.plan = plan; self.prepared = None; self.binding = None; self.receipt = None; self.adapter = None
+        self._adopt_prompt_catalog(catalog)
         self._sync_advanced_json_from_plan(force=True)
         self._output_preview = self._output_preview_plan = None
         self.remix_source = any(item.kind == "init_image" for stage in plan.request.stages for item in stage.inputs)
@@ -4113,7 +4150,9 @@ class GenerationDialog(FeedbackEnabledDialog):
         self._draft_saved_digest = plan.digest
         self._draft_save_error = False
         self.draft_status.setText("Saved draft loaded · changes will be saved locally for Resume Image Draft.")
-        self._generation += 1; self._refresh_from_plan("Loaded plan. Review and prepare it again before submitting.")
+        message = (f"Loaded prompt catalog: {catalog.summary}. Choose text on Request or Outfits in Advanced; Knowledge editing stays in Organizer."
+                   if catalog is not None else "Loaded plan. Review and prepare it again before submitting.")
+        self._generation += 1; self._refresh_from_plan(message)
         return self.plan
 
     def load_from(self, path: str | Path):

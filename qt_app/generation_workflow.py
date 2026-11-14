@@ -387,7 +387,7 @@ def _apply_finishing_draft(target, value):
     target._refresh_from_plan("Winner opened for refinement at its source size. Review the final size, then preview and apply its output stages.")
 
 
-def choose_generation_draft(parent, *, allow_draft_transfer=False, selection_allowed=None):
+def choose_generation_draft(parent, *, allow_draft_transfer=False, selection_allowed=None, prompt_catalog_only=False):
     """Choose and validate a saved request before adding a Generate workspace."""
     from core.generation_planning import load_plan_with_digest
     from .generation_saved_work_dialog import SavedGenerationWorkDialog
@@ -397,6 +397,7 @@ def choose_generation_draft(parent, *, allow_draft_transfer=False, selection_all
         host.state.jobs, _generation_data_root(host) / "generation", "drafts",
         parent=parent, selection_only=True, allow_draft_transfer=allow_draft_transfer,
         file_transfer_allowed=selection_allowed,
+        prompt_catalog=prompt_catalog_only,
     )
     try:
         if browser.exec() != QDialog.Accepted:
@@ -416,6 +417,10 @@ def choose_generation_draft(parent, *, allow_draft_transfer=False, selection_all
     target = Path(selected_path).absolute()
     try:
         plan, token = load_plan_with_digest(target)
+        if prompt_catalog_only:
+            from core.generation_prompt_catalog import catalog_from_plan
+            if catalog_from_plan(plan) is None:
+                raise ValueError("Choose an Organizer prompt catalog, or a saved image draft that includes one.")
         if not selected_digest or token != selected_digest:
             raise ValueError("This saved draft changed since the list was shown. Refresh and choose it again.")
     except (OSError, ValueError, RuntimeError, TypeError, KeyError) as exc:
@@ -628,6 +633,8 @@ def open_generation_workspace(parent, *, paths=(), record=None, resource_id="", 
                 dialog._refresh_from_plan("Repair candidate from Problems. Choose how much to change and describe the correction in the prompt. "
                                           "Generated candidates return to Ingest unreviewed; the original stays in Problems.")
         if initial_plan is not None:
+            from core.generation_prompt_catalog import catalog_from_plan
+            dialog._adopt_prompt_catalog(catalog_from_plan(initial_plan))
             dialog.plan = initial_plan
             dialog.remix_source = any(item.kind in {"init_image", "reference_image", "control_image"} for stage in initial_plan.request.stages for item in stage.inputs)
             if (source_context or {}).get("additional_references"):

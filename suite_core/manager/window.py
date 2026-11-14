@@ -619,6 +619,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             generation_history = compact_action(QPushButton("Review Generation Jobs…"))
             generation_history.clicked.connect(self.review_generation_jobs)
             generation_layout.addWidget(generation_history, 0, Qt.AlignLeft)
+            self.prompt_catalog_button = compact_action(QPushButton("Use Organizer Prompt Catalog…"))
+            self.prompt_catalog_button.setToolTip("Import read-only Tag, Character and Outfit prompt choices exported from Organizer Knowledge Actions.")
+            self.prompt_catalog_button.clicked.connect(lambda: self.open_generate_plan(prompt_catalog=True))
+            generation_layout.addWidget(self.prompt_catalog_button, 0, Qt.AlignLeft)
             self._verified_result_remix = None
             self.verified_result_remix_button = compact_action(QPushButton("Plan Remix from Verified Result…"))
             self.verified_result_remix_button.hide()
@@ -1564,7 +1568,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self._generation_dialog = self.generation_page.retained_workspace("image")
             self._video_generation_dialog = self.generation_page.retained_workspace("video")
 
-        def open_generate_plan(self):
+        def open_generate_plan(self, *, prompt_catalog=False):
             if self._image_draft_picker_open:
                 return
             state = self.generation_state()
@@ -1577,6 +1581,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 choose_generation_draft(
                     self, allow_draft_transfer=True,
                     selection_allowed=lambda: self.generation_state() is state,
+                    prompt_catalog_only=prompt_catalog,
                 )
             finally:
                 self._image_draft_picker_open = False

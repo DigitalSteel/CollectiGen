@@ -1,3 +1,7 @@
+# Unreleased
+
+- Generate can import a read-only Organizer prompt catalog through the existing image-draft browser. Search exported Tag names/aliases and browse Character-associated, other and generic Outfit text; save/reopen retains those choices. Other drafts and the export stay unchanged. Paired Manager/Organizer package delivery is pending.
+
 # What's New - a.0.7.5 (embedded 0.7.5-alpha.1) - 2026-11-13
 
 - Settings can save your theme, color-blind status colors and tooltips, apply them now and remember them at the next launch. Other modules keep their own preferences.

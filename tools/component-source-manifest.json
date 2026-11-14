@@ -987,7 +987,11 @@
     "version.py",
     "tests/test_manager_workflow_navigation.py",
     "tests/test_manager_update_reply_deadline.py",
-    "tests/test_training_package_context_compatibility.py"
+    "tests/test_training_package_context_compatibility.py",
+    "core/generation_prompt_catalog.py",
+    "docs/GENERATION_PROMPT_CATALOG.md",
+    "tests/test_generation_prompt_catalog.py",
+    "tests/test_generation_prompt_catalog_ui.py"
   ],
   "reviewed_defaults": [],
   "required_provenance": []
