@@ -197,3 +197,15 @@ def test_entry_lost_release_ack_drops_only_cache_and_keeps_hold(channel, tmp_pat
     assert session.state=='held' and session.component_stage_outstanding is pending
     assert value._image_scope is None and value._image_witnesses=={}
     assert value.reader is not None and value.writer is not None
+
+
+def test_late_checkpoint_cannot_recreate_image_lease_after_release(channel, monkeypatch):
+    value, api, image=channel
+    value.local_witness()
+    late_check=lambda:value._image_witness('local',api.GetCurrentProcess())
+    value._end_image_scope('a'*32)
+    def forbidden(*args):raise AssertionError('Late checkpoint recreated a released lease')
+    monkeypatch.setattr(native,'_RetainedChannelImage',forbidden)
+    assert late_check()==native._native_witness(api,api.GetCurrentProcess())
+    assert value._image_witnesses=={}
+    image.write_bytes(b'no retained write-denial after release')

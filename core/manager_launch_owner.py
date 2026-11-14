@@ -3517,6 +3517,9 @@ class WindowsControlChannel:
 
     @_serialized
     def _image_witness(self, role, handle):
+        # Recheck under the channel lock if a caller raced scope disposal.
+        if self._image_scope is None:
+            return _native_witness(self.api, handle)
         if self.reader is None or self.writer is None:
             raise LaunchHold('live_original_control_channel_required')
         image = self._image_witnesses.get(role)

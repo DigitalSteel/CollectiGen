@@ -633,8 +633,8 @@
     },
     {
       "path": "core/manager_launch_owner.py",
-      "bytes": 273041,
-      "sha256": "3cd1d70911290f23e7008233b7a62bce745bff979fb3d623a582573f60588b99"
+      "bytes": 273210,
+      "sha256": "0835b831d78d43f6daf06e0f3c8522f7fcd7c91888151157455811c348efaadb"
     },
     {
       "path": "core/manager_llamacpp_provider.py",
