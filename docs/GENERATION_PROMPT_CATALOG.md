@@ -3,8 +3,8 @@
 Unreleased source work for GEN-06 / SUITE-10B; not included in Manager a.0.7.5
 or Organizer a.0.5.5. Package delivery remains pending.
 
-In Organizer, open Knowledge and choose **Knowledge Actions > Export Prompt
-Catalog for Generate**. Review the counts and scope, then save to a new filename.
+In Organizer, choose **Knowledge > Prompt Catalog**, then **Knowledge >
+Prompt Choices > Export Prompt Catalog for Generate**. Review the counts and scope, then save to a new filename.
 The export contains reusable Tag names/aliases, Character names and reviewed
 Outfit prompt text and associations. It contains no image files, image paths,
 model files or arbitrary native record fields. Nothing is uploaded.
@@ -34,3 +34,9 @@ Final source checks passed: 12 Manager cases and 11 Organizer cases, including
 shared generated core cases. Readable offscreen import/export, progress and error
 states were reviewed. These are source/component results, not packaged acceptance.
 Native packaged acceptance and full-suite parity are separate; no human-test hold.
+
+Organizer's Ribbon keeps this export visible under Knowledge > Prompt Choices.
+From Library, Ingest or Dataset, Knowledge > Prompt Catalog opens the native
+Tag Encyclopedia workspace first; then use Prompt Choices to review the export.
+The normal source menu remains the action owner. Opening this workspace does
+not launch the separate Reader or export anything automatically.

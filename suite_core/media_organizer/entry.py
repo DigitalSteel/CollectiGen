@@ -45,6 +45,19 @@ def make_window_type(base_window: type, *, current_application: Callable,
                 return replace(command, group="Dataset Plans", label=label)
             return command
 
+        def workspace_extra_commands(self, index):
+            from qt_app.command_bar import UiCommand
+            inherited = getattr(super(), "workspace_extra_commands", None)
+            commands = list(inherited(index)) if callable(inherited) else []
+            commands.append(UiCommand(
+                "organizer:prompt-catalog", "Prompt Catalog…", "Knowledge",
+                callback=lambda: self.navigation.setCurrentRow(4),
+                context="Tag Encyclopedia", reveal=True,
+                keywords=("generate", "prompt", "catalog", "export", "character", "outfit"),
+                description="Open reusable Knowledge choices. Choose Knowledge > Prompt Choices to export a local catalog for Suite Manager; nothing is exported yet.",
+            ))
+            return commands
+
         def _build_ui(self):
             # Context actions can open the shared floating image planner.
             # Organizer owns drafting, never generator execution.

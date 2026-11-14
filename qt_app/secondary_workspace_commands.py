@@ -49,6 +49,7 @@ def _knowledge_commands(page):
     specifications=(
         ("Discover Knowledge…","Knowledge",("Find New Knowledge…",)),
         ("Relationships…","Knowledge",("Manage Relationships…","Review Character Tag Links…")),
+        ("Prompt Choices…","Knowledge",("Export Prompt Catalog for Generate…",)),
         ("Maintenance…","Knowledge",("Restore Shipped Values…","Propose Local Changes as Future Defaults…","Review Removed Vocabulary…","Review Safe Fixes…")),
         ("Tag Colors…","View",("Manage Tag Colors…",)),
         ("Saved Views…","View",("Save Current View…","Delete Current Saved View…")),

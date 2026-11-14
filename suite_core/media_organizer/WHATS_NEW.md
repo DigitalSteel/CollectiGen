@@ -1,6 +1,6 @@
 # Media Organizer a.0.5.6
 
-- Export reusable Tag names and aliases plus Character and Outfit prompt choices from Knowledge Actions > Export Prompt Catalog for Generate.
+- Export reusable Tag names and aliases plus Character and Outfit prompt choices through Knowledge > Prompt Catalog, then Prompt Choices > Export Prompt Catalog for Generate.
 - Review exactly what will be shared, save a new local image draft, then choose Use Organizer Prompt Catalog in the matching Suite Manager update. Existing files are preserved; an active export settles before Close.
 - Image files, library paths, model paths and unreviewed Outfit text are excluded from the catalog.
 
