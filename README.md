@@ -1,14 +1,14 @@
 # CollectiGen Media Organizer
 
-**Media Organizer a.0.5.6** organizes images, preserves Image Knowledge and generation
+**Media Organizer a.0.5.7** organizes images, preserves Image Knowledge and generation
 lineage, and prepares Dataset captions and Training plans. Generate and Training
 execution belong to Suite Manager.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.6-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.6-alpha.1/MediaOrganizer-a.0.5.6-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.6-alpha.1/MediaOrganizer-a.0.5.6-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.7-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.7-alpha.1/MediaOrganizer-a.0.5.7-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.7-alpha.1/MediaOrganizer-a.0.5.7-windows-x64.zip.sha256)
 
-Export reusable Tag names/aliases, Characters and reviewed Outfit prompt choices with **Knowledge > Prompt Catalog**, then **Knowledge > Prompt Choices > Export Prompt Catalog for Generate**. Review and save a new export; import it in **Suite Manager a.0.7.6 > Generate > Use Organizer Prompt Catalog**. The export excludes images, library/model paths and unreviewed Outfit text. Existing rule repair, Undo and Copy recovery remain included.
+Export reusable Tag names/aliases, Characters and reviewed Outfit prompt choices with **Knowledge > Prompt Catalog**, then **Knowledge > Prompt Choices > Export Prompt Catalog for Generate**. Review and save a new export; import it in **Suite Manager a.0.7.6 or newer > Generate > Use Organizer Prompt Catalog**. The export excludes images, library/model paths and unreviewed Outfit text. Existing rule repair, Undo and Copy recovery remain included.
 
 ## Start
 
@@ -17,7 +17,7 @@ and run **Start_MediaOrganizer.bat**. Retain your previous package and separate
 profile, image and catalog backups. Windows may report an unknown publisher:
 CollectiGen signs update metadata, while the executable has no Authenticode signature.
 
-Use **Suite Manager a.0.7.4 > Applications > Get or update Media Organizer** to find the latest compatible signed release. Review the version and confirm installation. Module updates do not require rebuilding Manager.
+Use **Suite Manager > Applications > Get or update Media Organizer** to find the latest compatible signed release. Review the version and confirm installation. Module updates do not require rebuilding Manager.
 
 ## Work across components
 
@@ -31,7 +31,8 @@ Use **Suite Manager a.0.7.4 > Applications > Get or update Media Organizer** to 
   Organizer, then import them in Manager. Organizer does not start a generator
   or training runtime.
 
-Native Copy/recovery can now return to a previously used path while preserving exact file identity and family bytes. This update preserves Copy Undo after the first automatic initialization of a copied Manager result. It keeps a reviewed result available for explicit Retry after busy file work,
-limits verified result previews to Copy, and names the copied-family Recycle action.
+Copy and recovery preserve exact file identity and family bytes, retain reviewed Manager results for explicit Retry after busy file work, and provide the existing copied-family Recycle action.
 
-The packaged Ribbon catalog export, saved catalog readback, independent reopen and normal Close passed with a generated NetworkShared profile. Unchanged rule-recovery checks are retained from a.0.5.5; they were not repeated for the catalog update. Signed prior recovery artifacts remain authenticated. Actual installed update/rollback, real libraries, model execution and full suite parity are not claimed by this release.
+In a.0.5.7, saving an image that leaves the active Dataset preparation filter closes the inspector with the cleared selection. Choose the image in its new stage to reopen the ordinary editor; images remaining in the view retain their inspector.
+
+The exact package passed generated-image save, stage-change selection clearing, ordinary inspector/editor reopen and normal Close offscreen at 1920×1080. The saved description and PNG image stream were verified. Unchanged writer, history and recovery evidence is retained; signed prior a.0.5.6 is authenticated. Actual installed rollback, real libraries, model execution and full suite parity are not claimed.
