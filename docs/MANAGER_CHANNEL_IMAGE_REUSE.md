@@ -1,21 +1,28 @@
-# Original control-channel image reuse
+# Organizer transaction image-read reuse
 
-SUITE-10B3 fixes repeated full executable reads during component member checkpoints.
-The existing WindowsControlChannel now retains a read handle for each of its two
-original process images. It computes the digest once under that handle, which
-allows read and rename/delete sharing but denies concurrent writes. Each use
-still queries the retained process handle for its PID, birth and image path,
-rejects path/reparse/file identity changes, and requires the original API,
-process handle and channel epoch. No serialized cache or peer-supplied digest
-creates this authority. Normal channel Close closes both retained image streams
-before its original pipe and inherited peer handles.
+SUITE-10B3 avoids repeated executable reads during the existing authenticated
+Organizer component transaction. WindowsControlChannel defaults to its previous
+full native witnesses. Only a successful Organizer stage begin enables the
+cache, on Root after original stage admission and on Manager after its verified
+reply. Reader, successor, maintenance and unrelated channels do not opt in.
 
-This does not skip package signatures, inventory checks, transaction scopes,
-cancellation, owner leases or recovery. Named-file replacement refuses rather
-than reusing a digest from a different file. The existing independent full
-_native_witness remains unchanged for other native admission paths.
+During that stage, each original process image is hashed once under a retained
+read handle denying writes. Every use still checks actual process birth, image
+path, named-file identity, original API, retained process handle and channel
+epoch. The image handle is not serialized or accepted from a peer.
 
-Stock API evidence: [CreateFileW sharing modes](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew).
-Regression coverage: tests/test_manager_channel_image_reuse.py; component-stage
-and native admission suites remain direct consumers. Final package timing and
-signed delivery evidence are retained separately; source tests are not delivery.
+Release closes and clears BOTH image streams before Root removes its durable
+stage and permits maintenance. Manager drops its cache after validating release
+or on failed exchange; an uncertain request remains held. Cache disposal closes
+no original pipe, process, Job or owner lease and grants no update/recovery
+permission. A cache-close failure retains the original stage. Normal channel
+Close also disposes any remaining cache. Default full witnesses resume afterward.
+
+The previous channel-lifetime candidate was not published: source review found
+its root-side file leases could survive into stock apply/repair. Regression
+coverage requires actual Windows os.replace to work after scope release while
+the original channel remains open; rename-away alone is insufficient proof.
+
+Stock API: https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+Tests: tests/test_manager_channel_image_reuse.py and original component-stage
+ownership tests. Exact signed delivery and native evidence are recorded separately.

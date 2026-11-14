@@ -31,6 +31,7 @@ def channel(tmp_path):
     api = ImageApi(image)
     reader, writer = os.pipe()
     value = native.WindowsControlChannel(api, reader, writer, api.GetCurrentProcess(), epoch='original-epoch')
+    value._begin_image_scope('a' * 32)
     try:
         yield value, api, image
     finally:
@@ -61,8 +62,7 @@ def test_channel_lease_denies_byte_writes_and_releases_after_close(channel):
     value.close()
     assert all(lease.stream.closed for lease in leases)
     image.write_bytes(b'allowed after original close')
-    with pytest.raises(native.LaunchHold, match='live_original_control_channel_required'):
-        value.local_witness()
+    assert value._image_witnesses == {} and value._image_scope is None
 
 
 def test_replacing_named_image_does_not_reuse_old_hash(channel, tmp_path):
@@ -110,3 +110,90 @@ def test_actual_current_process_identity_matches_existing_full_witness():
         assert value.local_witness() == native._native_witness(api, api.GetCurrentProcess())
     finally:
         value.close()
+
+
+def test_scope_release_allows_updater_overwrite_without_closing_channel(channel, tmp_path):
+    value, api, image = channel
+    value.local_witness(); value.peer_witness()
+    leases = list(value._image_witnesses.values())
+    value._end_image_scope('a' * 32)
+    assert value._image_scope is None and value._image_witnesses == {}
+    assert all(lease.stream.closed for lease in leases)
+    os.fstat(value.reader); os.fstat(value.writer)  # Original channel remains retained.
+    replacement = tmp_path / 'sdk-replacement.bin'
+    replacement.write_bytes(b'generated SDK replacement')
+    os.replace(replacement, image)  # The earlier channel-lifetime candidate denied this.
+    assert value.local_witness()['executable_sha256'] != leases[0].digest
+    assert value._image_witnesses == {}  # Ordinary full witnesses resumed.
+
+
+def test_default_channels_do_not_retain_images(channel):
+    value, api, image = channel
+    value._end_image_scope()
+    first = value.local_witness()
+    image.write_bytes(b'generated changed file outside Organizer stage')
+    assert value.local_witness()['executable_sha256'] != first['executable_sha256']
+    assert value._image_witnesses == {}
+
+
+def test_root_reader_never_enables_cache_and_organizer_release_precedes_maintenance(channel, tmp_path, monkeypatch):
+    from copy import deepcopy
+    from threading import RLock
+    from types import SimpleNamespace
+    from suite_core.manager.bootstrap_entry import NormalOwnerRoute
+    value, api, image = channel
+    value._end_image_scope()
+    owner = native.DeploymentOwner.__new__(native.DeploymentOwner)
+    owner.dispatch_lock = RLock(); owner._owned = lambda **kw: None
+    owner._model_free_scope = None
+    owner.root=tmp_path/'Code'; owner.data_root=tmp_path/'Data'
+    owner.record={'phase':'normal','helper_grants_open':True,'owner':'generation','helper_attempts':{}}
+    owner.children={'manager':SimpleNamespace(_handle=value.peer_handle,poll=lambda:None)}
+    transport=SimpleNamespace(api=api,_creation_api=api,job=70,_creation_job=70,job_active_count=lambda:1)
+    owner.native_transport=transport; value.transport=transport
+    route=NormalOwnerRoute.__new__(NormalOwnerRoute)
+    route.owner=owner; route.channel=value; route.state='ready'; route._live_peer=lambda:True
+    route.wire=SimpleNamespace(proof=SimpleNamespace(channel_epoch=value.epoch))
+    owner._persist=lambda record:setattr(owner,'record',deepcopy(record))
+    reader=owner.component_stage_scope(route,'begin',None,component='collectigen.tag-encyclopedia')
+    assert value._image_scope is None and value._image_witnesses == {}
+    owner.component_stage_scope(route,'release',reader['scope_id'],component='collectigen.tag-encyclopedia')
+    scope=owner.component_stage_scope(route,'begin',None,component='collectigen.media-organizer')
+    value.local_witness(); value.peer_witness()
+    retained=dict(owner.record['component_stage'])
+    image_lease=value._image_witnesses['peer']
+    with monkeypatch.context() as patch:
+        patch.setattr(image_lease,'close',lambda:(_ for _ in ()).throw(OSError('generated close failure')))
+        with pytest.raises(OSError,match='generated close failure'):
+            owner.component_stage_scope(route,'release',scope['scope_id'],component='collectigen.media-organizer')
+    assert owner.record['component_stage']==retained  # Failure grants no maintenance.
+    owner.component_stage_scope(route,'release',scope['scope_id'],component='collectigen.media-organizer')
+    assert 'component_stage' not in owner.record
+    assert value._image_witnesses=={} and value._image_scope is None
+    replacement=tmp_path/'sdk-after-release.bin';replacement.write_bytes(b'new program')
+    os.replace(replacement,image)
+    assert owner.children['manager']._handle==value.peer_handle and value.reader is not None
+
+
+def test_entry_lost_release_ack_drops_only_cache_and_keeps_hold(channel, tmp_path):
+    from threading import RLock
+    from types import SimpleNamespace
+    from suite_core.installation import ComponentId
+    from suite_core.manager.bootstrap_entry import NormalEntrySession
+    value, api, image=channel;value._end_image_scope()
+    session=NormalEntrySession.__new__(NormalEntrySession);session.state='ready'
+    session.binding=SimpleNamespace(owner_generation='original-owner')
+    session.admitted=SimpleNamespace(layout=SimpleNamespace(code_root=tmp_path/'Code',data_root=tmp_path/'Data'))
+    session.wire=SimpleNamespace(lock=RLock(),channel=value)
+    scope={'scope_id':'b'*32,'component':'collectigen.media-organizer','owner_generation':'original-owner','code_root':str(tmp_path/'Code'),'data_root':str(tmp_path/'Data')}
+    session._exchange=lambda kind,payload,expected:{'payload':{'schema':1,'operation':payload['operation'],'scope':scope}}
+    component=ComponentId('collectigen.media-organizer')
+    session.request_component_stage('begin',component=component)
+    value.local_witness();assert value._image_witnesses
+    pending={'operation':'release','scope_id':scope['scope_id']};session.component_stage_outstanding=pending
+    session._exchange=lambda *args:(_ for _ in ()).throw(TimeoutError('generated lost ACK'))
+    with pytest.raises(TimeoutError,match='generated lost ACK'):
+        session.request_component_stage('release',scope['scope_id'],component=component)
+    assert session.state=='held' and session.component_stage_outstanding is pending
+    assert value._image_scope is None and value._image_witnesses=={}
+    assert value.reader is not None and value.writer is not None

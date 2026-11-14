@@ -537,7 +537,19 @@ class NormalEntrySession:
                         'original_component_stage_reply_required')
             except BaseException as error:
                 self.state,self.error='held',error
+                channel=getattr(self.wire,'channel',None)
+                if component.value=='collectigen.media-organizer' and type(channel) is _native().WindowsControlChannel:
+                    # Cache disposal never settles an uncertain original stage.
+                    channel._end_image_scope()
                 raise
+            channel=getattr(self.wire,'channel',None)
+            if component.value=='collectigen.media-organizer' and type(channel) is _native().WindowsControlChannel:
+                try:
+                    if operation=='begin':channel._begin_image_scope(reply['scope']['scope_id'])
+                    elif operation=='release':channel._end_image_scope(scope_id)
+                except BaseException as error:
+                    self.state,self.error='held',error
+                    raise
             # Clear only after the original complete reply passes scope binding.
             self.component_stage_outstanding=None
             return reply['scope']
@@ -1551,9 +1563,13 @@ class NormalOwnerRoute:
                         and type(payload['component']) is str
                         and payload['component'] in {'collectigen.tag-encyclopedia','collectigen.media-organizer'}
                         and payload['operation'] in {'begin','check','release'},'component_stage_schema')
-                scope=self.owner.component_stage_scope(self,payload['operation'],payload['scope_id'],
-                                                       component=payload['component'])
-                self.wire.send('component-stage-reply',{'schema':1,'operation':payload['operation'],'scope':scope})
+                try:
+                    scope=self.owner.component_stage_scope(self,payload['operation'],payload['scope_id'],
+                                                           component=payload['component'])
+                    self.wire.send('component-stage-reply',{'schema':1,'operation':payload['operation'],'scope':scope})
+                except BaseException:
+                    if payload['operation']!='release':self.channel._end_image_scope()
+                    raise
                 return kind
             if kind == 'recovery-visible':
                 require(self.state in {'ready','sealing','sealed'} and type(payload) is dict

@@ -858,8 +858,8 @@
       "size_bytes": 7431
     },
     "core/manager_launch_owner.py": {
-      "sha256": "0ce690a9e7c3bbbcabff38e0f2a534d40d66ed127a113b68e0c09c3ed44da87e",
-      "size_bytes": 271617
+      "sha256": "3cd1d70911290f23e7008233b7a62bce745bff979fb3d623a582573f60588b99",
+      "size_bytes": 273041
     },
     "core/manager_llamacpp_provider.py": {
       "sha256": "c49337020d7ee8e858a84aea638a2c20d266334e02902e7959ab3f57cf4e147a",
@@ -3258,8 +3258,8 @@
       "size_bytes": 5605
     },
     "suite_core/manager/bootstrap_entry.py": {
-      "sha256": "48962c63fbe38c228cf9ffe3b943d0e4e89d9f4b606baaf7231dede1da425cfe",
-      "size_bytes": 104805
+      "sha256": "ec92eb0da22b4a6444c70dd85d0bbdba304d14d383d0bca8207b8051572d566b",
+      "size_bytes": 105791
     },
     "suite_core/manager/candidate_inventory.py": {
       "sha256": "2274b30218af9ccacdb3a030f241fa67e41170610269b77541a91238aa07cdd1",
@@ -4198,7 +4198,7 @@
       "size_bytes": 18369
     },
     "tools/encyclopedia_build/source-manifest.json": {
-      "sha256": "7d858f049e4c0a4eae06476669bc64e2690f553d7f3d62ee721f8438649641a3",
+      "sha256": "2454a1f81cf79bbeddf63a00e3d9c296950797ef8d7407141f97b593c4db6bc4",
       "size_bytes": 69146
     },
     "tools/manager_build/CollectiGen.spec": {
@@ -4222,7 +4222,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "9f61ab01722d28d5ed05de85e817f44356bcfb937e69e1289459ce9f419f2d09",
+      "sha256": "6914d9b4687ab0163e1d9063f0e28e6ca04489e05715b7921875705391605ae8",
       "size_bytes": 165482
     },
     "tools/manager_build/tool-inputs.json": {
@@ -4862,16 +4862,16 @@
       "size_bytes": 324
     },
     "docs/MANAGER_CHANNEL_IMAGE_REUSE.md": {
-      "sha256": "5f63e4eb1fce474c3e65dd62d26f94347ee756c72c7c3593dce58d2babebfe20",
-      "size_bytes": 1417
+      "sha256": "1fe5e8b3f123483c02e112c52b67e8b995294efcd1d95030da30a042c07a3d97",
+      "size_bytes": 1802
     },
     "docs/releases/collectigen.suite-manager-v0.7.10-alpha.1.md": {
       "sha256": "79d1cf3047ff8a1d5cc530cefaee2ae4c6ab4da681a7da00f1919e65873c39ec",
       "size_bytes": 665
     },
     "tests/test_manager_channel_image_reuse.py": {
-      "sha256": "5022b333c11571424488c116d3b25e6265105953afe69c35749bf1bcea63f850",
-      "size_bytes": 4504
+      "sha256": "ef2707b0172678f5785d9256293c45dc7400cbcfbede2fb2d49f8eae6419c48c",
+      "size_bytes": 10015
     }
   },
   "fresh_history_required": true,

@@ -2194,6 +2194,13 @@ class DeploymentOwner:
                     or stage['epoch']!=route.wire.proof.channel_epoch):
                 raise LaunchHold('exact_original_component_stage_required')
         stage=deepcopy(self.record['component_stage'])
+        if component == 'collectigen.media-organizer':
+            if operation == 'begin':
+                route.channel._begin_image_scope(stage['id'])
+            elif operation == 'release':
+                # Dispose read handles BEFORE admitting any later maintenance.
+                # A failed close keeps the original durable stage held.
+                route.channel._end_image_scope(stage['id'])
         if operation=='release':
             next_record=deepcopy(self.record);next_record.pop('component_stage');self._persist(next_record)
         reply = {'scope_id':stage['id'],'owner_generation':stage['owner'],
@@ -3340,7 +3347,7 @@ class NativeChannelProof:
 
 
 class _RetainedChannelImage:
-    """Hash one write-denied image handle for this original channel lifetime.
+    """Hash one write-denied image handle for an admitted Organizer stage.
 
     Every use still queries process birth/image and compares the named file to
     the retained file. Rename/delete sharing preserves normal updater recovery;
@@ -3422,6 +3429,7 @@ class WindowsControlChannel:
         self.read_fault = None
         self._read_progress = 0
         self._image_witnesses = {}
+        self._image_scope = None
 
     @staticmethod
     def _bounded(raw):
@@ -3517,8 +3525,32 @@ class WindowsControlChannel:
             self._image_witnesses[role] = image
         return image.identity(self.api, handle, self.epoch)
 
-    def local_witness(self): return self._image_witness('local', self.api.GetCurrentProcess())
-    def peer_witness(self): return self._image_witness('peer', self.peer_handle)
+    @_serialized
+    def _begin_image_scope(self, scope_id):
+        if (type(scope_id) is not str or not re.fullmatch('[0-9a-f]{32}', scope_id)
+                or getattr(self, '_image_scope', None) is not None
+                or getattr(self, '_image_witnesses', {})):
+            raise LaunchHold('fresh_original_organizer_image_scope_required')
+        self._image_scope = scope_id
+
+    @_serialized
+    def _end_image_scope(self, scope_id=None):
+        if scope_id is not None and getattr(self, '_image_scope', None) not in (None, scope_id):
+            raise LaunchHold('same_original_organizer_image_scope_required')
+        for role, image in tuple(getattr(self, '_image_witnesses', {}).items()):
+            image.close()
+            del self._image_witnesses[role]
+        self._image_scope = None
+
+    def local_witness(self):
+        if getattr(self, '_image_scope', None) is None:
+            return _native_witness(self.api, self.api.GetCurrentProcess())
+        return self._image_witness('local', self.api.GetCurrentProcess())
+
+    def peer_witness(self):
+        if getattr(self, '_image_scope', None) is None:
+            return _native_witness(self.api, self.peer_handle)
+        return self._image_witness('peer', self.peer_handle)
 
     @_serialized
     def qualify_binding(self, document, admitted, *, expected_peer_image_sha256):
@@ -3617,9 +3649,7 @@ class WindowsControlChannel:
 
     @_serialized
     def close(self):
-        for role, image in tuple(getattr(self, "_image_witnesses", {}).items()):
-            image.close()
-            del self._image_witnesses[role]
+        self._end_image_scope()
         for name in ("reader","writer"):
             fd = getattr(self,name)
             if fd is not None: os.close(fd); setattr(self,name,None)
