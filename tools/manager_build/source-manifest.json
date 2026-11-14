@@ -3664,12 +3664,12 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 44257,
-      "sha256": "3e5ec931b0293a40a8254bb19cc72fd1355bfdb68a0712fcb1bf15781c7c0e3a"
+      "sha256": "e9bfed70c903f619e95a23db2cd1cf3704085e9275e3b060006032b061676840"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "027e0df68e77612fa70d2126651392bfeba35942f6998ca82137b24e5073d501"
+      "sha256": "fd2237390677607699bd3dcbed579a999d43f8dc89249903d7143606247dde79"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -4009,7 +4009,7 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "14969bce128cea3edcb863fa2b10940ae11c386af9606021b23eaab07229bed9"
+      "sha256": "7f0da9c819abaf40afcff4ad045a55552b116f92fbeec05d488aaf9045d33af3"
     },
     {
       "path": "suite_core/manager/window.py",
@@ -4818,8 +4818,8 @@
     },
     {
       "path": "suite_core/manager/description_setup_ui.py",
-      "bytes": 8572,
-      "sha256": "c4ac202a8cd65c671eeb441c331d45c18466074c6170397fad194f58207356e0"
+      "bytes": 8613,
+      "sha256": "5f6d399435bc4c5dcdec0f3b8513dc8876e1b9f84a7b4d76fe81689c63b1bce2"
     }
   ]
 }

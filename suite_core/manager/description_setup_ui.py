@@ -26,7 +26,8 @@ class DescriptionSetupDialog(QDialog):
         note = QLabel(
             "Reuse your installed caption model. Save returns to the same unfinished Generation Setup. "
             "Opening, saving and returning do not download a model or start analysis. "
-            "If components are missing, install them in Organizer Setup, then choose that same models folder here.")
+            "These choices do not install missing caption components. "
+            "If suggestions remain unavailable, use saved text or manual authoring.")
         note.setWordWrap(True); layout.addWidget(note)
         body = QWidget(); form = QFormLayout(body)
         form.setSizeConstraint(QLayout.SetMinAndMaxSize)

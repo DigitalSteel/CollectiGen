@@ -2038,8 +2038,8 @@
       "size_bytes": 2292
     },
     "docs/MANAGER_DESCRIPTION_SETUP.md": {
-      "sha256": "e37825ab9505373110022158d6a29e64b8f7a82df36e56e15c103e12d655fdf6",
-      "size_bytes": 2992
+      "sha256": "43dd57a8cb3684bb15dab5070b209e16ec6213f93c9d53db679b3c1ba6602075",
+      "size_bytes": 3079
     },
     "docs/MANAGER_INSTALLED_UPDATE_LAYOUT.md": {
       "sha256": "1ee54635cced0bed885290d666be8be42651e9acd1d0a06d407b5036124c18a4",
@@ -3178,7 +3178,7 @@
       "size_bytes": 10856
     },
     "suite_core/manager/MODULE_MANIFEST.json": {
-      "sha256": "3e5ec931b0293a40a8254bb19cc72fd1355bfdb68a0712fcb1bf15781c7c0e3a",
+      "sha256": "e9bfed70c903f619e95a23db2cd1cf3704085e9275e3b060006032b061676840",
       "size_bytes": 44257
     },
     "suite_core/manager/README.md": {
@@ -3186,11 +3186,11 @@
       "size_bytes": 6633
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
-      "sha256": "5a6d746f357cde0f74ff1d02a248adb5bf439363b181be9d3e40e5574b91804b",
-      "size_bytes": 13862
+      "sha256": "3621ac58599e3b699b85fb980c3e6b882ed0b100dff3b33a8eedef7d366b1c77",
+      "size_bytes": 14297
     },
     "suite_core/manager/RELEASE_PRESENTATION.json": {
-      "sha256": "027e0df68e77612fa70d2126651392bfeba35942f6998ca82137b24e5073d501",
+      "sha256": "fd2237390677607699bd3dcbed579a999d43f8dc89249903d7143606247dde79",
       "size_bytes": 246
     },
     "suite_core/manager/RESOURCE_DASHBOARD_INTEGRATION.md": {
@@ -3202,8 +3202,8 @@
       "size_bytes": 13490
     },
     "suite_core/manager/WHATS_NEW.md": {
-      "sha256": "a1bef382e6f23b0247184cb5ae6b3b866153ff5af0a545094e98c3bd1a9889f5",
-      "size_bytes": 33067
+      "sha256": "5fa97d2e68fd6282f7e421b60b482d5b284b00b9f3d1773d052c2c6afcd97b30",
+      "size_bytes": 33304
     },
     "suite_core/manager/__init__.py": {
       "sha256": "9a62d58ff88c50f94c2a4b426ca5f7a2f7ad5347779b78b950185f707581c79d",
@@ -3282,8 +3282,8 @@
       "size_bytes": 4206
     },
     "suite_core/manager/description_setup_ui.py": {
-      "sha256": "c4ac202a8cd65c671eeb441c331d45c18466074c6170397fad194f58207356e0",
-      "size_bytes": 8572
+      "sha256": "5f6d399435bc4c5dcdec0f3b8513dc8876e1b9f84a7b4d76fe81689c63b1bce2",
+      "size_bytes": 8613
     },
     "suite_core/manager/diagnostic_help_candidate.py": {
       "sha256": "924a4ac86cc63d8d1b3e8867e74f036a4305ffdd000f4d7aa4e5d290eeeb2fe1",
@@ -3478,7 +3478,7 @@
       "size_bytes": 15135
     },
     "suite_core/manager/version.py": {
-      "sha256": "14969bce128cea3edcb863fa2b10940ae11c386af9606021b23eaab07229bed9",
+      "sha256": "7f0da9c819abaf40afcff4ad045a55552b116f92fbeec05d488aaf9045d33af3",
       "size_bytes": 274
     },
     "suite_core/manager/window.py": {
@@ -4166,7 +4166,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "07761b72680941eec980b7349a6c11fbbcf5b4439a6580621ece874208180eb1",
+      "sha256": "ab07d5b1aa8d713c476f696332940e85648445b66440c8898a25b7c4ba6efd27",
       "size_bytes": 164474
     },
     "tools/manager_build/tool-inputs.json": {

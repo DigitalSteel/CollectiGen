@@ -1,10 +1,11 @@
-# Unreleased
+# What's New - a.0.7.6 (embedded 0.7.6-alpha.1) - 2026-11-13
 
-- Image-derived Setup shows its selected reference with the shared unknown-rating blur and temporary Reveal/Hide controls; preview controls fit beside the source.
+- Use Organizer Prompt Catalog in Generate to import reusable Tag names, aliases and Character/Outfit prompt choices exported by Organizer a.0.5.6. Search Tags on Request or browse associated, other and generic Outfits in Advanced; saving a draft retains those choices.
+- Create Generation Setup offers manual authoring or one selected image. Review saved text and recorded settings before choosing what to keep; choosing an image starts no analysis.
+- Local description settings return to the same unfinished image setup with its name and edits retained. A compatible local caption runtime and model are still required for optional image suggestions; saved text and manual authoring remain available.
+- The selected-image reference uses the shared unknown-rating blur and temporary Reveal/Hide controls.
 
-- Create Generation Setup offers a one-image source as well as manual authoring. Image suggestions can return through saved local description settings to the same unfinished review, with source recheck and no automatic analysis. Package delivery remains pending.
-
-- Generate can import a read-only Organizer prompt catalog through the existing image-draft browser. Search exported Tag names/aliases and browse Character-associated, other and generic Outfit text; save/reopen retains those choices. Other drafts and the export stay unchanged. Paired Manager/Organizer package delivery is pending.
+Signed component discovery, explicit installation confirmation and existing recovery remain unchanged. No model or trainer runs automatically.
 
 # What's New - a.0.7.5 (embedded 0.7.5-alpha.1) - 2026-11-13
 

@@ -13,8 +13,9 @@ Manager's local caption settings. Choose the existing JoyCaption or Florence-2
 adapter and the models parent folder. Advanced controls match the original
 Setup page's description settings. This dialog does not inspect model contents,
 install components, benchmark, start inference or change a generator connection.
-Existing component installation remains in Organizer Setup; the same installed
-models folder can be reused here.
+These choices do not install a caption runtime. Model files may be reused, but
+Manager also needs compatible caption components. If suggestions remain
+unavailable, use saved text or manual authoring.
 
 **Save and Return** uses the canonical settings writer and updates the same
 in-memory Settings object used by the retained review. Unknown configuration
