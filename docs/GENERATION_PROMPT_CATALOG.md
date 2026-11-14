@@ -1,7 +1,7 @@
 # Reuse Organizer prompt choices in Manager
 
-Unreleased source work for GEN-06 / SUITE-10B; not included in Manager a.0.7.5
-or Organizer a.0.5.5. Package delivery remains pending.
+Available in Manager a.0.7.6 and Organizer a.0.5.6. Broader GEN-06 / SUITE-10B
+parity and update/recovery work remains open.
 
 In Organizer, choose **Knowledge > Prompt Catalog**, then **Knowledge > Prompt
 Choices > Export Prompt Catalog for Generate**. Review the counts and scope, then save to a new filename.
@@ -12,7 +12,7 @@ model files or arbitrary native record fields. Nothing is uploaded.
 In Manager, open **Generate > Use Organizer Prompt Catalog**. Choose **Import
 File**, select that export, then open the imported draft. The existing importer
 makes a new local copy. Other open drafts and the exported file remain unchanged.
-Use Tag search on **Request**, or **Advanced > Knowledge** to browse Outfits
+Use Tag search on **Request**, or **Advanced > Reusable Prompt Text** to browse Outfits
 associated with the selected Character, other Characters, or no Character.
 Browsing does not change the request. Choose text and Apply deliberately.
 
