@@ -169,7 +169,7 @@ class SavedGenerationWorkDialog(QDialog):
             self.setWindowTitle("Use Organizer Prompt Catalog")
             heading.setText("Start an image with your Organizer prompt choices")
             explanation.setText(
-                "In Organizer, choose Knowledge Actions > Export Prompt Catalog for Generate. "
+                "In Organizer, choose Knowledge > Prompt Catalog, then Knowledge > Prompt Choices > Export Prompt Catalog for Generate. "
                 "Use Import File here, then choose the imported draft. A local copy opens as a new image draft; "
                 "your other drafts and the exported file stay unchanged. No generation starts here.")
         explanation.setWordWrap(True); layout.addWidget(explanation)

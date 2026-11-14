@@ -3,8 +3,8 @@
 Unreleased source work for GEN-06 / SUITE-10B; not included in Manager a.0.7.5
 or Organizer a.0.5.5. Package delivery remains pending.
 
-In Organizer, open Knowledge and choose **Knowledge Actions > Export Prompt
-Catalog for Generate**. Review the counts and scope, then save to a new filename.
+In Organizer, choose **Knowledge > Prompt Catalog**, then **Knowledge > Prompt
+Choices > Export Prompt Catalog for Generate**. Review the counts and scope, then save to a new filename.
 The export contains reusable Tag names/aliases, Character names and reviewed
 Outfit prompt text and associations. It contains no image files, image paths,
 model files or arbitrary native record fields. Nothing is uploaded.

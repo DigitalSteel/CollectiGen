@@ -2034,8 +2034,8 @@
       "size_bytes": 7367
     },
     "docs/GENERATION_PROMPT_CATALOG.md": {
-      "sha256": "f1c118ad23f910d8319d3f31caecd08c383a174d309f7890be69eb85450ee1d0",
-      "size_bytes": 2292
+      "sha256": "bf6379d34a9d65301caac031694ad25b07a4fac71ad601891bf1ca6f67414fdb",
+      "size_bytes": 2319
     },
     "docs/MANAGER_DESCRIPTION_SETUP.md": {
       "sha256": "43dd57a8cb3684bb15dab5070b209e16ec6213f93c9d53db679b3c1ba6602075",
@@ -2338,8 +2338,8 @@
       "size_bytes": 11633
     },
     "qt_app/generation_saved_work_dialog.py": {
-      "sha256": "749de2d3ce484eb15d4a8173d3279decf20ff31c05c162bb951954c957278ca5",
-      "size_bytes": 39376
+      "sha256": "08fdb8a60e314e99f4389fcab3c763a9412298043c0a27977dc8690a3abb20dd",
+      "size_bytes": 39418
     },
     "qt_app/generation_setup_save.py": {
       "sha256": "88e4ae0cc0db47eb0bd4cd0f62ba16608b702e46f3dd95b5f3f2324b6dc1b511",
@@ -3482,8 +3482,8 @@
       "size_bytes": 274
     },
     "suite_core/manager/window.py": {
-      "sha256": "375da153da42a009e77a888873ef2a14c4b4f8dc928b4eaac611ed6f1fd7156b",
-      "size_bytes": 299532
+      "sha256": "990aebeeff3d679dcc009e4082253ae472b53a57d5b5316f377a99657107700c",
+      "size_bytes": 300553
     },
     "suite_core/media_examples.py": {
       "sha256": "9846d6219dc6e8e4e050d8359f869047e408c5c1b9a3a1fab635cc8379418bd2",
@@ -4166,7 +4166,7 @@
       "size_bytes": 1113
     },
     "tools/manager_build/source-manifest.json": {
-      "sha256": "ab07d5b1aa8d713c476f696332940e85648445b66440c8898a25b7c4ba6efd27",
+      "sha256": "96befac7b61205a9e0950ddb49c51e563cac8126f42da667ea542d552f3b8751",
       "size_bytes": 164474
     },
     "tools/manager_build/tool-inputs.json": {
