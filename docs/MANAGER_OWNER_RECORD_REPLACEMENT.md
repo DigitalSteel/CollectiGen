@@ -21,9 +21,14 @@ Windows cause or prove the full update/recovery workflow fixed.
 
 The source regressions cover transient/permanent denial, error classification,
 initial acquisition, changed disk/RAM/candidate/lease, deadline consumed by reads,
-flush failure and uncertain post-replace readback. Native final qualification
-remains open until the corrected original Root completes the existing signed
-update and explicit authenticated rollback, with all resources settled.
+flush failure and uncertain post-replace readback. Native qualification of a task-only corrected original Root passed signed
+0.7.7 to0.7.8 Apply, controlled failed startup, explicit signed0.7.7 repair,
+two distinct restored-prior readiness/normal Close paths, all1303signed files,
+two settings snapshots, transaction retirement and complete resource closure.
+Only the owner source changed in that Root stage;its SHA256 is
+d3f80ca66c152fd1cf186cfdebd1a81cdfc974a13d625eb9e3cdcb40321c54ce.
+The original Windows denial cause remains unproved. Exact0.7.9 full-ZIP startup
+and packaged delivery remain separate;this test fixture is not a release.
 
 Delivery uses collectigen.suite-manager and its full Windows ZIP. A component-only
 update retains the installed Root, so it cannot repair this pre-target failure.

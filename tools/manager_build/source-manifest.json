@@ -3664,12 +3664,12 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 44468,
-      "sha256": "2c00f75cd29943173f664aa3bca4c20d1d440be2542d55b56cddaa0923902f55"
+      "sha256": "4ea53e71c8800ddd2bb4be40809e744233c0ee9c2ab67dbf1885187f33b9d8cb"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
       "bytes": 246,
-      "sha256": "56ae92181783d0ab3d3e58868750610640f1b5ae4a921afa9b64420c78c9caba"
+      "sha256": "a489744c36c5f178f57ce78b78930123eee5ef9ac4f3d17d078b06801a85511e"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -4009,7 +4009,7 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "09bcf67f3f5e0b4e7e045716130cb548e2ab3634f1ebe84eb94727f56b3a705e"
+      "sha256": "f61f648965b65d0cb802b3e19a536c85b17abe2b6c08dff97b44b4a6537fde89"
     },
     {
       "path": "suite_core/manager/window.py",

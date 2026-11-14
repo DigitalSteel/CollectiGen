@@ -1,7 +1,11 @@
-# Unreleased - original launcher owner-record reliability
+# Suite Manager a.0.7.9 - 2026-11-14
 
-- Original launcher ownership-record replacement now tolerates a bounded Windows access/sharing denial using the same flushed candidate and original lease. Changed state, uncertain readback and permanent failures retain the original hold.
-- Source-only SUITE-10B2 candidate. A corrected full Windows ZIP and connected signed update/rollback qualification are still required; component-only updates cannot replace an older launcher. The original Windows denial cause is not established.
+- Fixes a Windows error that could stop a Manager update before the updated app opened.
+- Keeps the verified prior Manager and its saved settings available through Repair if an update cannot start.
+
+Updating from a.0.7.8 or earlier: use the full Windows ZIP so the launcher is updated too. Close Manager first, back up the current Suite folder, and keep your Data folder. If an update is already stopped in recovery, keep that folder intact and extract the new ZIP into a separate folder. Component-only updates retain the older launcher.
+
+Module downloads and updates remain available through Suite Manager.
 
 # What's New - a.0.7.8 (embedded 0.7.8-alpha.1) - 2026-11-14
 

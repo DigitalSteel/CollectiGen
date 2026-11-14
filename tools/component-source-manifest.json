@@ -999,7 +999,8 @@
     "docs/MANAGER_DESCRIPTION_SETUP.md",
     "tests/test_manager_protected_setup_preview_ui.py",
     "docs/MANAGER_OWNER_RECORD_REPLACEMENT.md",
-    "tests/test_manager_owner_record_replace.py"
+    "tests/test_manager_owner_record_replace.py",
+    "docs/releases/collectigen.suite-manager-v0.7.9-alpha.1.md"
   ],
   "reviewed_defaults": [],
   "required_provenance": []
