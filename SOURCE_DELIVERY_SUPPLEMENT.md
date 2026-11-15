@@ -114,3 +114,19 @@ Generated original-service checks cover cancellation, errors, explicit retry,
 persistence and local compatibility. No provider, server or Qt route is activated;
 source result text is not visible workflow qualification. Organizer 0.6.0 remains
 discovery/preferences only; signed runtime delivery remains open.
+
+
+## AI-05P1 manual external description source consumer
+
+Run AI retains Local AI as its default and offers an explicit per-run LM Studio
+choice. Connection preferences remain independently saved; model inspection is an
+explicit metadata refresh and exact loaded vision instance choice. Local drafts,
+factory settings and automatic analysis stay separate. The normal live dispatch
+is absent: this build cannot execute LM Studio image analysis until the separate
+exact-server execution qualification is bound by its owner.
+
+The injected source consumer reuses the original job/history/preparation/evidence
+and review path, with description-only controls, explicit retry and client cleanup.
+It reports unknown server outcomes honestly and never loads/unloads a local model.
+Generated source UI evidence does not establish actual model or packaged support.
+Organizer 0.6.0 remains preferences/discovery only; no new package/version here.

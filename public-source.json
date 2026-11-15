@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 888,
+  "allowlisted_source_file_count": 889,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -38,8 +38,8 @@
       "size_bytes": 2794
     },
     "SOURCE_DELIVERY_SUPPLEMENT.md": {
-      "sha256": "123a35a6e229f2070396c33dbea9d242b3872a3d8c91bed2599ceb613dacd2c1",
-      "size_bytes": 9146
+      "sha256": "9a2aa9dc46223fc8f45a9f39fef2783653e5b5d6402b7aaf6bb19d205c0e62e9",
+      "size_bytes": 10081
     },
     "SUPPORT.md": {
       "sha256": "d8392a3bf12b5559d07f6885b9bd4e37e0e91ea043f21feb83fd3d88599370c8",
@@ -2014,8 +2014,8 @@
       "size_bytes": 16648
     },
     "qt_app/ai_run_dialog.py": {
-      "sha256": "df81b54e8270037ff244a1e9d52e052de65bf73c59932b950638e70b69896882",
-      "size_bytes": 29575
+      "sha256": "9459c7364f9345c9e84a7795b692e0e12f544469fdda2910666a1a6fe6b6ef5c",
+      "size_bytes": 44579
     },
     "qt_app/ai_runtime_controls.py": {
       "sha256": "ba9a078b1ff9ec3da407761648c321622d2d471dea1f2757548502c69cb12d5a",
@@ -3560,6 +3560,10 @@
     "tests/test_lmstudio_service_review_join.py": {
       "sha256": "1d85d958b2ee486ad889e8735f03582c92a3e1960c8614d663ee2f911353b5c9",
       "size_bytes": 17350
+    },
+    "tests/test_lmstudio_manual_consumer_ui.py": {
+      "sha256": "e6fbfa4ebc749e307137a1276d3ab6bf78ea68fc70e49ec6d1b146ebf2dd3026",
+      "size_bytes": 16440
     }
   },
   "fresh_history_required": true,
