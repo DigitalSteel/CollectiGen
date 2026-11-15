@@ -44,3 +44,17 @@ This module is not wired into the current Organizer runtime or the shipped0.6.0
 package. Future consumer and signed package delivery retain the existing Organizer
 route. Actual server/JIT policy,model inference,review and resource qualification
 remain open. No component/version/binary or model management is added here.
+
+
+## AI-05K1 fixed native description POST source
+
+The new source-only client builds the J1 request internally and uses one fresh
+stock loopback connection and one fixed native POST. It never retries or follows
+redirects. Failures after submission begins retain outcome_unknown even after
+client cancellation or cleanup failure. Timers,watchers and owned handles settle
+before success;client closure does not establish server generation stopped.
+
+Only injected and generated ephemeral-loopback tests qualify this source child.
+No real LM Studio,model,provider,profile or image-library operation is performed.
+Existing GET and codec source remain unchanged. Actual server/JIT policy,review
+consumer and signed Organizer runtime delivery remain open;no version is added.
