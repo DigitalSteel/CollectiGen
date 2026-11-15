@@ -28,24 +28,18 @@ Retain your previous package and separate profile/image/catalog backups.
 
 ### Install apps with Suite Manager
 
-This patch restores the fixed Anima worker and a required Training execution/readiness source file in Manager's package. Existing model qualification and reviewed Start choices remain in place.
+Use Suite Manager to install and update Media Organizer and Tag Encyclopedia Reader. Generate and Training are built into Manager; models and optional runtimes are configured separately.
 
 1. Extract the complete Manager ZIP into a new, short writable folder, such as **C:\CollectiGen**, and start **CollectiGen.exe**.
 2. In **Applications**, choose **Get or update Media Organizer**, or **Tag Encyclopedia > Find reader**.
 3. Review the offered version, choose **Install**, and confirm.
 4. Restart Manager when requested, then open the installed app from its workspace.
 
-Manager a.0.7.11 includes dedicated **Generate** and **Training** workspaces for
-image/video drafts, saved work, local setup, training preparation and retained
-reviews. Models and optional runtimes are configured separately. Saved setups can
-open a separate image draft while preserving the work already open. Both Remix
-entries now do the same, retaining existing image and video drafts. Use the
-**Help** group or **F1** in Generate and Training for their workflow guides.
-Generate and update buttons fit smaller windows, and Tab moves out of update notes.
+Use **Generate** for image/video drafts, saved work and configured local generation tools. Saved setups and Remix can open a separate image draft while retaining drafts already open. Use **Training** for dataset preparation, trainer setup, saved runs and reviews. Open the **Help** group or press **F1** in either workspace for its guide.
 
 In **Generate > Use Organizer Prompt Catalog**, import Organizer’s export to start an image draft with searchable Tags and Character/Outfit prompt choices. Saving and reopening the draft retains that catalog. **Create Generation Setup** offers manual text or a selected image; local description settings return to the unfinished setup. For optional image suggestions, **Review Local Description Setup** can save the model choices and open **Set Up Components**. Check readiness, review any required caption-component or model download, then return and choose Suggest. Opening or returning starts no download or analysis; manual authoring stays available.
 
-Manager a.0.7.11 saves your theme, color-blind colors and tooltip choices in **Settings**, and restores them at the next launch. **Current build** identifies the bundled Python/Qt runtime and package version. The complete Windows ZIP avoids repeatedly reading the running executables during Organizer installation. Use the complete ZIP to update the launcher too; component-only Manager updates retain the existing launcher.
+Manager saves your theme, color-blind colors and tooltip choices in **Settings**, and restores them at the next launch. **Current build** identifies the bundled Python/Qt runtime and package version.
 
 **Training > Set Up Trainer** can install the reviewed trainer software or verify an existing installation. **Other Setup Options** includes offline packs, repair, activation and rollback. Saved operations appear when work is available to review, resume or cancel. Installing software, activating it and starting training require separate reviews.
 
@@ -53,14 +47,13 @@ Find interrupted Training packages from **Training > Review Interrupted Training
 
 Manager a.0.7.11 checks GitHub for newer compatible signed Reader and Organizer releases. Ordinary module updates no longer require a new Manager build. Review and confirm each installation in Applications. Generate and Training remain in Manager.
 
-Training Package Review now shows the target, image counts and next preparation
+Training Package Review shows the target, image counts and next preparation
 action. It distinguishes package verification from unchecked trainer readiness
 and returns to **Training**. History management remains included.
 
-Training history and saved SDXL preparations now offer **Forget From This List**
+Training history and saved SDXL preparations offer **Forget From This List**
 and **Recover Saved List**. Forget keeps reviews, checkpoints and outputs intact;
 Recover finishes an interrupted saved-list update.
-Applications currently finds signed Reader a.0.3.1 and Organizer a.0.5.8, and can discover newer compatible releases.
 
 Use a short installation path: long paths can prevent the bundled Qt Windows
 plugin from loading. Keep the folder together. Existing component records are
@@ -68,14 +61,14 @@ bound to their installation location; moving installations and migration from
 older portable Manager releases are not qualified by this release. Release
 metadata is signed; the Windows executable is not Authenticode-signed.
 
-Manager a.0.7.9 and newer can use the reviewed Manager update for this Training fix. A launcher already updated to a.0.7.10 needs no replacement for it. Use the full ZIP for a fresh installation or an older launcher. Close Manager first, back up Suite and preserve Data. If an update is stopped in recovery, keep that folder intact and extract the new ZIP separately. The exact a.0.7.11 ZIP passed startup, the Training page and normal Close. Signed prior a.0.7.10 was authenticated; unchanged failed-start recovery evidence is retained. Model/trainer execution and a new forced rollback were not run. Keep the previous folder and separate data backups.
+For Manager a.0.7.11, an existing a.0.7.9 or later installation can use the reviewed component update. Component-only updates retain the existing launcher. Use the complete ZIP for a fresh installation or to replace an older launcher; a launcher already updated to a.0.7.10 needs no replacement for a.0.7.11. Close Manager first, back up Suite and preserve Data. If an update is stopped in recovery, keep that folder intact and extract the new ZIP separately. The exact a.0.7.11 ZIP passed startup, the Training page and normal Close. Signed prior a.0.7.10 was authenticated; unchanged failed-start recovery evidence is retained. Model/trainer execution and a new forced rollback were not run. Keep the previous folder and separate data backups. See the [Manager release notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.11-alpha.1) for version-specific changes.
 
 The Reader component ZIP is supplied for Manager's reviewed installation path.
 Read the release's included guide before using component ZIPs directly.
 
 ### Media Organizer
 
-Organizer a.0.5.8 fixes Related Rule Repairs for installations without the optional legacy built-in rules file. Review the proposed changes, confirm the repair, and use Restore Last Rule Repair to undo it. The saved-stage image editor correction from a.0.5.7 remains included.
+Use Media Organizer to organize local images, edit Tags and Descriptions, and prepare datasets. Related Rule Repairs shows proposed changes before you confirm; Restore Last Rule Repair restores the original rules.
 
 Extract its ZIP, then run **Start_MediaOrganizer.bat** at the ZIP root. Guided
 Setup saves selected locations/preferences without starting a scan. Evaluate
@@ -85,8 +78,7 @@ and included README for the changes and supported scope.
 Organizer a.0.5.8 exports reusable Tag names/aliases, Characters and reviewed Outfit prompt choices for Manager. Choose **Knowledge > Prompt Catalog**, then **Knowledge > Prompt Choices > Export Prompt Catalog for Generate**. Review and save the export, then import it in Manager. Existing rule repair/Undo recovery, Dataset Training plans and offline drafts remain included.
 If a generated image or sidecar changes after copy preview, Ingest explains the
 refusal and directs you to review the current Manager result again.
-Review transferred Training drafts in **Suite Manager a.0.6.0 or later > Training >
-Review a Dataset Draft**. The original Organizer plan remains separate.
+Review transferred Training drafts in **Suite Manager > Training > Review a Dataset Draft**. The original Organizer plan remains separate.
 
 ### Optional catalog data
 
