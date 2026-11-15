@@ -34,7 +34,7 @@
   "maturity": "alpha",
   "module_id": "collectigen.media-organizer",
   "native_activation_qualified": false,
-  "numeric_version": "0.6.0",
+  "numeric_version": "0.7.0",
   "optional_integrations": [
     "injected model-manager status",
     "borrowed Encyclopedia TagLookup interface 1"
@@ -120,11 +120,11 @@
   "scope": "Explicit local LM Studio model-list review and guarded connection preferences;no inference or model management. Existing0.5.8 image,rule-repair and recovery behavior retained.",
   "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
   "shell_owner": "qt_app.main_window.TagManagerWindow",
-  "software_version": "0.6.0-alpha.1",
+  "software_version": "0.7.0-alpha.1",
   "standalone_distribution_qualified": false,
   "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
   "startup_owner": "qt_main._start_application",
-  "status": "a.0.6.0 candidate;exact package qualification/publication recorded separately",
+  "status": "a.0.7.0 unpublished build candidate;application/signing/release gates remain open",
   "unavailable_product_workspaces": [
     "Generate",
     "Training"

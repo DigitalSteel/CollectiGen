@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 891,
+  "allowlisted_source_file_count": 892,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -3222,20 +3222,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "d31737cb3c524b311c7ad162e09ef0db827023d822f89dbca76af486c4edf6e9",
-      "size_bytes": 5444
+      "sha256": "835033ab5c5b6dc45756c2bd8f1689f3605597bd2df5b1b0b78d91214968eebf",
+      "size_bytes": 5448
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "d8a05d82f6e47853231d05c874a5b237ac4f87eb3ef87c8cfcaa5da3ae79606b",
-      "size_bytes": 19803
+      "sha256": "5048db5558f71f42c82b864a3a566f93f11cae0032795bcf73201ff45c88c8bf",
+      "size_bytes": 20272
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
-      "sha256": "d6dbbe5ccda51b378721838ca8d3d711999e9185c78eacffac1bd9b1eee9ad3e",
+      "sha256": "8ee44408dd31fb4131ffc07c470986f48df1110a92cf582c13f8bbaafbd283f1",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "d9c97c74ba25a42ce21debb34e7a72e8948991b4609537a0d65c9b417aa9553e",
-      "size_bytes": 32790
+      "sha256": "5815cbe04c28dd7a5f83d03732b5641fcec03b899561b2a99b510c17e513a9ca",
+      "size_bytes": 34332
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3294,7 +3294,7 @@
       "size_bytes": 3136
     },
     "suite_core/media_organizer/version.py": {
-      "sha256": "e2449445315ceafabd3b2f31b1d69faa5c9e2e7fe00adec0ec9ad5b0dfb1bffc",
+      "sha256": "366942f3d5a7d79caec8476c8f7bac5c4ac40d30fb4ff03934947a28a86ebb01",
       "size_bytes": 264
     },
     "suite_core/registry/__init__.py": {
@@ -3572,6 +3572,10 @@
     "tests/test_lmstudio_discovery_auth_ui.py": {
       "sha256": "8c8dbb99acb27bc1b39d3f723ac04c0b4e9bed290cedc38a09d4f7feb15937ec",
       "size_bytes": 10935
+    },
+    "docs/releases/MediaOrganizer-0.7.0.md": {
+      "sha256": "9ee06a923ed46bcd17f87627f8e8f5759ae43beb4a1af77c4ace6f1670ddc6e7",
+      "size_bytes": 1541
     }
   },
   "fresh_history_required": true,
@@ -3587,6 +3591,7 @@
     "SOURCE_DELIVERY_SUPPLEMENT.md",
     "data/defaults/release-trust.json",
     "docs/releases/v0.4.6-alpha.1.md",
-    "docs/releases/MediaOrganizer-0.6.0.md"
+    "docs/releases/MediaOrganizer-0.6.0.md",
+    "docs/releases/MediaOrganizer-0.7.0.md"
   ]
 }

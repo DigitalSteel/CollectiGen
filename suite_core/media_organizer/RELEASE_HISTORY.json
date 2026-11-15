@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.7.0-alpha.1",
+      "numeric_version": "0.7.0",
+      "maturity": "alpha",
+      "date": "2026-11-15",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "Unpublished source/build candidate;not signed,admitted or packaged-visible qualified",
+      "scope": "Optional invocation-only authentication and manual local model-list inspection;image inference and model management remain unavailable"
+    },
+    {
       "software_version": "0.6.0-alpha.1",
       "numeric_version": "0.6.0",
       "maturity": "alpha",
