@@ -74,3 +74,17 @@ source reader/decoder,J1/K1 and evidence conversion classes remain unchanged.
 This follows existing RGB/white-alpha conventions,not color-managed fidelity.
 Actual server/JIT/model,visible/persisted review and signed Organizer delivery
 remain open. No package or version is created for this source-only child.
+
+
+## AI-05M1 original service and persisted review component qualification
+
+The focused source witness binds a fresh generated profile before storage imports
+and uses the original analysis service,record/evidence writers,review decision
+and reload paths with the real injected LM Studio backend. Cases cover unreviewed
+persistence,explicit acceptance,cache reuse,no automatic retry,cancellation and
+late source/sidecar/review stale guards. No product service is replaced or activated.
+
+This is generated component evidence,not visible UI or actual-server/model
+qualification. Generic Loading/partial-cancel uncertainty remain integration
+requirements. No existing profile,real library,Root/Reader/C3A trial,package or
+version is introduced. Signed Organizer runtime delivery remains open.
