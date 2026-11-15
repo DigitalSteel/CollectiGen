@@ -1,12 +1,12 @@
 # CollectiGen Media Organizer
 
-**Media Organizer a.0.5.8** organizes images, preserves Image Knowledge and generation
+**Media Organizer a.0.6.0** organizes images, preserves Image Knowledge and generation
 lineage, and prepares Dataset captions and Training plans. Generate and Training
 execution belong to Suite Manager.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.5.8-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.8-alpha.1/MediaOrganizer-a.0.5.8-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.5.8-alpha.1/MediaOrganizer-a.0.5.8-windows-x64.zip.sha256)
+[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.6.0-alpha.1) ·
+[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.6.0-alpha.1/MediaOrganizer-a.0.6.0-windows-x64.zip) ·
+[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.6.0-alpha.1/MediaOrganizer-a.0.6.0-windows-x64.zip.sha256)
 
 Export reusable Tag names/aliases, Characters and reviewed Outfit prompt choices with **Knowledge > Prompt Catalog**, then **Knowledge > Prompt Choices > Export Prompt Catalog for Generate**. Review and save a new export; import it in **Suite Manager a.0.7.6 or newer > Generate > Use Organizer Prompt Catalog**. The export excludes images, library/model paths and unreviewed Outfit text. Existing rule repair, Undo and Copy recovery remain included.
 
@@ -33,6 +33,6 @@ Use **Suite Manager > Applications > Get or update Media Organizer** to find the
 
 Copy and recovery preserve exact file identity and family bytes, retain reviewed Manager results for explicit Retry after busy file work, and provide the existing copied-family Recycle action.
 
-In a.0.5.8, **Related Rule Repairs** works when the optional legacy built-in rules file is absent. Review the exact proposed changes before confirming; **Restore Last Rule Repair** restores the original rules. The image editor correction from a.0.5.7 remains included.
+In a.0.6.0, open **Setup > AI Tools & Models > LM Studio Connection** to save a local HTTP address and preferred model key. **Refresh Models** reads the reported list; choose a key, then **Save Connection** separately. Refresh does not load models, change the current AI provider or analyze images. Credential entry and image analysis through LM Studio are not included. Existing rule repair, exact Restore and image-editor corrections remain included.
 
-The exact a.0.5.8 package passed generated-rule preview, confirmed repair, exact Restore, Settings save, fresh-process preference reopen and normal Close offscreen. Image bytes were preserved. Unchanged image-edit and Dashboard/Review evidence is retained from a.0.5.7, which is also the authenticated prior recovery package. Actual installed rollback, real libraries, model or trainer execution and full suite parity are not claimed.
+The exact a.0.6.0 package passed generated loopback Refresh, selection, separate Save, Cancel with physical cleanup, fresh-process preference reopen and normal Close offscreen. Reopen made no network requests. The existing missing-ExifTool installer prompt was explicitly declined; metadata writing was not qualified by this run. Prior a.0.5.8 is authenticated for recovery, and existing transaction recovery proof is retained. Actual installed rollback, real libraries, an actual LM Studio server, model or trainer execution and full suite parity are not claimed.
