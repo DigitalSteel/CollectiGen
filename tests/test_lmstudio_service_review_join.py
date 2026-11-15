@@ -68,7 +68,8 @@ assert all(beneath(p,profile) for p in [paths.DATA_DIR,paths.DEFAULTS_DIR,paths.
 from core.automation_rules import DEFAULT_RULES,AUTOMATION_RULE_SCHEMA_VERSION
 (paths.DEFAULTS_DIR/'automation_rules.json').write_text(json.dumps(dict(DEFAULT_RULES,schema_version=AUTOMATION_RULE_SCHEMA_VERSION)))
 from PIL import Image,PngImagePlugin
-from core.ai_interrogation import AIInterrogationService
+from core.ai_interrogation import AIInterrogationService,InterrogationResult,AIImageRunResult,AIExternalRequestOutcome
+from dataclasses import FrozenInstanceError
 from core.image_record import ImageRecord,ImageRecordStaleWriteError
 from core.lmstudio_backend import LMStudioContext,LMStudioDescriptionBackend,LMStudioBackendCancelled
 from core.lmstudio_description import encode_description,decode_description
@@ -91,6 +92,10 @@ def dispatch(**kwargs):
     calls.append(True)
     if case=='unknown_failure' and len(calls)==1:
         raise DescriptionTransportError('description_io_timeout','outcome_unknown')
+    if case=='external_not_sent_cancel':
+        raise DescriptionTransportError('description_cancelled','not_sent')
+    if case=='external_cleanup_cancel':
+        raise DescriptionTransportError('description_cancelled','outcome_unknown',cleanup_failed=True)
     if case in {'cancel_default','cancel_partial'}:
         raise DescriptionTransportError('description_cancelled','outcome_unknown')
     if case=='sidecar_race':
@@ -108,6 +113,19 @@ class Backend(LMStudioDescriptionBackend):
         if case=='source_race':image.write_bytes(image.read_bytes()+b'generated-adversarial-change')
         return result
 backend=Backend(context,dispatch=dispatch)
+if case.startswith('local_'):
+    class LocalFixtureBackend:
+        model_id='generated/local-compatibility'
+        def analyze(self,path):
+            calls.append(True)
+            if case!='local_progress':
+                error=InterruptedError('generated local cancellation')
+                if case=='local_bad_metadata_cancel':
+                    error.submission_state='generated-untrusted-field'
+                    error.cleanup_failed='generated-private-flag'
+                raise error
+            return InterrogationResult(model_id=self.model_id,kind='plain_language',plain_language=description)
+    backend=LocalFixtureBackend()
 service=AIInterrogationService()
 def run(**extra):
     return service.analyze_batch([image],backend,auto_merge=False,run_mode='manual',
@@ -120,12 +138,27 @@ if case=='cancel_default':
         result['raised_submission_state']=error.submission_state
     else:raise AssertionError('Expected original cancellation exception')
     assert len(calls)==1 and sidecar.read_bytes()==baseline[sidecar]
-elif case=='cancel_partial':
+elif case in {'cancel_partial','external_not_sent_cancel','external_cleanup_cancel','local_cancel','local_bad_metadata_cancel'}:
     batch=run(return_partial_on_cancel=True)
     assert batch.cancelled and batch.processed==0 and len(calls)==1
     assert sidecar.read_bytes()==baseline[sidecar]
     assert not hasattr(batch,'submission_state')
-    result['partial_cancel_uncertainty_gap_retained']=True
+    outcome=batch.image_result(image).external_request_outcome
+    if case.startswith('local_'):
+        assert outcome is None
+    else:
+        assert outcome==AIExternalRequestOutcome('not_sent' if case=='external_not_sent_cancel' else 'outcome_unknown',case=='external_cleanup_cancel')
+        aggregate=AIImageRunResult();aggregate.absorb(batch.image_result(image))
+        assert aggregate.external_request_outcome is outcome
+        try:outcome.cleanup_failed=False
+        except FrozenInstanceError:pass
+        else:raise AssertionError('Outcome must be immutable')
+        for state,cleanup in [('invalid',False),('not_sent','invalid')]:
+            try:AIExternalRequestOutcome(state,cleanup)
+            except ValueError:pass
+            else:raise AssertionError('Invalid outcome accepted')
+        result['external_request_outcome']=dict(submission_state=outcome.submission_state,cleanup_failed=outcome.cleanup_failed)
+    result['partial_cancel_uncertainty_gap_retained']=False
 elif case in {'sidecar_race','source_race'}:
     batch=run()
     assert batch.processed==0 and batch.errors and len(calls)==1
@@ -137,6 +170,7 @@ else:
         failed=run()
         assert failed.processed==0 and failed.errors and len(calls)==1
         assert sidecar.read_bytes()==baseline[sidecar]
+        assert failed.image_result(image).external_request_outcome==AIExternalRequestOutcome('outcome_unknown',False)
         result['no_automatic_retry_before_explicit_second_run']=True
     batch=run()
     assert batch.processed==1 and not batch.errors and batch.review_paths==[image]
@@ -177,6 +211,14 @@ assert caption.read_bytes()==baseline[caption]
 if case!='source_race':assert image.read_bytes()==baseline[image]
 assert backend._runtime_progress is None
 assert not violations,violations
+loading=any(text.startswith('Loading') for text in progress)
+assert loading==case.startswith('local_')
+if not case.startswith('local_'):
+    assert any(text.startswith('Preparing local-server analysis') for text in progress)
+    assert any(text.startswith('Preparing image for local server') for text in progress)
+    assert any(text.startswith('Waiting for local description') for text in progress)
+    if case not in {'cancel_default','cancel_partial','external_not_sent_cancel','external_cleanup_cancel'}:
+        assert any(text.startswith('Checking description and source') for text in progress)
 result.update(case=case,passed=True,dispatch_count=len(calls),profile_paths_bound=True,
     component_only=True,source_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),
     sidecar_sha256=hashlib.sha256(sidecar.read_bytes()).hexdigest(),
@@ -190,7 +232,8 @@ print(json.dumps(result))
 
 
 @pytest.mark.parametrize('case',['persist_accept','cache_reuse','unknown_failure',
-    'cancel_default','cancel_partial','sidecar_race','source_race','stale_acceptance'])
+    'cancel_default','cancel_partial','sidecar_race','source_race','stale_acceptance',
+    'external_not_sent_cancel','external_cleanup_cancel','local_progress','local_cancel','local_bad_metadata_cancel'])
 def test_original_service_persist_review_join(selected_public_source,tmp_path,case):
     env={key:value for key,value in os.environ.items() if not key.startswith(
         ('TAG_MANAGER_UI_TEST','TAG_MANAGER_PYTEST'))}

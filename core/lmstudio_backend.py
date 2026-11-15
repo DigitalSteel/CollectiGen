@@ -99,6 +99,7 @@ class LMStudioContext:
 
 class LMStudioDescriptionBackend:
     _provider = "LM Studio (external)"
+    analysis_preparation_phase = "Preparing local-server analysis"
 
     def __init__(self, context, *, dispatch):
         _require(type(context) is LMStudioContext)
@@ -114,6 +115,11 @@ class LMStudioDescriptionBackend:
         return dict(model_id=self.model_id, model_revision=self._context.model_revision or "",
                     kind="plain_language", prompt=self._context.prompt, settings=self._context.settings())
 
+    def _report_phase(self, phase):
+        progress = getattr(self, "_runtime_progress", None)
+        if callable(progress):
+            progress(phase)
+
     def analyze(self, image):
         return self.analyze_with_cancellation(image, None)
 
@@ -122,6 +128,8 @@ class LMStudioDescriptionBackend:
         inputs = {}
         prepared = request = response = answer = None
         try:
+            check_cancelled(should_cancel)
+            self._report_phase("Preparing image for local server")
             check_cancelled(should_cancel)
             prepared = prepare_image(image, should_cancel=should_cancel)
             check_cancelled(should_cancel)
@@ -132,6 +140,8 @@ class LMStudioDescriptionBackend:
             request = encode_description(**inputs)
             request_hash = hashlib.sha256(request.body).hexdigest()
             request = None
+            check_cancelled(should_cancel)
+            self._report_phase("Waiting for local description")
             check_cancelled(should_cancel)
             state = "outcome_unknown"
             response = self._dispatch(**inputs, cancelled=should_cancel or (lambda: False))
@@ -156,6 +166,7 @@ class LMStudioDescriptionBackend:
                         and (type(number) is int or math.isfinite(number))))
             if not valid:
                 raise LMStudioBackendError("invalid_dispatch_result")
+            self._report_phase("Checking description and source")
             verify_source_current(image, prepared, should_cancel=should_cancel)
             audit = prepared.audit()
             audit.update(request_sha256=request_hash, model_instance_id=response.instance_id,

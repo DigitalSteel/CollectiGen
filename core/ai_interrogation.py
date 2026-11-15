@@ -398,6 +398,19 @@ class Reconciliation:
     proposed_plain_language: str
 
 
+@dataclass(frozen=True)
+class AIExternalRequestOutcome:
+    """Safe client disposition only; never a server-stop or execution grant."""
+    submission_state: str
+    cleanup_failed: bool = False
+
+    def __post_init__(self):
+        if (type(self.submission_state) is not str
+                or self.submission_state not in {"not_sent", "outcome_unknown"}
+                or type(self.cleanup_failed) is not bool):
+            raise ValueError("Invalid external request outcome.")
+
+
 @dataclass
 class AIImageRunResult:
     processed: int = 0
@@ -406,6 +419,7 @@ class AIImageRunResult:
     auto_merged: int = 0
     conflicts_held: int = 0
     review_required: bool = False
+    external_request_outcome: AIExternalRequestOutcome | None = None
 
     def absorb(self, other: "AIImageRunResult") -> None:
         self.processed += int(other.processed)
@@ -414,6 +428,8 @@ class AIImageRunResult:
         self.auto_merged += int(other.auto_merged)
         self.conflicts_held += int(other.conflicts_held)
         self.review_required = self.review_required or bool(other.review_required)
+        if other.external_request_outcome is not None:
+            self.external_request_outcome = other.external_request_outcome
 
 
 @dataclass
@@ -786,6 +802,15 @@ class AIInterrogationService:
         return sum(count+(2 if callable(getattr(backend,"release",None)) else 0) for backend in backends)
 
     @staticmethod
+    def _external_request_outcome(error):
+        state = getattr(error, "submission_state", None)
+        cleanup = getattr(error, "cleanup_failed", None)
+        if (type(state) is str and state in {"not_sent", "outcome_unknown"}
+                and type(cleanup) is bool):
+            return AIExternalRequestOutcome(state, cleanup)
+        return None
+
+    @staticmethod
     def _backend_label(backend) -> str:
         value=str(getattr(backend,"model_id","") or type(backend).__name__)
         return value.rsplit("/",1)[-1]
@@ -905,7 +930,8 @@ class AIInterrogationService:
                     f"{phase} {label} • provider {provider_label()}; {completed_image}/{len(paths)} images finished"+timing_detail())
         report.observe_inference=getattr(progress,'observe_inference',None)
         backend._runtime_progress=runtime_progress
-        runtime_progress("Loading")
+        preparation_phase = getattr(backend, "analysis_preparation_phase", "Loading")
+        runtime_progress(preparation_phase if type(preparation_phase) is str and preparation_phase else "Loading")
         try:
             self._raise_if_cancelled(should_cancel)
             if getattr(backend,"batch_size",1)>1 and hasattr(backend,"analyze_many"):
@@ -951,9 +977,11 @@ class AIInterrogationService:
                     )
                     finish_timing=getattr(backend,"finish_timing_sample",None)
                     if callable(finish_timing):finish_timing(not bool(should_cancel and should_cancel()))
-                except InterruptedError:
+                except InterruptedError as exc:
+                    result.image_result(path).external_request_outcome = self._external_request_outcome(exc)
                     raise
                 except Exception as exc:
+                    result.image_result(path).external_request_outcome = self._external_request_outcome(exc)
                     if isinstance(exc,RuntimeMemoryAdmissionError):observe_remaining('held')
                     finish_timing=getattr(backend,"finish_timing_sample",None)
                     if callable(finish_timing):finish_timing(False)

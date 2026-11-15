@@ -88,3 +88,17 @@ This is generated component evidence,not visible UI or actual-server/model
 qualification. Generic Loading/partial-cancel uncertainty remain integration
 requirements. No existing profile,real library,Root/Reader/C3A trial,package or
 version is introduced. Signed Organizer runtime delivery remains open.
+
+
+## AI-05N external progress and cancellation source integration
+
+External analysis now reports preparation, request waiting and source checking
+through the existing progress callback without claiming a local model load.
+Partial cancellation and failed requests retain validated immutable per-image
+submission uncertainty and cleanup status. Default cancellation still raises the
+original typed exception; local backend Loading/cancellation behavior is retained.
+
+Generated component checks cover original persistence/review and local compatibility.
+This source-only change activates no provider, model, server or Qt workflow. Visible
+uncertainty/recovery, opt-in routing and actual-server qualification remain open.
+Organizer 0.6.0 does not contain this change; signed runtime delivery remains open.
