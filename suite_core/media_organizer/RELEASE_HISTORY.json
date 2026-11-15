@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.6.0-alpha.1",
+      "numeric_version": "0.6.0",
+      "maturity": "alpha",
+      "date": "2026-11-15",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "Source checkpoint;exact final package/publication evidence recorded separately",
+      "scope": "Explicit local model-list review,independent connection preferences and settings publication protection;no inference/model management"
+    },
+    {
       "software_version": "0.5.8-alpha.1",
       "numeric_version": "0.5.8",
       "maturity": "alpha",

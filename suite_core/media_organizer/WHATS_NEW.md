@@ -1,3 +1,9 @@
+# Media Organizer a.0.6.0 — 2026-11-15
+
+- Setup can refresh a local LM Studio model list and remember a selected model key,with separate Save and Cancel/Close. Current AI models and image knowledge stay unchanged.
+- Connection preferences survive ordinary settings saves;newer settings detected during publication remain preserved.
+- LM Studio image analysis,credential entry and model loading are not included.
+
 # Media Organizer a.0.5.8 — 2026-11-14
 
 - Related Rule Repairs can review and repair saved user rules when the optional legacy built-in rules file is absent from the installed package. The preview still shows the exact proposed changes before confirmation.

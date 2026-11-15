@@ -139,6 +139,7 @@ _LOCAL_LABEL_ROWS = (
     ('TagEncyclopedia', '0.1.0-alpha.6', '0.1.6', 'alpha'),
     ('TagEncyclopedia', '0.1.0-alpha.7', '0.1.7', 'alpha'),
     ('TagEncyclopedia', '0.1.0-alpha.8', '0.1.8', 'alpha'),
+    ('MediaOrganizer', '0.6.0-alpha.1', '0.6.0', 'alpha'),
 )
 _LOCAL_LABELS = validate_legacy_display_mapping(
     (component, legacy, ComponentReleaseIdentity(numeric, maturity))

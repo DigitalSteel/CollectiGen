@@ -34,7 +34,7 @@
   "maturity": "alpha",
   "module_id": "collectigen.media-organizer",
   "native_activation_qualified": false,
-  "numeric_version": "0.5.8",
+  "numeric_version": "0.6.0",
   "optional_integrations": [
     "injected model-manager status",
     "borrowed Encyclopedia TagLookup interface 1"
@@ -46,7 +46,7 @@
     "Ingest",
     "Setup"
   ],
-  "release_date": "2026-11-14",
+  "release_date": "2026-11-15",
   "release_timezone": "America/New_York",
   "required_runtime": [
     "bundled Python 3.13.15 organizer-image runtime",
@@ -117,14 +117,14 @@
   "runtime_kind": "interpreter-portable",
   "runtime_profile": "organizer-image",
   "schema_version": 1,
-  "scope": "Related rule-repair review accepts absent optional legacy defaults while retaining source freshness and Restore; Dataset selection, existing editors, metadata/history, prompt-catalog handoff and recoverable Close retained. Source branch adds explicit local LM Studio model-list preferences;no inference or model control.",
+  "scope": "Explicit local LM Studio model-list review and guarded connection preferences;no inference or model management. Existing0.5.8 image,rule-repair and recovery behavior retained.",
   "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
   "shell_owner": "qt_app.main_window.TagManagerWindow",
-  "software_version": "0.5.8-alpha.1",
+  "software_version": "0.6.0-alpha.1",
   "standalone_distribution_qualified": false,
   "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
   "startup_owner": "qt_main._start_application",
-  "status": "Source-only LM Studio integration on the 0.5.8 baseline;not a released build.",
+  "status": "a.0.6.0 candidate;exact package qualification/publication recorded separately",
   "unavailable_product_workspaces": [
     "Generate",
     "Training"

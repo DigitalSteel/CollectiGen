@@ -22,3 +22,10 @@ Original newer Organizer files are preserved outside finite Setup/settings
 changes. This source branch is not the published0.5.8 build;current-host
 packaged qualification and signed delivery remain open. No inference,credential
 storage,model loading or default server discovery is enabled.
+
+## Media Organizer a.0.6.0 source candidate
+
+The current Organizer source integrates explicit LM Studio model-list review and
+connection preferences. The declared0.6.0identity selects a new feature release;
+this source checkpoint alone is not a qualified binary or publication. Existing
+server/model ownership and image-analysis limits remain.
