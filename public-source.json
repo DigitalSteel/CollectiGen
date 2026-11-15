@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 883,
+  "allowlisted_source_file_count": 887,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -38,8 +38,8 @@
       "size_bytes": 2794
     },
     "SOURCE_DELIVERY_SUPPLEMENT.md": {
-      "sha256": "130505f3e8d6c59d265ed8def3d937cc29c0d1d1b677de2bcb437fa8f4bc2c1f",
-      "size_bytes": 5950
+      "sha256": "0d47df81dc32d0e93057fd40fb862e1fb3bfc9b02ef18bf1d4d49b9f798d8bbc",
+      "size_bytes": 6882
     },
     "SUPPORT.md": {
       "sha256": "d8392a3bf12b5559d07f6885b9bd4e37e0e91ea043f21feb83fd3d88599370c8",
@@ -3540,6 +3540,22 @@
     "tests/test_lmstudio_description_transport_loopback.py": {
       "sha256": "624900a7aa9dfee589e5989256cf8e7d28a5169f2b467d96478949f9e150371d",
       "size_bytes": 6666
+    },
+    "core/lmstudio_image_preparation.py": {
+      "sha256": "bf9a8305e0ae5a08a74cbb870a3a6da76fe480c20be60ed73e3febe8f93f17fe",
+      "size_bytes": 5326
+    },
+    "core/lmstudio_backend.py": {
+      "sha256": "1fd1fe4bd190e615ac96833e5cc3d6bcc309dfda4b5302be79b1551d89b40259",
+      "size_bytes": 9163
+    },
+    "tests/test_lmstudio_image_preparation.py": {
+      "sha256": "fb2549c93159a4216da96b00bcfaf83e8758f641b0b7740e472beb9e68af7ca2",
+      "size_bytes": 6958
+    },
+    "tests/test_lmstudio_backend.py": {
+      "sha256": "fd55fa79273acb712cb77f0bc0d520e60230672b415455b2c5c0bbd1a08ab029",
+      "size_bytes": 8988
     }
   },
   "fresh_history_required": true,

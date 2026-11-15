@@ -58,3 +58,19 @@ Only injected and generated ephemeral-loopback tests qualify this source child.
 No real LM Studio,model,provider,profile or image-library operation is performed.
 Existing GET and codec source remain unchanged. Actual server/JIT policy,review
 consumer and signed Organizer runtime delivery remain open;no version is added.
+
+
+## AI-05L1 read-only preparation and description backend source
+
+The source adapter reads only the explicit image through the canonical stable
+reader,prepares an oriented metadata-free RGB PNG in memory,verifies returned
+request/instance correlation and rereads the source before returning the existing
+unreviewed InterrogationResult. Original files and image families are not written.
+Metadata encountered during decode is not copied into the payload or audit.
+
+Dispatch must be injected;no default server,credentials,provider selection,local
+model lifecycle,evidence persistence or UI activation is added. The existing
+source reader/decoder,J1/K1 and evidence conversion classes remain unchanged.
+This follows existing RGB/white-alpha conventions,not color-managed fidelity.
+Actual server/JIT/model,visible/persisted review and signed Organizer delivery
+remain open. No package or version is created for this source-only child.
