@@ -87,3 +87,11 @@ It reuses the unchanged native-v1 GET client and immutable parser, with separate
 guarded Save and physical Cancel/Close settlement. This is a source contribution,
 not a released Organizer update or actual-server/model qualification. No tokens,
 model load/unload, server management or inference endpoints are added.
+
+## Loopback discovery transport qualification source
+
+AI-05C2 adds finite generated HTTP/socket cases for the unchanged discovery
+client. Only ephemeral numeric-loopback fixtures are contacted; no LM Studio
+server, model, profile or application is used. Real socket success, framing,
+request cancellation, timeout and settlement evidence remains distinct from
+actual server/version interoperability and packaged Organizer support.
