@@ -13,3 +13,12 @@ Run the private copy's bundled interpreter with `-B -m suite_core.media_organize
 Technical witness qt-replacement/RESULT.json proves a byte-distinct ABI-equivalent binding/DLL pair can load from a private copy with normal validation enabled and only its applicable integrity hash refreshed. Inert PE overlays left executable sections/ABI unchanged; this is a replacement-mechanism witness, not a rebuilt-Qt-source or arbitrary-version compatibility guarantee. The exact sources/build instructions provide the route for substantive compatible modifications. No signing key, publisher permission or Windows configuration change was needed for this private witness. No native window was created.
 
 This document records technical source-delivery/replacement evidence; it is not a blanket legal opinion, clean-machine test or publication approval. Official candidate bytes and user data remain untouched.
+
+## Current Organizer LM Studio source integration
+
+AI-05H carries the reviewed discovery/preferences services and canonical late-
+publication/preference-preservation protections into the current0.5.8 source.
+Original newer Organizer files are preserved outside finite Setup/settings
+changes. This source branch is not the published0.5.8 build;current-host
+packaged qualification and signed delivery remain open. No inference,credential
+storage,model loading or default server discovery is enabled.

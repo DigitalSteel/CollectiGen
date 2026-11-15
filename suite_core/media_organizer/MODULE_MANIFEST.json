@@ -108,19 +108,23 @@
     "qt_app/ingest_page.py",
     "resources/model_workflow_baseline.json",
     "core/generation_prompt_catalog.py",
-    "qt_app/generation_prompt_catalog_actions.py"
+    "qt_app/generation_prompt_catalog_actions.py",
+    "core/lmstudio_discovery.py",
+    "core/lmstudio_transport.py",
+    "core/lmstudio_connection_settings.py",
+    "qt_app/lmstudio_connection_dialog.py"
   ],
   "runtime_kind": "interpreter-portable",
   "runtime_profile": "organizer-image",
   "schema_version": 1,
-  "scope": "Related rule-repair review accepts absent optional legacy defaults while retaining source freshness and Restore; Dataset selection, existing editors, metadata/history, prompt-catalog handoff and recoverable Close retained.",
+  "scope": "Related rule-repair review accepts absent optional legacy defaults while retaining source freshness and Restore; Dataset selection, existing editors, metadata/history, prompt-catalog handoff and recoverable Close retained. Source branch adds explicit local LM Studio model-list preferences;no inference or model control.",
   "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
   "shell_owner": "qt_app.main_window.TagManagerWindow",
   "software_version": "0.5.8-alpha.1",
   "standalone_distribution_qualified": false,
   "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
   "startup_owner": "qt_main._start_application",
-  "status": "a.0.5.8 candidate; exact packaged qualification and publication recorded separately",
+  "status": "Source-only LM Studio integration on the 0.5.8 baseline;not a released build.",
   "unavailable_product_workspaces": [
     "Generate",
     "Training"
