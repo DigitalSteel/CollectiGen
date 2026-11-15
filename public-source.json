@@ -38,8 +38,8 @@
       "size_bytes": 2794
     },
     "SOURCE_DELIVERY_SUPPLEMENT.md": {
-      "sha256": "0e04059b38e529b17989f51440ca8cc397195ab736eb6fe076307d7f0ecd5c0c",
-      "size_bytes": 8473
+      "sha256": "123a35a6e229f2070396c33dbea9d242b3872a3d8c91bed2599ceb613dacd2c1",
+      "size_bytes": 9146
     },
     "SUPPORT.md": {
       "sha256": "d8392a3bf12b5559d07f6885b9bd4e37e0e91ea043f21feb83fd3d88599370c8",
@@ -1106,8 +1106,8 @@
       "size_bytes": 10164
     },
     "core/preparation_workflow.py": {
-      "sha256": "fc46be0cd5b2f01a8cc6f2c5c8d2ada7b52ba21cc28ccb96599a0035ca7b0db5",
-      "size_bytes": 58192
+      "sha256": "1eb330f4825af9ce6ef73e49984958698ab73a784751875f5b454fb2048db8e5",
+      "size_bytes": 58970
     },
     "core/profile_paths.py": {
       "sha256": "6df8ac673a21f09ddbc04b93ed3b0cadcd7839921556e04a596dfdd781b182af",
@@ -3558,8 +3558,8 @@
       "size_bytes": 8988
     },
     "tests/test_lmstudio_service_review_join.py": {
-      "sha256": "3aba9b9f92738240dde8451d28d402aeadf14c4e7e683ebf79ad462b98f39d74",
-      "size_bytes": 14425
+      "sha256": "1d85d958b2ee486ad889e8735f03582c92a3e1960c8614d663ee2f911353b5c9",
+      "size_bytes": 17350
     }
   },
   "fresh_history_required": true,

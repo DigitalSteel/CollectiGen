@@ -38,6 +38,8 @@ CHILD = r'''
 import sys,json,hashlib,os
 from pathlib import Path
 program,case_root,case=Path(sys.argv[1]).resolve(),Path(sys.argv[2]).resolve(),sys.argv[3]
+unified=case.startswith('unified_')
+case=case.removeprefix('unified_')
 profile=case_root/'profile'
 (profile/'data/defaults').mkdir(parents=True)
 sys.path.insert(0,str(program))
@@ -131,7 +133,44 @@ def run(**extra):
     return service.analyze_batch([image],backend,auto_merge=False,run_mode='manual',
         should_cancel=lambda:False,progress=lambda i,n,text:progress.append(text),**extra)
 result={}
-if case=='cancel_default':
+if unified:
+    from core.preparation_workflow import UnifiedPreparationService,PreparationOptions,PreparationImageOutcome
+    options=PreparationOptions(read_external_evidence=False,suggest_sdxl_tags=False,
+        suggest_plain_language=True,confirm_safe_tags=False,prepare_preferred_descriptions=False)
+    preparation=UnifiedPreparationService(None,service)
+    def prepare():
+        return preparation.run([image],options,description_backend=backend,
+            should_cancel=lambda:False,progress=lambda i,n,text:progress.append(text))
+    batch=prepare();outcome=batch.outcomes[0]
+    cancelled=case in {'cancel_partial','external_not_sent_cancel','external_cleanup_cancel','local_cancel'}
+    assert batch.cancelled==cancelled and len(calls)==1
+    disposition=outcome.external_request_outcome
+    if cancelled or case=='unknown_failure':
+        assert sidecar.read_bytes()==baseline[sidecar] and outcome.description_model_passes==0
+    else:
+        assert outcome.description_model_passes==1 and len(ImageRecord(image).annotation.ai_evidence)==1
+    if case.startswith('local_') or case=='persist_accept':
+        assert disposition is None and 'external_request_outcome' not in outcome.as_dict()
+        assert 'server work may continue' not in outcome.detail()
+    else:
+        expected=AIExternalRequestOutcome('not_sent' if case=='external_not_sent_cancel' else 'outcome_unknown',case=='external_cleanup_cancel')
+        assert disposition==expected
+        payload=outcome.as_dict()['external_request_outcome']
+        assert payload==dict(submission_state=expected.submission_state,cleanup_failed=expected.cleanup_failed)
+        assert json.loads(json.dumps(batch.as_page_result()))['outcomes'][0]['external_request_outcome']==payload
+        assert ('server work may continue' in outcome.detail())==(expected.submission_state=='outcome_unknown')
+        assert ('client cleanup failed' in outcome.detail())==expected.cleanup_failed
+        result['external_request_outcome']=payload
+    if case=='unknown_failure':
+        retry=prepare()
+        assert len(calls)==2 and retry.outcomes[0].description_model_passes==1
+        assert retry.outcomes[0].external_request_outcome is None
+        assert len(ImageRecord(image).annotation.ai_evidence)==1
+        result['explicit_retry_without_duplicate_evidence']=True
+    legacy=PreparationImageOutcome(image)
+    assert 'external_request_outcome' not in legacy.as_dict() and legacy.detail()=='No changes were needed.'
+    result['unified_result_roundtrip']=True
+elif case=='cancel_default':
     try:run()
     except LMStudioBackendCancelled as error:
         assert error.submission_state=='outcome_unknown'
@@ -211,14 +250,14 @@ assert caption.read_bytes()==baseline[caption]
 if case!='source_race':assert image.read_bytes()==baseline[image]
 assert backend._runtime_progress is None
 assert not violations,violations
-loading=any(text.startswith('Loading') for text in progress)
+loading=any(('Loading ' in text) for text in progress)
 assert loading==case.startswith('local_')
 if not case.startswith('local_'):
-    assert any(text.startswith('Preparing local-server analysis') for text in progress)
-    assert any(text.startswith('Preparing image for local server') for text in progress)
-    assert any(text.startswith('Waiting for local description') for text in progress)
+    assert any('Preparing local-server analysis' in text for text in progress)
+    assert any('Preparing image for local server' in text for text in progress)
+    assert any('Waiting for local description' in text for text in progress)
     if case not in {'cancel_default','cancel_partial','external_not_sent_cancel','external_cleanup_cancel'}:
-        assert any(text.startswith('Checking description and source') for text in progress)
+        assert any('Checking description and source' in text for text in progress)
 result.update(case=case,passed=True,dispatch_count=len(calls),profile_paths_bound=True,
     component_only=True,source_sha256=hashlib.sha256(image.read_bytes()).hexdigest(),
     sidecar_sha256=hashlib.sha256(sidecar.read_bytes()).hexdigest(),
@@ -246,3 +285,9 @@ def test_original_service_persist_review_join(selected_public_source,tmp_path,ca
     assert completed.returncode==0,completed.stderr[-2000:]
     result=json.loads((tmp_path/'RESULT.json').read_bytes())
     assert result['passed'] and result['profile_paths_bound'] and not result['blocked_operations']
+
+
+@pytest.mark.parametrize('case',['cancel_partial','external_not_sent_cancel','external_cleanup_cancel',
+    'unknown_failure','local_cancel','local_progress','persist_accept'])
+def test_unified_preparation_external_disposition(selected_public_source,tmp_path,case):
+    test_original_service_persist_review_join(selected_public_source,tmp_path,'unified_'+case)

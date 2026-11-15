@@ -14,7 +14,7 @@ from types import SimpleNamespace
 
 from .annotation import ImageAnnotation
 from .batch_preparation import BatchPreparationService
-from .ai_interrogation import _preparation_record
+from .ai_interrogation import AIExternalRequestOutcome, _preparation_record
 from .image_record import ImageRecord
 from .operation_journal import JournalOperation, OperationJournal
 from .history_configuration import HistoryConfigurationError, path_key
@@ -162,6 +162,7 @@ class PreparationImageOutcome:
     errors: list[str] = field(default_factory=list)
     cancelled: bool = False
     external_evidence_refreshed: bool = False
+    external_request_outcome: AIExternalRequestOutcome | None = None
 
     @property
     def completed_ai_passes(self) -> int:
@@ -200,6 +201,14 @@ class PreparationImageOutcome:
             self.completed_ai_passes+self.ai_passes_skipped<self.expected_ai_passes
         ):
             parts.append("cancelled before every requested pass finished")
+        if self.external_request_outcome is not None:
+            disposition=self.external_request_outcome
+            if disposition.submission_state=="not_sent":
+                parts.append("external request was not sent")
+            else:
+                parts.append("external request outcome is unknown; server work may continue")
+            if disposition.cleanup_failed:
+                parts.append("client cleanup failed")
         if self.errors:
             parts.append("; ".join(dict.fromkeys(self.errors)))
         return "; ".join(parts) or "No changes were needed."
@@ -217,6 +226,8 @@ class PreparationImageOutcome:
             "review_required":self.review_required,
             "errors":list(self.errors),"cancelled":self.cancelled,
             "external_evidence_refreshed":self.external_evidence_refreshed,
+            **({"external_request_outcome":asdict(self.external_request_outcome)}
+               if self.external_request_outcome is not None else {}),
         }
 
 
@@ -865,6 +876,7 @@ class UnifiedPreparationService:
                 result.errors.extend(description_result.errors)
                 for path,item in description_result.image_results.items():
                     outcome=outcomes.setdefault(path,PreparationImageOutcome(path))
+                    outcome.external_request_outcome=item.external_request_outcome
                     outcome.description_model_passes+=item.processed
                     outcome.ai_passes_skipped+=item.skipped_existing
                     outcome.review_required=outcome.review_required or item.review_required

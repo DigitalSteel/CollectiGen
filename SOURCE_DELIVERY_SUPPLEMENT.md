@@ -102,3 +102,15 @@ Generated component checks cover original persistence/review and local compatibi
 This source-only change activates no provider, model, server or Qt workflow. Visible
 uncertainty/recovery, opt-in routing and actual-server qualification remain open.
 Organizer 0.6.0 does not contain this change; signed runtime delivery remains open.
+
+
+## AI-05O unified preparation request disposition
+
+The original preparation description projection now retains the immutable
+per-image external request outcome. Existing result detail and serialization
+separate not-sent from unknown server outcome and retain client cleanup failure.
+Local outcomes omit the new optional serialized field, preserving their shape.
+Generated original-service checks cover cancellation, errors, explicit retry,
+persistence and local compatibility. No provider, server or Qt route is activated;
+source result text is not visible workflow qualification. Organizer 0.6.0 remains
+discovery/preferences only; signed runtime delivery remains open.
