@@ -124,7 +124,7 @@
   "standalone_distribution_qualified": false,
   "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
   "startup_owner": "qt_main._start_application",
-  "status": "a.0.7.0 unpublished build candidate;application/signing/release gates remain open",
+  "status": "a.0.7.0 unpublished source candidate;earlier exact ZIP scoped Setup check passed;signing/admission/release gates remain open",
   "unavailable_product_workspaces": [
     "Generate",
     "Training"

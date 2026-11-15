@@ -36,3 +36,21 @@ Copy and recovery preserve exact file identity and family bytes, retain reviewed
 In a.0.6.0, open **Setup > AI Tools & Models > LM Studio Connection** to save a local HTTP address and preferred model key. **Refresh Models** reads the reported list; choose a key, then **Save Connection** separately. Refresh does not load models, change the current AI provider or analyze images. Credential entry and image analysis through LM Studio are not included. Existing rule repair, exact Restore and image-editor corrections remain included.
 
 The exact a.0.6.0 package passed generated loopback Refresh, selection, separate Save, Cancel with physical cleanup, fresh-process preference reopen and normal Close offscreen. Reopen made no network requests. The existing missing-ExifTool installer prompt was explicitly declined; metadata writing was not qualified by this run. Prior a.0.5.8 is authenticated for recovery, and existing transaction recovery proof is retained. Actual installed rollback, real libraries, an actual LM Studio server, model or trainer execution and full suite parity are not claimed.
+
+## Unpublished a.0.7.0 source candidate
+
+The source candidate adds optional masked authentication for the next explicit
+LM Studio model-list refresh and manual connection inspection in Run AI. It does
+not enable LM Studio image analysis or model management. The release links above
+continue to identify the shipped a.0.6.0; no a.0.7.0 download is advertised.
+
+The earlier exact 0.7.0 ZIP with SHA-256
+`96bb4b9a9593f101ac3991faf400445379158f4f0831fe0374c2f1a982ab9b3e`
+passed generated-response offscreen startup, Setup refresh/save, fresh preference
+reopen, cancellation, safe failure/explicit retry and normal Close. This is not
+actual authenticated-server/model, manual Run AI, required-component or installed
+update/rollback qualification. The missing-ExifTool installer was declined.
+These source presentation edits do not change that tested ZIP. Any future ZIP
+requires exact artifact binding and an explicit evidence-reuse/qualification
+decision. The candidate remains unsigned, unpublished and not Manager-admitted.
+See [a.0.7.0 candidate notes](docs/releases/MediaOrganizer-0.7.0.md).

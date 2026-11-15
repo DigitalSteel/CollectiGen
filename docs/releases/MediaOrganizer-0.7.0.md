@@ -16,4 +16,8 @@
 
 Only an explicit local HTTP address and port on this computer are supported. Model capabilities are server declarations, not inference qualification. This update does not load, unload or configure a model, run training or enable LM Studio image analysis.
 
-This is an unpublished, unsigned build candidate. Source checks use generated data; actual authenticated-server behavior, packaged startup and saved-state/recovery acceptance have not been qualified for this candidate. It is not an admitted Suite Manager update. Existing recovery and release gates remain open.
+This is an unpublished, unsigned build candidate, not an admitted Suite Manager update. The exact earlier 0.7.0 candidate ZIP (SHA-256 `96bb4b9a9593f101ac3991faf400445379158f4f0831fe0374c2f1a982ab9b3e`, source `80ba73e76058c4d282e5fb316d49e75704abdb42`) passed an automated offscreen check of original startup, generated-token model-list refresh, separate Save, fresh-process preference reopen, cancellation cleanup, safe failure with explicit retry, and normal Close. Fifteen default-system/light states were inspected. Responses were generated; no actual server or model was used.
+
+That check does not qualify actual authenticated-server behavior, image inference, manual Run AI interaction, other themes or installed update/rollback. The existing missing-ExifTool installer prompt was declined; metadata writing and required-component readiness were not qualified. Signing, exact signed admission/recovery and publication remain open.
+
+These revised source notes do not change the tested ZIP. A later package must bind its exact source and artifact identity and record applicable evidence reuse or additional qualification before publication. Organizer a.0.6.0 remains the shipped version.

@@ -22,8 +22,8 @@
       "size_bytes": 2304
     },
     "README.md": {
-      "sha256": "87d55724948bd5737b17c968bdcd006be14cfcf851864dd50b33212e898d9841",
-      "size_bytes": 3591
+      "sha256": "c1b987d4fa947deb5adb9f303a25d01f852a9e5dda360767b107de3e59fff72b",
+      "size_bytes": 4703
     },
     "RELEASE_NOTES.md": {
       "sha256": "d9b444d5fdb8acb7c1bbbf737ab596f7083c12fe7c1b7c6b2b4d1bd1c71d5bb9",
@@ -3222,20 +3222,20 @@
       "size_bytes": 12400
     },
     "suite_core/media_organizer/MODULE_MANIFEST.json": {
-      "sha256": "835033ab5c5b6dc45756c2bd8f1689f3605597bd2df5b1b0b78d91214968eebf",
-      "size_bytes": 5448
+      "sha256": "2eb1d6918e16bf83d36f6c7e16c0faa42c83e4d28cb9a908f065de8ef8077bf5",
+      "size_bytes": 5491
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "5048db5558f71f42c82b864a3a566f93f11cae0032795bcf73201ff45c88c8bf",
-      "size_bytes": 20272
+      "sha256": "13766e701fe662921369cf2f687b38c811434962dab8a53e3c920e640ad974d5",
+      "size_bytes": 20311
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
       "sha256": "8ee44408dd31fb4131ffc07c470986f48df1110a92cf582c13f8bbaafbd283f1",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "5815cbe04c28dd7a5f83d03732b5641fcec03b899561b2a99b510c17e513a9ca",
-      "size_bytes": 34332
+      "sha256": "168b6b33a556df823a491a5054563265b8d8634388bd7150e9197627e7473df3",
+      "size_bytes": 35217
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3574,8 +3574,8 @@
       "size_bytes": 10935
     },
     "docs/releases/MediaOrganizer-0.7.0.md": {
-      "sha256": "9ee06a923ed46bcd17f87627f8e8f5759ae43beb4a1af77c4ace6f1670ddc6e7",
-      "size_bytes": 1541
+      "sha256": "d1a20c466df9d2b4694faa7bd638703be3eebfc9906670f6b790a7f6359db15f",
+      "size_bytes": 2422
     }
   },
   "fresh_history_required": true,
