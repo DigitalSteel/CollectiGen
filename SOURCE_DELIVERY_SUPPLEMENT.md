@@ -78,3 +78,12 @@ unchanged;no runtime version or binary is created for this source prerequisite.
 +binary or installed update is created;published0.4.23 stays unchanged.
 +An earlier unscoped synthetic Qt run hit an access violation;later scoped source
 evidence does not identify its cause or qualify native lifecycle.
+
+## Explicit LM Studio model-list review source
+
+AI-05G1 adds explicit Refresh Models and declared-key selection to the existing
+connection editor. Refresh does not save preferences or activate inference.
+It reuses the unchanged native-v1 GET client and immutable parser, with separate
+guarded Save and physical Cancel/Close settlement. This is a source contribution,
+not a released Organizer update or actual-server/model qualification. No tokens,
+model load/unload, server management or inference endpoints are added.

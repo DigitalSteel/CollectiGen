@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 825,
+  "allowlisted_source_file_count": 826,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -38,8 +38,8 @@
       "size_bytes": 2794
     },
     "SOURCE_DELIVERY_SUPPLEMENT.md": {
-      "sha256": "6aaf9ee0f7422f54aff38869e13d232eb42f5ff9190bf2509601a264229c253e",
-      "size_bytes": 7436
+      "sha256": "28c32adf477f7b6e643fa03a6564725599ef042efc003eeecc984ea4e37fedf5",
+      "size_bytes": 7956
     },
     "SUPPORT.md": {
       "sha256": "d8392a3bf12b5559d07f6885b9bd4e37e0e91ea043f21feb83fd3d88599370c8",
@@ -2250,8 +2250,8 @@
       "size_bytes": 25151
     },
     "qt_app/lmstudio_connection_dialog.py": {
-      "sha256": "6df3672ae83255a4d946172e2b7e653ddb16a418e3041ff7587827d40aea9dac",
-      "size_bytes": 10495
+      "sha256": "79cbb945078fb7687691ef209c422fe7eeacc64bff2a995c62964d2b182a5ae8",
+      "size_bytes": 17435
     },
     "qt_app/main_window.py": {
       "sha256": "ab482fc2459822df78ad924f0efc9005e1e35d41dfe16e7cd4dbe005ace1f4ee",
@@ -3332,6 +3332,10 @@
     "version.py": {
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48",
       "size_bytes": 324
+    },
+    "tests/test_lmstudio_discovery_ui.py": {
+      "sha256": "910fc7308fd28f36bc7a9df0de4441e50b4b51d93a0c8b1c0b3133c352639818",
+      "size_bytes": 6649
     }
   },
   "fresh_history_required": true,
