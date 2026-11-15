@@ -29,3 +29,18 @@ The current Organizer source integrates explicit LM Studio model-list review and
 connection preferences. The declared0.6.0identity selects a new feature release;
 this source checkpoint alone is not a qualified binary or publication. Existing
 server/model ownership and image-analysis limits remain.
+
+
+## AI-05J1 pure native image-description codec
+
+The source-only codec constructs bounded native v1 image-description request bytes
+and decodes unreviewed text with exact loaded-instance correlation. It does not
+connect,read files,decode pixels,activate a provider,run a model or write evidence.
+Requests ask for no conversation storage or streaming and include no tools,
+integrations,load/context settings or TTL. MIME is caller-supplied;it is not image
+validation. Model load time is retrospective observation,not execution authority.
+
+This module is not wired into the current Organizer runtime or the shipped0.6.0
+package. Future consumer and signed package delivery retain the existing Organizer
+route. Actual server/JIT policy,model inference,review and resource qualification
+remain open. No component/version/binary or model management is added here.

@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 878,
+  "allowlisted_source_file_count": 880,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -38,8 +38,8 @@
       "size_bytes": 2794
     },
     "SOURCE_DELIVERY_SUPPLEMENT.md": {
-      "sha256": "032545513857be00747cdeadee1d9a071a7b343cde2154024f428536f7d6ed41",
-      "size_bytes": 4321
+      "sha256": "eaa1f4ea8d412c6dd15464e2b4f7df637f2af64b80f39b7be3ab32b13ac59a42",
+      "size_bytes": 5181
     },
     "SUPPORT.md": {
       "sha256": "d8392a3bf12b5559d07f6885b9bd4e37e0e91ea043f21feb83fd3d88599370c8",
@@ -3520,6 +3520,14 @@
     "docs/releases/MediaOrganizer-0.6.0.md": {
       "sha256": "813ebe4de739e503fbca1ff4e76823fa77ffbc51c1678164589013991d4ac99f",
       "size_bytes": 1388
+    },
+    "core/lmstudio_description.py": {
+      "sha256": "9c660232da666146839e386398cd178307a22220e8f9edce42f56bc014f8c101",
+      "size_bytes": 6475
+    },
+    "tests/test_lmstudio_description.py": {
+      "sha256": "fff7cca5845d94cb01c65bc2b549dbf34db3c6a6e01b800357a77353e717ebac",
+      "size_bytes": 10733
     }
   },
   "fresh_history_required": true,
