@@ -86,7 +86,7 @@ def test_declared_metadata_is_not_readiness(app, tmp_path, empty, loaded, vision
     assert dialog.model_key.text()=="unreported-preference"
 
 
-@pytest.mark.parametrize("code,phrase", [("authentication_required_or_rejected","no credential entry"),("unsupported_route","supported model-list API"),("discovery_deadline","timed out"),("invalid_json","could not be read"),("private-sentinel-path","could not be read")])
+@pytest.mark.parametrize("code,phrase", [("authentication_required_or_rejected","Enter a token"),("unsupported_route","supported model-list API"),("discovery_deadline","timed out"),("invalid_json","could not be read"),("private-sentinel-path","could not be read")])
 def test_refusals_leave_manual_preferences_available(app,tmp_path,code,phrase):
     def refused(*a,**kw): raise DiscoveryError(code)
     store,dialog=opened(tmp_path,app,refused)

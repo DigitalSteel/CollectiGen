@@ -130,3 +130,9 @@ and review path, with description-only controls, explicit retry and client clean
 It reports unknown server outcomes honestly and never loads/unloads a local model.
 Generated source UI evidence does not establish actual model or packaged support.
 Organizer 0.6.0 remains preferences/discovery only; no new package/version here.
+
+## Unreleased source: one-refresh discovery authentication
+
+Optional masked authentication is available for one explicit model-list Refresh in the connection editor and manual Run AI discovery consumer. The draft clears on submission or lifecycle changes and is never saved. Requests reuse the existing local GET client. Metadata echoing the submitted credential is refused; unknown callback failures become content-free outcomes before worker delivery. Python strings are not securely zeroized.
+
+This source change is not in the qualified Organizer 0.6.0 package. It does not enable image inference, model loading, authenticated server qualification or a credential store. Source-component tests use generated data only; package and actual-server gates remain separate.

@@ -75,8 +75,10 @@ class RunAIDialog(FeedbackEnabledDialog):
         self._lm_discovery=lmstudio_discovery
         self._lm_dispatch=lmstudio_dispatch
         self._lm_snapshot=None
+        self._lm_auth_endpoint=None
         self._lm_refresh_task=None
         self._lm_refresh_outcome=None
+        self._lm_refresh_invocation=None
         self._lm_analysis_outcome=None
         self._lm_cancel=Event()
         self._lm_close_pending=False
@@ -194,6 +196,10 @@ class RunAIDialog(FeedbackEnabledDialog):
         advanced.addWidget(QLabel("Prompt"),0,0);advanced.addWidget(self.lm_prompt,0,1)
         advanced.addWidget(QLabel("Maximum output tokens"),1,0);advanced.addWidget(self.lm_output,1,1)
         lm_layout.addWidget(self.lm_advanced,4,0,1,2)
+        from .lmstudio_connection_dialog import discovery_auth_controls
+        self.lm_auth_panel,self.lm_auth_token,self.lm_auth_toggle=discovery_auth_controls(self)
+        lm_layout.addWidget(self.lm_auth_panel,5,0,1,2)
+        self.lm_auth_toggle.toggled.connect(self._expand_discovery_auth)
         self.lm_advanced.hide();self.lm_panel.hide()
         layout.addWidget(self.lm_panel)
         self.lm_options.clicked.connect(lambda:self.lm_advanced.setVisible(not self.lm_advanced.isVisible()))
@@ -262,8 +268,10 @@ class RunAIDialog(FeedbackEnabledDialog):
         self.progress=QProgressBar()
         self.progress.hide()
         layout.addWidget(self.progress)
-        from .components import bind_status_footer
-        bind_status_footer(self,self.progress,title="AI analysis")
+        from .components import bind_status_footer,IndeterminateActivityBar
+        self.lm_activity=IndeterminateActivityBar(self)
+        self.lm_activity.hide()
+        bind_status_footer(self,self.progress,self.lm_activity,title="AI analysis")
         self.buttons=QDialogButtonBox(QDialogButtonBox.Cancel)
         self.cancel_button=self.buttons.button(QDialogButtonBox.Cancel)
         self.cancel_button.clicked.connect(self._cancel_or_close)
@@ -317,6 +325,11 @@ class RunAIDialog(FeedbackEnabledDialog):
     def _external_mode(self):
         return self.description_provider.currentData()=="lmstudio"
 
+    def _expand_discovery_auth(self, expanded):
+        if expanded and self.screen() is not None:
+            size=bounded_window_size(self.screen().availableGeometry(),QSize(980,900))
+            self.resize(max(self.width(),size.width()),max(self.height(),size.height()))
+
     def _external_choice_changed(self,*_):
         if hasattr(self,"run_button"):
             self._choices_changed()
@@ -334,6 +347,8 @@ class RunAIDialog(FeedbackEnabledDialog):
         self.lm_models.addItem("Refresh, then choose an exact loaded instance",None)
 
     def _provider_changed(self,*_):
+        self.lm_auth_token.clear()
+        self._lm_auth_endpoint=None
         external=self._external_mode()
         if external:
             self._local_draft=(self.tags.isChecked(),self.descriptions.isChecked(),self.confirm_tags.isChecked())
@@ -341,6 +356,7 @@ class RunAIDialog(FeedbackEnabledDialog):
             self._invalidate_external()
             try:
                 snapshot=self._connection_service().observe()
+                self._lm_auth_endpoint=snapshot.selection.endpoint if snapshot.selection else None
                 self.lm_status.setText(("Image analysis through LM Studio is not available in this build. You can inspect models and save the connection." if not callable(self._lm_dispatch) else
                     "Saved connection available. Refresh to inspect loaded instances.") if snapshot.selection else
                     "No connection saved. Open Connection Preferences first.")
@@ -353,15 +369,23 @@ class RunAIDialog(FeedbackEnabledDialog):
 
     def _open_lm_connection(self):
         if self._task is not None or self._lm_refresh_task is not None:return
+        self.lm_auth_token.clear()
         from .lmstudio_connection_dialog import LmStudioConnectionDialog
         dialog=LmStudioConnectionDialog(self._connection_service(),self,discovery=self._lm_discovery)
         dialog.exec()
+        try:
+            snapshot=self._connection_service().observe()
+            self._lm_auth_endpoint=snapshot.selection.endpoint if snapshot.selection else None
+        except Exception:
+            self._lm_auth_endpoint=None
         self._invalidate_external()
         self.lm_status.setText("Connection review closed. Refresh models before running.")
         self._choices_changed()
 
     def _refresh_external(self):
         if not self._external_mode() or self._task is not None or self._lm_refresh_task is not None:return
+        token=self.lm_auth_token.text() or None
+        self.lm_auth_token.clear()
         self._invalidate_external()
         try:
             snapshot=self._connection_service().observe()
@@ -369,21 +393,40 @@ class RunAIDialog(FeedbackEnabledDialog):
         except Exception:
             self.lm_status.setText("Save a usable connection in Connection Preferences, then refresh.")
             return
-        from core.lmstudio_transport import discover
+        from core.lmstudio_transport import discover,DiscoveryInvocation
         discovery=self._lm_discovery or discover
         endpoint=snapshot.selection.endpoint
+        if token is not None and endpoint!=self._lm_auth_endpoint:
+            self.lm_status.setText("The connection address changed. Review Connection Preferences, then re-enter the token. Nothing was sent.")
+            return
         self._lm_cancel=Event();cancel=self._lm_cancel
+        try:
+            invocation=DiscoveryInvocation(endpoint,token,discovery,cancel.is_set)
+        except Exception:
+            self.lm_status.setText("Use a valid local address and a token of at most 4096 printable ASCII characters without spaces. Nothing was sent.")
+            return
+        self._lm_refresh_invocation=invocation
         self._lm_started=time.monotonic()
         self._lm_refresh_outcome=None
-        task=AsyncCallTask(lambda:discovery(endpoint,cancelled=cancel.is_set))
+        task=AsyncCallTask(invocation)
         self._lm_refresh_task=task
         self._lm_refresh_snapshot=snapshot
-        task.signals.complete.connect(lambda value:self._receive_external("refresh",True,value))
+        task.signals.complete.connect(lambda value:self._receive_external("refresh",value[0]=="ok",value[1]))
         task.signals.failed.connect(lambda _message:self._receive_external("refresh",False,None))
         self.lm_status.setText("Inspecting model metadata… No analysis or model loading requested.")
         set_progress_bar(self.progress,detail="Inspecting server model metadata…",unknown_text="Waiting for metadata…")
-        self.progress.show()
-        self._choices_changed();self._lm_settle.start();self.pool.start(task)
+        self.lm_activity.set_active(True,"Reading the model list; no model loading or analysis.")
+        self.lm_activity.show()
+        self._choices_changed();self._lm_settle.start()
+        try:
+            self.pool.start(task)
+        except Exception:
+            invocation.discard();self._lm_refresh_invocation=None
+            self._lm_refresh_task=None;self._lm_refresh_outcome=None
+            self._lm_settle.stop();self.progress.hide()
+            self.lm_activity.set_active(False);self.lm_activity.hide()
+            self.lm_status.setText("Model refresh could not start. Enter a token again if needed, then explicitly retry.")
+            self._choices_changed()
 
     def _receive_external(self,kind,ok,value):
         if kind=="refresh":self._lm_refresh_outcome=(ok,value)
@@ -397,9 +440,12 @@ class RunAIDialog(FeedbackEnabledDialog):
             self.lm_status.setText(f"{phase} • {elapsed}s elapsed. {detail}")
         task=self._lm_refresh_task
         if task is not None and task.is_finished() and self._lm_refresh_outcome is not None:
+            if self._lm_refresh_invocation is not None:
+                self._lm_refresh_invocation.discard();self._lm_refresh_invocation=None
             ok,inventory=self._lm_refresh_outcome
             self._lm_refresh_task=None;self._lm_refresh_outcome=None
             self.progress.hide()
+            self.lm_activity.set_active(False);self.lm_activity.hide()
             from core.lmstudio_discovery import ModelInventory
             try:current=self._connection_service().observe()==self._lm_refresh_snapshot
             except Exception:current=False
@@ -432,6 +478,9 @@ class RunAIDialog(FeedbackEnabledDialog):
             and self.lm_models.currentData() is not None and bool(self.lm_prompt.text().strip())
             and self._lm_refresh_task is None)
 
+    def prepare_for_privacy_capture(self):
+        self.lm_auth_token.clear()
+
     def _external_backend(self):
         if not self._external_ready():raise ValueError("external_analysis_unavailable")
         if self._connection_service().observe()!=self._lm_snapshot:
@@ -463,6 +512,7 @@ class RunAIDialog(FeedbackEnabledDialog):
         self.descriptions.setEnabled(idle and not external)
         self.lm_connection.setEnabled(idle)
         self.lm_refresh.setEnabled(idle)
+        self.lm_auth_panel.setEnabled(idle)
         for widget in (self.lm_models,self.lm_options,self.lm_prompt,self.lm_output):widget.setEnabled(idle)
         self.run_button.setEnabled(enabled and idle and (not external or self._external_ready()))
         self.runtime_memory_note.setVisible(not external)
@@ -629,6 +679,8 @@ class RunAIDialog(FeedbackEnabledDialog):
         self._setup_opened_for_run=True
 
     def _set_busy(self,busy: bool):
+        self.lm_auth_panel.setEnabled(not busy)
+        if busy:self.lm_auth_token.clear()
         for widget in (self.description_provider,self.lm_connection,self.lm_refresh,self.lm_models,self.lm_options,self.lm_prompt,self.lm_output):
             widget.setEnabled(not busy)
         self.history_button.setEnabled(not busy)
@@ -842,9 +894,12 @@ class RunAIDialog(FeedbackEnabledDialog):
         self.accept()
 
     def _cancel_or_close(self):
+        self.lm_auth_token.clear()
+        if self._lm_refresh_invocation is not None:self._lm_refresh_invocation.discard()
         if self._lm_refresh_task is not None:
             self._lm_close_pending=True;self._lm_cancel.set()
-            self.cancel_button.setText("Waiting for request cleanup…");self.cancel_button.setEnabled(False)
+            self.cancel_button.setText("Closing…");self.cancel_button.setEnabled(False)
+            self.cancel_button.setMinimumWidth(self.cancel_button.fontMetrics().horizontalAdvance("Closing…")+24)
             return
         if isinstance(self._task,AsyncCallTask):
             self.state.request_long_operation_cancel(self.owner)
@@ -859,6 +914,9 @@ class RunAIDialog(FeedbackEnabledDialog):
         self.reject()
 
     def reject(self):
+        self.lm_auth_token.clear()
+        if self._lm_refresh_invocation is not None:
+            self._lm_refresh_invocation.discard()
         if self._task is not None or self._lm_refresh_task is not None:
             self._cancel_or_close()
             return

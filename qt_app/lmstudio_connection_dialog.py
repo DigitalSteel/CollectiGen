@@ -5,15 +5,42 @@ from threading import Event
 from PySide6.QtCore import QThreadPool, QTimer, QSize, Qt
 from PySide6.QtWidgets import (
     QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-    QMessageBox, QProgressBar, QPushButton, QVBoxLayout,
+    QMessageBox, QProgressBar, QPushButton, QVBoxLayout, QWidget,
 )
 
 from core.lmstudio_connection_settings import SettingsError, SettingsRecoveryRequired
 from core.lmstudio_discovery import MAX_ID, ModelInventory, DiscoveryError, _text
-from core.lmstudio_transport import _endpoint, discover
+from core.lmstudio_transport import _endpoint, discover, DiscoveryInvocation
 from .components import bounded_window_size, compact_button
 from .modal_feedback import FeedbackEnabledDialog
 from .workers import AsyncCallTask, start_qt_delivery_task
+
+
+def discovery_auth_controls(parent):
+    """Stock masked controls shared by the two explicit discovery consumers."""
+    panel = QWidget(parent)
+    layout = QVBoxLayout(panel)
+    layout.setContentsMargins(0, 0, 0, 0)
+    toggle = QPushButton("Authentication (optional)", panel)
+    toggle.setCheckable(True)
+    toggle.setAutoDefault(False)
+    layout.addWidget(toggle, 0, Qt.AlignLeft)
+    details = QWidget(panel)
+    form = QFormLayout(details)
+    form.setContentsMargins(0, 0, 0, 0)
+    token = QLineEdit(details)
+    token.setEchoMode(QLineEdit.Password)
+    token.setMaxLength(4097)  # Over-limit input stays invalid, never a valid prefix.
+    token.setClearButtonEnabled(True)
+    token.setAccessibleName("Token for next refresh (not saved)")
+    form.addRow("Token for next refresh (not saved)", token)
+    note = QLabel("Used once to read the model list. Cleared on Refresh; enter it again to retry.")
+    note.setWordWrap(True)
+    form.addRow(note)
+    layout.addWidget(details)
+    details.hide()
+    toggle.toggled.connect(details.setVisible)
+    return panel, token, toggle
 
 
 class LmStudioConnectionDialog(FeedbackEnabledDialog):
@@ -26,6 +53,7 @@ class LmStudioConnectionDialog(FeedbackEnabledDialog):
         self._service = service
         self._discovery = discover if discovery is None else discovery
         self._discovery_cancel = Event()
+        self._discovery_invocation = None
         self._discovery_generation = 0
         self._submitted_generation = None
         self._observed_endpoint = None
@@ -59,6 +87,8 @@ class LmStudioConnectionDialog(FeedbackEnabledDialog):
             "Refresh Models only reads the local model list. No model is loaded or credential stored.")
         hint.setWordWrap(True)
         layout.addWidget(hint)
+        self.auth_panel, self.auth_token, self.auth_toggle = discovery_auth_controls(self)
+        layout.addWidget(self.auth_panel)
         refresh_row = QHBoxLayout()
         self.refresh_button = QPushButton("Refresh Models")
         self.cancel_button = QPushButton("Cancel Refresh")
@@ -128,6 +158,7 @@ class LmStudioConnectionDialog(FeedbackEnabledDialog):
         self.model_key.setEnabled(not busy and not self._held)
         self.reload_button.setEnabled(not busy)
         refreshing = busy and self._operation == "discover"
+        self.auth_panel.setEnabled(not busy and not self._held)
         self.close_button.setEnabled(not busy or refreshing)
         self.cancel_button.setVisible(refreshing)
         self.cancel_button.setEnabled(refreshing and not self._discovery_cancel.is_set())
@@ -145,7 +176,11 @@ class LmStudioConnectionDialog(FeedbackEnabledDialog):
             return False
 
     def _endpoint_changed(self):
+        self.auth_token.clear()
         self._invalidate_models()
+
+    def prepare_for_privacy_capture(self):
+        self.auth_token.clear()
 
     def _invalidate_models(self):
         self._discovery_generation += 1
@@ -165,18 +200,32 @@ class LmStudioConnectionDialog(FeedbackEnabledDialog):
         if not self.refresh_button.isEnabled():
             return
         endpoint = self.endpoint.text()
+        token = self.auth_token.text() or None
+        self.auth_token.clear()
+        self._discovery_cancel = Event()
+        try:
+            invocation = DiscoveryInvocation(endpoint, token, self._discovery,
+                                             self._discovery_cancel.is_set)
+        except Exception:
+            self.model_status.setText("Use a valid local address and a token of at most 4096 printable ASCII characters without spaces. Nothing was sent.")
+            return
         self._invalidate_models()
         self._submitted_generation = self._discovery_generation
-        self._discovery_cancel = Event()
         self._close_requested = None
-        self._run("discover", lambda: self._discovery(endpoint,
-            cancelled=self._discovery_cancel.is_set))
+        self._discovery_invocation = invocation
+        self._run("discover", invocation)
 
     def _cancel_refresh(self):
+        self.auth_token.clear()
         self._discovery_cancel.set()
+        if self._discovery_invocation is not None:
+            self._discovery_invocation.discard()
         self._controls()
 
     def _finish_discovery(self, kind, inventory):
+        if self._discovery_invocation is not None:
+            self._discovery_invocation.discard()
+            self._discovery_invocation = None
         current = self._submitted_generation == self._discovery_generation
         if self._discovery_cancel.is_set() or not current:
             self.model_status.setText("Refresh cancelled or address changed. Refresh again when ready.")
@@ -196,7 +245,8 @@ class LmStudioConnectionDialog(FeedbackEnabledDialog):
                 self.model_status.setText(self.model_status.text() + " The preferred key was not reported.")
         else:
             messages = {
-                "authentication_required_or_rejected": "The server requires authentication. This editor has no credential entry yet; preferences can still be saved.",
+                "authentication_required_or_rejected": "Authentication was required or rejected. Enter a token under Authentication, then Refresh again. Preferences can still be saved.",
+                "credential_echo_refused": "The server returned an unusable model list. No model was selected; preferences can still be saved.",
                 "unsupported_route": "The server does not provide the supported model-list API. Check its version before refreshing again.",
                 "discovery_deadline": "The model-list request timed out. Refresh again when the server is available.",
                 "discovery_io_timeout": "The model-list request timed out. Refresh again when the server is available.",
@@ -230,15 +280,16 @@ class LmStudioConnectionDialog(FeedbackEnabledDialog):
         if self._task is not None:
             return
         if operation in ("read", "forget"):
+            self.auth_token.clear()
             self._invalidate_models()
         self._operation = operation
         self._started = monotonic()
         self._outcome = None
         def safe_call():
             try:
-                return "ok", call()
-            except DiscoveryError as error:
-                return str(error), None
+                return call() if operation == "discover" else ("ok", call())
+            except DiscoveryError:
+                return "error", None
             except (SettingsRecoveryRequired, SettingsError):
                 return "held", None
             except Exception:
@@ -320,10 +371,12 @@ class LmStudioConnectionDialog(FeedbackEnabledDialog):
         return box.clickedButton() is discard
 
     def _reload(self):
+        self.auth_token.clear()
         if self._task is None and self._discard_draft():
             self._run("read", self._service.observe)
 
     def _save(self):
+        self.auth_token.clear()
         if self.save_button.isEnabled():
             endpoint, key = self._values()
             expected = self._snapshot
@@ -331,11 +384,13 @@ class LmStudioConnectionDialog(FeedbackEnabledDialog):
                 preferred_model_key=key or None, expected=expected))
 
     def _forget(self):
+        self.auth_token.clear()
         if self.forget_button.isEnabled() and self._discard_draft():
             expected = self._snapshot
             self._run("forget", lambda: self._service.forget_selection(expected=expected))
 
     def done(self, result):
+        self.auth_token.clear()
         if self._task is not None:
             if self._operation == "discover":
                 self._close_requested = result

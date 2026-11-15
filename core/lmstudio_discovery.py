@@ -110,6 +110,32 @@ class ModelInventory:
         raise DiscoveryError("instance_not_found")
 
 
+def refuse_credential_echo(inventory, token):
+    """Refuse a whole typed observation, never rewrite opaque identities.
+
+    Short tokens may coincide with metadata: refusal is deliberately conservative.
+    Unknown wire fields have already been discarded by the bounded parser.
+    """
+    _require(type(inventory) is ModelInventory, "invalid_response")
+    if token is None:
+        return inventory
+    _require(type(inventory.models) is tuple and len(inventory.models) <= MAX_MODELS,
+             "invalid_models")
+    for model in inventory.models:
+        _require(type(model) is ModelDescriptor, "invalid_model")
+        for value, limit in ((model.key, MAX_ID), (model.model_type, 64),
+                             (model.display_name, MAX_LABEL)):
+            _text(value, limit, "invalid_model")
+            _require(token not in value, "credential_echo_refused")
+        _require(type(model.loaded_instances) is tuple
+                 and len(model.loaded_instances) <= MAX_INSTANCES, "invalid_loaded_instances")
+        for instance in model.loaded_instances:
+            _require(type(instance) is LoadedInstance, "invalid_instance")
+            _text(instance.instance_id, MAX_ID, "invalid_instance_id")
+            _require(token not in instance.instance_id, "credential_echo_refused")
+    return inventory
+
+
 def parse_models(raw: bytes) -> ModelInventory:
     """Parse a bounded UTF-8 GET /api/v1/models response without performing IO.
 

@@ -12,7 +12,7 @@ import time
 from urllib.parse import urlsplit
 
 from core.generation_transport import local_endpoint
-from core.lmstudio_discovery import DiscoveryError, MAX_BYTES, parse_models
+from core.lmstudio_discovery import DiscoveryError, MAX_BYTES, parse_models, refuse_credential_echo
 
 ROUTE = "/api/v1/models"
 
@@ -79,6 +79,55 @@ def _framing(response, maximum):
     return None
 
 
+def validate_discovery_token(token):
+    """Validate the original invocation-only bearer grammar without normalization."""
+    _require(token is None or (type(token) is str and 0 < len(token) <= 4096
+             and all(33 <= ord(c) <= 126 for c in token)), "invalid_token")
+    return token
+
+
+class DiscoveryInvocation:
+    """One worker handoff with content-free outcomes and explicit draft disposal.
+
+    Disposal drops retained references; immutable Python/HTTP buffers are not
+    securely zeroized. The running call owns its local token until it settles.
+    """
+    def __init__(self, endpoint, token, discovery, cancelled):
+        _endpoint(endpoint)
+        validate_discovery_token(token)
+        self._endpoint = endpoint
+        self._token = token
+        self._discovery = discovery
+        self._cancelled = cancelled
+        self._discarded = False
+
+    def discard(self):
+        self._discarded = True
+        self._token = None
+
+    def __call__(self):
+        token = self._token
+        try:
+            if self._discarded or self._cancelled():
+                return "discovery_cancelled", None
+            kwargs = {"cancelled": self._cancelled}
+            if token is not None:
+                kwargs["token"] = token
+            inventory = self._discovery(self._endpoint, **kwargs)
+            return "ok", refuse_credential_echo(inventory, token)
+        except DiscoveryError as error:
+            # Never emit arbitrary callback exception text through Qt signals.
+            code = error.args[0] if len(error.args) == 1 and type(error.args[0]) is str else None
+            allowed = {"authentication_required_or_rejected", "unsupported_route",
+                       "discovery_deadline", "discovery_io_timeout",
+                       "discovery_cancelled", "credential_echo_refused"}
+            return (code if code in allowed else "error"), None
+        except Exception:
+            return "error", None
+        finally:
+            self.discard()
+
+
 def discover(endpoint, *, token=None, cancelled=lambda: False,
              limits=DiscoveryLimits(), connection_factory=None):
     """Return one model-list observation, or a content-free DiscoveryError.
@@ -89,8 +138,7 @@ def discover(endpoint, *, token=None, cancelled=lambda: False,
     """
     parts = _endpoint(endpoint)
     _require(type(limits) is DiscoveryLimits and callable(cancelled), "invalid_request")
-    _require(token is None or (type(token) is str and 0 < len(token) <= 4096
-             and all(33 <= ord(c) <= 126 for c in token)), "invalid_token")
+    validate_discovery_token(token)
     factory = http.client.HTTPConnection if connection_factory is None else connection_factory
     _require(callable(factory), "invalid_request")
     stopped, expired, drain = threading.Event(), threading.Event(), threading.Event()
