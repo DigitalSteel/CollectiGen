@@ -12,6 +12,26 @@ from suite_core.manager.window import create_window, unconfigured
 from suite_core.manager.workflow_applications_ui import WorkflowAcquisitionPanel
 
 
+@pytest.mark.parametrize('component', ('generate','train'))
+def test_workflow_busy_progress_names_the_actual_application(component):
+    app=QApplication.instance() or QApplication([])
+    panel=WorkflowAcquisitionPanel('collectigen.'+component,
+        NS(install_available=True,candidate_admission=object()),NS(close_held=False))
+    panel.timer.stop()
+    panel.future=NS(done=lambda: False)
+    try:
+        panel.progress.put(('phase','Verifying the downloaded reader'))
+        panel.poll()
+        assert panel.status.text()=='Verifying the downloaded '+component.title()+'. Please wait.'
+        panel.progress.put((512*1024,1024*1024))
+        panel.poll()
+        assert panel.status.text()=='Downloading '+component.title()+': 50% of 1.0 MB. Installation has not finished.'
+    finally:
+        panel.future=None
+        panel.deleteLater()
+        app.processEvents()
+
+
 @pytest.mark.parametrize('component', ('generate', 'train'))
 def test_module_confirmation_stays_actionable_while_other_shared_edits_are_locked(monkeypatch, tmp_path, component):
     app = QApplication.instance() or QApplication([])

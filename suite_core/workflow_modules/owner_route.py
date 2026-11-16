@@ -37,6 +37,7 @@ class WorkflowControlActor:
         self.attempt, self.reservation = self.native.helper_attempt, self.native.helper_reservation
         self.child = control.child
         self.state, self.error = 'prepared', None
+        self.phase, self.first_failure = 'startup', None
         self.local_drain_claimed = False
         self.requested_return = None
         self.requested_resume_draft = None
@@ -116,8 +117,31 @@ class WorkflowControlActor:
                     'original_workflow_native_identity_changed')
 
     def _hold(self, error):
+        try:
+            self._retain_failure(error)
+        except Exception:
+            pass  # Diagnostic observation cannot mask the original hold.
         self.accepting_work = False
         self.state, self.error = 'held', error
+
+    def _retain_failure(self, error):
+        if self.first_failure is None:
+            from suite_core.diagnostics import WORKFLOW_FAILURE_CODES, valid_workflow_failure
+            # Map the error to a developer-owned token. Never retain its message.
+            try:
+                code = str(error)
+            except Exception:
+                code = 'other'
+            channel = self.control.channel
+            snapshot = dict(phase=self.phase, state=self.state,
+                error=code if code in WORKFLOW_FAILURE_CODES else 'other',
+                incoming=self.wire.incoming, outgoing=self.wire.outgoing,
+                read_bytes=getattr(channel, '_read_progress', 0),
+                pending_frame=self.wire.received_pending is not None,
+                read_fault=channel.read_fault is not None, write_fault=channel.write_fault is not None,
+                local_drain=self.local_drain_claimed)
+            if valid_workflow_failure(snapshot):
+                self.first_failure = snapshot
 
     def _scope(self):
         return dict(component_id=self.offer.component_id, attempt_id=self.offer.attempt_id,
@@ -127,6 +151,7 @@ class WorkflowControlActor:
         with self.wire.lock:
             require(self.state == 'prepared', 'single_workflow_offer_required')
             try:
+                self.phase = 'offer'
                 self._peer()
                 require(self.session.state == 'ready', 'original_manager_not_ready_for_workflow')
                 self.state = 'offer-sending'
@@ -206,6 +231,7 @@ class WorkflowControlActor:
             require(self.state in ('offered', 'ready', 'closing', 'drain-reported'),
                     'workflow_owner_not_pollable')
             try:
+                self.phase = 'peer'
                 self._original()
                 # Expected physical exit after the acknowledged local claim is
                 # a handoff to native drain, never EOF-as-success or lease release.
@@ -216,6 +242,7 @@ class WorkflowControlActor:
                     return False
                 self._peer()
                 try:
+                    self.phase = 'receive'
                     frame = self.wire.receive(timeout=timeout)
                 except LaunchHold as error:
                     channel = self.control.channel
@@ -224,6 +251,7 @@ class WorkflowControlActor:
                         return False
                     raise
                 self._peer()
+                self.phase = 'dispatch'
                 self._dispatch(frame)
                 return True
             except BaseException as error:

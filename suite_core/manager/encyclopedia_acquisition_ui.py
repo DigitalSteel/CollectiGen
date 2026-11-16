@@ -150,6 +150,12 @@ class EncyclopediaAcquisitionPanel(QWidget):
     def application_name(self):
         return "reader"
 
+    def progress_phase_text(self, phase):
+        return phase
+
+    def download_progress_text(self, percent, size):
+        return f"Downloading {self.application_name()}: {percent}% of {size/(1024*1024):.1f} MB. Installation has not finished."
+
     def installation_title(self, verb):
         return verb + " Tag Encyclopedia"
 
@@ -281,11 +287,11 @@ class EncyclopediaAcquisitionPanel(QWidget):
             if not self.cancel.is_set():
                 if len(values)==2 and values[0]=='phase':
                     self.activity.setRange(0,0)
-                    self.status.setText(values[1] + '. Please wait.')
+                    self.status.setText(self.progress_phase_text(values[1]) + '. Please wait.')
                 elif len(values)>=2 and type(values[0]) is int and type(values[1]) is int and 0<=values[0]<=values[1] and values[1]>0:
                     percent=max(0,min(100,round(values[0]*100/values[1])))
                     self.activity.setRange(0,100); self.activity.setValue(percent)
-                    self.status.setText(f"Downloading reader: {percent}% of {values[1]/(1024*1024):.1f} MB. Installation has not finished.")
+                    self.status.setText(self.download_progress_text(percent, values[1]))
                 else:
                     self.activity.setRange(0,0)
                     self.status.setText(f"Downloading {self.application_name()}. Installation has not finished.")

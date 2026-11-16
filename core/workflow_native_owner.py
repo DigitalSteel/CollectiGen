@@ -23,6 +23,8 @@ class WorkflowWorkspaceOwner:
         self._stop = Event()
         self._lock = RLock()
         self.error = None
+        self.diagnostics = None
+        self.failure_reference = None
         self.last_health = None
         self.return_target = None
         self.pending_generate_draft = self._launch_draft = None
@@ -98,8 +100,27 @@ class WorkflowWorkspaceOwner:
             while not self._stop.is_set() and not self.actor.waiting_for_native_drain:
                 self.actor.handle_next(timeout=0.25)
         except BaseException as error:
+            self._record_actor_failure(error)
             self.error = error
             self.reason = 'Workflow connection needs attention. Close the app normally; original cleanup remains owned.'
+
+    def _record_actor_failure(self, error):
+        """Retain the first actor snapshot through physical cleanup and relaunch."""
+        try:
+            snapshot = self.actor.first_failure
+            if snapshot is None:
+                return
+            from suite_core.diagnostics import Diagnostics, Component
+            if self.diagnostics is None:
+                profile = getattr(self.session, 'update_profile', {})
+                self.diagnostics = Diagnostics(self.selection.workspace_root,
+                    component=Component.MANAGER, build=profile.get('current_version', 'unknown'))
+            correlation = self.diagnostics.failure(error, workflow=snapshot)
+            if correlation is not None:
+                self.failure_reference = correlation
+        except Exception:
+            # Diagnostics never changes admission, failure state or drain authority.
+            pass
 
     def poll(self):
         with self._lock:

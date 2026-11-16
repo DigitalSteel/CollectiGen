@@ -37,6 +37,16 @@ class WorkflowAcquisitionPanel(EncyclopediaAcquisitionPanel):
     def application_name(self):
         return self.label
 
+    def progress_phase_text(self, phase):
+        return {
+            'Checking the reader download': 'Checking the ' + self.label + ' download',
+            'Verifying the downloaded reader': 'Verifying the downloaded ' + self.label,
+            'Preparing reader files': 'Preparing ' + self.label + ' files',
+            'Installing reader files': 'Installing ' + self.label + ' files',
+            'Checking installed reader files': 'Checking installed ' + self.label + ' files',
+            'Rechecking reader files before activation': 'Rechecking ' + self.label + ' files before activation',
+        }.get(phase, phase)
+
     def installation_title(self, verb):
         return verb + ' ' + self.label
 
@@ -210,6 +220,8 @@ class WorkflowApplications(QWidget):
     def render(self):
         held = self.owner is not None and self.owner.close_held
         for component_id, (status, opening, manage, _group) in self.rows.items():
+            reference = getattr(self.owner, 'failure_reference', None)
+            status.setToolTip('Workflow diagnostic reference: ' + reference if reference else '')
             resume = (component_id == 'collectigen.generate' and self.owner is not None
                       and self.owner.pending_generate_draft is not None)
             opening.setText('Resume Generate' if resume else 'Open ' + WORKFLOW_NAMES[component_id])

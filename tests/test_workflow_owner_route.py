@@ -95,6 +95,34 @@ def ready(f):
     assert f.actor.state == 'ready'
 
 
+def test_first_partial_frame_fault_retains_pre_hold_state_and_original_ownership(route, monkeypatch):
+    f = route
+    ready(f)
+    def partial_frame(channel, timeout=1):
+        channel._read_progress=4
+        channel.read_fault={'bytes_received':4,'reason':'LaunchHold'}
+        raise LaunchHold('control_channel_timeout')
+    monkeypatch.setattr(WindowsControlChannel,'read_frame',partial_frame)
+    with pytest.raises(LaunchHold,match='control_channel_timeout'):
+        f.actor.handle_next(timeout=.25)
+    first=dict(f.actor.first_failure)
+    assert first['phase']=='receive' and first['state']=='ready'
+    assert first['error']=='control_channel_timeout' and first['read_bytes']==4
+    assert first['read_fault'] and not first['local_drain']
+    f.actor._hold(RuntimeError('synthetic private error text'))
+    assert f.actor.first_failure==first
+    assert f.actor.state=='held' and not f.actor.grant_release_authorized
+    assert f.native.helper_accounting_held
+
+
+def test_unknown_peer_failure_diagnostic_uses_only_finite_tokens(route):
+    f=route
+    ready(f)
+    f.actor._hold(RuntimeError('synthetic secret path and prompt'))
+    assert f.actor.first_failure['error']=='other'
+    assert 'synthetic secret' not in str(f.actor.first_failure)
+
+
 def test_offer_and_ready_use_original_reserved_lifetime(route):
     f = route
     ready(f)

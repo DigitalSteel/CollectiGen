@@ -1062,6 +1062,7 @@
     "tests/test_workflow_catalog_packaging.py",
     "tests/test_workflow_distribution_builder.py",
     "tests/test_workflow_entry_intake.py",
+    "tests/test_workflow_failure_diagnostics.py",
     "tests/test_workflow_generation_feedback_ui.py",
     "tests/test_workflow_image_scope.py",
     "tests/test_workflow_install_confirmation.py",

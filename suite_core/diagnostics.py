@@ -149,13 +149,44 @@ def _valid_stamp(value):
         return False
 
 
+WORKFLOW_FAILURE_CODES = frozenset({
+    'other', 'control_channel_timeout', 'control_channel_idle_timeout',
+    'control_channel_eof', 'control_channel_eof_or_unavailable',
+    'control_read_recovery_required', 'control_write_recovery_required',
+    'control_write_timeout', 'control_write_eof_or_unavailable',
+    'original_workflow_root_peer_lost', 'original_workflow_child_peer_lost',
+    'native_image_query_failed', 'original_control_image_process_changed',
+    'original_registered_workflow_attempt_required', 'original_manager_not_ready_for_workflow',
+    'workflow_check_state_required', 'workflow_owner_not_pollable',
+})
+
+
+def valid_workflow_failure(value):
+    """Finite protocol observations only; never payloads, paths or error text."""
+    if type(value) is not dict or set(value) != {
+            'phase', 'state', 'error', 'incoming', 'outgoing', 'read_bytes',
+            'pending_frame', 'read_fault', 'write_fault', 'local_drain'}:
+        return False
+    if any(type(value[k]) is not str for k in ('phase', 'state', 'error')):
+        return False
+    return (value['phase'] in {'startup', 'offer', 'peer', 'receive', 'dispatch', 'native-drain'}
+        and value['state'] in {'prepared', 'offer-sending', 'offered', 'ready', 'closing',
+            'drain-reported', 'awaiting-native-drain', 'held'}
+        and value['error'] in WORKFLOW_FAILURE_CODES
+        and all(type(value[k]) is int and 0 <= value[k] <= 2**31 for k in ('incoming', 'outgoing'))
+        and type(value['read_bytes']) is int and 0 <= value['read_bytes'] <= 65540
+        and all(type(value[k]) is bool for k in ('pending_frame', 'read_fault', 'write_fault', 'local_drain')))
+
+
 def _validate(record):
     """Reject unknown/future fields rather than attempting regex redaction."""
-    if type(record) is not dict or set(record) != {
+    if type(record) is not dict or set(record) - {'workflow'} != {
         'schema', 'component', 'build', 'correlation', 'code', 'failure',
         'count', 'first', 'last', 'recoveries', 'recovery_steps_dropped',
         'dependency', 'native_code',
     } or type(record['schema']) is not int or record['schema'] != 1:
+        return False
+    if 'workflow' in record and not valid_workflow_failure(record['workflow']):
         return False
     try:
         Component(record['component'])
@@ -273,7 +304,8 @@ class Diagnostics:
             self._handler.failed = True
 
     def failure(self, exc: BaseException, *, code: ErrorCode = ErrorCode.OPERATION_FAILED,
-                dependency: Dependency = Dependency.UNKNOWN, native_code: int | None = None):
+                dependency: Dependency = Dependency.UNKNOWN, native_code: int | None = None,
+                workflow: dict | None = None):
         """Record original safe failure evidence; repeated unresolved failures fold."""
         try:
             if not self._recording:
@@ -282,8 +314,10 @@ class Diagnostics:
                 return None
             if native_code is not None and _number(native_code) is None:
                 return None
+            if workflow is not None and not valid_workflow_failure(workflow):
+                return None
             failure = _failure(exc)
-            key = (code.value, dependency.value, native_code, _json(failure))
+            key = (code.value, dependency.value, native_code, _json(failure), _json(workflow))
             with self._lock:
                 correlation = self._active.get(key)
                 record = self._events.get(correlation)
@@ -294,6 +328,8 @@ class Diagnostics:
                         correlation=correlation, code=code.value, failure=failure,
                         dependency=dependency.value, native_code=native_code,
                         count=0, first=now, last=now, recoveries=[], recovery_steps_dropped=0)
+                    if workflow is not None:
+                        record['workflow'] = dict(workflow)
                     self._events[correlation] = record
                     self._active[key] = correlation
                 record['count'] = min(record['count'] + 1, 2**31)

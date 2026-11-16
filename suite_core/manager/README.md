@@ -109,3 +109,13 @@ Keep component versions, signed package identities and rollback artifacts with
 their release. See `WHATS_NEW.md` for versioned release changes. Historical
 qualification receipts remain evidence for their exact original artifacts;
 they do not qualify a rebuilt candidate.
+# Workflow launch diagnostics (unreleased)
+
+When an admitted workflow control actor fails, Manager retains the first
+content-free protocol observation in the existing bounded diagnostics store.
+The Applications status tooltip provides its diagnostic reference. The record
+contains only finite phase/state/error tokens, bounded sequence/read counters
+and fault/drain flags; it excludes prompts, payloads, paths and exception text.
+It survives ordinary physical cleanup and a later launch. Diagnostics does not
+retry the request, release native ownership, change timeouts or admit a failed
+workflow. Exact packaged startup/recovery qualification remains required.
