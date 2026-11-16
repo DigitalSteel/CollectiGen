@@ -1947,6 +1947,11 @@
       "sha256": "b658c92be2d5db07c457d40600c4ae2dec2b5a18a25d7bcc5f9fcdaff04c1413"
     },
     {
+      "path": "core/training_restricted_loading_contract.py",
+      "bytes": 8442,
+      "sha256": "0032817951aba8261def4981c91d2265176d2a266738ceb107180d772eb08801"
+    },
+    {
       "path": "core/training_result.py",
       "bytes": 28947,
       "sha256": "364f8d3381dd967b30eda1e9538a799f90caccfd11b56367670946dac72d3e0d"
@@ -3133,8 +3138,8 @@
     },
     {
       "path": "suite_core/generate/MODULE_MANIFEST.json",
-      "bytes": 37161,
-      "sha256": "410a19d96a63efd678c525dcf0b23a46e2b2e2e3c0091d85d8337c3a8b52dad1"
+      "bytes": 37213,
+      "sha256": "d1770edff6f1a9b85266ed989c462a3ffbf491dafb62dd599a42e4d702b55c6c"
     },
     {
       "path": "suite_core/generate/WHATS_NEW.md",
@@ -3298,8 +3303,8 @@
     },
     {
       "path": "suite_core/manager/krea_training_review.py",
-      "bytes": 72245,
-      "sha256": "6205f8cd472963ffc3c1cf974ac40aa3b9323e12f0cd923cef90274eadb56475"
+      "bytes": 72543,
+      "sha256": "93c1e4716f6ab08f8111f61f5787f3dd9e7cd232326a7a0a79765be26ca21521"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",

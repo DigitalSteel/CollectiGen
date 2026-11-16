@@ -405,6 +405,7 @@
     "core/training_readiness.py",
     "core/training_reference_tokenizers.py",
     "core/training_resource_guidance.py",
+    "core/training_restricted_loading_contract.py",
     "core/training_result.py",
     "core/training_resume_adapter.py",
     "core/training_retained_history.py",

@@ -667,7 +667,11 @@ class KreaTrainingReviewDialog(QDialog):
                 self.dataset_button.show()
                 from core.training_dataset_binding import ReviewedDatasetVerifier
 
-                if type(self._dataset_verifier) is ReviewedDatasetVerifier and self._preview_jobs is not None:
+                from suite_core.workflow_modules.worker_runtime import ModuleDatasetVerifier
+                preparation_verifier = self._dataset_verifier
+                if type(preparation_verifier) is ModuleDatasetVerifier:
+                    preparation_verifier = preparation_verifier.original
+                if type(preparation_verifier) is ReviewedDatasetVerifier and self._preview_jobs is not None:
                     from core.training_adapter_preview import SdScriptsSdxlLoraPreviewService
 
                     try:

@@ -210,3 +210,69 @@ def test_signed_manager_config_root_version_and_local_video_copy_are_checked(tmp
         manager_binding._checked_explicit_worker_configs(admitted, signed, source, '3.13.7', local_video_copy=True)
     with pytest.raises(ValueError, match='signed_manager_worker_source_required'):
         manager_binding._checked_explicit_worker_configs(admitted, signed, local, '3.13.7')
+
+
+
+@pytest.mark.parametrize('kind', ['original', 'module', 'unreviewed', 'wrapped_unreviewed', 'subclass'])
+def test_training_review_exposes_prepare_only_for_reviewed_original_or_exact_module_adapter(tmp_path, monkeypatch, kind):
+    monkeypatch.setenv('QT_QPA_PLATFORM', 'offscreen')
+    from time import monotonic, sleep
+    from PIL import Image
+    from PySide6.QtWidgets import QApplication, QWidget
+    from PySide6.QtTest import QTest
+    from core import ImageRecord, LibraryImageIdentity, TagDatabase, TrainingCandidateSelectionService, TrainingGoal, TrainingPermissionDisposition
+    from core.training_package import TrainingPackageService
+    from core.training_process import ProcessInventory
+    from core.training_dataset_binding import ReviewedDatasetVerifier
+    from core.background_jobs import BackgroundJobManager
+    from suite_core.manager.krea_training_review import KreaTrainingReviewDialog
+    app = QApplication.instance() or QApplication([])
+    image = tmp_path / 'synthetic.png'
+    Image.new('RGB', (768, 896), (30, 60, 90)).save(image)
+    record = ImageRecord(image)
+    record.annotation.sdxl_tags = ['synthetic']
+    record.modified = True
+    record.save_sidecar(force=True)
+    knowledge = TagDatabase(tmp_path / 'tags.json')
+    selector = TrainingCandidateSelectionService(knowledge)
+    selected = selector.plan((image,), TrainingGoal('Synthetic', kind='character', base_model_id='sha256:'+'a'*64),
+        identities={image: LibraryImageIdentity('synthetic', image.name)})
+    selected = selector.apply_permission_disposition(selected, TrainingPermissionDisposition('proceed', 'Generated unit fixture only.', True))
+    service = TrainingPackageService(knowledge)
+    parent_folder = tmp_path / 'packages'
+    parent_folder.mkdir()
+    preview = service.preview(selected, parent_folder / 'package')
+    assert preview.ready, preview.issues
+    result = service.apply(preview, preview.decision.execution())
+    assert result.status == 'created', result.issues
+    inventory = ProcessInventory(str(tmp_path / 'worker'), str(tmp_path / 'inventory.json'), 'a'*64, 0, 0)
+    original = ReviewedDatasetVerifier(inventory, 'python.exe', tmp_path / 'review-work')
+    class ForeignVerifier(ReviewedDatasetVerifier):
+        pass
+    verifier = (original if kind == 'original' else
+        runtime.ModuleDatasetVerifier(original, object()) if kind == 'module' else
+        runtime.ModuleDatasetVerifier(lambda *_a, **_k: None, object()) if kind == 'wrapped_unreviewed' else
+        ForeignVerifier(inventory, 'python.exe', tmp_path / 'review-work') if kind == 'subclass' else
+        lambda *_a, **_k: None)
+    # Presentation only: no native owner/grant or worker execution is fabricated.
+    parent = QWidget()
+    jobs = BackgroundJobManager()
+    dialog = KreaTrainingReviewDialog(parent_folder / 'package', tmp_path / 'models.json', parent,
+        dataset_verifier=verifier, preview_jobs=jobs)
+    dialog.show()
+    deadline = monotonic() + 5
+    try:
+        while (not dialog.tabs.isEnabled() or dialog._executor.close_held) and monotonic() < deadline:
+            app.processEvents()
+            QTest.qWait(10)
+            sleep(.002)  # Let the retained Python worker physically retire before Qt settlement.
+        assert dialog.tabs.isEnabled() and not dialog._executor.close_held, (dialog.status.text(), dialog._future.done(), dialog._executor.close_held, dialog._timer.isActive(), dialog._timer.remainingTime())
+        assert dialog.dataset_button.isVisible()
+        assert dialog.prepare_button.isVisible() == (kind in {'original', 'module'})
+        assert dialog._dataset_verifier is verifier  # Never unwrap away authenticated lifetime/cancel hooks.
+    finally:
+        dialog.reject()
+        dialog._timer.stop()
+        jobs.shutdown(wait=True)
+        parent.close()
+        app.processEvents()

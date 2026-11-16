@@ -119,3 +119,37 @@ def test_workflow_source_requires_exact_manifest_directory(tmp_path, workflow):
     manifest.write_text(json.dumps(value), encoding='utf-8')
     with pytest.raises(exporter.PublicSourceError, match='exact component manifests'):
         exporter.load_manifest(manifest)
+
+
+
+def test_module_closure_contains_every_bound_dataset_worker_source(workflow):
+    import ast
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2]
+    def declared_names(file, assignment, function=None):
+        tree = ast.parse((root / file).read_text(encoding='utf-8'))
+        if function is not None:
+            tree = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == function)
+        node = next(n for n in ast.walk(tree) if isinstance(n, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == assignment for t in n.targets))
+        generator = node.value.args[0]
+        return ast.literal_eval(generator.generators[0].iter)
+    names = set(declared_names('core/training_preflight.py', 'code', '_run'))
+    names.update(declared_names('core/training_dataset_binding.py', 'PACKAGE_CODE'))
+    tree = ast.parse((root / 'core/training_source_loader.py').read_text(encoding='utf-8'))
+    declaration = next(n for n in ast.walk(tree) if isinstance(n, ast.Assign)
+        and any(isinstance(t, ast.Name) and t.id == 'VERIFIER_MODULES' for t in n.targets))
+    names.update(name + '.py' for name in ast.literal_eval(declaration.value))
+    required = {'core/' + name for name in names}
+    required.update({'tools/training_dataset_profile_worker.py', 'tools/training_verification_worker.py',
+        'tools/training_runtime_probe.py', 'tools/training_runtime_sources.json',
+        'tools/training_dataset_package.json', 'version.py'})
+    assert len(required) > 40  # Covers the original declared closure, not just one repaired filename.
+    manifest = json.loads((root / ('tools/workflow_build/' + workflow + '-source-manifest.json')).read_bytes())
+    runtime = json.loads((root / ('suite_core/' + workflow + '/MODULE_MANIFEST.json')).read_bytes())
+    assert not required.difference(runtime['runtime_files']), sorted(required.difference(runtime['runtime_files']))
+    rows = {row['path']: row for row in manifest['source_rows']}
+    assert not required.difference(rows), sorted(required.difference(rows))
+    for name in required:
+        raw = (root / name).read_bytes()
+        assert rows[name]['bytes'] == len(raw) and rows[name]['sha256'] == sha256(raw).hexdigest(), name
