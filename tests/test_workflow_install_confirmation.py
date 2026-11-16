@@ -121,3 +121,62 @@ def test_dashboard_exposes_module_entry_and_navigation_does_not_keep_other_secti
     finally:
         manager.close()
         app.processEvents()
+
+
+@pytest.mark.parametrize('component', ('generate', 'train'))
+def test_first_open_failure_keeps_matching_retry_and_inspectable_details(component):
+    from time import monotonic
+    from suite_core.manager.workflow_applications_ui import WorkflowApplications
+    from suite_core.manager.resource_executor import ResourceExecutorOwner
+
+    app = QApplication.instance() or QApplication([])
+    surface = WorkflowApplications()
+    surface.timer.stop()
+    # Component service boundary only; this grants no original/native admission.
+    surface.owner = NS(close_held=False, pending_generate_draft=None,
+        session=NS(workflow_contract_version=1), reason='Idle')
+    calls = []
+    def fail_launch(**options):
+        calls.append(options)
+        raise RuntimeError('synthetic_workflow_start_failed')
+    service = NS(install_available=True, candidate_admission=object(),
+        launch_available=True, observe=lambda: None, launch=fail_launch)
+    executor = ResourceExecutorOwner()
+    dialog = QDialog(surface)
+    panel = WorkflowAcquisitionPanel('collectigen.' + component, service, executor, parent=dialog)
+    from PySide6.QtWidgets import QVBoxLayout
+    QVBoxLayout(dialog).addWidget(panel)
+    identity = 'collectigen.' + component
+    surface.services[identity] = (service, executor)
+    surface.panels[identity] = panel
+    surface.dialogs[identity] = dialog
+    surface.render()
+    surface.show()
+    app.processEvents()
+    try:
+        assert not panel.check_attempted
+        QTest.mouseClick(surface.rows[identity][1], Qt.LeftButton)
+        deadline = monotonic() + 3
+        while (panel.future is not None or executor.close_held) and monotonic() < deadline:
+            app.processEvents()
+            QTest.qWait(10)
+        assert panel.future is None and not executor.close_held
+        assert len(calls) == 1
+        QTest.mouseClick(surface.rows[identity][2], Qt.LeftButton)
+        app.processEvents()
+        assert panel.technical.isVisible()
+        assert panel.refresh.isVisible() and panel.refresh.isEnabled()
+        assert panel.refresh.text() == 'Check Again'
+        assert 'Check Again' in panel.status.text()
+        QTest.mouseClick(panel.technical, Qt.LeftButton)
+        app.processEvents()
+        assert panel.details.isVisible()
+        assert 'Operation: Opening ' + component.title() in panel.details.toPlainText()
+        assert 'synthetic_workflow_start_failed' in panel.details.toPlainText()
+        assert len(calls) == 1  # Inspecting the failure must never replay launch.
+    finally:
+        panel.timer.stop()
+        executor.begin_close()
+        dialog.close()
+        surface.close()
+        app.processEvents()

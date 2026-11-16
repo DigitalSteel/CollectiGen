@@ -194,6 +194,7 @@ class WorkflowApplications(QWidget):
                 service.launch(confirmed=True, should_cancel=panel.cancel.is_set)
                 return InstallationResult(observed, True, WORKFLOW_NAMES[component_id] +
                     ' is opening. Close its window normally to return to shared management.')
+            panel.check_attempted = True
             panel._start('Opening ' + WORKFLOW_NAMES[component_id], work)
         self.render()
 
