@@ -39,6 +39,7 @@ class WorkflowAcquisitionPanel(EncyclopediaAcquisitionPanel):
 
     def progress_phase_text(self, phase):
         return {
+            'Saving the reader connection': 'Saving the ' + self.label + ' connection',
             'Checking the reader download': 'Checking the ' + self.label + ' download',
             'Verifying the downloaded reader': 'Verifying the downloaded ' + self.label,
             'Preparing reader files': 'Preparing ' + self.label + ' files',

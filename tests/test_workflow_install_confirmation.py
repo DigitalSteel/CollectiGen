@@ -23,6 +23,9 @@ def test_workflow_busy_progress_names_the_actual_application(component):
         panel.progress.put(('phase','Verifying the downloaded reader'))
         panel.poll()
         assert panel.status.text()=='Verifying the downloaded '+component.title()+'. Please wait.'
+        panel.progress.put(('phase','Saving the reader connection'))
+        panel.poll()
+        assert panel.status.text()=='Saving the '+component.title()+' connection. Please wait.'
         panel.progress.put((512*1024,1024*1024))
         panel.poll()
         assert panel.status.text()=='Downloading '+component.title()+': 50% of 1.0 MB. Installation has not finished.'
