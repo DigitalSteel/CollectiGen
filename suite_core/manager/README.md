@@ -68,7 +68,7 @@ workflow guide. Reading Help preserves your open work and starts no operation.
 
 ## Working across components
 
-In **Generate > Use Organizer Prompt Catalog**, import the reviewed export from Organizer a.0.6.0. Search Tag names/aliases on Request or browse Character/Outfit choices in **Advanced > Reusable Prompt Text**. A saved draft retains its catalog snapshot; editing Knowledge stays in Organizer.
+In **Generate > Use Organizer Prompt Catalog**, import the reviewed export from Organizer a.0.7.0. Search Tag names/aliases on Request or browse Character/Outfit choices in **Advanced > Reusable Prompt Text**. A saved draft retains its catalog snapshot; editing Knowledge stays in Organizer.
 
 **Create Generation Setup** offers manual text or a selected image. The image reference uses the existing blur and temporary Reveal/Hide controls. **Review Local Description Setup** saves choices and can open **Set Up Components** for readiness and explicitly confirmed caption-component/model downloads. Return keeps the unfinished setup; choose Suggest deliberately when ready. Opening or returning starts no download or analysis. Source/UI/readiness checks passed; actual model downloads and inference were not executed for this release.
 
@@ -83,7 +83,14 @@ returns through Organizer's existing Add Images review; original output and
 raw generation lineage are preserved rather than promoted into confirmed tags.
 
 Applications discovers compatible signed Reader and Organizer releases.
-Currently available: Reader a.0.3.1 and Organizer a.0.6.0. Review and confirm installation. Organizer a.0.6.0 adds explicit local LM Studio connection preferences and read-only model discovery; image analysis through LM Studio is not included.
+Currently available: Reader a.0.3.1 and [Organizer a.0.7.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.7.0-alpha.1). Review and confirm installation.
+
+[Organizer Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.7.0-alpha.1/MediaOrganizer-a.0.7.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.7.0-alpha.1/MediaOrganizer-a.0.7.0-windows-x64.zip.sha256).
+Organizer a.0.7.0 preserves long integer generation seeds and supports an
+optional one-request token for read-only LM Studio model-list refresh.
+Model listing does not establish inference readiness or load models.
+Generated-profile 0.6 to 0.7 update and prior-code rollback were qualified.
+Restart Manager after installing, updating or restoring Organizer before opening it.
 Tag Database is reviewed content, rather than another application installer.
 Manager a.0.7.9 and newer can use the reviewed Manager update for this Training
 fix. A launcher already updated to a.0.7.10 needs no replacement for it. Use the
