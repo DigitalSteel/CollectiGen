@@ -144,7 +144,34 @@ def test_module_closure_contains_every_bound_dataset_worker_source(workflow):
     required.update({'tools/training_dataset_profile_worker.py', 'tools/training_verification_worker.py',
         'tools/training_runtime_probe.py', 'tools/training_runtime_sources.json',
         'tools/training_dataset_package.json', 'version.py'})
-    assert len(required) > 40  # Covers the original declared closure, not just one repaired filename.
+    # The restricted-loading contract also imports policy modules. Freezer
+    # analysis follows those imports even when this worker captures source bytes.
+    # Walk this concrete local root without importing or exercising native APIs.
+    pending = ['core/training_restricted_loading_contract.py']
+    seen = set()
+    while pending:
+        name = pending.pop()
+        if name in seen:
+            continue
+        seen.add(name)
+        required.add(name)
+        for node in ast.walk(ast.parse((root / name).read_text(encoding='utf-8'))):
+            if isinstance(node, ast.ImportFrom):
+                if node.level == 1:
+                    module = 'core.' + (node.module or '')
+                elif node.level == 0:
+                    module = node.module or ''
+                else:
+                    continue
+                paths = ([module.replace('.', '/') + '.py'] if module != 'core.' else
+                         ['core/' + alias.name + '.py' for alias in node.names])
+            elif isinstance(node, ast.Import):
+                paths = [alias.name.replace('.', '/') + '.py' for alias in node.names]
+            else:
+                continue
+            pending.extend(path for path in paths if path.startswith('core/')
+                           and (root / path).is_file() and path not in seen)
+    assert len(required) > 40  # Covers the original declared closure and local dependencies.
     manifest = json.loads((root / ('tools/workflow_build/' + workflow + '-source-manifest.json')).read_bytes())
     runtime = json.loads((root / ('suite_core/' + workflow + '/MODULE_MANIFEST.json')).read_bytes())
     assert not required.difference(runtime['runtime_files']), sorted(required.difference(runtime['runtime_files']))

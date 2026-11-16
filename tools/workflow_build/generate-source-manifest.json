@@ -1702,6 +1702,11 @@
       "sha256": "1ffa73b70234cc1723ec84ec5c5dabbaf6e0b5e63ddec0ebf050a49460de4024"
     },
     {
+      "path": "core/training_appcontainer.py",
+      "bytes": 22646,
+      "sha256": "92c752292d63c084affc7a4bc3240bc05f6ec2bf26dc0d5936a9cba4f8cbf46e"
+    },
+    {
       "path": "core/training_candidate_selection.py",
       "bytes": 70845,
       "sha256": "9e5571832faa7155f10345a9cbc56ee3d6ee6cdbd929a06ce3981794625db60e"
@@ -1892,6 +1897,11 @@
       "sha256": "22304254e128273bbc6f993b4456365661d264e67972263f7e6c00fea828592d"
     },
     {
+      "path": "core/training_offline_policy.py",
+      "bytes": 11099,
+      "sha256": "620d95b69c820e5f2fe7f7b44e0057014df5c1ae4f3bc364cf5c4796425cabfb"
+    },
+    {
       "path": "core/training_package.py",
       "bytes": 118983,
       "sha256": "336e2236f987e8e7d78ee86177cfc729b976b2690677ac12814d3ab48309bb2d"
@@ -1940,6 +1950,11 @@
       "path": "core/training_reference_tokenizers.py",
       "bytes": 8213,
       "sha256": "16092a54c0d91e1f18d7c3faf37554dc9869de9850484c1486d5d0751901acb5"
+    },
+    {
+      "path": "core/training_registry_policy.py",
+      "bytes": 10720,
+      "sha256": "5eb3913b1c50e42d0e837c1822e51a2a1e0d2fcc1504281eabf8b992c681630d"
     },
     {
       "path": "core/training_resource_guidance.py",
@@ -2055,6 +2070,16 @@
       "path": "core/training_verification.py",
       "bytes": 6601,
       "sha256": "9243c9a5c2663b6fa0da90e3c31a1cd0a8dca1bc582deb783857063896fc5029"
+    },
+    {
+      "path": "core/training_wfp.py",
+      "bytes": 21826,
+      "sha256": "3602109fe8219a865564c53008488e2a5dd8b0b66d2ceccf5e7378e33ec57a82"
+    },
+    {
+      "path": "core/training_wfp_policy.py",
+      "bytes": 12678,
+      "sha256": "396581fd67a2438fa84f1e19c25327b797d2fe8a5dca4dbf311c153f53aafead"
     },
     {
       "path": "core/training_windows_file_identity.py",
@@ -3138,8 +3163,8 @@
     },
     {
       "path": "suite_core/generate/MODULE_MANIFEST.json",
-      "bytes": 37213,
-      "sha256": "d1770edff6f1a9b85266ed989c462a3ffbf491dafb62dd599a42e4d702b55c6c"
+      "bytes": 37392,
+      "sha256": "ee66911a62ff71f9b836fa50e732dd6d4fac76fdd8b2eacc84b328474672cece"
     },
     {
       "path": "suite_core/generate/WHATS_NEW.md",
