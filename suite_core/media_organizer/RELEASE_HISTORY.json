@@ -5,10 +5,10 @@
       "software_version": "0.7.0-alpha.1",
       "numeric_version": "0.7.0",
       "maturity": "alpha",
-      "date": "2026-11-15",
+      "date": "2026-11-16",
       "timezone": "America/New_York",
       "interface_version": 1,
-      "status": "Unpublished corrected source;earlier exact ZIP scoped Setup check remains separate;new seed correction not packaged or admitted",
+      "status": "Alpha source; exact package qualification and publication are recorded separately",
       "scope": "Optional invocation-only authentication and manual local model-list inspection;image inference and model management remain unavailable;exact integer seed normalization preserves raw generation evidence"
     },
     {

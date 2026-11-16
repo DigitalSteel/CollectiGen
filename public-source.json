@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 893,
+  "allowlisted_source_file_count": 894,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -3226,16 +3226,16 @@
       "size_bytes": 5491
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "e576031be8bee205c692de51b4d430ab19175087177e1e24dc37bada57c80387",
-      "size_bytes": 20382
+      "size_bytes": 20336,
+      "sha256": "9568c143fc73d4324b0ef3cb5593ac3b5630088fca031161ef70e1b46b36d477"
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
       "sha256": "8ee44408dd31fb4131ffc07c470986f48df1110a92cf582c13f8bbaafbd283f1",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "87e8317500a3384fff3cc5fb4b73b116c8db631119d958ff758a34234cab4908",
-      "size_bytes": 35551
+      "size_bytes": 34593,
+      "sha256": "2b001a262332ff2caefacf3e0660e8976cc117e84855b9e03c9a5788e6e969ab"
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3574,8 +3574,8 @@
       "size_bytes": 10935
     },
     "docs/releases/MediaOrganizer-0.7.0.md": {
-      "sha256": "f42b1eba0f09eb78a79d2a1fb3ee723c8eb46ee1bd90fc694379b5c060738daf",
-      "size_bytes": 2760
+      "size_bytes": 1801,
+      "sha256": "bd3ae50854ca425e2c448dd7d257909d2075514b44f0f03359ccfc92c1e84561"
     },
     "tests/test_generation_integer_precision.py": {
       "sha256": "02c7b19d59fdcb1ab07007ac8d9fd2712daa98990297203c23740ec6134e8d44",

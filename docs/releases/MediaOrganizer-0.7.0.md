@@ -1,24 +1,35 @@
-# Media Organizer a.0.7.0 — Alpha candidate
+# Media Organizer a.0.7.0 — Alpha
 
-2026-11-15 (America/New_York; unpublished build candidate)
+2026-11-16 (America/New_York)
 
-## New features
-
-- In LM Studio Connection, open Authentication to enter a token for one explicit Refresh Models request. The token is masked, clears when submitted and is never saved with connection preferences. Enter it again for a later refresh.
-- Run AI can inspect the saved local LM Studio connection and its reported image-capable models. Optional authentication is separate from your local AI model configuration. Image analysis through LM Studio remains unavailable.
+Organize and review your images locally. This alpha preserves long generation
+seeds exactly and adds explicit authentication for local model-list inspection.
 
 ## Improvements
 
-- Generation metadata parsing preserves integer seed values and text before floating-point conversion. Raw evidence, unknown fields and fractional sampling values stay intact; already-rounded metadata is not rewritten.
-- Model-list refresh shows activity and elapsed time while waiting. Cancel or Close waits for client cleanup. An address change requires review before a token can be sent to the new address.
-- An unusable response cannot become a selected model. Preferences remain a separate Save decision; refreshing does not load a model or start analysis.
+- Import generation seeds without rounding them. Raw metadata, unknown fields
+  and fractional settings remain intact. Previously rounded records are not
+  rewritten automatically.
+- In **LM Studio Connection**, open **Authentication** to enter a token for one
+  **Refresh Models** request. It is masked, cleared on submission and excluded
+  from saved connection preferences. Enter it again for another refresh.
+- Review the reported models before separately choosing **Save Connection**.
+  Refresh shows progress; Cancel and Close wait for the active request to settle.
+  Changing the server address requires another explicit review and refresh.
 
-## Scope and qualification
+## Limits and upgrade guidance
 
-Only an explicit local HTTP address and port on this computer are supported. Model capabilities are server declarations, not inference qualification. This update does not load, unload or configure a model, run training or enable LM Studio image analysis.
+LM Studio support covers connection preferences and read-only model-list review
+on this computer, using an explicit local HTTP address and port. Reported model
+capabilities do not establish inference readiness. LM Studio image analysis,
+model loading and training are unavailable through this connection.
 
-This is an unpublished, unsigned build candidate, not an admitted Suite Manager update. The exact earlier 0.7.0 candidate ZIP (SHA-256 `96bb4b9a9593f101ac3991faf400445379158f4f0831fe0374c2f1a982ab9b3e`, source `80ba73e76058c4d282e5fb316d49e75704abdb42`) passed an automated offscreen check of original startup, generated-token model-list refresh, separate Save, fresh-process preference reopen, cancellation cleanup, safe failure with explicit retry, and normal Close. Fifteen default-system/light states were inspected. Responses were generated; no actual server or model was used.
+This is alpha software. Generated images and local fixture responses cover the
+bounded workflow checks; actual authenticated LM Studio installations, inference
+and output quality remain unqualified. No AI models are bundled.
+Metadata writing and optional-tool readiness remain outside this release's
+generated-data qualification.
 
-That check does not qualify actual authenticated-server behavior, image inference, manual Run AI interaction, other themes or installed update/rollback. The existing missing-ExifTool installer prompt was declined; metadata writing and required-component readiness were not qualified. Signing, exact signed admission/recovery and publication remain open.
-
-This source now also contains the exact-integer seed correction. The earlier tested ZIP and final-presentation ZIP2620e191 remain unchanged and do not contain that correction. A later package must bind its exact source and artifact identity and record applicable evidence reuse or additional qualification before publication. Organizer a.0.6.0 remains the shipped version.
+Keep a verified prior package and separate backups of your profile and images.
+Close the application before updating. Restoring software does not undo image
+edits. Review the supplied release notes and checksums when installing an update.
