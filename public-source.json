@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 892,
+  "allowlisted_source_file_count": 893,
   "component_ids": [
     "collectigen.media-organizer"
   ],
@@ -546,8 +546,8 @@
       "size_bytes": 11728
     },
     "core/generation_metadata.py": {
-      "sha256": "bbf25e000c6402f50b40f6b8ccd4e34566dd4e9f7011918bf692b3cda03c52c2",
-      "size_bytes": 56477
+      "sha256": "9fc76ef9ede8513e6b61bc084d367eee9d99ed456a21d0823b458b7a151cc1c7",
+      "size_bytes": 56750
     },
     "core/generation_outpainting.py": {
       "sha256": "cff5cd9ec9ad61e70db2bf34bc7096e0b1ccd15626cda9ac18b47089deef0229",
@@ -3226,16 +3226,16 @@
       "size_bytes": 5491
     },
     "suite_core/media_organizer/RELEASE_HISTORY.json": {
-      "sha256": "13766e701fe662921369cf2f687b38c811434962dab8a53e3c920e640ad974d5",
-      "size_bytes": 20311
+      "sha256": "e576031be8bee205c692de51b4d430ab19175087177e1e24dc37bada57c80387",
+      "size_bytes": 20382
     },
     "suite_core/media_organizer/RELEASE_PRESENTATION.json": {
       "sha256": "8ee44408dd31fb4131ffc07c470986f48df1110a92cf582c13f8bbaafbd283f1",
       "size_bytes": 248
     },
     "suite_core/media_organizer/WHATS_NEW.md": {
-      "sha256": "168b6b33a556df823a491a5054563265b8d8634388bd7150e9197627e7473df3",
-      "size_bytes": 35217
+      "sha256": "87e8317500a3384fff3cc5fb4b73b116c8db631119d958ff758a34234cab4908",
+      "size_bytes": 35551
     },
     "suite_core/media_organizer/__init__.py": {
       "sha256": "8c08bd3f2f2230ad36427ca1d1cd5d97f94ec3090b3b6bd9d663619f0b3b604f",
@@ -3574,8 +3574,12 @@
       "size_bytes": 10935
     },
     "docs/releases/MediaOrganizer-0.7.0.md": {
-      "sha256": "d1a20c466df9d2b4694faa7bd638703be3eebfc9906670f6b790a7f6359db15f",
-      "size_bytes": 2422
+      "sha256": "f42b1eba0f09eb78a79d2a1fb3ee723c8eb46ee1bd90fc694379b5c060738daf",
+      "size_bytes": 2760
+    },
+    "tests/test_generation_integer_precision.py": {
+      "sha256": "02c7b19d59fdcb1ab07007ac8d9fd2712daa98990297203c23740ec6134e8d44",
+      "size_bytes": 2309
     }
   },
   "fresh_history_required": true,

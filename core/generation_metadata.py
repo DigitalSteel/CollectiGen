@@ -80,7 +80,15 @@ class GenerationTranslation:
 def _number(value: Any) -> int | float | str:
     if isinstance(value, bool):
         return str(value)
+    if isinstance(value, int):
+        return value
     text = str(value).strip()
+    # Seeds can exceed binary64's exact integer range. Parse integer text
+    # directly so metadata normalization does not change generator evidence.
+    try:
+        return int(text)
+    except ValueError:
+        pass
     try:
         number = float(text)
         return int(number) if number.is_integer() else number

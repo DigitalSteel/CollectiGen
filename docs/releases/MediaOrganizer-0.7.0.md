@@ -9,6 +9,7 @@
 
 ## Improvements
 
+- Generation metadata parsing preserves integer seed values and text before floating-point conversion. Raw evidence, unknown fields and fractional sampling values stay intact; already-rounded metadata is not rewritten.
 - Model-list refresh shows activity and elapsed time while waiting. Cancel or Close waits for client cleanup. An address change requires review before a token can be sent to the new address.
 - An unusable response cannot become a selected model. Preferences remain a separate Save decision; refreshing does not load a model or start analysis.
 
@@ -20,4 +21,4 @@ This is an unpublished, unsigned build candidate, not an admitted Suite Manager 
 
 That check does not qualify actual authenticated-server behavior, image inference, manual Run AI interaction, other themes or installed update/rollback. The existing missing-ExifTool installer prompt was declined; metadata writing and required-component readiness were not qualified. Signing, exact signed admission/recovery and publication remain open.
 
-These revised source notes do not change the tested ZIP. A later package must bind its exact source and artifact identity and record applicable evidence reuse or additional qualification before publication. Organizer a.0.6.0 remains the shipped version.
+This source now also contains the exact-integer seed correction. The earlier tested ZIP and final-presentation ZIP2620e191 remain unchanged and do not contain that correction. A later package must bind its exact source and artifact identity and record applicable evidence reuse or additional qualification before publication. Organizer a.0.6.0 remains the shipped version.

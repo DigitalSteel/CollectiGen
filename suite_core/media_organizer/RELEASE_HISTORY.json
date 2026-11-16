@@ -8,8 +8,8 @@
       "date": "2026-11-15",
       "timezone": "America/New_York",
       "interface_version": 1,
-      "status": "Unpublished source/build candidate;exact earlier ZIP generated Setup check passed;revised notes only,not signed or admitted",
-      "scope": "Optional invocation-only authentication and manual local model-list inspection;image inference and model management remain unavailable"
+      "status": "Unpublished corrected source;earlier exact ZIP scoped Setup check remains separate;new seed correction not packaged or admitted",
+      "scope": "Optional invocation-only authentication and manual local model-list inspection;image inference and model management remain unavailable;exact integer seed normalization preserves raw generation evidence"
     },
     {
       "software_version": "0.6.0-alpha.1",
