@@ -1023,8 +1023,8 @@
     },
     {
       "path": "core/manager_update_host.py",
-      "bytes": 29462,
-      "sha256": "3a4ec1f635f85ed0c385f677a91e007410f05f15cac679682e67bf0246db9218"
+      "bytes": 30884,
+      "sha256": "4d893963069d01cf6689379cd742bccda3bc8d04feb3336d7f372035297e8422"
     },
     {
       "path": "core/manager_update_service.py",

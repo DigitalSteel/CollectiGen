@@ -172,6 +172,112 @@ def test_exact_offer_repository_identity_is_mapped_only_for_explicit_components(
             SealedLocalQualificationOpener(pin, root, (component,))(Request(url + '/contents'))
 
 
+@pytest.fixture
+def phased_organizer_feed(tmp_path, monkeypatch):
+    import urllib.request
+    monkeypatch.setattr(urllib.request, 'urlopen', lambda *a, **k: pytest.fail('No network fallback'))
+    root=tmp_path/'phased-organizer';(root/'_bootstrap').mkdir(parents=True)
+    assets=root/'_qualification';assets.mkdir()
+    first=f'https://api.github.com/repos/{REPOSITORY}/releases?per_page=50&page=1'
+    artifact=f'https://github.com/{REPOSITORY}/releases/download/collectigen.media-organizer%2Fv0.7.0-alpha.1/candidate.zip'
+    def store(name, contents):
+        (assets/name).write_bytes(contents)
+        return dict(path='_qualification/'+name,size=len(contents),sha256=sha256(contents).hexdigest())
+    document=dict(schema=2,responses={artifact:store('asset.bin',b'INERT ASSET')},
+        release_phases={name:{first:store(name+'.json',raw([name]))} for name in ('baseline','candidate')})
+    descriptor=root/'_bootstrap/qualification-responses.json'
+    def seal():
+        contents=raw(document);descriptor.write_bytes(contents)
+        return SealedLocalQualificationOpener(sha256(contents).hexdigest(),root,('collectigen.media-organizer',))
+    selector=assets/'release-phase.txt';selector.write_bytes(b'baseline\n')
+    return root,document,selector,first,artifact,seal
+
+
+def test_phased_organizer_changes_only_presealed_listing_and_keeps_asset_identity(phased_organizer_feed):
+    root,document,selector,first,artifact,seal=phased_organizer_feed
+    opener=seal();descriptor=(root/'_bootstrap/qualification-responses.json').read_bytes()
+    for name in ('baseline','candidate'):
+        selector.write_bytes((name+'\n').encode())
+        with opener.bind(root,opener.transport_id)(Request(first)) as response:assert json.load(response)==[name]
+        with opener(Request(artifact)) as response:assert response.read()==b'INERT ASSET'
+        with opener(Request(artifact,headers={'Range':'bytes=6-'})) as response:
+            assert response.read()==b'ASSET' and response.getcode()==206
+    assert (root/'_bootstrap/qualification-responses.json').read_bytes()==descriptor
+    (root/'_qualification/asset.bin').write_bytes(b'CHANGED')
+    with pytest.raises(ValueError):opener(Request(artifact))
+
+
+@pytest.mark.parametrize('value',[b'',b'unknown\n',b'baseline',b'candidate\r\n',b'baseline\nEXTRA',b'candidate\n'+b'x'*10000])
+def test_phased_organizer_unknown_or_unbounded_selector_never_falls_back(phased_organizer_feed,value):
+    root,document,selector,first,artifact,seal=phased_organizer_feed
+    opener=seal();selector.write_bytes(value)
+    for url in (first,artifact):
+        with pytest.raises(ValueError,match='sealed_qualification_release_phase_required'):opener(Request(url))
+
+
+def test_phased_organizer_missing_selector_or_changed_descriptor_refuses(phased_organizer_feed):
+    root,document,selector,first,artifact,seal=phased_organizer_feed
+    opener=seal();selector.unlink()
+    with pytest.raises(OSError):opener(Request(first))
+    selector.write_bytes(b'baseline\n')
+    descriptor=root/'_bootstrap/qualification-responses.json';descriptor.write_bytes(descriptor.read_bytes()+b' ')
+    with pytest.raises(ValueError,match='sealed_qualification_mapping_changed'):opener(Request(first))
+
+
+def test_phased_organizer_candidate_listing_drift_is_not_a_new_offer(phased_organizer_feed):
+    root,document,selector,first,artifact,seal=phased_organizer_feed
+    opener=seal();(root/'_qualification/candidate.json').write_bytes(raw(['changed']))
+    with opener(Request(first)) as response:assert json.load(response)==['baseline']
+    selector.write_bytes(b'candidate\n')
+    with pytest.raises(ValueError):opener(Request(first))
+
+
+@pytest.mark.parametrize('fault',['foreign_component','mixed_components','extra_phase','extra_url','shadow_listing','unknown_key','boolean_schema'])
+def test_phased_organizer_cannot_expand_component_listing_or_selector_authority(phased_organizer_feed,fault):
+    root,document,selector,first,artifact,seal=phased_organizer_feed
+    if fault=='extra_phase':document['release_phases']['other']=document['release_phases']['baseline']
+    if fault=='extra_url':document['release_phases']['candidate'][artifact]=document['responses'][artifact]
+    if fault=='shadow_listing':document['responses'][first]=document['release_phases']['baseline'][first]
+    if fault=='unknown_key':document['selector_path']='../arbitrary-selector'
+    if fault=='boolean_schema':document['schema']=True
+    opener=seal()
+    if fault=='foreign_component':opener=replace(opener,component_ids=('collectigen.suite-manager',))
+    if fault=='mixed_components':opener=replace(opener,component_ids=('collectigen.media-organizer','collectigen.generate'))
+    with pytest.raises(ValueError):opener(Request(first))
+
+
+def test_phased_organizer_stock_signed_discovery_revalidation_and_transfer(tmp_path,phased_organizer_feed):
+    from core.component_acquisition import ComponentAcquisition,ExactOfferHold
+    from suite_core.installation import ComponentId
+    from test_component_acquisition import FakeFeed,trust,API
+    root,document,selector,first,artifact,seal=phased_organizer_feed
+    component=ComponentId('collectigen.media-organizer')
+    feed=FakeFeed()
+    for version in ('0.6.0-alpha.1','0.7.0-alpha.1'):feed.add(component=component.value,version=version)
+    assets=root/'_qualification'
+    def store(name,contents):
+        (assets/name).write_bytes(contents)
+        return dict(path='_qualification/'+name,size=len(contents),sha256=sha256(contents).hexdigest())
+    document['responses']={url:store('asset-%02d.bin'%i,contents) for i,(url,contents) in enumerate(feed.resources.items())}
+    document['responses'].update({API+str(page):store('page-%d.json'%page,b'[]') for page in (2,3)})
+    document['release_phases']={name:{first:store(name+'.json',raw(feed.rows[:count]))}
+        for name,count in (('baseline',1),('candidate',2))}
+    opener=seal();cache=tmp_path/'cache';cache.mkdir();trust_bytes=raw(trust())
+    service=ComponentAcquisition(cache_root=cache,cache_owner='inert-qualification-only',opener=opener,
+        host_version='0.8.0-alpha.1',trust_bytes=trust_bytes,trust_sha256=sha256(trust_bytes).hexdigest())
+    prior,=service.discover(channel='beta',installed_versions={},component_id=component)
+    assert prior.release.software_version=='0.6.0-alpha.1' and prior.operation=='install'
+    service.revalidate_offer(prior,refresh_listing=True)
+    selector.write_bytes(b'candidate\n')
+    with pytest.raises(ExactOfferHold):service.revalidate_offer(prior,refresh_listing=True)
+    current,=service.discover(channel='beta',installed_versions={component.value:'0.6.0-alpha.1'},component_id=component)
+    assert current.release.software_version=='0.7.0-alpha.1' and current.operation=='update'
+    service.revalidate_offer(current,refresh_listing=True)
+    acquired=service.acquire(current)
+    assert acquired.artifact.read_bytes()==feed.resources[current.artifact_source.url]
+    assert not acquired.production_install_authorized
+
+
 def test_mixed_entry_policy_refused_before_read_or_channel(profile, monkeypatch):
     from suite_core.workflow_modules import entry, compiled_admission, compiled_candidate
     monkeypatch.setattr(compiled_admission, 'PROFILE', object())

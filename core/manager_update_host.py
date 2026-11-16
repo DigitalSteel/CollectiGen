@@ -87,9 +87,29 @@ class SealedLocalQualificationOpener:
         require(len(raw)<=MAX_METADATA_BYTES and sha256(raw).hexdigest()==self.mapping_sha256,
             'sealed_qualification_mapping_changed')
         document=_json(raw,'qualification responses')
-        require(set(document)=={'schema','responses'} and type(document['schema']) is int and document['schema']==1
-            and type(document['responses']) is dict and 1<=len(document['responses'])<=32,
+        require(type(document.get('schema')) is int and document['schema'] in (1,2)
+            and type(document.get('responses')) is dict and 1<=len(document['responses'])<=32,
             'closed_qualification_response_map_required')
+        responses=document['responses']
+        if document['schema']==1:
+            require(set(document)=={'schema','responses'},'closed_qualification_response_map_required')
+        else:
+            # Only a qualification fixture can advance its simulated publication.
+            # The selector supplies no offer, signature, stage or native authority.
+            # Assets are common sealed bytes; only page 1 may change between the
+            # two presealed listings. Original review still revalidates the offer.
+            first_page=f'https://api.github.com/repos/{REPOSITORY}/releases?per_page=50&page=1'
+            phases=document.get('release_phases')
+            require(set(document)=={'schema','responses','release_phases'}
+                and self.component_ids==('collectigen.media-organizer',)
+                and type(phases) is dict and set(phases)=={'baseline','candidate'}
+                and all(type(phase) is dict and set(phase)=={first_page} for phase in phases.values())
+                and first_page not in responses and len(responses)<32,
+                'closed_organizer_release_phases_required')
+            selector=self.root/'_qualification/release-phase.txt';guard(selector)
+            with selector.open('rb') as stream: selected=stream.read(11)
+            require(selected in (b'baseline\n',b'candidate\n'),'sealed_qualification_release_phase_required')
+            responses={**responses,**phases[selected[:-1].decode('ascii')]}
         url=request.full_url
         listing={f'https://api.github.com/repos/{REPOSITORY}/releases?per_page=50&page={page}' for page in (1,2,3)}
         if any(component != 'collectigen.suite-manager' for component in self.component_ids):
@@ -102,8 +122,8 @@ class SealedLocalQualificationOpener:
                     for component in self.component_ids)
             and len(parts.path.split('/'))==7)
         require(request.get_method()=='GET' and (url in listing or asset)
-            and url in document['responses'],'unknown_qualification_url')
-        spec=document['responses'][url]
+            and url in responses,'unknown_qualification_url')
+        spec=responses[url]
         require(type(spec) is dict and set(spec)=={'path','size','sha256'}
             and type(spec['path']) is str and type(spec['size']) is int and 0<spec['size']<=512*1024*1024
             and type(spec['sha256']) is str and re.fullmatch('[0-9a-f]{64}',spec['sha256']),
