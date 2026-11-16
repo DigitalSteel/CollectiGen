@@ -1,3 +1,13 @@
+# Suite Manager a.0.8.0 — development candidate — 2026-11-15
+
+This source candidate has not been qualified or published.
+
+- Applications manages and opens independently versioned Generate and Train modules. Manager focuses on installation, updates, connections, shared settings and resources.
+- Existing workflow drafts, model identities, run records and recovery stay in their canonical workspace. Reviewed model choices continue into a separate saved Generate draft.
+- Shared model/settings edits wait while a workflow is open. Its original work and process must close safely before management resumes.
+
+Package downloads remain unavailable until signed, qualified component releases are enrolled. New native startup, update/recovery and visual acceptance remain pending. No automatic installation or restart is enabled.
+
 # Suite Manager a.0.7.11 — 2026-11-14
 
 - Restores the existing Anima worker program and a required Training execution/readiness source file in Manager packages. These files were referenced by the reviewed Training services but omitted from the frozen export.

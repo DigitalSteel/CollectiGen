@@ -16,7 +16,8 @@ from core.training_retained_history import upsert_retained_review
 from core.training_run_index import TrainingRunIndex
 from qt_app.training_validation_dialog import TrainingValidationDialog
 from qt_app.training_workflow_controller import TrainingWorkflowController
-from suite_core.manager.window import create_window, unconfigured
+from suite_core.train.window import create_window as create_train_window
+from suite_core.tests.workflow_ui_fixtures import synthetic_module_session, trigger_more
 from test_manager_comparison_queue import app, click, settle, close_clean, capture
 
 
@@ -64,8 +65,8 @@ def saved_measurement(training_root):
 
 def test_manager_history_opens_same_saved_measurement_twice_without_process_work(tmp_path, monkeypatch):
     application = app()
-    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
-    manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+    session = synthetic_module_session(tmp_path, 'train')
+    manager = create_train_window(session)
     manager.resize(1500, 960); manager.show()
     state = manager.generation_state()
     training_root = state.generation_data_root / "training"
@@ -76,9 +77,7 @@ def test_manager_history_opens_same_saved_measurement_twice_without_process_work
     monkeypatch.setattr(validation, "_current_inputs", no_process)
     monkeypatch.setattr(validation.TrainingValidationService, "recover", no_process)
     monkeypatch.setattr(validation.TrainingValidationService, "execute", no_process)
-    item = manager.navigation.item(manager.page_rows["Training"])
-    QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
-                    pos=manager.navigation.visualItemRect(item).center())
+    assert manager.surface.isVisible()
     seen = []; requested = 0; errors = []; deadline = time.monotonic() + 35
     def drive():
         nonlocal requested
@@ -122,7 +121,7 @@ def test_manager_history_opens_same_saved_measurement_twice_without_process_work
                     QTimer.singleShot(0, widget.reject)
     timer = QTimer(); timer.setInterval(15); timer.timeout.connect(drive); timer.start()
     try:
-        click(manager.training_history_button)
+        click(manager.surface.history)
     finally:
         timer.stop()
     assert not errors, errors
@@ -135,8 +134,8 @@ def test_manager_history_opens_same_saved_measurement_twice_without_process_work
 def test_validation_result_route_uses_owning_report_folder(tmp_path, manager_host):
     application = app()
     if manager_host:
-        session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
-        parent = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+        session = synthetic_module_session(tmp_path, 'train')
+        parent = create_train_window(session)
         state = parent.generation_state()
         from core.model_resource_registry import ModelResourceRegistry
         controller = parent.sdxl_preparation_controller(ModelResourceRegistry(tmp_path / "models.json"))
@@ -173,8 +172,8 @@ def test_manager_history_imports_unlisted_validation(tmp_path, monkeypatch, choi
     from PySide6.QtWidgets import QFileDialog, QPushButton
     from core.training_validation import TrainingValidationService
     application = app()
-    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
-    manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+    session = synthetic_module_session(tmp_path, 'train')
+    manager = create_train_window(session)
     manager.resize(1500, 960); manager.show()
     state = manager.generation_state()
     training_root = state.generation_data_root / "training"
@@ -198,9 +197,7 @@ def test_manager_history_imports_unlisted_validation(tmp_path, monkeypatch, choi
             session.state = "closed"
         return ("" if choice == "cancel" else str(receipt), "")
     monkeypatch.setattr(QFileDialog, "getOpenFileName", choose)
-    item = manager.navigation.item(manager.page_rows["Training"])
-    QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
-                    pos=manager.navigation.visualItemRect(item).center())
+    assert manager.surface.isVisible()
     errors = []; clicked = []; deadline = time.monotonic() + 25
     def drive():
         try:
@@ -220,7 +217,7 @@ def test_manager_history_imports_unlisted_validation(tmp_path, monkeypatch, choi
             if history is not None: history.reject()
     timer = QTimer(); timer.setInterval(20); timer.timeout.connect(drive); timer.start()
     try:
-        click(manager.training_history_button)
+        click(manager.surface.history)
     finally:
         timer.stop()
     assert not errors, errors

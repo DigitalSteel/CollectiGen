@@ -5,14 +5,13 @@ from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
 from core.background_jobs import BackgroundJobManager
 from core.training_run_index import TrainingRunIndex,TrainingRunRecord,ScopedTrainingHistory
-from suite_core.manager.window import create_window,unconfigured
+from suite_core.tests.workflow_ui_fixtures import workflow_window, trigger_more
 from test_training_draft_transfer import app,wait,capture
 
 
 def test_manager_visible_experiments_save_reopen_and_saved_draft_route(tmp_path,monkeypatch):
     application=app()
-    session=NS(state="ready",admitted=NS(layout=NS(data_root=tmp_path)))
-    window=create_window(unconfigured(datetime.now(timezone.utc)),normal_entry_session=session)
+    application, session, window = workflow_window(tmp_path, "train")
     window.resize(1500,960);window.show()
     state=window.generation_state();root=state.generation_data_root/"training";root.mkdir(parents=True,exist_ok=True)
     index=TrainingRunIndex(root/"training-runs.json")
@@ -20,10 +19,8 @@ def test_manager_visible_experiments_save_reopen_and_saved_draft_route(tmp_path,
         str(state.generation_data_root/"model_resources.json"),"d"*64,phase="completed")
     index.register(record,index.snapshot()[1])
     try:
-        item=window.navigation.item(window.page_rows["Training"])
-        QTest.mouseClick(window.navigation.viewport(),Qt.LeftButton,pos=window.navigation.visualItemRect(item).center())
         capture(window,"manager-experiments-entry.png",tmp_path)
-        QTest.mouseClick(window.training_experiments_button,Qt.LeftButton)
+        trigger_more(window, 'Training Experiments…')
         controller=window._sdxl_preparation_controller
         dialog=next(iter(controller.open_reviews()))
         wait(lambda:dialog._task is None and dialog.runs.topLevelItemCount()==1)
@@ -41,7 +38,7 @@ def test_manager_visible_experiments_save_reopen_and_saved_draft_route(tmp_path,
         transfer=next(d for d in controller.open_reviews() if isinstance(d,TrainingDraftTransferDialog))
         wait(lambda:transfer._task is None);transfer.reject();dialog.reject()
         application.processEvents()
-        QTest.mouseClick(window.training_experiments_button,Qt.LeftButton)
+        trigger_more(window, 'Training Experiments…')
         reopened=next(iter(controller.open_reviews()))
         wait(lambda:reopened._task is None and reopened.runs.topLevelItemCount()==1)
         assert reopened.runs.topLevelItem(0).text(0)=="Hero experiment"

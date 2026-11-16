@@ -224,8 +224,8 @@ class CompiledManagerUpdateProfile:
 
     def training_proof_for_retained_baseline(self, *, session, admitted):
         """Verify an explicitly retained baseline for this original entry."""
-        from suite_core.manager.bootstrap_entry import NormalEntrySession, check_training_baseline_offer
-        from suite_core.discovery.manager_runtime_detached_admission import admit_installed_detached
+        from suite_core.manager.bootstrap_entry import NormalEntrySession
+        from core.manager_worker_evidence import verify_retained_manager_worker
 
         self.check()
         require(type(session) is NormalEntrySession and session.state == 'offered'
@@ -234,36 +234,14 @@ class CompiledManagerUpdateProfile:
         profile = session.update_profile
         require(profile is not None and profile['trust_sha256'] == self.trust_sha256
                 and profile['channel'] == self.channel, 'training_proof_session_trust_changed')
-        reference = getattr(session, 'training_baseline', None)
-        if reference is None:
-            return None
-        reference = check_training_baseline_offer(reference, profile, session.binding.entry)
-        release = self._release(admitted.layout.code_root, reference)
-        files = release['files']
-        proof = read_manager_inventory_proof(files['proof'])
-        def metadata(name):
-            spec = files[name]
-            require(type(spec['size']) is int and 0 < spec['size'] <= MAX_METADATA_BYTES,
-                    'training_proof_metadata_bounds')
-            with Path(spec['path']).open('rb') as stream:
-                value = stream.read(spec['size'] + 1)
-            require(len(value) == spec['size'] and sha256(value).hexdigest() == spec['sha256'],
-                    'training_proof_metadata_changed')
-            return value
-        archive = Path(files['archive']['path'])
-        plan = admit_installed_detached(
-            archive, inventory_profile=PROFILE,
-            detached_inventory_bytes=proof, manifest_bytes=metadata('manifest'),
-            signature_bytes=metadata('signature'), trust_bytes=metadata('trust'),
-            expected_trust_sha256=self.trust_sha256, expected_inventory_sha256=files['inventory']['sha256'],
-            expected_version=profile['current_version'], expected_channel=self.channel,
-            installed_executable_sha256=session.binding.entry.executable_sha256,
-        )
-        require(plan.artifact_sha256 == files['archive']['sha256']
-                and manager_inventory_json(proof)['archive_size_bytes'] == files['archive']['size'],
-                'training_proof_archive_reference_changed')
-        session._peer()
-        return plan, proof
+        def check():
+            require(type(session) is NormalEntrySession and session.state == 'offered'
+                    and session.admitted is admitted, 'original_training_proof_session_required')
+            session._peer()
+        return verify_retained_manager_worker(root=admitted.layout.code_root,
+            reference=getattr(session, 'training_baseline', None), expected_version=profile['current_version'],
+            expected_channel=self.channel, trust_bytes=self.trust_bytes, trust_sha256=self.trust_sha256,
+            manager_identity=session.binding.entry, check=check)
 
     def _release(self, root, source):
         release=json.loads(json.dumps(source))

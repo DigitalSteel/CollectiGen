@@ -16,7 +16,8 @@ from core.settings import AppSettings
 from core.generation_image_suggestions import ImageSetupProposal, ImageSetupSuggestionResult
 from suite_core.manager.caption_components_ui import CaptionComponentsDialog
 from suite_core.manager.description_setup_ui import DescriptionSetupDialog
-from suite_core.manager.window import create_window, unconfigured
+from suite_core.generate.window import create_window as create_generate_window
+from suite_core.tests.workflow_ui_fixtures import synthetic_module_session
 from test_manager_generator_setup_ui import application, wait_until, capture
 from test_manager_description_setup_return_ui import open_image_setup
 
@@ -146,9 +147,10 @@ def test_manager_image_review_uses_bound_provider_after_component_return(tmp_pat
     app = application(); runtime = CaptionFixture(model=True)
     source = tmp_path/'generated-source.png'; Image.new('RGB',(20,20),'blue').save(source)
     original = source.read_bytes()
-    session = NS(state='ready', caption_runtime=runtime, admitted=NS(layout=NS(data_root=tmp_path/'suite')))
-    window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
-    window.resize(1800,980); window.show(); window.navigation.setCurrentRow(window.page_rows['Generate'])
+    session = synthetic_module_session(tmp_path/'suite', 'generate')
+    session.caption_runtime = runtime  # Explicit synthetic provider; no signed worker/native qualification.
+    window = create_generate_window(session)
+    window.resize(1800,980); window.show()
     flashes = []
     class VisibleOwnership(QObject):
         def eventFilter(self, widget, event):
@@ -168,17 +170,28 @@ def test_manager_image_review_uses_bound_provider_after_component_return(tmp_pat
     assert review.review_description_setup_button.isVisible()
     assert runtime.calls == []  # First-time component setup needs no failed analysis.
     monkeypatch.setattr(QMessageBox,'question',lambda *_a,**_k:QMessageBox.Yes)
+    from test_workflow_settings_return_ui import (request_saved_return, manager_for_return,
+        management_button, resumed_generate, wait_restored_review, close_component_window)
+    descriptor,saved,draft_path=request_saved_return(app,session,window,
+        review.review_description_setup_button,'description-settings')
+    assert descriptor['resume_image_review'] is True
+    snapshot=saved.target_context['unfinished_image_setup_review']
+    assert snapshot['state']['name']=='Retained caption setup'
+    assert snapshot['state']['parts']['scene']['text']=='Manual scene stays'
+    saved_bytes=draft_path.read_bytes()
+    app,manager_session,manager=manager_for_return(tmp_path/'suite',caption_runtime=runtime)
     errors = []; stage = [0]; deadline = monotonic()+20
+    timer=QTimer();timer.setInterval(20)
     def drive():
+        config = manager._generation_setup_dialog
+        components = next((x for x in app.topLevelWidgets() if isinstance(x,CaptionComponentsDialog) and x.isVisible()),None)
         if monotonic()>deadline:
-            errors.append('Component return timed out')
-            for widget in app.topLevelWidgets():
-                if isinstance(widget,(CaptionComponentsDialog,DescriptionSetupDialog)):widget.reject()
+            errors.append('Component return timed out');timer.stop()
+            if components is not None:components.reject()
+            if config is not None:config.reject()
             return
         try:
-            config = next((x for x in app.topLevelWidgets() if isinstance(x,DescriptionSetupDialog) and x.isVisible()),None)
-            components = next((x for x in app.topLevelWidgets() if isinstance(x,CaptionComponentsDialog) and x.isVisible()),None)
-            if stage[0] == 0 and config is not None:
+            if stage[0] == 0 and isinstance(config,DescriptionSetupDialog) and config.isVisible():
                 assert config.components_button.isVisible(); stage[0] = 1
                 QTest.mouseClick(config.components_button,Qt.LeftButton)
             elif stage[0] == 1 and components is not None:
@@ -186,31 +199,42 @@ def test_manager_image_review_uses_bound_provider_after_component_return(tmp_pat
             elif stage[0] == 2 and components is not None and components._task is None and components._review is not None:
                 stage[0] = 3; QTest.mouseClick(components.install_button,Qt.LeftButton)
             elif stage[0] == 3 and components is not None and components._task is None and components._review is not None and runtime.components:
-                capture(components,'manager-caption-components-return'); stage[0] = 4
-                QTest.mouseClick(components.close_button,Qt.LeftButton); return
+                capture(components,'manager-caption-components-return'); stage[0] = 5;timer.stop()
+                QTest.mouseClick(components.close_button,Qt.LeftButton)
         except Exception as error:
-            errors.append(str(error))
+            errors.append(str(error));timer.stop()
             if components is not None:components.reject()
             if config is not None:config.reject()
-            return
-        QTimer.singleShot(20,drive)
-    QTimer.singleShot(20,drive)
-    QTest.mouseClick(review.review_description_setup_button,Qt.LeftButton)
-    assert not errors and stage[0] == 4
+    timer.timeout.connect(drive);timer.start()
+    try:QTest.mouseClick(management_button(manager,'Description settings'),Qt.LeftButton)
+    finally:timer.stop()
+    assert not errors and stage[0] == 5
     assert runtime.calls == ['status','install-runtime','status']
-    assert review is owner._image_setup_dialog and review.name.text() == 'Retained caption setup'
-    assert review.part_fields['scene'].text() == 'Manual scene stays' and review.suggestion_goal.currentData() == goal
-    QTest.mouseClick(review.suggest_button,Qt.LeftButton)
-    wait_until(app,lambda:review._suggestion_task is None and len(review._suggestion_candidates)==1)
-    assert runtime.calls[-1] == 'suggest' and review.part_fields['scene'].text() == 'Manual scene stays'
+    assert draft_path.read_bytes()==saved_bytes
+    manager.close();app.processEvents();assert not manager.isVisible()
+    # A new admitted process reconstructs its own provider. No runtime handle
+    # crosses the saved draft; only the synthetic installed state is reproduced.
+    fresh=CaptionFixture(model=runtime.model);fresh.components=runtime.components
+    app,resumed_session,resumed,resumed_owner=resumed_generate(tmp_path/'suite',descriptor,
+        configure_session=lambda new_session:setattr(new_session,'caption_runtime',fresh))
+    restored=wait_restored_review(app,resumed_owner,'Retained caption setup')
+    assert resumed_owner is not owner and restored is not review
+    assert restored.part_fields['scene'].text() == 'Manual scene stays'
+    assert restored.suggestion_goal.currentData() == goal
+    assert fresh.calls==[] and runtime.calls==['status','install-runtime','status']
+    assert draft_path.read_bytes()==saved_bytes
+    QTest.mouseClick(restored.suggest_button,Qt.LeftButton)
+    try:
+        wait_until(app,lambda:restored._suggestion_task is None and len(restored._suggestion_candidates)==1)
+    except AssertionError as error:
+        raise AssertionError((restored.suggest_button.isVisible(), restored.suggest_button.isEnabled(),
+                              restored.suggestion_status.text(), fresh.calls)) from error
+    assert fresh.calls == ['suggest'] and runtime.calls==['status','install-runtime','status']
+    assert restored.part_fields['scene'].text() == 'Manual scene stays'
     assert source.read_bytes() == original
-    capture(review,'manager-caption-provider-proposal')
-    window._description_test_watchdog.stop(); review.reject()
-    wait_until(app,lambda:getattr(owner,'_image_setup_dialog',None) is None)
-    window.close()
-    if window.isVisible():
-        wait_until(app,lambda:not owner.has_active_background_work(),timeout=30); window.close()
-    wait_until(app,lambda:not window.isVisible(),timeout=30)
+    capture(restored,'manager-caption-provider-proposal')
+    close_component_window(app,resumed)
+
 
 
 def test_caption_readiness_failure_can_be_reviewed_and_retried(tmp_path):

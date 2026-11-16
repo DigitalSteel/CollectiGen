@@ -15,7 +15,7 @@ from core import ImageRecord, LibraryImageIdentity, TagDatabase, TrainingCandida
 from core.training_package import TrainingPackageService
 from qt_app.theme import apply_theme
 from qt_app.training_page import TrainingRecoveryFinderDialog
-from suite_core.manager.window import create_window, unconfigured
+from suite_core.tests.workflow_ui_fixtures import workflow_window, trigger_more
 from test_manager_generator_setup_ui import application, wait_until, capture
 
 
@@ -48,12 +48,8 @@ def family_bytes(root):
 
 
 def manager(tmp_path,theme='dark'):
-    app=application();session=NS(state='ready',admitted=NS(layout=NS(data_root=tmp_path/'Suite/Data')))
-    window=create_window(unconfigured(datetime.now(timezone.utc)),normal_entry_session=session,theme=theme)
-    window.resize(1920,1040);window.show();app.processEvents()
-    item=window.navigation.item(window.page_rows['Training'])
-    QTest.mouseClick(window.navigation.viewport(),Qt.LeftButton,pos=window.navigation.visualItemRect(item).center())
-    QTest.mouseClick(window.training_package_recovery_button,Qt.LeftButton)
+    app, session, window = workflow_window(tmp_path, 'train', theme=theme)
+    trigger_more(window, 'Review Interrupted Package…')
     app.processEvents();finder=window._training_package_recovery_dialog
     assert type(finder) is TrainingRecoveryFinderDialog and finder.isVisible()
     return app,session,window,finder
@@ -152,7 +148,9 @@ def test_search_failure_late_result_and_close_do_not_open_preview(tmp_path,monke
             task.signals.complete.emit(())
         elif mode in ['revoked','replaced']:
             if mode=='revoked':session.state='closed'
-            else:window.state=NS(**vars(window.state))
+            else:
+                window._controller.state = NS(**vars(window.state))
+                window.state = window._controller.state
             task.signals.complete.emit(())
             assert 'session ended or changed' in finder.status.text()
             assert not finder.folder_button.isEnabled() and not finder.browse_receipt_button.isEnabled()

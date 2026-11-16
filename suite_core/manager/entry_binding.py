@@ -193,7 +193,46 @@ def _bind_training_worker(admitted, signed_worker, *, prepare_workspace=False):
     return plan.provision_training_worker(proof, code_root=code, data_root=data)
 
 
-def _bind_manager_video_runtime(session, verifier, signed_worker):
+def _checked_explicit_worker_configs(admitted, signed_worker, source_root, python_version, *, local_video_copy=False):
+    """Finite module adapter inputs, pinned to the admitted Manager source tree."""
+    import json
+    from hashlib import sha256
+    from core.paths import PROGRAM_ROOT
+    from core.training_source_io import read_stable_training_source
+    from suite_core.discovery.manager_runtime_detached_admission import manager_inventory_json
+    from .bootstrap_entry import EntryHold
+
+    plan, proof = signed_worker
+    source = Path(source_root)
+    code = admitted.layout.code_root / 'Apps/Manager/current'
+    if source != code / '_internal' or sha256(proof).hexdigest() != plan.inventory_sha256:
+        raise EntryHold('signed_manager_worker_source_required')
+    rows = {row['path']: row for row in manager_inventory_json(proof)['files']}
+    values = {}
+    for relative in ('tools/runtime-pins.json', 'tools/optional-ai-profiles.json'):
+        key = '_internal/' + relative
+        pin = rows.get(key)
+        if pin is None:
+            raise EntryHold('signed_manager_worker_config_missing')
+        raw, _ = read_stable_training_source(source / relative, max_bytes=64 * 1024)
+        if len(raw) != pin['size_bytes'] or sha256(raw).hexdigest() != pin['sha256']:
+            raise EntryHold('signed_manager_worker_config_changed')
+        if local_video_copy:
+            # Existing dependency methods use their own package-local config.
+            # Equal authenticated bytes preserve that stock path without global
+            # redirection or silently mixing independently versioned contracts.
+            local, _ = read_stable_training_source(PROGRAM_ROOT / relative, max_bytes=64 * 1024)
+            if local != raw:
+                raise EntryHold('module_video_config_differs_from_admitted_manager')
+        values[relative] = json.loads(raw)
+    pins = values['tools/runtime-pins.json']
+    if (type(python_version) is not str or pins['python']['version'] != python_version
+            or values['tools/optional-ai-profiles.json'].get('target', {}).get('python') != python_version):
+        raise EntryHold('signed_manager_worker_python_version_changed')
+    return source, pins
+
+
+def _bind_manager_video_runtime(session, verifier, signed_worker, *, source_root=None, worker_python_version=None, admission_check=None):
     """Bind Video to the exact packaged worker already admitted by this session."""
     import json
     import shutil
@@ -211,7 +250,13 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
     interpreter = Path(inventory.root) / verifier.python_relative
     interpreter_sha256 = rows[verifier.python_relative]["sha256"]
 
+    explicit_source = source_root is not None
+    if explicit_source != (worker_python_version is not None) or (admission_check is not None and not callable(admission_check)):
+        raise ValueError("Explicit worker source/version and admission check required.")
+
     def check_session(check_interrupt):
+        if admission_check is not None:
+            admission_check()
         if check_interrupt is not None:
             check_interrupt()
         if session.state != "ready" or session.admitted is not admitted:
@@ -222,8 +267,12 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
             check_session(check_interrupt)
         check()
         DependencyService._profile_union((DependencyService.VIDEO_PROFILE_ID, "manager-video-encoder-windows"))
-        raw, _ = read_stable_training_source(PROGRAM_ROOT / "tools/runtime-pins.json", max_bytes=64 * 1024)
-        pins = json.loads(raw)
+        if explicit_source:
+            _source, pins = _checked_explicit_worker_configs(admitted, signed_worker, source_root,
+                worker_python_version, local_video_copy=True)
+        else:
+            raw, _ = read_stable_training_source(PROGRAM_ROOT / "tools/runtime-pins.json", max_bytes=64 * 1024)
+            pins = json.loads(raw)
 
         def should_cancel():
             check()
@@ -302,7 +351,7 @@ def _bind_manager_video_runtime(session, verifier, signed_worker):
     return admit, review, install, recover
 
 
-def _bind_manager_caption_runtime(session, verifier, signed_worker):
+def _bind_manager_caption_runtime(session, verifier, signed_worker, *, source_root=None, worker_python_version=None, admission_check=None):
     """Reuse the exact signed worker; caption storage never replaces Video."""
     import sys
     from hashlib import sha256
@@ -318,12 +367,20 @@ def _bind_manager_caption_runtime(session, verifier, signed_worker):
     rows = plan.training_worker_file_rows(proof)
     interpreter = Path(inventory.root) / verifier.python_relative
     interpreter_pin = rows[verifier.python_relative]['sha256']
-    source = Path(PROGRAM_ROOT)
+    explicit_source = source_root is not None
+    if explicit_source != (worker_python_version is not None) or (admission_check is not None and not callable(admission_check)):
+        raise ValueError("Explicit worker source/version and admission check required.")
+    source = Path(PROGRAM_ROOT if source_root is None else source_root)
     code = admitted.layout.code_root / 'Apps/Manager/current'
     bindings = CaptionWorkerBinding(source, Path(inventory.root), interpreter, interpreter_pin,
-                                   sys.version.split()[0], admitted.layout.data_root / 'Manager/Descriptions')
+        sys.version.split()[0] if worker_python_version is None else worker_python_version,
+        admitted.layout.data_root / 'Manager/Descriptions')
     def check(check_interrupt):
+        if admission_check is not None:
+            admission_check()
         check_interrupt()
+        if explicit_source:
+            _checked_explicit_worker_configs(admitted, signed_worker, source, worker_python_version)
         if session.state != 'ready' or session.admitted is not admitted:
             raise InterruptedError('The original Manager caption session ended.')
         def cancelled():

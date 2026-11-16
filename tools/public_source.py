@@ -10,6 +10,10 @@ import sys
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 
 PRIVATE_PATH_PARTS = {
     ".agents",
@@ -194,7 +198,9 @@ def load_manifest(path: Path) -> dict[str, Any]:
         components = payload.get("component_ids")
         known = {"collectigen.tag-encyclopedia": "suite_core/encyclopedia/MODULE_MANIFEST.json",
                  "collectigen.suite-manager": "suite_core/manager/MODULE_MANIFEST.json",
-                 "collectigen.media-organizer": "suite_core/media_organizer/MODULE_MANIFEST.json"}
+                 "collectigen.media-organizer": "suite_core/media_organizer/MODULE_MANIFEST.json",
+                 "collectigen.generate": "suite_core/generate/MODULE_MANIFEST.json",
+                 "collectigen.train": "suite_core/train/MODULE_MANIFEST.json"}
         if (type(components) is not list or not components
                 or any(type(c) is not str or c not in known for c in components)
                 or len(set(components)) != len(components)
@@ -321,10 +327,20 @@ def validate_default_references(prepared: dict[str, bytes], manifest: dict[str, 
         for component in manifest["component_ids"]:
             directory = {"collectigen.suite-manager": "manager",
                          "collectigen.tag-encyclopedia": "encyclopedia",
-                         "collectigen.media-organizer": "media_organizer"}[component]
+                         "collectigen.media-organizer": "media_organizer",
+                         "collectigen.generate": "generate",
+                         "collectigen.train": "train"}[component]
             identity = json.loads(prepared[f"suite_core/{directory}/MODULE_MANIFEST.json"])
             if identity.get("module_id") != component or not identity.get("software_version"):
                 return ["Component source manifest identity mismatch."]
+            if component in {"collectigen.generate", "collectigen.train"}:
+                if type(identity.get("schema_version")) is not int or identity["schema_version"] != 1:
+                    return ["Component source manifest identity mismatch."]
+                from suite_core.discovery.component_release_signature import _version
+                try:
+                    _version(identity["software_version"])
+                except ValueError:
+                    return ["Component source manifest identity mismatch."]
         trust = prepared.get("data/defaults/release-trust.json")
         if trust is not None:
             from suite_core.discovery.component_release_signature import _trust

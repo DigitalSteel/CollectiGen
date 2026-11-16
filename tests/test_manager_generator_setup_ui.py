@@ -16,6 +16,7 @@ from core.swarm_runtime import SwarmRuntimeManager, SwarmSnapshot
 from core.settings import AppSettings
 from qt_app.swarm_runtime_widget import SwarmRuntimeWidget
 from suite_core.manager.window import create_window, unconfigured
+from suite_core.tests.workflow_ui_fixtures import workflow_window, trigger_more
 
 
 def application():
@@ -105,10 +106,10 @@ def test_manager_visible_full_setup_scopes_models_import_and_close(tmp_path, mon
     session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
     window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
     window.resize(1600, 950); window.show()
-    item = window.navigation.item(window.page_rows["Generate"])
+    item = window.navigation.item(window.page_rows["Applications"])
     QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
         pos=window.navigation.visualItemRect(item).center())
-    button = next(b for b in window.findChildren(QPushButton) if b.text().startswith("Generator Setup"))
+    button = next(b for b in window.findChildren(QPushButton) if b.text().casefold().startswith("generator connection"))
     errors = []
     def drive():
         dialog = window._generation_setup_dialog
@@ -217,12 +218,9 @@ def test_image_plan_visible_setup_return_preserves_saved_draft(tmp_path, monkeyp
     from qt_app.generation_saved_work_dialog import SavedGenerationWorkDialog
     from core.generation_planning import load_plan_with_digest
     monkeypatch.setattr(runtime, "SwarmRuntimeManager", FixtureRuntime)
-    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
-    window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+    app, session, window = workflow_window(tmp_path, 'generate')
     window.resize(1600, 950); window.show()
-    item = window.navigation.item(window.page_rows["Generate"])
-    QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
-        pos=window.navigation.visualItemRect(item).center())
+    assert window.surface.isVisible()
     def create_new():
         picker = next((w for w in app.topLevelWidgets()
             if isinstance(w, SavedGenerationWorkDialog) and w.isVisible()), None)
@@ -230,7 +228,7 @@ def test_image_plan_visible_setup_return_preserves_saved_draft(tmp_path, monkeyp
             QTimer.singleShot(20, create_new); return
         QTest.mouseClick(picker.create_setup_button, Qt.LeftButton)
     QTimer.singleShot(20, create_new)
-    QTest.mouseClick(window.generate_plan_button, Qt.LeftButton)
+    QTest.mouseClick(window.surface.resume, Qt.LeftButton)
     wait_until(app, lambda: getattr(window, "_generation_dialog", None) is not None)
     draft = window._generation_dialog
     wait_until(app, lambda: not draft._pending)
@@ -247,29 +245,41 @@ def test_image_plan_visible_setup_return_preserves_saved_draft(tmp_path, monkeyp
             draft._pending, draft._draft_inputs_valid()))
     path = draft._draft_path
     before, token = load_plan_with_digest(path)
-    errors = []
-    def return_from_setup():
-        setup = window._generation_setup_dialog
+    from test_workflow_settings_return_ui import (request_saved_return, manager_for_return,
+        management_button, resumed_generate, close_component_window)
+    descriptor, saved, saved_path = request_saved_return(app, session, window,
+        draft.review_connection_button, 'connections')
+    assert saved_path == path and saved.request.positive_prompt == before.request.positive_prompt
+    saved_bytes = path.read_bytes()
+    app, manager_session, manager = manager_for_return(tmp_path)
+    errors = []; seen = []; deadline = monotonic() + 15
+    def review_connection():
+        setup = manager._generation_setup_dialog
         if setup is None:
-            QTimer.singleShot(20, return_from_setup); return
+            if monotonic() >= deadline:
+                errors.append('Manager connection settings did not open'); return
+            QTimer.singleShot(20, review_connection); return
         try:
-            assert setup.review.return_to_request_button.isVisible()
-            assert setup.review._generation_storage_root == tmp_path / "Manager/generation"
-            capture(setup, "plan-return")
-            QTest.mouseClick(setup.review.return_to_request_button, Qt.LeftButton)
-        except Exception as exc:
-            errors.append(exc); setup.reject()
-    QTimer.singleShot(20, return_from_setup)
-    QTest.mouseClick(draft.review_connection_button, Qt.LeftButton)
-    assert not errors, errors
-    assert window._generation_dialog is draft and draft._draft_path == path
-    assert draft.positive.toPlainText() == before.request.positive_prompt
+            assert setup.isVisible() and setup.review.isVisible()
+            assert setup.review._generation_storage_root == session.workspace_root / "generation"
+            seen.append(True); capture(setup, "plan-return-manager-settings")
+        except Exception as error:
+            errors.append(error)
+        setup.reject()
+    QTimer.singleShot(20, review_connection)
+    QTest.mouseClick(management_button(manager, 'Generator connection'), Qt.LeftButton)
+    assert not errors and seen == [True]
+    assert path.read_bytes() == saved_bytes
+    manager.close(); app.processEvents(); assert not manager.isVisible()
+    app, resumed_session, resumed, resumed_draft = resumed_generate(tmp_path, descriptor)
+    assert resumed_draft is not draft and resumed_draft._draft_path == path
+    assert resumed_draft.positive.toPlainText() == before.request.positive_prompt
     after, _ = load_plan_with_digest(path)
     assert after.request.positive_prompt == before.request.positive_prompt
-    capture(draft, "returned-draft")
-    draft.close()
-    wait_until(app, lambda: not draft.isVisible())
-    window.close(); app.processEvents()
+    assert path.read_bytes() == saved_bytes
+    capture(resumed_draft, "returned-draft")
+    close_component_window(app, resumed)
+
 
 
 def test_setup_failure_remains_retryable(tmp_path, monkeypatch):
@@ -299,8 +309,7 @@ def test_saved_setup_opens_separate_draft_and_preserves_retained_image(tmp_path,
     from PySide6.QtWidgets import QDialogButtonBox
 
     app = application()
-    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
-    window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+    app, session, window = workflow_window(tmp_path, 'generate')
     window.resize(1800, 960); window.show()
     window.generation_state()
     # Prepare one real saved draft; the tested route starts at Manager's visible control.
@@ -315,7 +324,7 @@ def test_saved_setup_opens_separate_draft_and_preserves_retained_image(tmp_path,
     original_path = original._draft_path
     original_bytes = original_path.read_bytes()
     original_digest = original.plan.digest
-    recipe_path = tmp_path / "Manager/generation/recipes/separate-setup.json"
+    recipe_path = session.workspace_root / "generation/recipes/separate-setup.json"
     recipe_path.parent.mkdir(parents=True, exist_ok=True)
     recipe = make_manual_recipe("Separate blue vase", [{"kind": "scene", "text": "A blue vase"}])
     save_recipe(recipe_path, recipe)
@@ -375,9 +384,7 @@ def test_saved_setup_opens_separate_draft_and_preserves_retained_image(tmp_path,
                     widget.reject()
     QTimer.singleShot(20, drive)
     try:
-        button = next(b for b in window.findChildren(QPushButton) if b.text() == "Use Saved Setup…")
-        assert button.isVisible() and button.isEnabled()
-        QTest.mouseClick(button, Qt.LeftButton)
+        trigger_more(window, 'Use Saved Setup…')
         wait_until(app, lambda: stage["finished"], timeout=35)
         assert not errors, errors
         wait_until(app, lambda: all(not d._pending for d in window.generation_page.retained_workspaces()))

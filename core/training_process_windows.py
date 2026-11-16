@@ -250,10 +250,16 @@ class WindowsTrainingJob:
         """Root-only optional restrictions; verifier members retain their owner."""
         return ()
 
-    def spawn_suspended(self, command: tuple[str, ...], cwd: str, environment: dict[str, str]):
+    def spawn_suspended(self, command: tuple[str, ...], cwd: str, environment: dict[str, str], *, workflow_control=None):
         import msvcrt
         if self.process is not None:
             raise RuntimeError("This process owner already has a root process.")
+        control_handles = ()
+        if workflow_control is not None:
+            from core.workflow_native_channel import WorkflowNativeChannel
+            if type(workflow_control) is not WorkflowNativeChannel:
+                raise RuntimeError("Typed workflow control endpoints required.")
+            control_handles = workflow_control.inherited_handles(self, command, cwd, environment)
         read, write = W.HANDLE(), W.HANDLE()
         security = _Security(C.sizeof(_Security), None, True)
         _check(self.api.CreatePipe(C.byref(read), C.byref(write), C.byref(security), 0))
@@ -264,7 +270,10 @@ class WindowsTrainingJob:
             with open(os.devnull, "rb", buffering=0) as null:
                 null_handle = msvcrt.get_osfhandle(null.fileno())
                 os.set_handle_inheritable(null_handle, True)
-                inherited = (W.HANDLE * 2)(null_handle, write.value)
+                handle_values = (null_handle, write.value, *control_handles)
+                if len(set(handle_values)) != len(handle_values) or self.handle in handle_values:
+                    raise RuntimeError("Exact inherited standard/control handles required.")
+                inherited = (W.HANDLE * len(handle_values))(*handle_values)
                 jobs = (W.HANDLE * 1)(self.handle)
                 extra = tuple(self.creation_attributes())
                 size = C.c_size_t()
@@ -289,11 +298,22 @@ class WindowsTrainingJob:
                 env = C.create_unicode_buffer("\0".join(f"{k}={v}" for k, v in sorted(environment.items())) + "\0\0")
                 args = C.create_unicode_buffer(subprocess.list2cmdline(command))
                 with _external_dll_directory(self.api):
-                    _check(self.api.CreateProcessW(command[0], args, None, None, True,
-                        0x4 | 0x8000000 | 0x80000 | 0x400, env, cwd, C.byref(startup), C.byref(info)))
-                    # Restoration can fail after successful creation. Retain the
-                    # suspended original before leaving the guarded boundary.
-                    self.process, self.thread, self.pid = info.process, info.thread, info.pid
+                    if workflow_control is None:
+                        _check(self.api.CreateProcessW(command[0], args, None, None, True,
+                            0x4 | 0x8000000 | 0x80000 | 0x400, env, cwd, C.byref(startup), C.byref(info)))
+                        # Preserve the existing default path and restoration ordering.
+                        self.process, self.thread, self.pid = info.process, info.thread, info.pid
+                    else:
+                        # Retain native output storage before entering creation.
+                        # Failed/uncertain returns never discard partial originals.
+                        self._workflow_process_info = info
+                        workflow_control.enter_creation(self)
+                        try:
+                            created = self.api.CreateProcessW(command[0], args, None, None, True,
+                                0x4 | 0x8000000 | 0x80000 | 0x400, env, cwd, C.byref(startup), C.byref(info))
+                        finally:
+                            self.process, self.thread, self.pid = info.process, info.thread, info.pid
+                        _check(created)
             descriptor = msvcrt.open_osfhandle(read.value, os.O_RDONLY | os.O_BINARY)
             read = W.HANDLE()
             self.stdout = os.fdopen(descriptor, "rb", buffering=0)

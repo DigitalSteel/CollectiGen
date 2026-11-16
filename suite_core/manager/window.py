@@ -10,7 +10,7 @@ TITLE = "CollectiGen Suite Manager"
 ICON_PATH = Path(__file__).resolve().parent / "assets" / "collectigen.ico"
 from core.application_categories import (APP_CATEGORIES, CATEGORY_DESCRIPTIONS, APPLICATION_GROUPS,
     ApplicationFilterState, select_category, matches_category, matching_catalog, application_roles, related_application_entries)
-NOTES = "# What's New - a.0.7.8 (embedded 0.7.8-alpha.1) - 2026-11-14\n\n- Training restores the original trainer software lifecycle: reviewed managed installation, existing software verification, offline import/export, repair, activation and rollback. Setup uses Manager-local stock queue, generations, health and recovery services; training still needs its own review.\n- Saved Setup Operations reconnects retained work or prepares an explicit retry review. Opening Setup starts no downloads or recovery work; Cancel targets only the selected original operation.\n- Closing a setup review can leave confirmed work in the same Manager queue. Manager Close cancels and waits for that queue and retained native owners. Local resource choices are saved only after verified existing software or explicit activation.\n\nCandidate implementation; final checks and signed package delivery remain pending. No model, trainer, Reader/C3A or real-library trial was run during implementation.\n\n# What's New - a.0.7.7 (embedded 0.7.7-alpha.1) - 2026-11-14\n\n- Local Description Settings can save your choices and open Manager caption component setup. Check readiness, then explicitly review component installation or the selected model download. Opening the review starts no download or image analysis.\n- Image-derived Setup suggestions use the original JoyCaption/Florence service in Manager's admitted Python worker. The caption store is separate from Video and Organizer; saved model choices, purpose prompts, source checks and reviewable uncertain proposals remain with the original workflow.\n- Caption setup and analysis retain their contained process and download descendants through Cancel/Close. The package includes the already pinned pip wheel required by worker setup; no new updater or module is introduced.\n\nCandidate implementation: final source/package validation and delivery are recorded separately. No model/trainer, Reader/C3A or real-library execution is authorized by opening these tools.\n\n# What's New - a.0.7.6 (embedded 0.7.6-alpha.1) - 2026-11-13\n\n- Use Organizer Prompt Catalog in Generate to import reusable Tag names, aliases and Character/Outfit prompt choices exported by Organizer a.0.5.6. Search Tags on Request or browse associated, other and generic Outfits in Advanced; saving a draft retains those choices.\n- Create Generation Setup offers manual authoring or one selected image. Review saved text and recorded settings before choosing what to keep; choosing an image starts no analysis.\n- Local description settings return to the same unfinished image setup with its name and edits retained. A compatible local caption runtime and model are still required for optional image suggestions; saved text and manual authoring remain available.\n- The selected-image reference uses the shared unknown-rating blur and temporary Reveal/Hide controls.\n\nSigned component discovery, explicit installation confirmation and existing recovery remain unchanged. No model or trainer runs automatically.\n\n# What's New - a.0.7.5 (embedded 0.7.5-alpha.1) - 2026-11-13\n\n- Settings can save your theme, color-blind status colors and tooltips, apply them now and remember them at the next launch. Other modules keep their own preferences.\n- The original launcher can retry an interrupted startup-record write for the same paused updated Manager. Existing prior-version repair remains available after a failed startup.\n- Current build identifies the bundled Python/Qt runtime and package version. Windows executable signing remains separate from verified release metadata.\n\n# What's New - a.0.7.4 (embedded 0.7.4-alpha.1) - 2026-11-13\n\n- Applications discovers newer signed Reader and Media Organizer releases from GitHub without requiring a new Manager build for each module update. Review the selected version and confirm installation.\n- Publisher signatures, compatible upgrade paths, exact review revalidation and existing installation/recovery ownership remain in effect.\n\n# What's New - a.0.7.3 (embedded 0.7.3-alpha.1) - 2026-11-13\n\n- Closing Manager can cancel Organizer app-status verification while retaining its original worker. If health publication has started, the existing transaction and readback finish before closing.\n- Applications offers signed Media Organizer a.0.5.4, including native Copy and recovery to reused paths. Review and confirm the offered update.\n- Generate and Training remain available. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.2 (embedded 0.7.2-alpha.1) - 2026-11-13\n\n- Applications now offers signed Media Organizer a.0.5.3, which retains Copy Undo after the first automatic saved-data initialization of a Manager result. Review and confirm the update before installing it.\n- The installed-Organizer startup fix and existing Generate and Training workspaces remain included. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.1 (embedded 0.7.1-alpha.1) - 2026-11-13\n\n- Opening an installed Media Organizer now allows its signed-package review to finish before the startup reply expires. The same startup request and recovery controls remain in use.\n- Existing Generate and Training workspaces and confirmed Reader/Organizer installation remain available. Full all-in-one parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.0 (embedded 0.7.0-alpha.1) - 2026-11-13\n\n- Training can find interrupted packages by their intended save location and package name. Choose Review Interrupted Training Package, then Choose Package Location. Browse Exact Receipt remains available for advanced selection.\n- Searches show activity and elapsed time with Cancel Safely. Close or an ended session cannot reopen a late review. The existing receipt review changes no package files; recovery writes stay with the original package workspace.\n- Applications continues to offer signed Reader a.0.3.1 and Organizer a.0.5.2. Automatic Manager updates support a.0.6.7 and newer;older launchers need the full ZIP in a fresh folder. Full all-in-one parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.6.10 (embedded 0.6.10-alpha.1) - 2026-11-13\n\n- Applications offers signed Media Organizer a.0.5.2 through the existing confirmed installer. It includes copy-only Manager result previews, explicit Retry after busy file work, and clearer copied-family Undo through Recycle.\n- Existing Reader installation, Generate/Training workspaces and the Manager update route from a.0.6.7 remain available. Older launchers need the full ZIP in a fresh folder. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.6.9 (embedded 0.6.9-alpha.1) - 2026-11-13\n\n- Training Package Review now shows the target model, included and excluded image counts, training/validation/holdout split, and the available next preparation action.\n- The review distinguishes verified package files from unchecked trainer and model readiness. Return and recovery guidance now name the Training workspace.\n- Uses the existing Manager update route from a.0.6.7 and newer. Full suite parity and actual failed-update rollback remain unqualified.\n\n# What's New - a.0.6.8 (embedded 0.6.8-alpha.1) - 2026-11-13\n\n- Saved Training and SDXL-preparation history controls use Manager's existing compact button sizing so Refresh, Forget and recovery captions fit the host fonts.\n- Saved-list transactions and retained review/output files stay with their existing owners. The published a.0.6.7 list actions already passed isolated recovery, Forget and saved-state reopening.\n- Older launchers a.0.6.6 and earlier still need the fresh full ZIP. In-place update and rollback qualification from the fixed a.0.6.7 baseline remains open until its actual checks finish.\n\n# What's New - a.0.6.7 (embedded 0.6.7-alpha.1) - 2026-11-13\n\n- Manager update admission checks SDK files at the locations used by the stock installer, while retaining every signed application-file check.\n- If the installed update is rejected before Manager starts, the original launcher can offer Repair to prior Manager after confirming its processes closed.\n- Older Suite Manager launchers need the fresh full ZIP to receive these launcher fixes. Full all-in-one parity and actual installed-update/rollback qualification remain open until their checks finish.\n\n# What's New - a.0.6.6 (embedded 0.6.6-alpha.1) - 2026-11-13\n\n- Manage Manager-owned Training history with Forget From This List and Recover Saved List. Forget preserves run files; list recovery retains the original guarded transaction.\n\n# What's New - a.0.6.5 (embedded 0.6.5-alpha.1) - 2026-11-12\n\n- Plan a Remix and Plan Remix from Verified Result open separate image drafts while retaining existing image/video work. Source-change checks and cancellation still apply.\n\n# What's New - a.0.6.4 (embedded 0.6.4-alpha.1) - 2026-11-12\n\n- The default Organizer installer offer targets signed a.0.5.1, including changed-result recovery guidance.\n\n- Generate and Manager update actions wrap to fit the available window width.\n- Tab leaves the read-only update notes for the next action.\n- Original draft, confirmation, update and recovery handlers are retained.\n\n# What's New - a.0.6.3 (embedded 0.6.3-alpha.1) - 2026-11-12\n\n- Restored contextual Generate and Training Help through the Help ribbon and F1.\n- Explain data preparation in Organizer and execution/review in Manager while retaining open work.\n\n# What's New - a.0.6.2 (embedded 0.6.2-alpha.1) - 2026-11-12\n\n- Fixed Apply giving up before the launcher finished checking a signed update.\n  Manager waits for the original reply without submitting the update twice.\n- Apply shows that the staged update is being checked before Manager closes.\n  Nothing is replaced until the original launcher accepts the operation.\n\n# What's New - a.0.6.1 (embedded 0.6.1-alpha.1) - 2026-11-12\n\n- Use Saved Setup opens a separate image draft while retaining your current\n  image and video drafts. You no longer need to close another image first.\n- Choosing a setup still requires explicit review and Apply. Cancelling the\n  picker or review preserves existing work; changed setups require a fresh review.\n\nUnpublished package candidate. The correction passed focused offscreen source\nchecks; signed package delivery and successor update/recovery remain pending.\nThis does not qualify model execution, older portable migration or full suite parity.\n\n# What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11\n\n- Opening Organizer keeps Manager's bundled DLL paths out of the child\n  environment so Organizer can initialize its own packaged Qt runtime.\n- Dashboard refreshes the generator card when startup finishes and points to\n  Organizer installation instead of calling the published app in development.\n- Manager startup accepts normal Windows casing for CollectiGen.exe and its\n  folder, keeping the canonical entry binding; renamed entries remain refused.\n- Training preparation can receive the signed packaged worker through the\n  original Manager session; trainer launch remains a separate user action.\n- Dataset status stays owned by its page during first startup, so background\n  status feedback cannot leave a separate window alive after Close.\n- Applications offers signed Media Organizer a.0.5.0 through the existing\n  download, review and confirmed-install workflow.\n- Training packages retain the saved caption-assessment context. Current plans\n  and legacy plans remain readable without dropping their source identity.\n- Training lists open run, setup and comparison reviews. Return to the selected\n  original review without creating another review or restarting its work.\n- Generate keeps multiple image and video drafts in the original workspace\n  switcher. New plans and model-guided requests preserve open drafts; Close\n  consults every retained request before releasing its original jobs.\n- Generate and Training now have dedicated sidebar workspaces. Their existing\n  dialogs, saved work and controllers are retained; comparisons return to Training.\n- Training plans retain reviewed relationship constraints when the optional legacy conflicts file is absent; rebuild older saved plans to refresh their caption context.\n\n- Caption checks accept Organizer defaults without optional rule files, retain typed relationship constraints and detect rule-file changes during review.\n\n- Saved Training drafts retain the context reference needed for caption comparison in Manager; older drafts remain readable.\n\n- Generate planning from a registered LoRA keeps its exact LoRA role in the new\n  draft; it no longer treats that selection as a checkpoint. Checkpoint choice\n  and generator readiness remain separate.\n- Applications opens the original local Models workspace for registration, notes,\n  storage and model-guided planning. Reviewed guidance opens a new Generate draft;\n  a busy or changed review can return to Models.\n- Training History can import an unlisted saved Validation review, recheck its\n  retained measurement and add it to History without starting a new evaluation.\n- Verified Results keeps image/receipt actions above the preview and explains\n  the result review. Updated Organizer accepts its receipt through normal Ingest\n  copy review, preserving the source and generation lineage.\n- Dashboard shows saved local-generator status and routes to Setup, image\n  drafts or generation work without contacting or starting SwarmUI.\n- Generator Setup now includes the original connect/install, run/status,\n  models/import and maintenance sections. Setup uses Manager's model registry,\n  preferences and presets, and Return keeps the same generation draft.\n  Generate accepts both checked existing and managed local installations.\n- Training comparisons can open their saved batch in Generate's normal queue.\n  Review the candidates and explicitly Start through the checked local generator.\n  Open drafts are preserved and every queued image rechecks the connection.\n  Reviewing a single image also keeps Return to Training Comparison available;\n  closing Generate restores the saved comparison.\n  Registered Training results and evaluation checkpoints keep their exact run\n  and LoRA when opening a comparison, with return to Manager Applications.\n- Held-out Validation can verify an anchored Training result after application\n  code updates, using its saved result receipt and current output files.\n- Saved held-out Validation opens its chart and per-image measurements from\n  Training History. New Validation reviews use the current Training workspace.\n- Training Experiments keeps run names, notes and favorites, compares retained\n  runs, and clones a run into a new draft. Export the draft for editing through\n  Organizer's Dataset Plans workflow; the updated Organizer package is required.\n- Find and review the published Reader and Organizer packages from Manager,\n  then confirm installation in the component workspace.\n- Use the Tag Database workspace to review available content, preview changes\n  and apply them while preserving local corrections.\n- Prepare SDXL Training, run the reviewed local trainer and register the finished\n  LoRA. Reopen saved Training runs from History to review results and recovery.\n- Save and reopen Generate work, reconnect generation backends, and review\n  retained queue results and interrupted-work recovery.\n\nThis is an unpublished alpha package candidate. It is not full all-in-one parity.\nThe first managed baseline uses a new writable installation; migration from the\nolder portable Manager and installed self-update remain separately qualified.\n\n# What's New - a.0.5.1 (embedded 0.5.1-alpha.1) - 2026-10-18\n\n- Dashboard now lists Tag Encyclopedia Reader, with a pointer to Applications.\n- The Reader card says Find reader before checking for a release, then Install when a release is available. Downloading app files still requires installation confirmation.\n\nThis Windows x64 portable Alpha supports fresh installations with Reader a.0.3.1 only. Legacy Reader upgrade and rollback through Manager are excluded. Organizer downloads and Manager self-update remain unavailable. Keep backups; extract into a new writable folder. The executable is not Authenticode-signed.\n\n# What's New - a.0.5.0 (embedded 0.5.0-alpha.1) - 2026-10-14\n\n- Review an explicitly configured Reader or Organizer release before installing or updating it. The version, verified notes and confirmation stay together.\n- Pending setup, opening, update, restoration and Close show their phase, activity and elapsed time. Use Cancel where it is available; Close waits for work to settle safely. Optional Details retain the original connection and recovery reasons.\n- Open Reader and Organizer deliberately, then close their windows normally to finish setup. Recovery retains the selected catalog and protected settings.\n- Connect a Tag Database and preview changes before applying supported content updates. Local corrections remain protected; unsupported or stale inputs stop for review.\n- Help and release history use the same current version labels as the application.\n\nAlpha evaluation software for Windows 11 x64 portable use. Component downloads\nrequire an explicitly configured verified release feed. Manager self-update is\nunavailable. Keep backups and use test copies when evaluating catalog changes.\nThe Windows executable is not Authenticode-signed and has no installer.\n\n# What's New - a.0.4.1 (embedded 0.4.1-alpha.1) - 2026-10-12\n\n- Fixed a startup error in the previous alpha candidate that could prevent Manager from opening.\n\nThis unsigned correction has not established the full reader workflow or clean-machine compatibility. The default package continues to connect existing approved reader packages. Automatic Encyclopedia acquisition and native updates remain unavailable. Preserve earlier copies and recovery records.\n\n# What's New - a.0.4.0 (embedded 0.4.0-alpha.1) - 2026-10-12\n\n- Applications search and status filters now include Tag Encyclopedia. Its card shows the next supported action, with connection and release tools under Options.\n- Dependencies shows supplied status and blockers, with links to the existing setup or recovery workspace. Returning from that workspace lets you review its status again.\n- Fixed first-party release discovery rejecting valid GitHub download links.\n\nThe default launch connects existing approved reader packages. Automatic acquisition requires a separately admitted original-root profile and remains unavailable by default. Saved reader changes may require a Manager restart before Launch. Native installation, ordinary launch/close, updates and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.3.2 (embedded 0.3.2-alpha.1) - 2026-10-11\n\n- Fixed a reader setup settings mismatch that could prevent saving an Encyclopedia connection in portable Manager. Saved connections use the companion settings file while preserving the original startup configuration.\n\nConnect an already installed Encyclopedia from Applications, save it, then restart Manager before Launch. Automatic reader download/install and native application updates remain unavailable. This unsigned local candidate has not established clean-machine compatibility.\n\n# What's New - a.0.3.1 (embedded 0.3.1-alpha.1) - 2026-10-11\n\n- After saving a new Encyclopedia selection, Manager clearly asks you to restart before launching it. Launch stays unavailable until that exact reader is admitted at startup.\n- Switching to another reader, including a changed package in the same folder, keeps the restart guidance visible. Reopening the saved connection after restart restores Launch for the admitted reader.\n\nThis unsigned local candidate connects already installed readers. Automatic Encyclopedia download/install remains unavailable; native application updates, public release and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.3.0 (embedded 0.3.0-alpha.1) - 2026-10-11\n\n- Applications > Encyclopedia lets you connect an already installed standalone reader. Review its folder, save the connection, then restart Manager to launch that selected reader.\n- Open saved connection restores your selection. Manager keeps reader work supervised while closing; Cancel Close returns to the same window.\n- Databases continues to offer separate connection review, content preview, Apply, recovery and Reload for an enrolled Tag catalog.\n\nThis unsigned local candidate does not download or install Encyclopedia automatically. Native application updates, public release and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.2.16 (embedded 0.2.1-alpha.16) - 2026-10-11\n\n- Databases lets you select an approved local Tag source and create a new catalog or open an enrolled catalog. Review and confirm the connection, then preview and apply the content separately.\n- Reopen the saved catalog, recover an interrupted import, or reload saved changes after a snapshot refresh fails. Closing retains admitted work until it finishes.\n- Capability summaries describe the selected catalog and keep unavailable behavior and its reasons visible. Connection settings remain accessible beside the selected catalog.\n\nThis is an unreleased source checkpoint. Portable startup and clean-machine behavior remain separately qualified. Native application updates and public release remain unavailable.\n\n# What's New - a.0.2.15 (embedded 0.2.1-alpha.15) - 2026-10-10\n\n- Direct GGUF chat now allows replies up to 512 tokens. The shorter 32-token limit belongs to explicit proof runs.\n- This unsigned manual candidate uses ordinary entries and starts with empty conversations. Review the fixed installed files, Load model, then Open Chat to send your own message.\n\nThe admitted Qwen/runtime profile remains CPU only: 2 threads, 4096 context and one slot. Reply limits are not adjustable here. Synthetic streaming checks passed at 512 tokens; real-model 512-token behavior, ordinary manual startup/navigation/Close, GPU operation and clean-machine compatibility remain unverified. The earlier exact-profile native lifecycle proof used 32 tokens. Native updates and public release remain unavailable.\n\n# What's New - a.0.2.14 (embedded 0.2.1-alpha.14) - 2026-10-10\n\n- Standalone Manager entry offers an existing GGUF file directly, with a separately selected installed llama-server. No model copy, Ollama import or download.\n- Review checks the selected files and server version. Load uses a bounded CPU-only plan; Chat and Stop keep the original process owned through completion.\n\nThe selected Qwen GGUF completed a bounded CPU-only frozen Manager load, reply, reload and owned shutdown through the normal root with the retained llama-server runtime. An admitted direct-runtime profile fixes the reviewed files. The alpha14 manual artifact uses 2 CPU threads, 4096 context, one slot and a fixed maximum of 32 reply tokens; these limits are not adjustable there. Ordinary manual startup, navigation and Close were not accepted; exact development actors were cleaned up separately and its failed ledger was preserved. GPU operation and other models/runtimes are not qualified. Existing-backend chat source integration remains separate; native updates and public release remain unavailable.\n\n# What's New - a.0.2.13 (embedded 0.2.1-alpha.13) - 2026-10-10\n\n- Open Chat from Applications > Ollama after refreshing a configured backend and choosing an already loaded model.\n- Replies appear as they arrive. Stop cancels this request; New Chat clears the conversation. Messages stay in memory.\n- Closing Manager waits for chat work to finish safely. After an interrupted request, refresh the backend before sending again.\n\nSource integration is under verification. Direct GGUF loading, packaged inference, native updates and public distribution remain separately qualified.\n\n# What's New - a.0.2.12 (embedded 0.2.1-alpha.12) - 2026-10-10\n\n- If Manager encounters a problem while approved Tag work is pending, the same window keeps its status, cancellation and recovery controls available.\n- Close waits for the original Tag operation to settle; Cancel Close keeps its saved outcome and original failure available for review.\n\nAvailable only with an explicitly supplied approved Tag host. The default entry has no catalog connected. Native updates and public distribution remain separately qualified.\n\n# What's New - a.0.2.11 (embedded 0.2.1-alpha.11) - 2026-10-10\n\n- With an explicitly connected approved Tag catalog, Databases offers preview, reviewed Apply, cancellation, recovery and saved-result reload.\n- Closing waits for Tag work to finish. Cancel Close keeps its progress and recovery controls available.\n- Media Organizer details show its current source version and date.\n\nThe default entry has no approved Tag catalog connected. Combining this Tag host with owned failed-entry recovery requires separate qualification. Automatic updates and public distribution remain separate.\n\n# What's New - a.0.2.10 (embedded 0.2.1-alpha.10) - 2026-10-10\n\n- When a local runner exits during startup, Manager keeps recovery available so Stop can finish its cleanup.\n- Runner status distinguishes an exited runner awaiting cleanup from a running or fully stopped runner.\n- Startup diagnostics retain the original failure to help explain an unsuccessful start.\n- Repeated reviewed starts use the same retained deployment owner and separate attempt identities.\n- Failed-entry recovery keeps one visible Manager surface, original controls and cleanup evidence; codes are available in Details.\n\nUnreleased fixes for explicitly qualified local runner packages. The exact private existing-profile lifecycle acceptance passed.\nNew installations, model/Hermes actions, automatic updates and distribution remain separately qualified.\n\n# What's New - a.0.2.9 (embedded 0.2.1-alpha.9) - 2026-10-09\n\n- Starting a reviewed local Ollama runner no longer fails while Manager is finishing its startup checks.\n- A running runner is shown correctly. Stop remains available, and a stopped runner can be started again.\n- Closing Manager explains when the runner still needs to be stopped. Once Stop finishes, Manager closes normally without leaving its runner behind.\n\nAvailable only with an explicitly configured, qualified local runner package.\nNew installations, model installation and Hermes actions remain unavailable until\nseparately qualified. Automatic updates and public distribution remain separate.\n\n# What's New - a.0.2.8 (embedded 0.2.1-alpha.8) - 2026-10-09\n\n- Owned Ollama starts can reuse an explicitly reviewed, verified local model cache. Unknown, incomplete or changed cache contents remain blocked.\n- Cancelled or expired starts stop before launching a process.\n- Stop closes the runner Manager started together with its inference processes, preserving recovery ownership and cached model files.\n\nThis is an unreleased source checkpoint. These runtime changes do not enable cached-model controls in a packaged application. Model installation and Hermes actions remain unavailable; automatic updates and distribution remain separately qualified.\n\n# What's New - a.0.2.7 (embedded 0.2.1-alpha.7) - 2026-10-09\n\n- With an explicitly supplied qualified Ollama package and installation permission, Applications > Model runners offers installation review, progress, Cancel and recovery.\n- Review local key creation before starting the owned runner. Stop targets only the runner Manager started; external connections remain independent.\n- Failed status delivery retains the runner for explicit Stop and reconciliation instead of leaving controls permanently busy. Closing waits for retained work and process ownership.\n\nThis is an unreleased source checkpoint. The default entry has no qualified package and keeps installation unavailable. Production host/package selection, packaged and real GUI qualification remain pending. Model installation and Hermes agent actions remain unavailable until separately qualified.\n\n# What's New - a.0.2.6 (embedded 0.2.1-alpha.6) - 2026-10-09\n\n- Find Ollama connection tools and model observations in Applications > Model runners. Servers opens the same workspace.\n- The connection editor uses clear Save and Cancel actions. Saving a connection keeps metadata access separate; saved choices can be reloaded and reconciled explicitly.\n- Model summaries and inventory remain readable in narrower or shorter windows, with scrolling to reach the full workspace.\n\nThis is an unreleased source checkpoint. Install new remains unavailable; packaged and real-provider qualification remain pending.\n\n# What's New - a.0.2.5 (embedded 0.2.1-alpha.5) - 2026-10-08\n\n- Dashboard separates applications, connections, this computer and jobs into concise summaries, with further information under Details.\n- Light and dark themes keep application symbols, status badges and controls readable. Cards use more consistent spacing and action placement.\n- Application descriptions wrap in narrower windows. Expanded Details stay inside their cards and scroll to the end; collapsing restores the compact layout.\n- Everday is described as a dating and simulation game with AI characters in Games.\n- Normal navigation keeps demo and debug controls out of the way.\n- Servers opens correctly. Unavailable measurements and connections remain clearly marked.\n\n# What's New - a.0.2.4 (embedded 0.2.1-alpha.4) - 2026-10-08\n\n- Applications groups the existing catalog by task with a category list, while retaining search and installation-status filters.\n- Application cards show declared roles. Agent and model-runner groups stay empty unless the supplied catalog identifies matching applications.\n- Details links to declared related components when matching catalog information is available; compatibility and installation remain unknown.\n\n# What's New - a.0.2.3 (embedded 0.2.1-alpha.3) - 2026-10-08\n\n- Servers brings local computer measurements and existing backend connections into a separate section with compact cards and expandable Details.\n- Dashboard summarizes observations and links to Servers. Expired or unavailable measurements remain unknown; held jobs stay visible without an invented server assignment.\n- The sidebar selects sections. The command bar offers supported actions for the current section, with View, Help and command search still available.\n- Connect existing Ollama opens the metadata connection editor. Saving a connection and refreshing metadata remain separate actions; this does not install Ollama.\n\n# What's New - a.0.2.2 (embedded 0.2.1-alpha.2) - 2026-10-08\n\n- Applications offers compact cards with readable requirements and expandable Details.\n- Catalog review fits narrower windows, and Settings groups connection, model, appearance and build information.\n- Local backend setup keeps deliberate Save separate from Refresh; appearance remains session-only.\n\nThis is an unreleased source candidate. Normal component installation and managed execution remain unavailable by default. Native saved-workflow, recovery and portable qualification remain pending.\n\n# What's New - a.0.2.1 (embedded 0.2.1-alpha.1) - 2026-10-08\n\n- Application cards are smaller and easier to scan, with category icons and Details for requirements and availability.\n- Catalog review controls fit narrower windows; disconnected catalogs keep review details out of the default view.\n- Settings groups backend connections, model observations, appearance and build details consistently.\n- Dependencies separates build information from supplied component requirements without implying that setup actions are available.\n\n# What's New - a.0.2.0 (embedded 0.2.0-alpha.1) - 2026-10-07\n\n- Local Ollama setup saves connection settings explicitly and refreshes metadata only when requested. A delayed or refused refresh keeps previous dated results visible and offers retry.\n\nNo new user-visible component lifecycle capability is enabled by this source proposal. Normal component installation and managed sessions remain unavailable; their saved-workflow and safe-close recovery still need native acceptance.\n\n# What's New - a.0.1.22 (embedded 0.1.0-alpha.22) - 2026-10-08\n\n- No new user-visible capability in this development checkpoint. Media Organizer remains In development; application launches remain unavailable through the default Manager entry.\n\n# What's New - a.0.1.21 (embedded 0.1.0-alpha.21) - 2026-10-07\n\n- Expand or collapse the sidebar with one click; the View menu uses the same control.\n- Applications shows Media Organizer and Everday as In development. Databases shows the default Tag Catalog. These cards stay separate from installed and downloadable components; Install explains why it is unavailable.\n- Page headings and spacing are consistent, empty pages use clearer wording, and the color-blind palette shows On or Off.\n- Portable build details display the packaged runtime information when valid build metadata is included.\n\n# What's New - a.0.1.20 (embedded 0.1.0-alpha.20) - 2026-10-06\n\n\n- Help offers Review diagnostics before saving an explicitly selected ZIP. No information is uploaded.\n- Preview existing safe Manager diagnostics and runtime versions, choose what to include, cancel an unwanted preview, and save to a new filename. Unavailable records and save failures stay visible.\n- No diagnostics are read until Preview is chosen. Startup capture stays disabled; raw application logs are excluded.\n\n# What's New - a.0.1.19 (embedded 0.1.0-alpha.19) - 2026-10-06\n\n\n- Dashboard offers Refresh local resources to read this computer's CPU, RAM and NVIDIA GPU usage. Nothing is sampled until you click Refresh.\n- Measurements show their source and time; expired or unavailable values stay unknown. Cancel discards the result, and close waits for the measurement worker to finish.\n- Demo remains synthetic. Existing Databases preview controls remain available.\n\n# What's New - a.0.1.18 (embedded 0.1.0-alpha.18) - 2026-10-06\n\n\n- Databases uses the same prominent heading and content spacing as Dashboard.\n- With a configured preview provider, request a catalog preview, review content versions and protected edits, or discard the preview. Apply remains unavailable.\n\n# What's New \u2014 a.0.1.17 (embedded 0.1.0-alpha.17) \u2014 2026-10-06\n\n- Databases uses the same prominent heading and content spacing as Dashboard.\n- Request and discard background catalog previews when an approved host route is supplied. Review content versions and protected edits; Apply remains unavailable.\n- Canceled Ollama refreshes no longer reappear as retained models after a later failed refresh.\n- A timed-out inventory refresh can be retried explicitly. When refresh is unavailable, Settings explains how to recover.\n- Settings shows installed and loaded Ollama models separately, with metadata health, observation dates and freshness.\n- Current build details remain separate from release history.\n"
+NOTES = '# Suite Manager a.0.8.0 — development candidate — 2026-11-15\n\nThis source candidate has not been qualified or published.\n\n- Applications manages and opens independently versioned Generate and Train modules. Manager focuses on installation, updates, connections, shared settings and resources.\n- Existing workflow drafts, model identities, run records and recovery stay in their canonical workspace. Reviewed model choices continue into a separate saved Generate draft.\n- Shared model/settings edits wait while a workflow is open. Its original work and process must close safely before management resumes.\n\nPackage downloads remain unavailable until signed, qualified component releases are enrolled. New native startup, update/recovery and visual acceptance remain pending. No automatic installation or restart is enabled.\n\n' + "# What's New - a.0.7.8 (embedded 0.7.8-alpha.1) - 2026-11-14\n\n- Training restores the original trainer software lifecycle: reviewed managed installation, existing software verification, offline import/export, repair, activation and rollback. Setup uses Manager-local stock queue, generations, health and recovery services; training still needs its own review.\n- Saved Setup Operations reconnects retained work or prepares an explicit retry review. Opening Setup starts no downloads or recovery work; Cancel targets only the selected original operation.\n- Closing a setup review can leave confirmed work in the same Manager queue. Manager Close cancels and waits for that queue and retained native owners. Local resource choices are saved only after verified existing software or explicit activation.\n\nCandidate implementation; final checks and signed package delivery remain pending. No model, trainer, Reader/C3A or real-library trial was run during implementation.\n\n# What's New - a.0.7.7 (embedded 0.7.7-alpha.1) - 2026-11-14\n\n- Local Description Settings can save your choices and open Manager caption component setup. Check readiness, then explicitly review component installation or the selected model download. Opening the review starts no download or image analysis.\n- Image-derived Setup suggestions use the original JoyCaption/Florence service in Manager's admitted Python worker. The caption store is separate from Video and Organizer; saved model choices, purpose prompts, source checks and reviewable uncertain proposals remain with the original workflow.\n- Caption setup and analysis retain their contained process and download descendants through Cancel/Close. The package includes the already pinned pip wheel required by worker setup; no new updater or module is introduced.\n\nCandidate implementation: final source/package validation and delivery are recorded separately. No model/trainer, Reader/C3A or real-library execution is authorized by opening these tools.\n\n# What's New - a.0.7.6 (embedded 0.7.6-alpha.1) - 2026-11-13\n\n- Use Organizer Prompt Catalog in Generate to import reusable Tag names, aliases and Character/Outfit prompt choices exported by Organizer a.0.5.6. Search Tags on Request or browse associated, other and generic Outfits in Advanced; saving a draft retains those choices.\n- Create Generation Setup offers manual authoring or one selected image. Review saved text and recorded settings before choosing what to keep; choosing an image starts no analysis.\n- Local description settings return to the same unfinished image setup with its name and edits retained. A compatible local caption runtime and model are still required for optional image suggestions; saved text and manual authoring remain available.\n- The selected-image reference uses the shared unknown-rating blur and temporary Reveal/Hide controls.\n\nSigned component discovery, explicit installation confirmation and existing recovery remain unchanged. No model or trainer runs automatically.\n\n# What's New - a.0.7.5 (embedded 0.7.5-alpha.1) - 2026-11-13\n\n- Settings can save your theme, color-blind status colors and tooltips, apply them now and remember them at the next launch. Other modules keep their own preferences.\n- The original launcher can retry an interrupted startup-record write for the same paused updated Manager. Existing prior-version repair remains available after a failed startup.\n- Current build identifies the bundled Python/Qt runtime and package version. Windows executable signing remains separate from verified release metadata.\n\n# What's New - a.0.7.4 (embedded 0.7.4-alpha.1) - 2026-11-13\n\n- Applications discovers newer signed Reader and Media Organizer releases from GitHub without requiring a new Manager build for each module update. Review the selected version and confirm installation.\n- Publisher signatures, compatible upgrade paths, exact review revalidation and existing installation/recovery ownership remain in effect.\n\n# What's New - a.0.7.3 (embedded 0.7.3-alpha.1) - 2026-11-13\n\n- Closing Manager can cancel Organizer app-status verification while retaining its original worker. If health publication has started, the existing transaction and readback finish before closing.\n- Applications offers signed Media Organizer a.0.5.4, including native Copy and recovery to reused paths. Review and confirm the offered update.\n- Generate and Training remain available. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.2 (embedded 0.7.2-alpha.1) - 2026-11-13\n\n- Applications now offers signed Media Organizer a.0.5.3, which retains Copy Undo after the first automatic saved-data initialization of a Manager result. Review and confirm the update before installing it.\n- The installed-Organizer startup fix and existing Generate and Training workspaces remain included. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.1 (embedded 0.7.1-alpha.1) - 2026-11-13\n\n- Opening an installed Media Organizer now allows its signed-package review to finish before the startup reply expires. The same startup request and recovery controls remain in use.\n- Existing Generate and Training workspaces and confirmed Reader/Organizer installation remain available. Full all-in-one parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.0 (embedded 0.7.0-alpha.1) - 2026-11-13\n\n- Training can find interrupted packages by their intended save location and package name. Choose Review Interrupted Training Package, then Choose Package Location. Browse Exact Receipt remains available for advanced selection.\n- Searches show activity and elapsed time with Cancel Safely. Close or an ended session cannot reopen a late review. The existing receipt review changes no package files; recovery writes stay with the original package workspace.\n- Applications continues to offer signed Reader a.0.3.1 and Organizer a.0.5.2. Automatic Manager updates support a.0.6.7 and newer;older launchers need the full ZIP in a fresh folder. Full all-in-one parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.6.10 (embedded 0.6.10-alpha.1) - 2026-11-13\n\n- Applications offers signed Media Organizer a.0.5.2 through the existing confirmed installer. It includes copy-only Manager result previews, explicit Retry after busy file work, and clearer copied-family Undo through Recycle.\n- Existing Reader installation, Generate/Training workspaces and the Manager update route from a.0.6.7 remain available. Older launchers need the full ZIP in a fresh folder. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.6.9 (embedded 0.6.9-alpha.1) - 2026-11-13\n\n- Training Package Review now shows the target model, included and excluded image counts, training/validation/holdout split, and the available next preparation action.\n- The review distinguishes verified package files from unchecked trainer and model readiness. Return and recovery guidance now name the Training workspace.\n- Uses the existing Manager update route from a.0.6.7 and newer. Full suite parity and actual failed-update rollback remain unqualified.\n\n# What's New - a.0.6.8 (embedded 0.6.8-alpha.1) - 2026-11-13\n\n- Saved Training and SDXL-preparation history controls use Manager's existing compact button sizing so Refresh, Forget and recovery captions fit the host fonts.\n- Saved-list transactions and retained review/output files stay with their existing owners. The published a.0.6.7 list actions already passed isolated recovery, Forget and saved-state reopening.\n- Older launchers a.0.6.6 and earlier still need the fresh full ZIP. In-place update and rollback qualification from the fixed a.0.6.7 baseline remains open until its actual checks finish.\n\n# What's New - a.0.6.7 (embedded 0.6.7-alpha.1) - 2026-11-13\n\n- Manager update admission checks SDK files at the locations used by the stock installer, while retaining every signed application-file check.\n- If the installed update is rejected before Manager starts, the original launcher can offer Repair to prior Manager after confirming its processes closed.\n- Older Suite Manager launchers need the fresh full ZIP to receive these launcher fixes. Full all-in-one parity and actual installed-update/rollback qualification remain open until their checks finish.\n\n# What's New - a.0.6.6 (embedded 0.6.6-alpha.1) - 2026-11-13\n\n- Manage Manager-owned Training history with Forget From This List and Recover Saved List. Forget preserves run files; list recovery retains the original guarded transaction.\n\n# What's New - a.0.6.5 (embedded 0.6.5-alpha.1) - 2026-11-12\n\n- Plan a Remix and Plan Remix from Verified Result open separate image drafts while retaining existing image/video work. Source-change checks and cancellation still apply.\n\n# What's New - a.0.6.4 (embedded 0.6.4-alpha.1) - 2026-11-12\n\n- The default Organizer installer offer targets signed a.0.5.1, including changed-result recovery guidance.\n\n- Generate and Manager update actions wrap to fit the available window width.\n- Tab leaves the read-only update notes for the next action.\n- Original draft, confirmation, update and recovery handlers are retained.\n\n# What's New - a.0.6.3 (embedded 0.6.3-alpha.1) - 2026-11-12\n\n- Restored contextual Generate and Training Help through the Help ribbon and F1.\n- Explain data preparation in Organizer and execution/review in Manager while retaining open work.\n\n# What's New - a.0.6.2 (embedded 0.6.2-alpha.1) - 2026-11-12\n\n- Fixed Apply giving up before the launcher finished checking a signed update.\n  Manager waits for the original reply without submitting the update twice.\n- Apply shows that the staged update is being checked before Manager closes.\n  Nothing is replaced until the original launcher accepts the operation.\n\n# What's New - a.0.6.1 (embedded 0.6.1-alpha.1) - 2026-11-12\n\n- Use Saved Setup opens a separate image draft while retaining your current\n  image and video drafts. You no longer need to close another image first.\n- Choosing a setup still requires explicit review and Apply. Cancelling the\n  picker or review preserves existing work; changed setups require a fresh review.\n\nUnpublished package candidate. The correction passed focused offscreen source\nchecks; signed package delivery and successor update/recovery remain pending.\nThis does not qualify model execution, older portable migration or full suite parity.\n\n# What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11\n\n- Opening Organizer keeps Manager's bundled DLL paths out of the child\n  environment so Organizer can initialize its own packaged Qt runtime.\n- Dashboard refreshes the generator card when startup finishes and points to\n  Organizer installation instead of calling the published app in development.\n- Manager startup accepts normal Windows casing for CollectiGen.exe and its\n  folder, keeping the canonical entry binding; renamed entries remain refused.\n- Training preparation can receive the signed packaged worker through the\n  original Manager session; trainer launch remains a separate user action.\n- Dataset status stays owned by its page during first startup, so background\n  status feedback cannot leave a separate window alive after Close.\n- Applications offers signed Media Organizer a.0.5.0 through the existing\n  download, review and confirmed-install workflow.\n- Training packages retain the saved caption-assessment context. Current plans\n  and legacy plans remain readable without dropping their source identity.\n- Training lists open run, setup and comparison reviews. Return to the selected\n  original review without creating another review or restarting its work.\n- Generate keeps multiple image and video drafts in the original workspace\n  switcher. New plans and model-guided requests preserve open drafts; Close\n  consults every retained request before releasing its original jobs.\n- Generate and Training now have dedicated sidebar workspaces. Their existing\n  dialogs, saved work and controllers are retained; comparisons return to Training.\n- Training plans retain reviewed relationship constraints when the optional legacy conflicts file is absent; rebuild older saved plans to refresh their caption context.\n\n- Caption checks accept Organizer defaults without optional rule files, retain typed relationship constraints and detect rule-file changes during review.\n\n- Saved Training drafts retain the context reference needed for caption comparison in Manager; older drafts remain readable.\n\n- Generate planning from a registered LoRA keeps its exact LoRA role in the new\n  draft; it no longer treats that selection as a checkpoint. Checkpoint choice\n  and generator readiness remain separate.\n- Applications opens the original local Models workspace for registration, notes,\n  storage and model-guided planning. Reviewed guidance opens a new Generate draft;\n  a busy or changed review can return to Models.\n- Training History can import an unlisted saved Validation review, recheck its\n  retained measurement and add it to History without starting a new evaluation.\n- Verified Results keeps image/receipt actions above the preview and explains\n  the result review. Updated Organizer accepts its receipt through normal Ingest\n  copy review, preserving the source and generation lineage.\n- Dashboard shows saved local-generator status and routes to Setup, image\n  drafts or generation work without contacting or starting SwarmUI.\n- Generator Setup now includes the original connect/install, run/status,\n  models/import and maintenance sections. Setup uses Manager's model registry,\n  preferences and presets, and Return keeps the same generation draft.\n  Generate accepts both checked existing and managed local installations.\n- Training comparisons can open their saved batch in Generate's normal queue.\n  Review the candidates and explicitly Start through the checked local generator.\n  Open drafts are preserved and every queued image rechecks the connection.\n  Reviewing a single image also keeps Return to Training Comparison available;\n  closing Generate restores the saved comparison.\n  Registered Training results and evaluation checkpoints keep their exact run\n  and LoRA when opening a comparison, with return to Manager Applications.\n- Held-out Validation can verify an anchored Training result after application\n  code updates, using its saved result receipt and current output files.\n- Saved held-out Validation opens its chart and per-image measurements from\n  Training History. New Validation reviews use the current Training workspace.\n- Training Experiments keeps run names, notes and favorites, compares retained\n  runs, and clones a run into a new draft. Export the draft for editing through\n  Organizer's Dataset Plans workflow; the updated Organizer package is required.\n- Find and review the published Reader and Organizer packages from Manager,\n  then confirm installation in the component workspace.\n- Use the Tag Database workspace to review available content, preview changes\n  and apply them while preserving local corrections.\n- Prepare SDXL Training, run the reviewed local trainer and register the finished\n  LoRA. Reopen saved Training runs from History to review results and recovery.\n- Save and reopen Generate work, reconnect generation backends, and review\n  retained queue results and interrupted-work recovery.\n\nThis is an unpublished alpha package candidate. It is not full all-in-one parity.\nThe first managed baseline uses a new writable installation; migration from the\nolder portable Manager and installed self-update remain separately qualified.\n\n# What's New - a.0.5.1 (embedded 0.5.1-alpha.1) - 2026-10-18\n\n- Dashboard now lists Tag Encyclopedia Reader, with a pointer to Applications.\n- The Reader card says Find reader before checking for a release, then Install when a release is available. Downloading app files still requires installation confirmation.\n\nThis Windows x64 portable Alpha supports fresh installations with Reader a.0.3.1 only. Legacy Reader upgrade and rollback through Manager are excluded. Organizer downloads and Manager self-update remain unavailable. Keep backups; extract into a new writable folder. The executable is not Authenticode-signed.\n\n# What's New - a.0.5.0 (embedded 0.5.0-alpha.1) - 2026-10-14\n\n- Review an explicitly configured Reader or Organizer release before installing or updating it. The version, verified notes and confirmation stay together.\n- Pending setup, opening, update, restoration and Close show their phase, activity and elapsed time. Use Cancel where it is available; Close waits for work to settle safely. Optional Details retain the original connection and recovery reasons.\n- Open Reader and Organizer deliberately, then close their windows normally to finish setup. Recovery retains the selected catalog and protected settings.\n- Connect a Tag Database and preview changes before applying supported content updates. Local corrections remain protected; unsupported or stale inputs stop for review.\n- Help and release history use the same current version labels as the application.\n\nAlpha evaluation software for Windows 11 x64 portable use. Component downloads\nrequire an explicitly configured verified release feed. Manager self-update is\nunavailable. Keep backups and use test copies when evaluating catalog changes.\nThe Windows executable is not Authenticode-signed and has no installer.\n\n# What's New - a.0.4.1 (embedded 0.4.1-alpha.1) - 2026-10-12\n\n- Fixed a startup error in the previous alpha candidate that could prevent Manager from opening.\n\nThis unsigned correction has not established the full reader workflow or clean-machine compatibility. The default package continues to connect existing approved reader packages. Automatic Encyclopedia acquisition and native updates remain unavailable. Preserve earlier copies and recovery records.\n\n# What's New - a.0.4.0 (embedded 0.4.0-alpha.1) - 2026-10-12\n\n- Applications search and status filters now include Tag Encyclopedia. Its card shows the next supported action, with connection and release tools under Options.\n- Dependencies shows supplied status and blockers, with links to the existing setup or recovery workspace. Returning from that workspace lets you review its status again.\n- Fixed first-party release discovery rejecting valid GitHub download links.\n\nThe default launch connects existing approved reader packages. Automatic acquisition requires a separately admitted original-root profile and remains unavailable by default. Saved reader changes may require a Manager restart before Launch. Native installation, ordinary launch/close, updates and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.3.2 (embedded 0.3.2-alpha.1) - 2026-10-11\n\n- Fixed a reader setup settings mismatch that could prevent saving an Encyclopedia connection in portable Manager. Saved connections use the companion settings file while preserving the original startup configuration.\n\nConnect an already installed Encyclopedia from Applications, save it, then restart Manager before Launch. Automatic reader download/install and native application updates remain unavailable. This unsigned local candidate has not established clean-machine compatibility.\n\n# What's New - a.0.3.1 (embedded 0.3.1-alpha.1) - 2026-10-11\n\n- After saving a new Encyclopedia selection, Manager clearly asks you to restart before launching it. Launch stays unavailable until that exact reader is admitted at startup.\n- Switching to another reader, including a changed package in the same folder, keeps the restart guidance visible. Reopening the saved connection after restart restores Launch for the admitted reader.\n\nThis unsigned local candidate connects already installed readers. Automatic Encyclopedia download/install remains unavailable; native application updates, public release and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.3.0 (embedded 0.3.0-alpha.1) - 2026-10-11\n\n- Applications > Encyclopedia lets you connect an already installed standalone reader. Review its folder, save the connection, then restart Manager to launch that selected reader.\n- Open saved connection restores your selection. Manager keeps reader work supervised while closing; Cancel Close returns to the same window.\n- Databases continues to offer separate connection review, content preview, Apply, recovery and Reload for an enrolled Tag catalog.\n\nThis unsigned local candidate does not download or install Encyclopedia automatically. Native application updates, public release and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.2.16 (embedded 0.2.1-alpha.16) - 2026-10-11\n\n- Databases lets you select an approved local Tag source and create a new catalog or open an enrolled catalog. Review and confirm the connection, then preview and apply the content separately.\n- Reopen the saved catalog, recover an interrupted import, or reload saved changes after a snapshot refresh fails. Closing retains admitted work until it finishes.\n- Capability summaries describe the selected catalog and keep unavailable behavior and its reasons visible. Connection settings remain accessible beside the selected catalog.\n\nThis is an unreleased source checkpoint. Portable startup and clean-machine behavior remain separately qualified. Native application updates and public release remain unavailable.\n\n# What's New - a.0.2.15 (embedded 0.2.1-alpha.15) - 2026-10-10\n\n- Direct GGUF chat now allows replies up to 512 tokens. The shorter 32-token limit belongs to explicit proof runs.\n- This unsigned manual candidate uses ordinary entries and starts with empty conversations. Review the fixed installed files, Load model, then Open Chat to send your own message.\n\nThe admitted Qwen/runtime profile remains CPU only: 2 threads, 4096 context and one slot. Reply limits are not adjustable here. Synthetic streaming checks passed at 512 tokens; real-model 512-token behavior, ordinary manual startup/navigation/Close, GPU operation and clean-machine compatibility remain unverified. The earlier exact-profile native lifecycle proof used 32 tokens. Native updates and public release remain unavailable.\n\n# What's New - a.0.2.14 (embedded 0.2.1-alpha.14) - 2026-10-10\n\n- Standalone Manager entry offers an existing GGUF file directly, with a separately selected installed llama-server. No model copy, Ollama import or download.\n- Review checks the selected files and server version. Load uses a bounded CPU-only plan; Chat and Stop keep the original process owned through completion.\n\nThe selected Qwen GGUF completed a bounded CPU-only frozen Manager load, reply, reload and owned shutdown through the normal root with the retained llama-server runtime. An admitted direct-runtime profile fixes the reviewed files. The alpha14 manual artifact uses 2 CPU threads, 4096 context, one slot and a fixed maximum of 32 reply tokens; these limits are not adjustable there. Ordinary manual startup, navigation and Close were not accepted; exact development actors were cleaned up separately and its failed ledger was preserved. GPU operation and other models/runtimes are not qualified. Existing-backend chat source integration remains separate; native updates and public release remain unavailable.\n\n# What's New - a.0.2.13 (embedded 0.2.1-alpha.13) - 2026-10-10\n\n- Open Chat from Applications > Ollama after refreshing a configured backend and choosing an already loaded model.\n- Replies appear as they arrive. Stop cancels this request; New Chat clears the conversation. Messages stay in memory.\n- Closing Manager waits for chat work to finish safely. After an interrupted request, refresh the backend before sending again.\n\nSource integration is under verification. Direct GGUF loading, packaged inference, native updates and public distribution remain separately qualified.\n\n# What's New - a.0.2.12 (embedded 0.2.1-alpha.12) - 2026-10-10\n\n- If Manager encounters a problem while approved Tag work is pending, the same window keeps its status, cancellation and recovery controls available.\n- Close waits for the original Tag operation to settle; Cancel Close keeps its saved outcome and original failure available for review.\n\nAvailable only with an explicitly supplied approved Tag host. The default entry has no catalog connected. Native updates and public distribution remain separately qualified.\n\n# What's New - a.0.2.11 (embedded 0.2.1-alpha.11) - 2026-10-10\n\n- With an explicitly connected approved Tag catalog, Databases offers preview, reviewed Apply, cancellation, recovery and saved-result reload.\n- Closing waits for Tag work to finish. Cancel Close keeps its progress and recovery controls available.\n- Media Organizer details show its current source version and date.\n\nThe default entry has no approved Tag catalog connected. Combining this Tag host with owned failed-entry recovery requires separate qualification. Automatic updates and public distribution remain separate.\n\n# What's New - a.0.2.10 (embedded 0.2.1-alpha.10) - 2026-10-10\n\n- When a local runner exits during startup, Manager keeps recovery available so Stop can finish its cleanup.\n- Runner status distinguishes an exited runner awaiting cleanup from a running or fully stopped runner.\n- Startup diagnostics retain the original failure to help explain an unsuccessful start.\n- Repeated reviewed starts use the same retained deployment owner and separate attempt identities.\n- Failed-entry recovery keeps one visible Manager surface, original controls and cleanup evidence; codes are available in Details.\n\nUnreleased fixes for explicitly qualified local runner packages. The exact private existing-profile lifecycle acceptance passed.\nNew installations, model/Hermes actions, automatic updates and distribution remain separately qualified.\n\n# What's New - a.0.2.9 (embedded 0.2.1-alpha.9) - 2026-10-09\n\n- Starting a reviewed local Ollama runner no longer fails while Manager is finishing its startup checks.\n- A running runner is shown correctly. Stop remains available, and a stopped runner can be started again.\n- Closing Manager explains when the runner still needs to be stopped. Once Stop finishes, Manager closes normally without leaving its runner behind.\n\nAvailable only with an explicitly configured, qualified local runner package.\nNew installations, model installation and Hermes actions remain unavailable until\nseparately qualified. Automatic updates and public distribution remain separate.\n\n# What's New - a.0.2.8 (embedded 0.2.1-alpha.8) - 2026-10-09\n\n- Owned Ollama starts can reuse an explicitly reviewed, verified local model cache. Unknown, incomplete or changed cache contents remain blocked.\n- Cancelled or expired starts stop before launching a process.\n- Stop closes the runner Manager started together with its inference processes, preserving recovery ownership and cached model files.\n\nThis is an unreleased source checkpoint. These runtime changes do not enable cached-model controls in a packaged application. Model installation and Hermes actions remain unavailable; automatic updates and distribution remain separately qualified.\n\n# What's New - a.0.2.7 (embedded 0.2.1-alpha.7) - 2026-10-09\n\n- With an explicitly supplied qualified Ollama package and installation permission, Applications > Model runners offers installation review, progress, Cancel and recovery.\n- Review local key creation before starting the owned runner. Stop targets only the runner Manager started; external connections remain independent.\n- Failed status delivery retains the runner for explicit Stop and reconciliation instead of leaving controls permanently busy. Closing waits for retained work and process ownership.\n\nThis is an unreleased source checkpoint. The default entry has no qualified package and keeps installation unavailable. Production host/package selection, packaged and real GUI qualification remain pending. Model installation and Hermes agent actions remain unavailable until separately qualified.\n\n# What's New - a.0.2.6 (embedded 0.2.1-alpha.6) - 2026-10-09\n\n- Find Ollama connection tools and model observations in Applications > Model runners. Servers opens the same workspace.\n- The connection editor uses clear Save and Cancel actions. Saving a connection keeps metadata access separate; saved choices can be reloaded and reconciled explicitly.\n- Model summaries and inventory remain readable in narrower or shorter windows, with scrolling to reach the full workspace.\n\nThis is an unreleased source checkpoint. Install new remains unavailable; packaged and real-provider qualification remain pending.\n\n# What's New - a.0.2.5 (embedded 0.2.1-alpha.5) - 2026-10-08\n\n- Dashboard separates applications, connections, this computer and jobs into concise summaries, with further information under Details.\n- Light and dark themes keep application symbols, status badges and controls readable. Cards use more consistent spacing and action placement.\n- Application descriptions wrap in narrower windows. Expanded Details stay inside their cards and scroll to the end; collapsing restores the compact layout.\n- Everday is described as a dating and simulation game with AI characters in Games.\n- Normal navigation keeps demo and debug controls out of the way.\n- Servers opens correctly. Unavailable measurements and connections remain clearly marked.\n\n# What's New - a.0.2.4 (embedded 0.2.1-alpha.4) - 2026-10-08\n\n- Applications groups the existing catalog by task with a category list, while retaining search and installation-status filters.\n- Application cards show declared roles. Agent and model-runner groups stay empty unless the supplied catalog identifies matching applications.\n- Details links to declared related components when matching catalog information is available; compatibility and installation remain unknown.\n\n# What's New - a.0.2.3 (embedded 0.2.1-alpha.3) - 2026-10-08\n\n- Servers brings local computer measurements and existing backend connections into a separate section with compact cards and expandable Details.\n- Dashboard summarizes observations and links to Servers. Expired or unavailable measurements remain unknown; held jobs stay visible without an invented server assignment.\n- The sidebar selects sections. The command bar offers supported actions for the current section, with View, Help and command search still available.\n- Connect existing Ollama opens the metadata connection editor. Saving a connection and refreshing metadata remain separate actions; this does not install Ollama.\n\n# What's New - a.0.2.2 (embedded 0.2.1-alpha.2) - 2026-10-08\n\n- Applications offers compact cards with readable requirements and expandable Details.\n- Catalog review fits narrower windows, and Settings groups connection, model, appearance and build information.\n- Local backend setup keeps deliberate Save separate from Refresh; appearance remains session-only.\n\nThis is an unreleased source candidate. Normal component installation and managed execution remain unavailable by default. Native saved-workflow, recovery and portable qualification remain pending.\n\n# What's New - a.0.2.1 (embedded 0.2.1-alpha.1) - 2026-10-08\n\n- Application cards are smaller and easier to scan, with category icons and Details for requirements and availability.\n- Catalog review controls fit narrower windows; disconnected catalogs keep review details out of the default view.\n- Settings groups backend connections, model observations, appearance and build details consistently.\n- Dependencies separates build information from supplied component requirements without implying that setup actions are available.\n\n# What's New - a.0.2.0 (embedded 0.2.0-alpha.1) - 2026-10-07\n\n- Local Ollama setup saves connection settings explicitly and refreshes metadata only when requested. A delayed or refused refresh keeps previous dated results visible and offers retry.\n\nNo new user-visible component lifecycle capability is enabled by this source proposal. Normal component installation and managed sessions remain unavailable; their saved-workflow and safe-close recovery still need native acceptance.\n\n# What's New - a.0.1.22 (embedded 0.1.0-alpha.22) - 2026-10-08\n\n- No new user-visible capability in this development checkpoint. Media Organizer remains In development; application launches remain unavailable through the default Manager entry.\n\n# What's New - a.0.1.21 (embedded 0.1.0-alpha.21) - 2026-10-07\n\n- Expand or collapse the sidebar with one click; the View menu uses the same control.\n- Applications shows Media Organizer and Everday as In development. Databases shows the default Tag Catalog. These cards stay separate from installed and downloadable components; Install explains why it is unavailable.\n- Page headings and spacing are consistent, empty pages use clearer wording, and the color-blind palette shows On or Off.\n- Portable build details display the packaged runtime information when valid build metadata is included.\n\n# What's New - a.0.1.20 (embedded 0.1.0-alpha.20) - 2026-10-06\n\n\n- Help offers Review diagnostics before saving an explicitly selected ZIP. No information is uploaded.\n- Preview existing safe Manager diagnostics and runtime versions, choose what to include, cancel an unwanted preview, and save to a new filename. Unavailable records and save failures stay visible.\n- No diagnostics are read until Preview is chosen. Startup capture stays disabled; raw application logs are excluded.\n\n# What's New - a.0.1.19 (embedded 0.1.0-alpha.19) - 2026-10-06\n\n\n- Dashboard offers Refresh local resources to read this computer's CPU, RAM and NVIDIA GPU usage. Nothing is sampled until you click Refresh.\n- Measurements show their source and time; expired or unavailable values stay unknown. Cancel discards the result, and close waits for the measurement worker to finish.\n- Demo remains synthetic. Existing Databases preview controls remain available.\n\n# What's New - a.0.1.18 (embedded 0.1.0-alpha.18) - 2026-10-06\n\n\n- Databases uses the same prominent heading and content spacing as Dashboard.\n- With a configured preview provider, request a catalog preview, review content versions and protected edits, or discard the preview. Apply remains unavailable.\n\n# What's New \u2014 a.0.1.17 (embedded 0.1.0-alpha.17) \u2014 2026-10-06\n\n- Databases uses the same prominent heading and content spacing as Dashboard.\n- Request and discard background catalog previews when an approved host route is supplied. Review content versions and protected edits; Apply remains unavailable.\n- Canceled Ollama refreshes no longer reappear as retained models after a later failed refresh.\n- A timed-out inventory refresh can be retried explicitly. When refresh is unavailable, Settings explains how to recover.\n- Settings shows installed and loaded Ollama models separately, with metadata health, observation dates and freshness.\n- Current build details remain separate from release history.\n"
 @dataclass(frozen=True)
 class DetachedView:
     report: object
@@ -141,7 +141,7 @@ def view_for_candidate(observation):
             dict(observation.release_dates).get(observation.software_version), "Unsigned developer candidate", observation.notes),))
 
 
-def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None, dataset_verifier=None, training_draft_settings_path=None, training_caption_review_factory=None, appearance_store=None, appearance_snapshot=None, appearance_error=None, show_tooltips=True):
+def create_window(view, *, theme="system", color_blind_mode=False, candidate_inspector=None, offline_previews=(), lifecycle_controller=None, close_policy=None, close_clock=None, lifecycle_bridge=None, current_build=None, database_catalogs=(), database_review=None, database_preview_route=None, resource_route=None, diagnostics_provider=None, metadata_setup=None, owned_runtime=None, owned_descriptor=None, owned_runtime_allowed=False, manager_update_service=None, normal_entry_session=None, tag_database_controller=None, tag_encyclopedia=None, chat_host=None, direct_model_host=None, reader_settings_path=None, reader_owner=None, encyclopedia_acquisition=None, encyclopedia_executor=None, shared_settings_controller=None, shared_settings_submit=None, shared_settings_close_choice=None, organizer_connection_host=None, model_workspace_factory=None, tag_content_host=None, organizer_acquisition=None, organizer_executor=None, krea_registry_path=None, dataset_verifier=None, training_draft_settings_path=None, training_caption_review_factory=None, appearance_store=None, appearance_snapshot=None, appearance_error=None, show_tooltips=True, workflow_workspace_owner=None, workflow_services=()):
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtGui import QIcon
     if organizer_connection_host is not None:
@@ -188,6 +188,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
     class ManagerWindow(QMainWindow):
         def __init__(self):
             super().__init__()
+            self.workflow_workspace_owner = workflow_workspace_owner
             self.organizer_connection_host = organizer_connection_host
             self.organizer_connection_panel = None
             self.tag_database_pane = None
@@ -518,6 +519,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     self.tag_content_button = compact_action(QPushButton('Get or update Tag content', databases_page))
                     self.tag_content_button.clicked.connect(self.open_tag_content_workspace)
             settings_page = QWidget(); settings_outer = QVBoxLayout(settings_page); settings_outer.setContentsMargins(0, 0, 0, 0)
+            from .workflow_applications_ui import WorkflowReturnBar
+            self.workflow_return_bar = WorkflowReturnBar(
+                lambda: self.open_workflow_application('collectigen.generate'), settings_page)
+            settings_outer.addWidget(self.workflow_return_bar)
             settings_body = QWidget(); settings_layout = workspace_layout(settings_body)
             settings_layout.addWidget(workspace_heading("Settings"))
             from .shared_settings_shell import SharedSettingsShell
@@ -560,130 +565,37 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if model_workspace_factory is not None else 'Repository inspection is unavailable in this launch.')
             self.repository_inspection_button.clicked.connect(self.open_repository_inspection)
             applications_layout.addWidget(self.repository_inspection_button, 0, Qt.AlignLeft)
-            self._krea_review_dialog = None
-            self._training_package_picker_open = False
-            self._training_package_recovery_task = None
-            self._training_package_recovery_dialog = None
-            self._close_after_krea_review = False
-            self.krea_training_review_button = compact_action(QPushButton("Review Training Package…"))
-            self.krea_training_review_button.setVisible(
-                not view.synthetic and getattr(normal_entry_session, "state", None) == "ready"
-            )
-            self.krea_training_review_button.setToolTip("Verify a selected package for manual handoff and see which checks are available.")
-            self.krea_training_review_button.clicked.connect(self.open_krea_training_review)
-            self.generate_plan_button = compact_action(QPushButton("New or Saved Image…"))
-            self.generate_plan_button.setVisible(not view.synthetic and normal_entry_session is not None)
-            self.generate_plan_button.setToolTip("Create or reopen an image draft. A checked saved generator is required to submit.")
-            self.generate_plan_button.clicked.connect(self.open_generate_plan)
-            generation_actions = [self.generate_plan_button]
-            self.generate_plan_button.setProperty("primary", True)
-            self._generation_setup_dialog = None
-            for label, action in (
-                ("Generator Setup…", self.review_generator_connection),
-                ("Plan a Remix…", self.open_remix_plan),
-                ("Create Generation Setup…", self.create_generation_setup),
-                ("Use Saved Setup…", self.use_saved_generation_setup),
-            ):
-                button = compact_action(QPushButton(label))
-                button.setVisible(not view.synthetic and normal_entry_session is not None)
-                button.clicked.connect(action)
-                generation_actions.append(button)
-            self._image_draft_picker_open = False
-            self._video_draft_picker_open = False
-            for label, action in (
-                ("Plan a Video…", self.open_video_plan),
-                ("Open Video Draft…", lambda: self.open_video_plan(reopen=True)),
-            ):
-                button = compact_action(QPushButton(label))
-                button.setVisible(not view.synthetic and normal_entry_session is not None)
-                button.clicked.connect(action)
-                generation_actions.append(button)
-            self._video_setup_cancel = None
-            self.video_setup_button = compact_action(QPushButton("Set Up Video Components…"))
-            self.video_setup_button.setVisible(not view.synthetic and callable(
-                getattr(normal_entry_session, "review_manager_video_setup", None)))
-            self.video_setup_button.clicked.connect(self.setup_video_components)
-            self.video_recovery_button = compact_action(QPushButton("Recover Video Setup…"))
-            self.video_recovery_button.setVisible(not view.synthetic and callable(
-                getattr(normal_entry_session, "recover_manager_video_setup", None)))
-            self.video_recovery_button.clicked.connect(lambda: self.setup_video_components(recover=True))
-            generation_panel = self.generation_panel = QWidget()
-            generation_layout = QVBoxLayout(generation_panel)
-            generation_layout.setContentsMargins(0, 0, 0, 0)
-            generation_layout.addWidget(QLabel("Generate · Plan offline or submit with a checked generator"))
-            self.generation_actions_grid = ResponsiveCardGrid(minimum_card_width=220, maximum_columns=4)
-            self.generation_actions_grid.set_cards(generation_actions)
-            generation_layout.addWidget(self.generation_actions_grid)
-            generation_layout.addWidget(self.video_setup_button, 0, Qt.AlignLeft)
-            generation_layout.addWidget(self.video_recovery_button, 0, Qt.AlignLeft)
-            generation_history = compact_action(QPushButton("Review Generation Jobs…"))
-            generation_history.clicked.connect(self.review_generation_jobs)
-            generation_layout.addWidget(generation_history, 0, Qt.AlignLeft)
-            self.prompt_catalog_button = compact_action(QPushButton("Use Organizer Prompt Catalog…"))
-            self.prompt_catalog_button.setToolTip("Import read-only Tag, Character and Outfit prompt choices exported from Organizer Knowledge Actions.")
-            self.prompt_catalog_button.clicked.connect(lambda: self.open_generate_plan(prompt_catalog=True))
-            generation_layout.addWidget(self.prompt_catalog_button, 0, Qt.AlignLeft)
-            self._verified_result_remix = None
-            self.verified_result_remix_button = compact_action(QPushButton("Plan Remix from Verified Result…"))
-            self.verified_result_remix_button.hide()
-            self.verified_result_remix_button.clicked.connect(self.open_verified_result_remix)
-            generation_layout.addWidget(self.verified_result_remix_button, 0, Qt.AlignLeft)
-            generation_panel.setVisible(not view.synthetic and normal_entry_session is not None)
-            # Generation has its own navigation home; keep one original panel owner.
-            training_panel = self.training_panel = QWidget()
-            training_layout = QVBoxLayout(training_panel)
-            training_layout.setContentsMargins(0, 0, 0, 0)
-            training_layout.addWidget(QLabel("Training · Prepare a package, choose a local trainer or open a saved run"))
-            self._trainer_setup_dialog = None
+            # Workflow execution belongs to separately admitted application modules.
+            self._generation_setup_dialog = self._trainer_setup_dialog = None
+            self._trainer_setup_loading_task = None
             self._trainer_setup_close_requested = False
-            open_training_reviews = QHBoxLayout()
-            self.training_open_reviews = QComboBox()
-            self.training_open_reviews.setAccessibleName("Open Training run and setup reviews")
-            self.training_open_reviews.setPlaceholderText("No open Training reviews")
-            self.training_open_review_button = compact_action(QPushButton("Return to Open Review"))
-            self.training_open_review_button.setToolTip("Return to the selected existing review without restarting it.")
-            self.training_open_review_button.setEnabled(False)
-            self.training_open_review_button.clicked.connect(self.return_to_open_training_review)
-            open_training_reviews.addWidget(self.training_open_reviews, 1)
-            open_training_reviews.addWidget(self.training_open_review_button)
-            training_layout.addLayout(open_training_reviews)
-            self.trainer_setup_button = compact_action(QPushButton("Set Up Trainer…"))
-            self.trainer_setup_button.clicked.connect(self.open_existing_trainer_setup)
-            self.trainer_setup_button.setVisible(self.krea_training_review_button.isVisibleTo(self)
-                                                 and training_draft_settings_path is not None)
-            training_layout.addWidget(self.trainer_setup_button, 0, Qt.AlignLeft)
-            training_layout.addWidget(self.krea_training_review_button, 0, Qt.AlignLeft)
-            self.training_package_recovery_button = compact_action(QPushButton("Review Interrupted Training Package…"))
-            self.training_package_recovery_button.clicked.connect(self.review_interrupted_training_package)
-            training_layout.addWidget(self.training_package_recovery_button, 0, Qt.AlignLeft)
-            self.training_comparison_button = compact_action(QPushButton("Compare Training Samples…"))
-            self.training_comparison_button.setToolTip("Compare saved samples or review a generation queue using your checked generator.")
-            self.training_comparison_button.setVisible(not view.synthetic and normal_entry_session is not None)
-            self.training_comparison_button.clicked.connect(self.open_training_comparison)
-            training_layout.addWidget(self.training_comparison_button, 0, Qt.AlignLeft)
-            self.training_experiments_button = compact_action(QPushButton("Training Experiments…"))
-            self.training_experiments_button.setVisible(not view.synthetic and normal_entry_session is not None)
-            self.training_experiments_button.clicked.connect(self.open_training_experiments)
-            training_layout.addWidget(self.training_experiments_button, 0, Qt.AlignLeft)
-            self.training_history_button = compact_action(QPushButton("Review Saved Training Runs…"))
-            self.training_history_button.setVisible(not view.synthetic and normal_entry_session is not None)
-            self.training_history_button.clicked.connect(self.open_training_history)
-            training_layout.addWidget(self.training_history_button, 0, Qt.AlignLeft)
-            self.training_draft_button = compact_action(QPushButton("Review a Dataset Draft…"))
-            self.training_draft_button.setVisible(not view.synthetic and normal_entry_session is not None)
-            self.training_draft_button.clicked.connect(self.open_training_draft)
-            training_layout.addWidget(self.training_draft_button, 0, Qt.AlignLeft)
-            self.saved_preparation_button = compact_action(QPushButton("Review Saved SDXL Preparations…"))
-            self.saved_preparation_button.setVisible(not view.synthetic and normal_entry_session is not None)
-            self.saved_preparation_button.clicked.connect(lambda: self.open_training_history(preparations=True))
-            training_layout.addWidget(self.saved_preparation_button, 0, Qt.AlignLeft)
-            self.training_merge_button = compact_action(QPushButton("Inspect Merge Inputs…"))
-            self.training_merge_button.setVisible(
-                not view.synthetic and getattr(normal_entry_session, "state", None) == "ready")
-            self.training_merge_button.clicked.connect(self.open_training_merge)
-            training_layout.addWidget(self.training_merge_button, 0, Qt.AlignLeft)
-            training_panel.setVisible(not view.synthetic and normal_entry_session is not None)
-            # Training has its own navigation home; keep the shared controllers intact.
+            self._image_draft_picker_open = self._video_draft_picker_open = False
+            self._training_package_picker_open = self._training_draft_review_open = False
+            self._training_history_dialog = self._training_package_recovery_dialog = None
+            self._training_package_recovery_task = self._krea_review_dialog = None
+            self._video_setup_cancel = self._video_generation_dialog = None
+            self._close_after_krea_review = False
+            from .workflow_applications_ui import WorkflowApplications
+            self.workflow_applications = WorkflowApplications(workspace_owner=workflow_workspace_owner,
+                services=workflow_services, launch_allowed=self.workflow_launch_allowed, parent=self)
+            applications_layout.addWidget(self.workflow_applications)
+            management = QGroupBox('Workflow software and connections')
+            management_layout = QHBoxLayout(management)
+            for label, callback in (('Generator connection…', self.review_generator_connection),
+                    ('Description settings…', self.review_image_description_setup),
+                    ('Set up trainer…', self.open_existing_trainer_setup)):
+                button = compact_action(QPushButton(label))
+                button.clicked.connect(callback)
+                management_layout.addWidget(button)
+            self.video_setup_button = compact_action(QPushButton('Video components…'))
+            self.video_setup_button.clicked.connect(self.setup_video_components)
+            self.video_recovery_button = compact_action(QPushButton('Recover video setup…'))
+            self.video_recovery_button.clicked.connect(lambda: self.setup_video_components(recover=True))
+            for button in (self.video_setup_button, self.video_recovery_button):
+                management_layout.addWidget(button)
+            management.setEnabled(not view.synthetic and normal_entry_session is not None)
+            self.workflow_management = management
+            applications_layout.addWidget(management)
             applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
             external.setWordWrap(True)
@@ -757,60 +669,17 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.applications_page = applications_page; self.dashboard_page = dashboard_page
             servers_page = QScrollArea(); servers_page.setWidgetResizable(True)
             self.servers_page = servers_page
-            def workflow_page(title, description, panel):
-                body = QWidget()
-                layout = workspace_layout(body)
-                layout.addWidget(workspace_heading(title))
-                intro = QLabel(description)
-                intro.setWordWrap(True)
-                intro.setTextFormat(Qt.PlainText)
-                layout.addWidget(intro)
-                unavailable = QLabel("Open a configured Suite Manager installation to use this workspace.")
-                unavailable.setWordWrap(True)
-                unavailable.setVisible(view.synthetic or normal_entry_session is None)
-                layout.addWidget(unavailable)
-                layout.addWidget(panel)
-                layout.addStretch(1)
-                scroll = QScrollArea()
-                scroll.setWidgetResizable(True)
-                scroll.setFrameShape(QFrame.NoFrame)
-                scroll.setAccessibleName(title + " workspace")
-                scroll.setWidget(body)
-                return scroll
-
-            self.generate_page = workflow_page("Generate",
-                "Create an image or video, reopen saved work, or review results. "
-                "Draft offline and choose when to submit to your local generator.", generation_panel)
-            from qt_app.generation_page import GenerationPage
-            self.generation_page = GenerationPage(self, show_launchers=False)
-            self.generation_page.header.hide()
-            self.generate_page.widget().layout().insertWidget(
-                self.generate_page.widget().layout().count() - 1, self.generation_page, 1)
-            self.generation_page.active_changed.connect(self.generation_workspace_changed)
-            self.generation_page.setVisible(not view.synthetic and normal_entry_session is not None)
-            self.training_page = workflow_page("Training",
-                "Prepare data in Organizer, open its package here, and choose a local trainer. "
-                "Resume saved runs, compare results, or prepare a model for Generate.", training_panel)
-            from qt_app.components import ContextHelpButton
-            from qt_app.help_content import manager_workspace_help
             self._workflow_help_controls = {}
-            for name, topic in (("Generate", "generation"), ("Training", "training")):
-                control = ContextHelpButton(name, manager_workspace_help(topic), self)
-                control.setVisible(True)
-                bind_source(self, "workflow-help-source-" + topic, control, "Help", move=True)
-                self._workflow_help_controls[name] = control
-            self._workflow_help_shortcut = QShortcut(QKeySequence("F1"), self)
-            self._workflow_help_shortcut.activated.connect(self.open_current_workspace_help)
-            # Append workspace identities so retained host routes keep their original page indices.
             pages = (("Dashboard", dashboard_page, "Dashboard"),
                 ("Servers", servers_page, "Setup"),
                 ("Applications", applications_page, "Generate"),
                 ("Databases", databases_page, "Tag Encyclopedia"),
                 ("Dependencies", dependencies_page, "Training"),
-                ("Settings", settings_page, "Setup"),
-                ("Generate", self.generate_page, "Generate"),
-                ("Training", self.training_page, "Training"))
+                ("Settings", settings_page, "Setup"))
             self.page_rows = {name: index for index, (name, _widget, _icon) in enumerate(pages)}
+            self._workflow_management_pages = (settings_page, servers_page)
+            self._workflow_disabled_controls = {}
+            self.workflow_applications.timer.timeout.connect(self.poll_workflow_applications)
             for index, (label, widget, icon) in enumerate(pages):
                 self.stack.addWidget(widget)
                 item = QListWidgetItem(navigation_icon(icon), label)
@@ -856,6 +725,115 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     "Preview only \u2022 Installation and application setup are not available yet")
             self.statusBar().showMessage(status)
             self.render_ollama()
+
+        def workflow_launch_allowed(self):
+            if normal_entry_session is None or normal_entry_session.state != "ready":
+                return False
+            if self.close_policy.pending:
+                return False
+            if any(getattr(self, name, None) for name in ('_generation_setup_dialog',
+                    '_trainer_setup_dialog', '_trainer_setup_loading_task', '_models_workspace_dialog')):
+                return False
+            workflow_ui = getattr(self, 'workflow_applications', None)
+            owned_dialogs = () if workflow_ui is None else workflow_ui.dialogs.values()
+            if any(dialog.isVisible() for dialog in self.findChildren(QDialog)
+                    if dialog not in owned_dialogs):
+                return False
+            state = getattr(self, 'state', None)
+            setup = getattr(self, '_manager_trainer_setup', None)
+            return (not (state is not None and state.jobs.active())
+                and not (setup is not None and setup.close_held)
+                and not self.shared_settings_shell.close_held
+                and not (self.chat_host is not None and self.chat_host.close_held)
+                and not (self.direct_model_host is not None and self.direct_model_host.close_held)
+                and not (self.lifecycle_bridge is not None and self.lifecycle_bridge.worker_pending)
+                and not (self._model_workspace_factory is not None
+                    and getattr(self._model_workspace_factory, 'close_held', False)))
+
+        def workflow_management_allowed(self):
+            if not self.workflow_applications.close_held:
+                return True
+            self.statusBar().showMessage('Close Generate or Train and wait for its original work to finish before changing shared models, settings or connections.')
+            return False
+
+        def open_workflow_application(self, component_id):
+            from core.workflow_connection import workflow_component
+            workflow_component(component_id)
+            self.navigation.setCurrentRow(self.page_rows['Applications'])
+            self.workflow_applications.render()
+            status, _opening, _manage, group = self.workflow_applications.rows[component_id]
+            group.setFocus()
+            self.statusBar().showMessage(status.text())
+            return False
+
+        def poll_workflow_applications(self):
+            held = self.workflow_applications.close_held
+            for page in self._workflow_management_pages:
+                page.setEnabled(not held)
+            for control in (self.workflow_management, self.local_models_button,
+                    self.repository_inspection_button, self.direct_model_button, self.ollama_workspace,
+                    self.shared_settings_shell.review):
+                if held and control not in self._workflow_disabled_controls:
+                    self._workflow_disabled_controls[control] = control.isEnabled()
+                if held:
+                    control.setEnabled(False)
+            # Retain Close/Cancel/Stop while blocking edits in already-open reviews.
+            if held:
+                from PySide6.QtWidgets import QAbstractButton, QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit, QPlainTextEdit
+                for dialog in self.findChildren(QDialog):
+                    if dialog in self.workflow_applications.dialogs.values():
+                        continue
+                    for control in dialog.findChildren(QWidget):
+                        editable = isinstance(control, (QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit, QPlainTextEdit))
+                        if callable(getattr(control, "isReadOnly", None)) and control.isReadOnly():
+                            editable = False
+                        if isinstance(control, QAbstractButton):
+                            text = control.text().replace('&', '').strip().lower()
+                            editable = not text.startswith(('close', 'cancel', 'stop', 'back', 'return'))
+                        if editable:
+                            if control not in self._workflow_disabled_controls:
+                                self._workflow_disabled_controls[control] = control.isEnabled()
+                            control.setEnabled(False)
+            else:
+                from shiboken6 import isValid
+                for control, enabled in self._workflow_disabled_controls.items():
+                    if isValid(control):
+                        control.setEnabled(enabled)
+                self._workflow_disabled_controls.clear()
+            owner = self.workflow_workspace_owner
+            self.workflow_return_bar.setVisible(owner is not None and owner.pending_generate_draft is not None and not held)
+            target = None if owner is None else owner.return_target
+            if target is not None and not held:
+                owner.return_target = None
+                state = getattr(self, 'state', None)
+                if state is not None and state.generation_settings_path.exists():
+                    from core.settings import AppSettings
+                    try:
+                        from core.training_source_io import _assert_unredirected
+                        _assert_unredirected(state.generation_settings_path)
+                        state.settings = AppSettings.load(state.generation_settings_path)
+                    except (ValueError, OSError, RuntimeError):
+                        self.statusBar().showMessage('Workflow data is retained. Shared settings could not be refreshed; review their access before continuing.')
+                        return
+                if target == 'applications':
+                    self.navigation.setCurrentRow(self.page_rows['Applications'])
+                elif target == 'description-settings':
+                    self.navigation.setCurrentRow(self.page_rows['Settings'])
+                    self.review_image_description_setup()
+                elif target in ('video-settings', 'video-recovery'):
+                    self.navigation.setCurrentRow(self.page_rows['Settings'])
+                    self.setup_video_components(recover=target == 'video-recovery')
+                elif target == 'trainer-settings':
+                    self.navigation.setCurrentRow(self.page_rows['Settings'])
+                    self.open_existing_trainer_setup()
+                elif target == 'connections':
+                    self.navigation.setCurrentRow(self.page_rows['Applications'])
+                    self.review_generator_connection()
+                elif target in ('connections', 'models', 'settings'):
+                    self.navigation.setCurrentRow(self.page_rows['Settings' if target == 'settings' else 'Applications'])
+                    self.statusBar().showMessage('Workflow saved and closed. Shared ' + target + ' management is available.')
+            if self.close_policy.pending and not held:
+                self.reconsider_close()
 
         def render_tag_content_summary(self):
             self.tag_database_pane.render()
@@ -965,6 +943,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.databases.setPlainText(state.sections[index].text())
 
         def open_ollama_workspace(self):
+            if not self.workflow_management_allowed(): return
             self.navigation.setCurrentRow(self.page_rows["Applications"])
             if not self.ollama_workspace.isVisible():
                 self._ollama_return_visibility = {name: getattr(self, name).isVisible() for name in
@@ -1157,6 +1136,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.owned_runtime_panel.review_install()
 
         def open_backend_setup(self):
+            if not self.workflow_management_allowed(): return
             if getattr(self, 'chat_host', None) is not None and self.chat_host.busy:
                 self.statusBar().showMessage('Stop the chat request and wait for completion before changing its backend.')
                 return
@@ -1381,6 +1361,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 'Connect an existing Ollama endpoint and Refresh inventory before loading a model.')
 
         def load_selected_ollama(self):
+            if not self.workflow_management_allowed(): return
             if self.chat_host is None or self.close_policy.pending: return
             self.refresh_chat_admission()
             try: self.chat_host.request_load(self.ollama_load_choices.currentData())
@@ -1405,7 +1386,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from core.training_source_io import _assert_unredirected
 
             available = (not self.view.synthetic and normal_entry_session is not None
-                         and normal_entry_session.state == "ready" and not self.close_policy.pending)
+                         and normal_entry_session.state == "ready" and not self.close_policy.pending
+                         and not self.workflow_applications.close_held)
             self.generator_card.setVisible(not self.view.synthetic)
             if not available:
                 self._dashboard_generator_action = ""
@@ -1460,6 +1442,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.open_generate_plan()
 
         def review_generator_connection(self):
+            if not self.workflow_management_allowed(): return
             state = self.generation_state()
             if state is None or self._generation_setup_dialog is not None:
                 return
@@ -1527,6 +1510,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         def generation_state(self):
             session = normal_entry_session
+            if self.workflow_applications.close_held: return None
             if view.synthetic or session is None or session.state != "ready" or self.close_policy.pending:
                 return
             from pathlib import Path
@@ -1547,111 +1531,34 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     generation_settings_path=settings_path,
                     generation_runtime_allowed=False, video_decoder_lifetime=VideoDecoderLifetime(),
                     admit_manager_video_runtime=getattr(session, "admit_manager_video_runtime", None),
-                    video_draft_session_state=self.generation_state,
-                    generation_session_state=self.generation_state,
-                    checked_image_connection=self.checked_image_connection,
-                    review_generator_connection=self.review_generator_connection,
-                    review_image_description_setup=self.review_image_description_setup,
-                    image_setup_suggestion_provider=(getattr(session, "caption_runtime", None).suggest
-                        if getattr(session, "caption_runtime", None) is not None else None),
-                    checked_image_submission=True,
-                    offline_generation_alternatives=True,
-                    retain_verified_result_remix=self.retain_verified_result_remix,
-                    review_verified_generation_results=True,
                 )
             return self.state
 
         _IMAGE_PICKER_CLOSE_NOTICE = "Close held. Finish or close the image chooser, then close Manager again."
 
-        def show_generate_workspace(self):
-            self.navigation.setCurrentRow(self.page_rows["Generate"])
-            return self.navigation.currentRow() == self.page_rows["Generate"]
+        def show_generate_workspace(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-        def generation_workspace_changed(self, _dialog=None):
-            self._generation_dialog = self.generation_page.retained_workspace("image")
-            self._video_generation_dialog = self.generation_page.retained_workspace("video")
+        def generation_workspace_changed(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-        def open_generate_plan(self, *, prompt_catalog=False):
-            if self._image_draft_picker_open:
-                return
-            state = self.generation_state()
-            if state is None:
-                return
-            from qt_app.generation_workflow import choose_generation_draft
-            self.show_generate_workspace()
-            self._image_draft_picker_open = True
-            try:
-                choose_generation_draft(
-                    self, allow_draft_transfer=True,
-                    selection_allowed=lambda: self.generation_state() is state,
-                    prompt_catalog_only=prompt_catalog,
-                )
-            finally:
-                self._image_draft_picker_open = False
-                if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:
-                    self.statusBar().clearMessage()
+        def open_generate_plan(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-        def review_generation_jobs(self):
-            if self._image_draft_picker_open or self.generation_state() is None:
-                return
-            self.navigation.setCurrentRow(self.page_rows["Generate"])
-            from qt_app.generation_workflow import open_generation_workspace
+        def review_generation_jobs(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-            def review(dialog):
-                dialog.tabs.setCurrentIndex(3)
-                if dialog.history_button.isEnabled():
-                    dialog.load_history(on_open=True, keep_current_tab=True)
+        def retain_verified_result_remix(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-            open_generation_workspace(self, on_opened=review)
+        def open_verified_result_remix(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-        def retain_verified_result_remix(self, paths, verifier, evidence):
-            if self.generation_state() is None or len(paths) != 1:
-                return
-            self._verified_result_remix = (tuple(paths), verifier, evidence)
-            self.verified_result_remix_button.show()
-
-        def open_verified_result_remix(self):
-            state = self.generation_state()
-            pending = self._verified_result_remix
-            if state is None or pending is None or self._image_draft_picker_open:
-                return
-            from qt_app.generation_workflow import open_generation_workspace
-
-            paths, verifier, evidence = pending
-
-            def opened(_dialog):
-                self._verified_result_remix = None
-                self.verified_result_remix_button.hide()
-
-            open_generation_workspace(self, paths=paths, remix=True, force_new=True,
-                source_context={"verified_source": verifier, "verified_source_evidence": evidence}, on_opened=opened,
-                source_result_allowed=lambda: self.generation_state() is state and self._verified_result_remix is pending)
-
-        def open_remix_plan(self):
-            if self._image_draft_picker_open or getattr(self, "_generation_source_task", None) is not None:
-                return
-            state = self.generation_state()
-            if state is None:
-                return
-            from PySide6.QtWidgets import QFileDialog
-            from qt_app.generation_workflow import open_generation_workspace
-
-            self._image_draft_picker_open = True
-            try:
-                path, _ = QFileDialog.getOpenFileName(
-                    self, "Choose an image for a Remix plan", "",
-                    "Images (*.png *.jpg *.jpeg *.webp)")
-            finally:
-                self._image_draft_picker_open = False
-                if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:
-                    self.statusBar().clearMessage()
-            if path and self.generation_state() is state:
-                open_generation_workspace(
-                    self, paths=(Path(path),), remix=True, force_new=True,
-                    source_result_allowed=lambda: self.generation_state() is state,
-                )
+        def open_remix_plan(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
         def setup_video_components(self, *, recover=False):
+            if not self.workflow_management_allowed(): return
             if self._video_setup_cancel is not None:
                 self._video_setup_cancel.set()
                 self.statusBar().showMessage("Stopping Video setup. Waiting for the current step to finish…")
@@ -1736,47 +1643,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             else:
                 start("Reviewing Video setup", lambda check: review(check_interrupt=check), reviewed)
 
-        def open_video_plan(self, *, reopen=False):
-            state = self.generation_state()
-            if (state is None or self._video_draft_picker_open or self._video_setup_cancel is not None
-                    or getattr(self, "_video_runtime_admission_task", None) is not None):
-                return
-            self.navigation.setCurrentRow(self.page_rows["Generate"])
-            from qt_app.video_generation_workflow import (
-                choose_video_generation_draft, open_video_generation_workspace,
-            )
+        def open_video_plan(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-            def connect_close_notices(video):
-                video.offline_draft_work_settled.connect(self.clear_video_close_notice)
-                video.offline_draft_work_settled.connect(self.clear_video_picker_close_notice)
-                video.workspace_closed.connect(self.clear_video_close_notice)
+        def clear_video_picker_close_notice(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-            if reopen:
-                self._video_draft_picker_open = True
-                try:
-                    choose_video_generation_draft(
-                        self, selection_allowed=lambda: self.generation_state() is state,
-                        on_opened=connect_close_notices,
-                    )
-                finally:
-                    self._video_draft_picker_open = False
-                    self.clear_video_picker_close_notice()
-            else:
-                open_video_generation_workspace(self, on_opened=connect_close_notices)
-
-        _VIDEO_PICKER_CLOSE_NOTICE = "Close held. Finish or close the video draft chooser, then close Manager again."
-
-        def clear_video_picker_close_notice(self):
-            bar = self.statusBar()
-            if bar.currentMessage() == self._VIDEO_PICKER_CLOSE_NOTICE:
-                bar.clearMessage()
-
-        _VIDEO_CLOSE_NOTICE = "Close held. Finish or save the video draft, then close Manager again."
-
-        def clear_video_close_notice(self):
-            bar = self.statusBar()
-            if bar.currentMessage() == self._VIDEO_CLOSE_NOTICE:
-                bar.clearMessage()
+        def clear_video_close_notice(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
         def run_generation_setup_dialog(self, dialog):
             self._generation_setup_dialog = dialog
@@ -1786,1046 +1660,67 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self._generation_setup_dialog = None
                 dialog.deleteLater()
 
-        def review_image_description_setup(self, owner, review):
-            from shiboken6 import isValid
+        def review_image_description_setup(self, owner=None, review=None):
+            if not self.workflow_management_allowed(): return
             state = self.generation_state()
             if state is None or self._generation_setup_dialog is not None:
                 return
-            def allowed():
-                return (self.generation_state() is state and isValid(owner) and isValid(review)
-                        and getattr(owner, "_image_setup_dialog", None) is review
-                        and not getattr(owner, "_closed", True))
-            if not allowed():
-                return
+            allowed = lambda: self.generation_state() is state and not self.close_policy.pending
             from .description_setup_ui import DescriptionSetupDialog
-            caption_runtime = getattr(normal_entry_session, "caption_runtime", None)
-            dialog = DescriptionSetupDialog(state.generation_settings_path, review, allowed=allowed,
-                                            components_available=caption_runtime is not None)
+            caption_runtime = getattr(normal_entry_session, 'caption_runtime', None)
+            dialog = DescriptionSetupDialog(state.generation_settings_path, self, allowed=allowed,
+                components_available=caption_runtime is not None)
+            for label in dialog.findChildren(QLabel):
+                if label.text().startswith('Reuse your installed caption model.'):
+                    label.setText('Choose the local model for optional image suggestions. Save these shared workflow choices here, then reopen Generate to use them. Opening or saving does not download a model or start analysis. Component setup requires a separate confirmation.')
             accepted = self.run_generation_setup_dialog(dialog)
-            if not allowed():
-                return
-            if accepted and dialog.saved_snapshot is not None:
+            if accepted and dialog.saved_snapshot is not None and allowed():
                 for key, value in dialog.saved_snapshot.values.items():
                     setattr(state.settings, key, value)
             if accepted and dialog.components_requested and caption_runtime is not None and allowed():
                 from .caption_components_ui import CaptionComponentsDialog
-                components = CaptionComponentsDialog(caption_runtime, state.settings, state.jobs, review, allowed=allowed)
+                components = CaptionComponentsDialog(caption_runtime, state.settings, state.jobs, self,
+                    allowed=allowed)
                 self.run_generation_setup_dialog(components)
-            if not allowed():
-                return
-            review.resume_description_setup()
-            review.raise_(); review.activateWindow()
 
-        def create_generation_setup(self):
-            state = self.generation_state()
-            if state is None or self._generation_setup_dialog is not None or self._image_draft_picker_open:
-                return
-            from qt_app.generation_setup_source_dialog import GenerationSetupSourceDialog
-            choice = GenerationSetupSourceDialog(parent=self, allow_image=True, allow_entities=False)
-            if not self.run_generation_setup_dialog(choice) or self.generation_state() is not state:
-                return
-            if choice.source_kind == "manual":
-                self.create_manual_generation_setup()
-                return
-            from PySide6.QtWidgets import QFileDialog
-            self._image_draft_picker_open = True
-            try:
-                path, _ = QFileDialog.getOpenFileName(
-                    self, "Choose an image for a Generation Setup", "", "Images (*.png *.jpg *.jpeg *.webp)")
-            finally:
-                self._image_draft_picker_open = False
-                if self.statusBar().currentMessage() == self._IMAGE_PICKER_CLOSE_NOTICE:
-                    self.statusBar().clearMessage()
-            if path and self.generation_state() is state:
-                from qt_app.generation_workflow import open_generation_workspace
-                open_generation_workspace(self, paths=(Path(path),), force_new=True, setup_from_image=True,
-                    source_result_allowed=lambda: self.generation_state() is state)
+        def create_generation_setup(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-        def create_manual_generation_setup(self):
-            state = self.generation_state()
-            if state is None or self._generation_setup_dialog is not None:
-                return
-            from qt_app.generation_manual_setup_dialog import ManualGenerationSetupDialog
-            from qt_app.generation_workflow import _generation_model_registry
+        def create_manual_generation_setup(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-            dialog = ManualGenerationSetupDialog(
-                state.jobs, state.generation_data_root / "generation",
-                registry=_generation_model_registry(self), parent=self,
-            )
-            if self.run_generation_setup_dialog(dialog) and dialog.saved_path is not None:
-                self.statusBar().showMessage(
-                    "Generation Setup saved. Choose Use Saved Setup to review it in a new image plan.",
-                    12000,
-                )
+        def use_saved_generation_setup(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.generate')
 
-        def use_saved_generation_setup(self):
-            state = self.generation_state()
-            if state is None or self._generation_setup_dialog is not None:
-                return
-            from qt_app.generation_saved_work_dialog import SavedGenerationWorkDialog
-            from qt_app.generation_workflow import _generation_model_registry, open_generation_workspace
+        def refresh_open_training_reviews(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-            browser = SavedGenerationWorkDialog(
-                state.jobs, state.generation_data_root / "generation", "recipes",
-                parent=self, selection_only=True, allow_setup_transfer=True,
-                registry=_generation_model_registry(self),
-                file_transfer_allowed=lambda: self.generation_state() is state,
-            )
-            if not self.run_generation_setup_dialog(browser) or self.generation_state() is not state:
-                return
-            if browser.requested_action == "create":
-                self.create_generation_setup()
-                return
-            path, digest = browser.selected_path, browser.selected_digest
-            if path is None or not digest:
-                return
+        def return_to_open_training_review(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-            def review(target):
-                original = target.plan.digest
+        def open_training_experiments(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-                def unapplied(error, _location_saved):
-                    if target.plan.digest == original:
-                        target.reject()
-                    if error:
-                        self.statusBar().showMessage(
-                            "Setup could not be opened. Choose Use Saved Setup to review the current file.",
-                            12000,
-                        )
+        def export_training_experiment_draft(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-                target.load_recipe(selected_path=path, selected_digest=digest, on_unapplied=unapplied)
+        def open_training_draft(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-            open_generation_workspace(self, force_new=True, on_opened=review)
+        def bind_training_draft_recheck(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-        _TRAINING_PICKER_CLOSE_NOTICE = "Close held. Finish or close the training package chooser, then close Manager again."
+        def open_training_history(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-        def refresh_open_training_reviews(self):
-            selected = self.training_open_reviews.currentData()
-            rows = []
-            seen = set()
-            for name in ("_sdxl_preparation_controller", "_training_comparison_controller"):
-                controller = getattr(self, name, None)
-                if controller is None:
-                    continue
-                for dialog in controller.open_reviews():
-                    if id(dialog) in seen:
-                        continue
-                    seen.add(id(dialog))
-                    rows.append((controller, dialog))
-            self.training_open_reviews.blockSignals(True)
-            self.training_open_reviews.clear()
-            selected_index = -1
-            for index, pair in enumerate(rows):
-                controller, dialog = pair
-                self.training_open_reviews.addItem(dialog.windowTitle() or "Training review", pair)
-                if selected is not None and selected[0] is controller and selected[1] is dialog:
-                    selected_index = index
-            self.training_open_reviews.setCurrentIndex(
-                selected_index if selected_index >= 0 else 0 if rows else -1)
-            self.training_open_reviews.blockSignals(False)
-            allowed = (not getattr(self, "view", view).synthetic
-                       and getattr(normal_entry_session, "state", None) == "ready"
-                       and not self.close_policy.pending)
-            self.training_open_reviews.setEnabled(bool(rows) and allowed)
-            self.training_open_review_button.setEnabled(bool(rows) and allowed)
+        def open_training_comparison(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-        def return_to_open_training_review(self):
-            if (self.view.synthetic or getattr(normal_entry_session, "state", None) != "ready"
-                    or self.close_policy.pending):
-                return
-            selected = self.training_open_reviews.currentData()
-            if selected is None:
-                self.refresh_open_training_reviews()
-                return
-            controller, dialog = selected
-            if not controller.show_review(dialog):
-                self.refresh_open_training_reviews()
-                self.statusBar().showMessage("That Training review has closed. Choose another open review or use Run History.")
-                return
-            self.navigation.setCurrentRow(self.page_rows["Training"])
-
-        def open_training_experiments(self):
-            from qt_app.generation_workflow import _generation_model_registry
-            if self.generation_state() is None:
-                return
-            self.navigation.setCurrentRow(self.page_rows["Training"])
-            controller = self.sdxl_preparation_controller(_generation_model_registry(self))
-            if controller is not None:
-                controller.experiments()
-
-        def export_training_experiment_draft(self, draft=None):
-            state = self.generation_state()
-            controller = getattr(self, "_sdxl_preparation_controller", None)
-            if state is None or controller is None or self.close_policy.pending:
-                return
-            from qt_app.training_draft_transfer_dialog import TrainingDraftTransferDialog
-            for dialog in controller.open_reviews():
-                if isinstance(dialog, TrainingDraftTransferDialog):
-                    controller.show_review(dialog)
-                    return
-            controller._show(TrainingDraftTransferDialog(state.jobs,
-                state.generation_data_root / "training" / "training-plan-drafts.json", self, selected=draft))
-
-        def open_training_draft(self):
-            state = self.generation_state()
-            if state is None or getattr(self, "_training_draft_review_open", False):
-                return
-            self.navigation.setCurrentRow(self.page_rows["Training"])
-            from pathlib import Path
-            from PySide6.QtWidgets import QFileDialog, QMessageBox
-            from core.training_plan_drafts import TrainingPlanDraft, TrainingPlanDraftError
-            from qt_app.training_candidate_plan_dialog import TrainingPlanDraftPickerDialog
-
-            self._training_draft_review_open = True
-            try:
-                path, _ = QFileDialog.getOpenFileName(
-                    self, "Choose a Dataset draft", "", "Dataset draft (*.json)")
-                if not path or self.generation_state() is not state:
-                    return
-                try:
-                    draft = TrainingPlanDraft.read_transfer(Path(path))
-                except TrainingPlanDraftError as exc:
-                    QMessageBox.warning(self, "Dataset draft unavailable", str(exc))
-                    return
-                dialog = TrainingPlanDraftPickerDialog((draft,), self, saved_details_only=True)
-                cancel_recheck = self.bind_training_draft_recheck(dialog, draft, state)
-                try:
-                    dialog.exec()
-                finally:
-                    cancel_recheck()
-                    dialog.deleteLater()
-            finally:
-                self._training_draft_review_open = False
-                if self.statusBar().currentMessage() == self._TRAINING_DRAFT_CLOSE_NOTICE:
-                    self.statusBar().clearMessage()
-
-        def bind_training_draft_recheck(self, dialog, draft, state):
-            from PySide6.QtWidgets import QDialogButtonBox
-            from core.settings import AppSettings
-            from core.training_source_io import read_stable_training_source
-            from qt_app.workers import CoordinatedCallTask
-
-            status = QLabel()
-            status.setWordWrap(True)
-            status.setTextFormat(Qt.PlainText)
-            dialog.layout().insertWidget(3, status)
-            button = dialog.findChild(QDialogButtonBox).addButton(
-                "Check Source Images", QDialogButtonBox.ActionRole,
-            )
-            button.setEnabled(training_draft_settings_path is not None)
-            caption_button = dialog.findChild(QDialogButtonBox).addButton(
-                "Check Captions…", QDialogButtonBox.ActionRole,
-            )
-            caption_button.setEnabled(button.isEnabled() and bool(
-                draft.plan_manifest.get("assessment_context_fingerprint")
-            ))
-            status.setText("Check the saved images or choose their Dataset data folder to compare captions."
-                           if button.isEnabled() else "Source checks require a configured Manager profile.")
-            task = None
-            closed = False
-
-            def check(job, selected_root):
-                try:
-                    raw, _ = read_stable_training_source(training_draft_settings_path, max_bytes=16 * 1024 * 1024)
-                    registry = AppSettings._from_bytes(raw).library_registry()
-                except (OSError, RuntimeError, ValueError) as exc:
-                    raise ValueError("Manager library settings could not be read.") from exc
-                counts = None
-
-                def read_sources(consume=None):
-                    nonlocal counts
-                    counts = draft.recheck_source_files(
-                        registry, should_cancel=lambda: job.cancel_requested,
-                        on_verified_annotation=consume,
-                    )
-
-                caption_status = "unavailable"
-                if selected_root is not None:
-                    from core.training_candidate_selection import admit_dataset_caption_root, prepare_dataset_caption_review
-
-                    root = admit_dataset_caption_root(selected_root, registry)
-                    try:
-                        review = prepare_dataset_caption_review(root, cancel=lambda: job.cancel_requested)
-                    except FileNotFoundError as exc:
-                        raise ValueError(
-                            "The selected Dataset folder is missing files needed to check captions. "
-                            "Choose the original Dataset data folder or rebuild the draft in Organizer."
-                        ) from exc
-                    caption_status = review(
-                        draft.plan_manifest, read_sources, cancel=lambda: job.cancel_requested,
-                    )
-                elif training_caption_review_factory is not None and draft.plan_manifest.get("assessment_context_fingerprint"):
-                    try:
-                        review = training_caption_review_factory()
-                    except (OSError, RuntimeError, ValueError):
-                        review = None
-                    if review is not None:
-                        caption_status = review(
-                            draft.plan_manifest, read_sources, cancel=lambda: job.cancel_requested,
-                        )
-                if counts is None:
-                    read_sources()
-                return counts, caption_status
-
-            def finish(message):
-                nonlocal task
-                task = None
-                if closed:
-                    return
-                status.setText(message)
-                enabled = self.generation_state() is state
-                button.setEnabled(enabled)
-                caption_button.setEnabled(enabled and bool(draft.plan_manifest.get("assessment_context_fingerprint")))
-
-            def start(selected_root=None):
-                nonlocal task
-                if closed or task is not None or self.generation_state() is not state:
-                    return
-                button.setEnabled(False)
-                caption_button.setEnabled(False)
-                status.setText("Checking saved source images…" if selected_root is None else "Checking Dataset context and saved captions…")
-                task = CoordinatedCallTask(
-                    state.jobs, "Check Training draft images",
-                    lambda job: check(job, selected_root), resource="io",
-                )
-                def show_result(result):
-                    counts, caption_status = result
-                    captions = {
-                        "matches": "Current captions match the saved draft.",
-                        "captions_changed": "Current captions differ from the saved draft. Rebuild the draft in Organizer.",
-                        "context_changed": "Dataset context changed. Rebuild the draft in Organizer.",
-                        "unavailable": "Current captions could not be checked.",
-                        "cancelled": "Caption check cancelled.",
-                    }
-                    guidance = captions[caption_status]
-                    if caption_status == "unavailable" and (counts[1] or counts[2]):
-                        guidance += " Review the changed sources and rebuild the draft in Organizer."
-                    finish(
-                        f"Checked {counts[0]:,} image(s). {counts[1]:,} changed. "
-                        f"Saved Image Knowledge: {counts[2]:,} changed, {counts[3]:,} unavailable. "
-                        + guidance
-                    )
-
-                task.signals.complete.connect(show_result)
-                task.signals.failed.connect(finish)
-                task.signals.cancelled.connect(lambda: finish("Source check cancelled."))
-                try:
-                    task.start()
-                except (RuntimeError, ValueError):
-                    finish("Source check could not start. Try again.")
-
-            def cancel(*_):
-                nonlocal closed
-                if closed:
-                    return
-                closed = True
-                if task is not None:
-                    task.cancel()
-
-            def choose_caption_root():
-                from PySide6.QtWidgets import QFileDialog
-
-                selected = QFileDialog.getExistingDirectory(dialog, "Choose the Dataset data folder")
-                if selected:
-                    start(Path(selected))
-
-            button.clicked.connect(lambda: start())
-            caption_button.clicked.connect(choose_caption_root)
-            dialog.finished.connect(cancel)
-            return cancel
-
-        def open_training_history(self, *, preparations=False):
-            from time import monotonic
-
-            state = self.generation_state()
-            if state is None or getattr(self, "_training_history_dialog", None) is not None:
-                return
-            self.navigation.setCurrentRow(self.page_rows["Training"])
-            from core.training_run_index import ScopedPreparationHistory, ScopedTrainingHistory
-            from core.paths import MODEL_RESOURCES_PATH
-            from qt_app.training_history_dialog import TrainingHistoryDialog
-            from qt_app.workers import CoordinatedCallTask
-
-            write_allowed = lambda: self.generation_state() is state
-            history = (ScopedPreparationHistory(state.generation_data_root / "TrainingReview", write_allowed=write_allowed) if preparations
-                       else ScopedTrainingHistory(state.generation_data_root / "training",
-                           model_registry_path=state.generation_data_root / MODEL_RESOURCES_PATH.name,
-                           write_allowed=write_allowed))
-            task = None
-            closing_review = False
-            receipt_started = 0.0
-
-            class ManagerTrainingHistoryDialog(TrainingHistoryDialog):
-                def done(self, result):
-                    nonlocal closing_review
-                    if task is not None:
-                        if result == QDialog.Rejected and not closing_review:
-                            closing_review = True
-                            self.set_retained_index_status("Closing after the current receipt check finishes…")
-                            if task.job_id:
-                                try:
-                                    state.jobs.cancel(task.job_id)
-                                except Exception:
-                                    self.set_retained_index_status(
-                                        "Stop could not be requested. Closing after the receipt check finishes.")
-                        return
-                    super().done(result)
-
-            dialog = ManagerTrainingHistoryDialog(history, state.jobs, self)
-            if preparations:
-                dialog.setWindowTitle("Saved SDXL Preparations")
-            dialog.open_button.setText("Review Selected Preparation")
-            for button in (dialog.refresh_button, dialog.forget_button, dialog.recover_button,
-                           dialog.open_button, *dialog.buttons.buttons()):
-                compact_action(button)
-            dialog.open_button.setMinimumWidth(max(dialog.open_button.minimumWidth(),
-                dialog.open_button.fontMetrics().horizontalAdvance("Review Saved Process Outcome") + 32))
-            self._training_history_dialog = dialog
-            receipt_timer = QTimer(dialog)
-            def receipt_activity():
-                if task is not None and not closing_review:
-                    dialog.set_retained_index_status(
-                        f"Checking the selected saved review · Elapsed {int(monotonic() - receipt_started)}s")
-            receipt_timer.timeout.connect(receipt_activity)
-            reviewed = None
-            handoff = None
-            retained_handoff = None
-            import_validation = False
-            open_run = QPushButton("Open Saved Training Review", dialog)
-            open_run.setAutoDefault(False)
-            open_run.setProperty("primary", True)
-            open_run.hide()
-            dialog.layout().addWidget(open_run)
-            plan_result = QPushButton("Plan an Image With This Result…", dialog)
-            plan_result.setAutoDefault(False)
-            plan_result.hide()
-            dialog.layout().addWidget(plan_result)
-            open_prepared = QPushButton("Open Prepared Workspace", dialog)
-            open_prepared.setAutoDefault(False)
-            open_prepared.hide()
-            if preparations:
-                dialog.layout().addWidget(open_prepared)
-            prepared_review = None
-
-            def has_saved_outcome(record):
-                return (record.kind == "execution" and bool(record.latest_journal_tip)
-                        and record.phase in {"stopped", "cancelled", "failed", "interrupted",
-                                             "verification_required", "registration_required", "completed"})
-
-            def can_open_run(record):
-                return (not preparations and record is not None and has_saved_outcome(record)
-                        and Path(record.registry_path) == state.generation_data_root / MODEL_RESOURCES_PATH.name)
-
-            def update_open_run():
-                selected = dialog._selected()
-                available = can_open_run(selected)
-                open_run.setVisible(available)
-                open_run.setEnabled(available and task is None and not closing_review
-                                    and bool(dialog._revision) and self.generation_state() is state
-                                    and not self.close_policy.pending and not dialog._history_operation_busy())
-                dialog.open_button.setProperty("primary", not available)
-
-            def verify(record, revision, *, open_workspace=False, open_retained=False):
-                nonlocal task, reviewed, prepared_review, receipt_started
-                prepared_review = None
-                open_prepared.hide()
-                reviewed = None
-                plan_result.hide()
-                if self.generation_state() is not state:
-                    dialog.set_retained_index_status(
-                        "Manager session is no longer ready. Close this review and reopen it when ready.")
-                    return
-                if task is not None:
-                    dialog.set_retained_index_status(
-                        "A saved review is still being checked. Wait for it to finish, then try again.")
-                    return
-                validation = record.kind == "validation" and record.phase == "completed"
-                execution = has_saved_outcome(record)
-                anima = record.kind == "anima"
-                if anima:
-                    review = history.review_anima_settings
-                elif validation:
-                    review = history.review_validation
-                elif execution:
-                    review = history.review_execution_outcome
-                else:
-                    review = history.review_preparation
-                def inspect(_job):
-                    result = review(record, revision)
-                    if not open_workspace:
-                        return result
-                    from core.training_source_io import _assert_unredirected
-                    from core.training_package import _directory_state
-
-                    folder = Path(record.destination) / "work" / "prepared"
-                    try:
-                        _assert_unredirected(folder)
-                        return folder, _directory_state(folder)
-                    except (OSError, RuntimeError, ValueError):
-                        raise ValueError("The prepared workspace is missing or changed. Restore the original folder or prepare the package again.") from None
-
-                dialog.set_retained_index_status("Checking the selected saved review…")
-                task = CoordinatedCallTask(state.jobs, "Verify Training receipt",
-                                           inspect,
-                                           resource="io")
-                receipt_started = monotonic()
-                dialog.progress.setRange(0, 0)
-                dialog.progress.show()
-                receipt_activity()
-                receipt_timer.start(250)
-                update_open_run()
-
-                def finish(message):
-                    nonlocal task
-                    task = None
-                    receipt_timer.stop()
-                    dialog.progress.hide()
-                    if closing_review:
-                        dialog.reject()
-                        return
-                    update_open_run()
-                    if self._training_history_dialog is dialog:
-                        if self.generation_state() is not state:
-                            dialog.set_retained_index_status(
-                                "Manager session is no longer ready. Close this review and reopen it when ready.")
-                        elif dialog._selected() == record and dialog._revision == revision:
-                            dialog.set_retained_index_status(message)
-                        else:
-                            message = ("The previous check finished. You can now review the selected run."
-                                       if dialog._selected() is not None else "")
-                            dialog.set_retained_index_status(message)
-
-                def complete(result):
-                    nonlocal reviewed, prepared_review, retained_handoff
-                    if closing_review:
-                        finish("")
-                        return
-                    if preparations:
-                        finish("Saved SDXL preparation receipt verified. Training was not started. Live inputs were not rechecked.")
-                        if (self._training_history_dialog is not dialog or self.generation_state() is not state
-                                or dialog._selected() != record or dialog._revision != revision):
-                            return
-                        if open_workspace:
-                            from core.training_source_io import _assert_unredirected
-                            from core.training_package import _directory_state
-                            from PySide6.QtCore import QUrl
-                            from PySide6.QtGui import QDesktopServices
-
-                            folder, identity = result
-                            try:
-                                _assert_unredirected(folder)
-                                if _directory_state(folder) != identity:
-                                    raise ValueError("Prepared workspace changed")
-                            except (OSError, RuntimeError, ValueError):
-                                dialog.set_retained_index_status("The prepared workspace changed. Review the saved preparation again.")
-                                return
-                            if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder))):
-                                dialog.set_retained_index_status("Windows could not open the prepared workspace. Choose Open Prepared Workspace to retry.")
-                        prepared_review = record, revision
-                        open_prepared.show()
-                    elif anima:
-                        finish(f"Saved Anima settings: {result.max_steps} optimizer steps, "
-                               f"{result.resolution} px, LoRA rank {result.rank}, seed {result.seed}, "
-                               f"learning rate {result.learning_rate:g}, time limit {result.timeout_seconds:g} seconds. "
-                               f"Batch size {result.batch_size}, gradient accumulation {result.gradient_accumulation}, "
-                               f"repeats {result.repeats}. "
-                               "Model outputs and live inputs were not rechecked.")
-                    elif validation:
-                        qualification = ("Candidate measurement. " if result["qualification"] == "candidate_only" else "")
-                        integrity = ("Saved report hash verified. " if record.validation_report_sha256
-                                     else "Older record has no saved report hash. ")
-                        finish(f"{qualification}Saved held-out denoising MSE: {result['mean_mse']:.6g}. "
-                               f"Sample count: {len(result['values'])}. "
-                               f"{integrity}Live inputs were not rechecked. MSE does not measure image quality.")
-                        if (self._training_history_dialog is dialog and self.generation_state() is state
-                                and dialog._selected() == record and dialog._revision == revision):
-                            from qt_app.training_validation_dialog import TrainingValidationDialog
-                            report_dialog = TrainingValidationDialog.from_saved_report(
-                                result, state.jobs,
-                                evaluation_root=state.generation_data_root / "training" / "validation",
-                                report_hash_verified=bool(record.validation_report_sha256), parent=dialog)
-                            report_dialog.setAttribute(Qt.WA_DeleteOnClose)
-                            report_dialog.setWindowModality(Qt.WindowModal)
-                            report_dialog.show()
-                    elif execution:
-                        terminal_state, exit_code, registered = result
-                        outcome = {
-                            "exited_unverified": "exited",
-                            "cancelled": "was cancelled",
-                            "failed": "failed",
-                            "interrupted": "was interrupted",
-                        }[terminal_state]
-                        exit_detail = f"Exit code: {exit_code}. " if exit_code is not None else ""
-                        result_detail = (f"Recorded registered result: {registered.resource_id}. "
-                                         if registered is not None else "")
-                        finish(f"Saved journal verified: the training process {outcome} and its process tree stopped. "
-                               f"{exit_detail}{result_detail}Output files and live inputs were not checked.")
-                        if (open_retained and can_open_run(record)
-                                and self._training_history_dialog is dialog
-                                and self.generation_state() is state and not self.close_policy.pending
-                                and dialog._selected() == record and dialog._revision == revision):
-                            retained_handoff = record, revision
-                            dialog.accept()
-                            return
-                        if (registered is not None and self._training_history_dialog is dialog
-                                and self.generation_state() is state and dialog._selected() == record
-                                and dialog._revision == revision
-                                and Path(record.registry_path) == state.generation_data_root / MODEL_RESOURCES_PATH.name):
-                            reviewed = record, revision, registered
-                            plan_result.show()
-                    else:
-                        finish(f"Saved preparation verified for {record.annotation.name or record.run_id}. "
-                               f"Configured time limit: {result:g} seconds. Results have not been checked.")
-
-                task.signals.complete.connect(complete)
-                task.signals.failed.connect(finish)
-                task.signals.cancelled.connect(lambda: finish("Receipt check cancelled."))
-                try:
-                    task.start()
-                except (RuntimeError, ValueError) as exc:
-                    finish(str(exc))
-
-            def selection_changed():
-                nonlocal reviewed, prepared_review
-                prepared_review = None
-                open_prepared.hide()
-                reviewed = None
-                plan_result.hide()
-                if not closing_review:
-                    message = "Still checking a saved receipt…" if task is not None else ""
-                    dialog.set_retained_index_status(message)
-                selected = dialog._selected()
-                update_open_run()
-                completed_validation = selected is not None and selected.kind == "validation" and selected.phase == "completed"
-                if selected is not None and selected.kind == "anima":
-                    dialog.open_button.setText("Review Saved Anima Settings")
-                elif completed_validation:
-                    dialog.open_button.setText("Review Saved Measurement")
-                elif selected is not None and has_saved_outcome(selected):
-                    dialog.open_button.setText("Review Saved Process Outcome")
-                else:
-                    dialog.open_button.setText("Review Selected Preparation")
-
-            def plan_with_result():
-                nonlocal handoff
-                if (reviewed is None or self.generation_state() is not state
-                        or dialog._selected() != reviewed[0] or dialog._revision != reviewed[1]):
-                    return
-                current = getattr(self, "_generation_dialog", None)
-                if current is not None and not current._closed:
-                    dialog.set_retained_index_status("Close the current image draft before planning with this result.")
-                    return
-                handoff = reviewed
-                dialog.accept()
-
-            def open_saved_workspace():
-                if (task is not None or prepared_review is None or self.generation_state() is not state
-                        or dialog._selected() != prepared_review[0] or dialog._revision != prepared_review[1]):
-                    return
-                verify(*prepared_review, open_workspace=True)
-
-            open_prepared.clicked.connect(open_saved_workspace)
-            def open_saved_run():
-                selected = dialog._selected()
-                if (task is not None or closing_review or not can_open_run(selected)
-                        or not dialog._revision or self.generation_state() is not state
-                        or self.close_policy.pending or dialog._history_operation_busy()):
-                    return
-                verify(selected, dialog._revision, open_retained=True)
-
-            open_run.clicked.connect(open_saved_run)
-            plan_result.clicked.connect(plan_with_result)
-            if not preparations:
-                from PySide6.QtWidgets import QFileDialog
-                from qt_app.training_history_dialog import PAGE_SIZE
-
-                find_validation = QPushButton("Import Validation Review…", dialog)
-                find_validation.setAutoDefault(False)
-                find_validation.setToolTip("Open a saved Validation receipt that is not listed here. No new evaluation starts.")
-                dialog.layout().addWidget(find_validation)
-
-                def choose_validation():
-                    nonlocal import_validation
-                    if (task is not None or closing_review or dialog._history_operation_busy()
-                            or self.generation_state() is not state or self.close_policy.pending):
-                        return
-                    import_validation = True
-                    dialog.accept()
-
-                find_validation.clicked.connect(choose_validation)
-                find_anima = QPushButton("Review Unlisted Anima Preparation…", dialog)
-                save_anima = QPushButton("Add Reviewed Preparation to History", dialog)
-                review_pending = QPushButton("Review Pending Anima History Write", dialog)
-                finish_pending = QPushButton("Recover Reviewed Anima History Entry", dialog)
-                for button in (find_anima, save_anima, review_pending, finish_pending):
-                    button.setAutoDefault(False)
-                    dialog.layout().addWidget(button)
-                save_anima.hide()
-                finish_pending.hide()
-                anima_review = None
-                pending_review = None
-                restored_run = None
-
-                def select_restored_run():
-                    nonlocal restored_run
-                    if restored_run is None:
-                        return
-                    for index in range(dialog.runs.topLevelItemCount()):
-                        item = dialog.runs.topLevelItem(index)
-                        if item.data(0, Qt.UserRole)[0] == restored_run:
-                            restored_run = None
-                            dialog.runs.setCurrentItem(item)
-                            dialog.set_retained_index_status("Anima preparation is in Training History.")
-                            break
-
-                dialog.runs.model().rowsInserted.connect(lambda *_: QTimer.singleShot(0, select_restored_run))
-
-                def recover_anima(*, save=False, pending=False):
-                    nonlocal task, anima_review, pending_review
-                    if task is not None or closing_review or self.generation_state() is not state:
-                        return
-                    current = pending_review if pending else anima_review
-                    if save:
-                        if current is None:
-                            return
-
-                        def work(job):
-                            session_ready = lambda: not job.cancel_requested and self.generation_state() is state
-                            if pending:
-                                history.recover_pending_anima(current, confirmed=True, session_ready=session_ready)
-                                record = current[1]
-                            else:
-                                try:
-                                    record = history.save_unlisted_anima(current, confirmed=True, session_ready=session_ready)
-                                except OSError:
-                                    return None, None
-                            rows, _ = history.snapshot()
-                            position = next((i for i, row in enumerate(rows) if row.run_id == record.run_id), None)
-                            return record, None if position is None else position // PAGE_SIZE * PAGE_SIZE
-                    elif pending:
-                        work = lambda _job: history.review_pending_anima()
-                    else:
-                        path, _ = QFileDialog.getOpenFileName(dialog, "Select the retained Anima receipt",
-                            str(state.generation_data_root / "training"), "Anima receipt (anima-review.json)")
-                        if (not path or self._training_history_dialog is not dialog or not dialog.isVisible()
-                                or self.generation_state() is not state or task is not None):
-                            return
-                        work = lambda _job: history.review_unlisted_anima(path)
-
-                    save_anima.hide()
-                    finish_pending.hide()
-                    anima_review = None
-                    pending_review = None
-
-                    find_anima.setEnabled(False)
-                    review_pending.setEnabled(False)
-                    dialog.set_retained_index_status("Saving the reviewed preparation…" if save else
-                                                     "Checking the retained Anima receipt…")
-                    task = CoordinatedCallTask(state.jobs, "Recover Anima preparation", work, resource="io")
-
-                    def finish(message="", result=None):
-                        nonlocal task, anima_review, pending_review, restored_run
-                        task = None
-                        if closing_review:
-                            dialog.reject()
-                            return
-                        if self.generation_state() is not state:
-                            dialog.set_retained_index_status("Manager session ended. Reopen Training History to retry.")
-                            return
-                        find_anima.setEnabled(True)
-                        review_pending.setEnabled(True)
-                        if result is None:
-                            dialog.set_retained_index_status(message)
-                        elif save:
-                            record, offset = result
-                            if record is None:
-                                anima_review = current
-                                save_anima.show()
-                                dialog.set_retained_index_status(
-                                    "Training History could not save the preparation. Choose Add Reviewed Preparation to History to retry.")
-                                return
-                            if offset is None:
-                                dialog.set_retained_index_status("Training History changed. Refresh to find the saved preparation.")
-                                return
-                            restored_run = record.run_id
-                            dialog._request_page(offset)
-                            dialog.set_retained_index_status("Anima preparation saved. Reading its Training History page…")
-                        elif pending:
-                            pending_review = result
-                            _, record, settings = result
-                            dialog.set_retained_index_status(
-                                f"Pending Anima History entry {record.run_id}: {settings.max_steps} steps. "
-                                "Recover to finish saving this entry. Training will not start.")
-                            finish_pending.show()
-                        else:
-                            anima_review = result
-                            _, settings = result
-                            dialog.set_retained_index_status(
-                                f"Retained Anima preparation: {settings.max_steps} steps, {settings.resolution} px, "
-                                f"LoRA rank {settings.rank}, seed {settings.seed}, learning rate {settings.learning_rate:g}, "
-                                f"time limit {settings.timeout_seconds} seconds, batch size {settings.batch_size}, "
-                                f"gradient accumulation {settings.gradient_accumulation}, repeats {settings.repeats}. "
-                                "Add this preparation to History to find it again. Training will not start.")
-                            save_anima.show()
-
-                    task.signals.complete.connect(lambda result: finish(result=result))
-                    task.signals.failed.connect(finish)
-                    task.signals.cancelled.connect(lambda: finish("Anima preparation recovery cancelled."))
-                    try:
-                        task.start()
-                    except (RuntimeError, ValueError) as exc:
-                        finish(str(exc))
-
-                find_anima.clicked.connect(lambda: recover_anima())
-                save_anima.clicked.connect(lambda: recover_anima(save=True))
-                review_pending.clicked.connect(lambda: recover_anima(pending=True))
-                finish_pending.clicked.connect(lambda: recover_anima(save=True, pending=True))
-            dialog.runs.itemSelectionChanged.connect(selection_changed)
-            dialog.openRunRequested.connect(verify)
-            try:
-                dialog.exec()
-            finally:
-                self._training_history_dialog = None
-                if task is not None:
-                    task.cancel()
-                dialog.deleteLater()
-            if (import_validation and self.generation_state() is state
-                    and not self.close_policy.pending):
-                from core.model_resource_registry import ModelResourceRegistry
-
-                registry = ModelResourceRegistry(state.generation_data_root / MODEL_RESOURCES_PATH.name)
-                controller = self.sdxl_preparation_controller(registry)
-                if controller is not None:
-                    controller.open_validation()
-            if (retained_handoff is not None and self.generation_state() is state
-                    and not self.close_policy.pending):
-                from core.model_resource_registry import ModelResourceRegistry
-
-                registry = ModelResourceRegistry(state.generation_data_root / MODEL_RESOURCES_PATH.name)
-                controller = self.sdxl_preparation_controller(registry)
-                if controller is not None:
-                    controller._open_retained(*retained_handoff)
-            if handoff is not None and self.generation_state() is state:
-                from qt_app.generation_workflow import open_generation_workspace
-
-                record, revision, registered = handoff
-
-                def check_resource(resource):
-                    if history.review_execution_outcome(record, revision)[2] != registered or not any(
-                            row.get("operation") == "training"
-                            and row.get("authority") == "collectigen_verified"
-                            and row.get("plan_fingerprint") == record.plan_fingerprint
-                            and row.get("output_id") == registered.resource_id
-                            and row.get("execution_receipt") == "sha256:" + registered.receipt_sha256
-                            for row in resource["lineage"]):
-                        raise ValueError("The registered Training result changed. Review it again in Training History.")
-
-                open_generation_workspace(self, resource_id=registered.resource_id, selected_role="lora",
-                    selected_family="sdxl", force_new=True, resource_guard=check_resource,
-                    source_result_allowed=lambda: self.generation_state() is state)
-
-        def open_training_comparison(self, _checked=False, *, run_id="", required_resource=""):
-            state = self.generation_state()
-            if state is None:
-                return
-            self.navigation.setCurrentRow(self.page_rows["Training"])
-            from qt_app.training_workflow_controller import TrainingWorkflowController
-
-            controller = getattr(self, "_training_comparison_controller", None)
-            if controller is None:
-                controller = TrainingWorkflowController(state.jobs, self)
-                self._training_comparison_controller = controller
-                controller.workspaceChanged.connect(self.refresh_open_training_reviews)
-            return controller.evaluation(run_id, required_resource,
-                on_return=lambda: self.navigation.setCurrentRow(self.page_rows["Training"]),
-                batch_review_only=False, protect_existing_draft=True,
-                generation_allowed=lambda: self.generation_state() is state,
-            )
-
-        def review_interrupted_training_package(self):
-            state = self.generation_state()
-            if (state is None or self._training_package_picker_open
-                    or self._training_package_recovery_task is not None
-                    or self._training_package_recovery_dialog is not None or self._krea_review_dialog is not None):
-                return
-            from PySide6.QtCore import QTimer
-            from PySide6.QtWidgets import QFileDialog
-            from threading import Event
-            from core.training_package import TrainingPackageService
-            from qt_app.training_page import TrainingRecoveryFinderDialog
-            from qt_app.workers import CoordinatedCallTask
-
-            finder = TrainingRecoveryFinderDialog(self)
-            for button in (finder.folder_button, finder.exact_button,
-                           finder.browse_receipt_button, finder.close_button, finder.review_button):
-                compact_action(button)
-            self._training_package_recovery_dialog = finder
-            selected = []
-
-            def current():
-                return (self._training_package_recovery_dialog is finder
-                        and self.generation_state() is state)
-
-            def selected_receipt(path, close=True):
-                if not current() or self._training_package_recovery_task is not None:
-                    return
-                selected[:] = [str(path)]
-                if close:
-                    finder.accept()
-
-            def finished(_result):
-                if self._training_package_recovery_dialog is not finder:
-                    return
-                self._training_package_recovery_dialog = None
-                if self._training_package_recovery_task is not None:
-                    self._training_package_recovery_cancel.set()
-                    # Keep the hidden owner alive until its original task and
-                    # shared progress binding settle; late work cannot reopen it.
-                else:
-                    finder.deleteLater()
-                if selected and self.generation_state() is state:
-                    path = selected[0]
-                    QTimer.singleShot(0, lambda: self._review_training_package_receipt(path, state))
-
-            def pick(kind):
-                if not current() or self._training_package_recovery_task is not None:
-                    return
-                self._training_package_picker_open = True
-                try:
-                    if kind == "folder":
-                        path = QFileDialog.getExistingDirectory(
-                            finder, "Where Would the Training Package Be Saved?")
-                    else:
-                        path, _ = QFileDialog.getOpenFileName(
-                            finder, "Review an Exact Interrupted Training Package", "",
-                            "Training recovery receipt (*.recovery.json)")
-                finally:
-                    self._training_package_picker_open = False
-                    if self.statusBar().currentMessage() == self._TRAINING_PICKER_CLOSE_NOTICE:
-                        self.statusBar().clearMessage()
-                if not path or not current():
-                    return
-                if kind == "receipt":
-                    selected_receipt(path)
-                    return
-                finder.show_searching()
-                cancelled = self._training_package_recovery_cancel = Event()
-
-                def search(job):
-                    return TrainingPackageService.recovery_choices(path, should_cancel=lambda: (
-                        cancelled.is_set() or normal_entry_session.state != "ready" or not job.checkpoint()))
-
-                task = CoordinatedCallTask(state.jobs, "Find interrupted Training packages", search, resource="io")
-                self._training_package_recovery_task = task
-                self.training_package_recovery_button.setEnabled(False)
-                from qt_app.job_progress import bind_job_progress
-                progress = bind_job_progress(finder, task,
-                    title=f"Find packages in {Path(path).name}", unit="packages")
-
-                def settle(choices=None, message=None):
-                    if self._training_package_recovery_task is not task:
-                        return
-                    self._training_package_recovery_task = None
-                    progress.finish(task)
-                    active = self.generation_state() is state
-                    self.training_package_recovery_button.setEnabled(active)
-                    if not current():
-                        if self._training_package_recovery_dialog is not finder:
-                            finder.deleteLater()
-                        else:
-                            finder.show_search_error("The Manager session ended or changed. Close this finder and reopen Training; nothing was changed.")
-                            finder.folder_button.setEnabled(False)
-                            finder.browse_receipt_button.setEnabled(False)
-                        return
-                    if choices is None or cancelled.is_set():
-                        finder.show_search_error(message or
-                            "Package search stopped. Choose a location to retry; nothing was recovered.")
-                    else:
-                        finder.show_choices(path, choices)
-
-                task.signals.complete.connect(settle)
-                task.signals.failed.connect(lambda _error: settle(message=
-                    "Could not check that location. Choose another location or browse an exact receipt; nothing was changed."))
-                task.signals.cancelled.connect(lambda: settle())
-                try:
-                    task.start()
-                except (RuntimeError, ValueError):
-                    settle(message="Could not start the package search. Wait for active work to finish, then choose a location again or browse an exact receipt.")
-
-            finder.folder_requested.connect(lambda: pick("folder"))
-            finder.exact_receipt_requested.connect(lambda: pick("receipt"))
-            finder.receipt_requested.connect(lambda path: selected_receipt(path, close=False))
-            finder.finished.connect(finished)
-            finder.open()
-
-        def _review_training_package_receipt(self, path, state):
-            if (not self.isVisible() or self.generation_state() is not state or self._training_package_picker_open
-                    or self._training_package_recovery_task is not None
-                    or self._training_package_recovery_dialog is not None or self._krea_review_dialog is not None):
-                return
-            from PySide6.QtWidgets import QMessageBox
-            from threading import Event
-            from core.training_package import TrainingPackageService
-            from qt_app.workers import CoordinatedCallTask
-
-            cancelled = self._training_package_recovery_cancel = Event()
-
-            def preview(job):
-                return TrainingPackageService().preview_recovery(path, should_cancel=lambda: (
-                    cancelled.is_set() or normal_entry_session.state != "ready" or not job.checkpoint()))
-
-            task = CoordinatedCallTask(state.jobs, "Review interrupted Training package", preview, resource="io")
-            self._training_package_recovery_task = task
-            self.training_package_recovery_button.setEnabled(False)
-            self.statusBar().showMessage("Checking the selected Training package receipt…")
-
-            def settle(result=None):
-                if self._training_package_recovery_task is not task:
-                    return
-                self._training_package_recovery_task = None
-                active = self.generation_state() is state
-                self.training_package_recovery_button.setEnabled(active)
-                if not active:
-                    return
-                if result is None or cancelled.is_set():
-                    self.statusBar().showMessage("Receipt review stopped. Choose Review Interrupted Training Package to try again.")
-                    return
-                self.statusBar().clearMessage()
-                details = "\n".join(result.issues)
-                if result.recovery_phase:
-                    details = f"Destination: {result.destination}\n\n{details}"
-                    next_step = ("Choose Review Published Package to check the published folder. "
-                                 "Use the original package workspace to finalize its receipt."
-                                 if result.recovery_phase == "promoted" else
-                                 "Return to the original package workspace to review recovery.")
-                    details += f"\n\n{next_step}"
-                box = QMessageBox(self)
-                box.setWindowTitle("Interrupted Training Package")
-                box.setTextFormat(Qt.PlainText)
-                box.setText(details + "\n\nManager did not change any package files.")
-                open_package = None
-                if result.recovery_phase == "promoted" and result.verification is not None:
-                    box.setStandardButtons(QMessageBox.Close)
-                    open_package = box.addButton("Review Published Package", QMessageBox.ActionRole)
-                self._training_package_recovery_dialog = box
-                try:
-                    box.exec()
-                    confirmed = open_package is not None and box.clickedButton() is open_package
-                finally:
-                    self._training_package_recovery_dialog = None
-                    box.deleteLater()
-                if confirmed and self.generation_state() is state:
-                    self.open_krea_training_review(destination=result.destination,
-                        expected_package_fingerprint=result.verification.package_fingerprint)
-
-            task.signals.complete.connect(settle)
-            task.signals.failed.connect(lambda _error: settle())
-            task.signals.cancelled.connect(settle)
-            try:
-                task.start()
-            except (RuntimeError, ValueError):
-                settle()
+        def review_interrupted_training_package(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
         def open_existing_trainer_setup(self):
+            if not self.workflow_management_allowed(): return
             state = self.generation_state()
             if state is None or training_draft_settings_path is None:
                 return False
@@ -2834,132 +1729,21 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 allowed=lambda: (getattr(normal_entry_session, 'state', None) == 'ready'
                     and not self.close_policy.pending and self.generation_state() is state))
 
-        def sdxl_preparation_controller(self, registry):
-            state = self.generation_state()
-            if state is None or self.close_policy.pending:
-                return None
-            from core.training_run_index import TrainingRunIndex, ScopedTrainingHistory
-            from core.training_source_io import _assert_unredirected
-            from qt_app.training_workflow_controller import TrainingWorkflowController
-            from .krea_training_review import resolve_manager_saved_sdxl_setup
+        def sdxl_preparation_controller(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-            root = state.generation_data_root / "training"
-            runs = root / "runs"
-            controller = getattr(self, "_sdxl_preparation_controller", None)
-            if controller is None:
-                try:
-                    _assert_unredirected(runs)
-                    runs.mkdir(parents=True, exist_ok=True)
-                except (OSError, RuntimeError) as exc:
-                    from PySide6.QtWidgets import QMessageBox
-                    QMessageBox.warning(self, "Training folder unavailable", str(exc))
-                    return None
-                def session_allowed():
-                    return normal_entry_session.state == "ready" and not self.close_policy.pending
+        def open_sdxl_preparation(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-                def load_saved_setup(*, should_cancel, progress):
-                    return resolve_manager_saved_sdxl_setup(
-                        training_draft_settings_path, registry.path,
-                        should_cancel=lambda: should_cancel() or not session_allowed(), progress=progress,
-                    )
+        def open_krea_training_review(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-                controller = TrainingWorkflowController(
-                    state.jobs, self, run_index=TrainingRunIndex(root / "training-runs.json"),
-                    preparation_root=root / "preparation", run_output_scope=runs,
-                    saved_setup=load_saved_setup if training_draft_settings_path is not None else None,
-                    session_allowed=session_allowed,
-                    draft_store_path=root / "training-plan-drafts.json",
-                    clone_opener=self.export_training_experiment_draft,
-                    evaluation_opener=self.open_training_comparison,
-                    validation_root=root / "validation",
-                    prepare_opener=self.open_krea_training_review,
-                    experiments_index=ScopedTrainingHistory(root, model_registry_path=registry.path),
-                )
-                controller.packageReviewRequested.connect(
-                    lambda selected: self.open_krea_training_review(destination=selected.destination,
-                        expected_package_fingerprint=selected.package_fingerprint))
-                self._sdxl_preparation_controller = controller
-                controller.workspaceChanged.connect(self.refresh_open_training_reviews)
-            return controller
+        def open_training_merge(self, *args, **kwargs):
+            return self.open_workflow_application('collectigen.train')
 
-        def open_sdxl_preparation(self, package, registry, recipe):
-            controller = self.sdxl_preparation_controller(registry)
-            if controller is None:
-                return False
-            return controller.prepare(package, registry, recipe) is not None
-
-        def open_krea_training_review(self, *, destination=None, expected_package_fingerprint=None):
-            registry_path = krea_registry_path
-            if (self.view.synthetic or getattr(normal_entry_session, "state", None) != "ready"
-                    or self.close_policy.pending or self._training_package_picker_open
-                    or self._training_package_recovery_task is not None
-                    or self._krea_review_dialog is not None):
-                return
-            from PySide6.QtWidgets import QFileDialog
-            from .krea_training_review import KreaTrainingReviewDialog
-            self.navigation.setCurrentRow(self.page_rows["Training"])
-            if destination is None:
-                self._training_package_picker_open = True
-                try:
-                    destination = QFileDialog.getExistingDirectory(self, "Select the training package")
-                finally:
-                    self._training_package_picker_open = False
-                    if self.statusBar().currentMessage() == self._TRAINING_PICKER_CLOSE_NOTICE:
-                        self.statusBar().clearMessage()
-            if (not destination or self.close_policy.pending
-                    or getattr(normal_entry_session, "state", None) != "ready"):
-                return
-            from core.background_jobs import BackgroundJobManager
-            preview_jobs = BackgroundJobManager()
-            try:
-                dialog = KreaTrainingReviewDialog(destination, registry_path, self,
-                                                    dataset_verifier=dataset_verifier, preview_jobs=preview_jobs,
-                                                    expected_package_fingerprint=expected_package_fingerprint,
-                                                    open_trainer_setup=self.open_existing_trainer_setup,
-                                                    open_sdxl_preparation=self.open_sdxl_preparation,
-                                                    anima_settings_path=training_draft_settings_path,
-                                                    anima_history_root=self.generation_state().generation_data_root / "training",
-                                                    anima_review_allowed=lambda: (
-                                                        not self.close_policy.pending
-                                                        and getattr(normal_entry_session, "state", None) == "ready"))
-            except BaseException:
-                preview_jobs.shutdown(wait=True)
-                raise
-            self._krea_review_dialog = dialog
-            try:
-                dialog.exec()
-            finally:
-                self._krea_review_dialog = None
-                dialog.deleteLater()
-                preview_jobs.shutdown(wait=True)
-                if self._close_after_krea_review:
-                    self._close_after_krea_review = False
-                    QTimer.singleShot(0, self.close)
-
-        def open_training_merge(self):
-            if (self.view.synthetic or getattr(normal_entry_session, "state", None) != "ready"
-                    or self.close_policy.pending):
-                return
-            if getattr(self, "_training_merge_dialog", None) is not None:
-                return
-            from core.background_jobs import BackgroundJobManager
-            from qt_app.training_merge_dialog import TrainingMergeDialog
-            jobs = BackgroundJobManager()
-            try:
-                dialog = TrainingMergeDialog(
-                    jobs, self, inspection_allowed=lambda: (
-                        normal_entry_session.state == "ready" and not self.close_policy.pending),
-                )
-                self._training_merge_dialog = dialog
-                dialog.exec()
-            finally:
-                dialog = getattr(self, "_training_merge_dialog", None)
-                self._training_merge_dialog = None
-                if dialog is not None:
-                    dialog.deleteLater()
-                jobs.shutdown(wait=True)
 
         def open_local_models(self):
+            if not self.workflow_management_allowed(): return
             state = self.generation_state()
             factory = self._model_workspace_factory
             opener = getattr(factory, 'open_local_models', None)
@@ -2991,50 +1775,39 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 if self.close_policy.pending:
                     self.reconsider_close()
 
-        def continue_models_generation(self, dialog):
-            # Same recheck/new-draft boundary as Setup's canonical Models handoff.
-            from qt_app.generation_workflow import open_generation_workspace
+        def continue_models_generation(self, dialog, *args, **kwargs):
+            from core.generation_module_handoff import save_reviewed_handoff
             handoff = dialog.generation_handoff
             if not dialog._generation_handoff_ready or handoff is None:
                 return True
+            if not self.workflow_management_allowed() or self.workflow_workspace_owner is None:
+                return False
             guidance, configuration, revision, service, catalog_token = handoff[:5]
             selected_resources = handoff[5] if len(handoff) > 5 else ()
-            def retain(message):
+            def check():
+                if dialog.registry.snapshot()[1] != revision or service.catalog_write_token() != catalog_token:
+                    raise ValueError('Models or guidance changed. Review a fresh recommendation; existing drafts were preserved.')
+            try:
+                state = self.generation_state()
+                if state is None:
+                    return False
+                descriptor = save_reviewed_handoff(state.generation_data_root, dialog.registry,
+                    guidance, configuration, expected_registry_revision=revision,
+                    selected_resources=selected_resources, check=check)
+            except (OSError, RuntimeError, ValueError) as error:
                 dialog._generation_handoff_ready = False
                 dialog.dialog_commands.select_group('Planning')
-                dialog.status.setText(message)
-                self.statusBar().showMessage(message + ' Choose Return to Models to continue.')
+                dialog.status.setText(str(error))
                 return False
-            try:
-                if dialog.registry.snapshot()[1] != revision or service.catalog_write_token() != catalog_token:
-                    return retain('Models or guidance changed. Review a fresh recommendation; no draft was changed.')
-            except (OSError, RuntimeError, ValueError):
-                return retain('Could not recheck Models. Your reviewed setup is retained.')
-            if self.generation_state() is None:
-                return retain('Finish closing or restoring Manager before continuing in Generate.')
-            opened = False
-            def apply(target):
-                nonlocal opened
-                opened = True
-                self.navigation.setCurrentRow(self.page_rows["Generate"])
-                try:
-                    if service.catalog_write_token() != catalog_token:
-                        target.status.setText('Model guidance changed. Review Recommended Setup again; this new draft was not changed.')
-                        return
-                    options = {"expected_registry_revision": revision}
-                    if selected_resources:
-                        options["selected_resources"] = selected_resources
-                    if target.apply_model_guidance(guidance, configuration, **options):
-                        dialog.generation_handoff = None
-                        dialog._generation_handoff_ready = False
-                except (OSError, RuntimeError, ValueError) as exc:
-                    target.status.setText(f'Could not apply reviewed setup: {exc}. Review Recommended Setup again.')
-            open_generation_workspace(self, force_new=True, on_opened=apply)
-            if not opened:
-                return retain('Finish the open Generate workflow first. The reviewed Models setup is still here.')
+            self.workflow_workspace_owner.pending_generate_draft = descriptor
+            dialog.generation_handoff = None
+            dialog._generation_handoff_ready = False
+            self.open_workflow_application('collectigen.generate')
+            self.statusBar().showMessage('Reviewed setup saved. Choose Open Generate in Applications to continue with the exact model choices.')
             return True
 
         def open_repository_inspection(self):
+            if not self.workflow_management_allowed(): return
             if self.view.synthetic or self.close_policy.pending or self._model_workspace_factory is None: return
             from qt_app.model_workspace_dialog import ModelWorkspaceDialog
             try: dialog = self._model_workspace_factory(self)
@@ -3055,6 +1828,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
 
         def open_direct_model(self):
+            if not self.workflow_management_allowed(): return
             host=self.direct_model_host
             if host is None or self.close_policy.pending:return
             from .direct_model_ui import create_direct_model_panel
@@ -3221,6 +1995,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             selected = self.library_filter.currentText()
             query = self.library_search.text().strip().casefold()
             category = self.application_filter_state.category
+            self.workflow_applications.set_filter(query, selected, category)
             self.application_filter_state = ApplicationFilterState(category, selected, query)
             self.category_description.setText(CATEGORY_DESCRIPTIONS.get(category, "No category description available."))
             self.category_description.setVisible(category != "All categories")
@@ -3467,7 +2242,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     self.render_local_resources()  # expire summary values; never submit a sample
 
         def organizer_connection_held(self):
-            return ((self.organizer_connection_host is not None and self.organizer_connection_host.close_held)
+            return self.workflow_applications.close_held or ((self.organizer_connection_host is not None and self.organizer_connection_host.close_held)
                 or (self.organizer_acquisition_panel is not None and self.organizer_acquisition_panel.close_held))
 
         def poll_organizer_connection(self):
@@ -3556,6 +2331,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.close() # recheck current identity/deadline; queued work is not proof
 
         def cancel_pending_close(self):
+            self.workflow_applications.resume_after_cancelled_close()
             if self.tag_content_host is not None: self.tag_content_host.cancel_close()
             cancel_models = getattr(self._model_workspace_factory, 'cancel_close', None)
             if cancel_models is not None: cancel_models()
@@ -3598,6 +2374,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
         _TRAINING_DRAFT_CLOSE_NOTICE = "Close the Dataset draft review before closing Manager."
 
         def closeEvent(self, event):
+            if not self.workflow_applications.close_ready():
+                self.statusBar().showMessage('Close Generate or Train normally. Manager retains its original process and workers until cleanup finishes.')
+                event.ignore()
+                return
             if self._hold_close_for_merge(event):
                 return
             if getattr(self, "_training_draft_review_open", False):
@@ -3677,25 +2457,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.statusBar().showMessage(self._IMAGE_PICKER_CLOSE_NOTICE)
                 event.ignore()
                 return
-            # Every retained request keeps its original dialog/job/save owner.
-            # Do not drop an inactive draft when closing the Manager shell.
-            for draft in self.generation_page.retained_workspaces():
-                if draft.has_active_background_work():
-                    self.show_generate_workspace()
-                    self.generation_page.show_workspace(draft)
-                    self.statusBar().showMessage("Close held: wait for Generate work to finish, then close again.")
-                    event.ignore()
-                    return
-                self.show_generate_workspace()
-                self.generation_page.show_workspace(draft)
-                close_workspace = getattr(draft, "close_workspace", None)
-                if callable(close_workspace):
-                    close_workspace()
-                else:
-                    draft.close()
-                if draft in self.generation_page.retained_workspaces():
-                    event.ignore()
-                    return
             if self._video_setup_cancel is not None:
                 self._video_setup_cancel.set()
                 self.statusBar().showMessage("Stopping Video setup. Close Manager again after it finishes.")
@@ -3937,14 +2698,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         def refresh_section_commands(self, *_):
             session_ready = not view.synthetic and getattr(normal_entry_session, "state", None) == "ready"
-            self.krea_training_review_button.setVisible(session_ready)
-            self.trainer_setup_button.setVisible(session_ready and training_draft_settings_path is not None)
-            self.training_merge_button.setVisible(session_ready)
-            self.refresh_open_training_reviews()
-            for panel in (self.generation_panel, self.training_panel, self.generation_page):
-                panel.setEnabled(session_ready)
-                panel.setToolTip("" if session_ready else "Available when the Manager session is ready.")
-
+            if not self.workflow_applications.close_held:
+                self.workflow_management.setEnabled(session_ready)
             section = next((name for name, row in self.page_rows.items() if row == self.navigation.currentRow()), "Dashboard")
             databases_hint = "Use Databases to connect a catalog, review content and recover interrupted work."
             applications_hint = "Use Applications to install or open Media Organizer; your libraries and images stay separate."
@@ -3962,7 +2717,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             context = [available[key] for key in section_command_keys(section)
                 if key != "inspect-candidate" or self.view.synthetic or callable(candidate_inspector)]
             workflow_help = self._workflow_help_controls.get(section)
-            self._workflow_help_shortcut.setEnabled(workflow_help is not None)
             if workflow_help is not None:
                 context.append(bind_source(self, "workflow-help", workflow_help, "Help",
                     label="Help for " + section, move=True,

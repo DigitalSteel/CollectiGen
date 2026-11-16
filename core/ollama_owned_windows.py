@@ -99,6 +99,16 @@ class WindowsOwnedProcess:
         self.helper_attempt=None;self._helper_attempt_capability=None
         self._helper_create_entered=False
 
+    def bind_workflow_control(self, component_id):
+        """Opt in before birth; retain inert endpoint owner before allocations."""
+        from core.workflow_native_channel import WorkflowNativeChannel
+        require(self.job is None and not self.logs and getattr(self,'workflow_control',None) is None,
+                'single_prebirth_workflow_control_required')
+        control=WorkflowNativeChannel(self,component_id)
+        self.workflow_control=control
+        control._original()
+        return control
+
     @property
     def helper_accounting_identity(self):
         attempt=getattr(self,'helper_attempt',None)
@@ -190,6 +200,12 @@ class WindowsOwnedProcess:
         guard(Path(command[0]));guard(Path(cwd))
         cwd=str(cwd);environment=dict(environment)
         cap=getattr(self,'helper_capability',None)
+        control=getattr(self,'workflow_control',None)
+        if control is not None:
+            from core.workflow_native_channel import WorkflowNativeChannel
+            require(type(control) is WorkflowNativeChannel and control.native is self
+                    and control.job is None and not control.closed,'fresh_workflow_control_required')
+            control._original()
         require(not self.helper_close_held,'helper_accounting_unconfirmed')
         validate_launch=getattr(cap,'validate_launch',None)
         if callable(validate_launch):validate_launch(command,cwd,environment)
@@ -237,15 +253,25 @@ class WindowsOwnedProcess:
         spawn_failed=False
         phase='create_process'
         try:
+            if control is not None:
+                environment=control.prepare(self.job,command,cwd,environment)
+                self.job.interactive=True
             if cap is not None:self._helper_create_entered=True
-            self.job.spawn_suspended(command,cwd,environment)
+            if control is None:
+                self.job.spawn_suspended(command,cwd,environment)
+            else:
+                self.job.spawn_suspended(command,cwd,environment,workflow_control=control)
         except BaseException as error:
             # Do not discard any partially created original process/job handle.
             self.start_failure=error;self.start_failure_phase=phase
             if self.job.process is None:
                 # Exception is NOT a positive zero-call receipt. Keep accounting
                 # held; only the entry's native reconciliation can settle it.
-                self.job.close();self.job=None;raise
+                if control is None or not control.creation_entered:
+                    self.job.close();self.job=None
+                # An entered workflow call with no returned process remains
+                # uncertain: retain the original Job and all control endpoints.
+                raise
             spawn_failed=True
         child=JobChild(self.job);self.logs[child]=None
         reader_ready=None
@@ -267,6 +293,9 @@ class WindowsOwnedProcess:
             except BaseException:self.drain_failed=True
             finally:self.drained.set()
         try:
+            if control is not None:
+                phase='workflow_control_binding'
+                control.bind_child(child)
             phase='helper_registration'
             if not spawn_failed and cap is not None:
                 # Retain then register the suspended original before ANY output
@@ -333,6 +362,9 @@ class WindowsOwnedProcess:
         require(self.drained.wait(2),'owned_output_drain_unconfirmed')
         if self.drain is not None and self.drain.ident is not None:self.drain.join(2)
         require(self.drain is None or not self.drain.is_alive(),'owned_output_worker_not_exited')
+        control=getattr(self,'workflow_control',None)
+        if control is not None:
+            control.close_after_drain(child)
         cap=getattr(self,'helper_capability',None)
         if cap is not None:
             # Root handle signal + inner Job zero + output worker exit were all

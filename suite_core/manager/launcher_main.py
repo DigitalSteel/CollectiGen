@@ -205,10 +205,22 @@ class PublicLaunch:
                 organizer_selection=None
                 self.organizer_selection_error=error
 
+            from .workflow_acquisition_binding import root_selection_for_owner as workflow_selection_for_owner
+            from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
+            workflow_selections = {}
+            self.workflow_selection_errors = {}
+            for component in WORKFLOW_EXECUTABLES:
+                try:
+                    workflow = workflow_selection_for_owner(self.owner, admitted, component)
+                    if workflow is not None:
+                        workflow_selections[component] = workflow
+                except (ValueError, OSError) as error:
+                    self.workflow_selection_errors[component] = error
+
             self.original_argv = (str(plan.manager_executable), *admitted.restart_arguments)
             if selection is not None and direct_selection is not None:
                 raise ValueError('one_explicit_runtime_admission_required')
-            if selection is None and direct_selection is None and reader_selection is None and organizer_selection is None:
+            if selection is None and direct_selection is None and reader_selection is None and organizer_selection is None and not workflow_selections:
                 self.abort_scope = self.owner.arm_model_free_normal(self.original_argv)
             self.record('acquired', manager_version=contract['manager_version'],
                 argv_sha256=self.owner.record['deployment']['entry_binding']['argv_sha256'])
@@ -220,7 +232,7 @@ class PublicLaunch:
                 route_options['manager_update_host']=host
             self.route = NormalOwnerRoute.spawn(self.owner, admitted, manager_executable=plan.manager_executable,
                 manager_sha256=plan.manager_sha256, helper_pins={}, environment=environment,
-                timeout=1, abort_scope=self.abort_scope, reader_selection=reader_selection, organizer_selection=organizer_selection, **route_options)
+                timeout=1, abort_scope=self.abort_scope, reader_selection=reader_selection, organizer_selection=organizer_selection, workflow_selections=workflow_selections, **route_options)
             self.route.owned_helper_selection=selection
             self.route.direct_helper_selection=direct_selection
             self.state = 'running'

@@ -3,6 +3,13 @@ from pathlib import Path
 import hashlib, json, sys
 root = Path(SPECPATH).resolve()
 config = json.loads((root/'STAGE.json').read_bytes())
+component = config.get('component', 'manager')
+products = {'manager': ('CollectiGenManager', 'suite_core/manager/frozen_entry.py'),
+            'generate': ('Generate', 'suite_core/generate/__main__.py'),
+            'train': ('Train', 'suite_core/train/__main__.py')}
+if component not in products:
+    raise ValueError('finite frozen component required')
+product_name, product_entry = products[component]
 source = root/'source'
 rows = config['source_rows']
 for row in rows:
@@ -17,12 +24,20 @@ hidden = sorted(allowed | {'PySide6.QtCore','PySide6.QtGui','PySide6.QtWidgets',
 reviewed_exclusions = set(['core.ai_interrogation', 'core.automation_repository', 'core.automation_rules', 'core.category_base_relationships', 'core.conflict_policy', 'core.default_sync', 'core.default_tag_identity', 'core.dependencies', 'core.external_write_transaction', 'core.image_knowledge_reconciliation', 'core.knowledge_lifecycle', 'core.knowledge_pack', 'core.managed_model_identity', 'core.modifier_composition', 'core.relationship_evaluator', 'core.resource_browser_view', 'core.reviewed_tag_semantics', 'core.rule_intents', 'core.structured_history_configuration', 'core.swarm_onboarding_receipts', 'core.tag_alias_relationships', 'core.tag_order_workspace', 'core.tag_storage_decode', 'core.tag_template_projection', 'core.training_package'])
 # First-release optional boundaries; required contracts remain source-declared.
 reviewed_exclusions.update({'suite_core.manager.model_workspace_host', 'qt_app.model_workspace_dialog', 'suite_core.manager.shared_settings_controller', 'core.manager_ollama_load', 'suite_core.manager.shared_settings_ui', 'core.collection_training_profiles'})
+if component != 'manager':
+    management_entries = {'suite_core.manager.__main__', 'suite_core.manager.window',
+                          'suite_core.manager.launcher_main', 'suite_core.manager.frozen_entry'}
+    if management_entries & allowed:
+        raise ValueError('workflow closure contains a Manager application entry')
+    # Shared binding/native services include dormant Manager launch functions.
+    # These four entry/UI owners are never part of a workflow module.
+    reviewed_exclusions.update(management_entries)
 reviewed_exclusions -= allowed  # Current explicitly required closure supersedes old optional exclusions.
 sdk = root/'sdk'
 sdk_extension = sdk/'velopack/velopack.pyd'
 sdk_datas = [(str(sdk/r['path']), str(Path(r['path']).parent)) for r in config['sdk_rows'] if not r['path'].endswith(('.py','.pyd'))]
 notice_datas = [(str(root/r['path']), 'licenses') for r in config['notice_rows']]
-a = Analysis([str(source/'suite_core/manager/frozen_entry.py')], pathex=[str(source),str(sdk)], binaries=[(str(sdk_extension),'velopack')], datas=datas+sdk_datas+notice_datas,
+a = Analysis([str(source/product_entry)], pathex=[str(source),str(sdk)], binaries=[(str(sdk_extension),'velopack')], datas=datas+sdk_datas+notice_datas,
     hiddenimports=hidden, hookspath=[str(root/'hooks')], runtime_hooks=[],
     excludes=sorted(reviewed_exclusions | {'qt_app.main_window','core.app_state','PyQt5','PyQt6','PySide2','av','suite_core.tests'}), noarchive=False)
 for name, origin, kind in a.pure:
@@ -43,7 +58,7 @@ if unclassified_excluded:
 closure_report = dict(reviewed_exclusions=sorted(reviewed_exclusions), excluded_local_modules=excluded_local, status='ANALYSIS_MODULE_BOUND_PASSED' if not missing_local else 'ANALYSIS_MODULE_BOUND_INSUFFICIENT',
     allowed_local_modules=sorted(allowed), actual_pure_modules=sorted(name for name, origin, kind in a.pure),
     missing_local_modules=missing_local, source_rows=len(rows), product_apps_started=False)
-(root.parent/'CollectiGenManager_ANALYSIS_CLOSURE.json').write_text(json.dumps(closure_report,indent=2)+'\n',encoding='utf-8')
+(root.parent/(product_name+'_ANALYSIS_CLOSURE.json')).write_text(json.dumps(closure_report,indent=2)+'\n',encoding='utf-8')
 if missing_local:
     raise ValueError('declared-module bound insufficient: missing local dependencies: '+', '.join(missing_local))
 sys.path.insert(0,str(root))
@@ -52,9 +67,9 @@ validate_with_sdk(a.binaries, sdk_extension, config["sdk_extension_sha256"])
 excluded_system_msvc={'msvcp140_1.dll', 'msvcp140_2.dll', 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll'}
 removed_system_msvc=[row for row in a.binaries if Path(row[0]).name.lower() in excluded_system_msvc]
 a.binaries=[row for row in a.binaries if Path(row[0]).name.lower() not in excluded_system_msvc]
-(root.parent/'CollectiGenManager_SYSTEM_MSVCP_POLICY.json').write_text(json.dumps(dict(policy='existing-system-prerequisite',minimum_version='14.44.35211.0',removed=removed_system_msvc,static_dependency_review_only=True),indent=2)+'\n',encoding='utf-8')
+(root.parent/(product_name+'_SYSTEM_MSVCP_POLICY.json')).write_text(json.dumps(dict(policy='existing-system-prerequisite',minimum_version='14.44.35211.0',removed=removed_system_msvc,static_dependency_review_only=True),indent=2)+'\n',encoding='utf-8')
 pyz = PYZ(a.pure)
-exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='CollectiGenManager',
+exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name=product_name,
     debug=False, bootloader_ignore_signals=False, strip=False, upx=False,
     console=False, disable_windowed_traceback=True, contents_directory='_internal')
-bundle = COLLECT(exe,a.binaries,a.datas,strip=False,upx=False,name='CollectiGenManager')
+bundle = COLLECT(exe,a.binaries,a.datas,strip=False,upx=False,name=product_name)

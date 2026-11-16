@@ -13,7 +13,7 @@ from PySide6.QtTest import QTest
 from core import training_run_index as storage
 from core.training_run_index import TrainingRunIndex, TrainingRunRecord, ScopedTrainingHistory, TrainingRunIndexError
 from test_manager_generator_setup_ui import application, capture
-from suite_core.manager.window import create_window, unconfigured
+from suite_core.tests.workflow_ui_fixtures import workflow_window, trigger_more
 
 
 def indexed(root, *, foreign=None, preparations=False):
@@ -140,15 +140,11 @@ def test_scoped_recovery_refuses_foreign_retained_after_state(tmp_path, monkeypa
 @pytest.mark.parametrize('preparations', [False, True])
 def test_visible_manager_history_list_management(tmp_path, monkeypatch, action, preparations):
     app = application()
-    root = tmp_path / ('Manager/TrainingReview' if preparations else 'Manager/training')
+    root = tmp_path / ('Suite/Data/Manager/TrainingReview' if preparations else 'Suite/Data/Manager/training')
     index, row, revision, review, output, registry = indexed(root, preparations=preparations)
     before = (review.read_bytes(), output.read_bytes())
     if action == 'recover': interrupted_forget(index, row, revision, monkeypatch)
-    session = NS(state='ready', admitted=NS(layout=NS(data_root=tmp_path)))
-    window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
-    window.resize(1920, 1040); window.show()
-    item = window.navigation.item(window.page_rows['Training'])
-    QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton, pos=window.navigation.visualItemRect(item).center())
+    app, session, window = workflow_window(tmp_path, 'train')
     errors = []; state = {'done':False, 'clicked':False}
     deadline = monotonic() + 20
     def drive():
@@ -178,9 +174,11 @@ def test_visible_manager_history_list_management(tmp_path, monkeypatch, action, 
             if dialog is not None: dialog.reject()
     try:
         QTimer.singleShot(20, drive)
-        button = window.saved_preparation_button if preparations else window.training_history_button
-        assert button.isVisible() and button.isEnabled()
-        QTest.mouseClick(button, Qt.LeftButton)
+        if preparations:
+            trigger_more(window, 'Saved Preparations…')
+        else:
+            assert window.surface.history.isVisible() and window.surface.history.isEnabled()
+            QTest.mouseClick(window.surface.history, Qt.LeftButton)
         assert not errors, errors
         assert state['clicked'] and state['done']
         assert index.snapshot()[0] == ()

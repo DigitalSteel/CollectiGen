@@ -152,13 +152,15 @@ def safe_source(workspace,name, *, public_export_inputs=False):
     return target
 
 def prepare_public_stage(source_root,output,*,public_inventory_sha256,
-                         frozen_sources,frozen_sources_sha256,manifest_sha256):
+                         frozen_sources,frozen_sources_sha256,manifest_sha256,component='manager'):
     """Stage a reviewed exported subset; no historical stage or SDK enrollment.
 
     frozen_sources is a Path to pinned JSON with schema=1 and source_rows.
     Rows use the existing path/bytes/sha256 representation, without origins.
     The caller owns native recipes and external tool qualification separately.
     """
+    if component not in {'manager', 'generate', 'train'}:
+        raise ValueError('finite_frozen_component_required')
     source_root=Path(source_root).absolute();output=Path(output).absolute()
     if (source_root.resolve()!=source_root or output.resolve()!=output or
             output.exists() or output.is_relative_to(source_root) or
@@ -188,12 +190,18 @@ def prepare_public_stage(source_root,output,*,public_inventory_sha256,
         raise ValueError('exact_frozen_subset_required')
     required={'core/manager_launch_owner.py','suite_core/manager/bootstrap_entry.py',
         'suite_core/manager/entry_binding.py','suite_core/manager/frozen_entry.py','suite_core/manager/launcher_main.py'}
-    manifest_name='suite_core/manager/MODULE_MANIFEST.json'
+    if component != 'manager':
+        required = {'suite_core/' + component + '/__main__.py',
+                    'suite_core/workflow_modules/entry.py', 'suite_core/workflow_modules/session.py'}
+    manifest_name='suite_core/' + component + '/MODULE_MANIFEST.json'
     manifest_path=safe_source(source_root,manifest_name)
     manifest_raw=pinned_bytes(manifest_path,manifest_sha256,'public_runtime_manifest_pin_changed')
     if inventory['files'].get(manifest_name)!={'size_bytes':len(manifest_raw),'sha256':manifest_sha256}:
         raise ValueError('runtime_manifest_not_in_public_inventory')
     manifest=document(manifest_raw)
+    if component != 'manager' and (manifest.get('schema_version') != 1
+            or manifest.get('module_id') != 'collectigen.' + component):
+        raise ValueError('same_workflow_runtime_manifest_required')
     if (type(manifest) is not dict or type(manifest.get('runtime_files')) is not list or
             any(type(n) is not str for n in manifest['runtime_files']) or
             type(manifest.get('software_version')) is not str or not manifest['software_version']):
@@ -250,13 +258,16 @@ def prepare_public_stage(source_root,output,*,public_inventory_sha256,
     pinned_bytes(inventory_path,public_inventory_sha256,'public_inventory_pin_changed')
     pinned_bytes(subset_path,frozen_sources_sha256,'frozen_subset_pin_changed')
     pinned_bytes(manifest_path,manifest_sha256,'public_runtime_manifest_pin_changed')
-    wrapper=stage/'source/public_root_entry.py';wrapper.write_bytes(root_entry().encode('utf-8'))
-    rows.append({'path':'public_root_entry.py','bytes':wrapper.stat().st_size,'sha256':digest(wrapper),
-        'origin':'generated canonical root wrapper; package pin intentionally unbound'})
+    if component == 'manager':
+        wrapper=stage/'source/public_root_entry.py';wrapper.write_bytes(root_entry().encode('utf-8'))
+        rows.append({'path':'public_root_entry.py','bytes':wrapper.stat().st_size,'sha256':digest(wrapper),
+            'origin':'generated canonical root wrapper; package pin intentionally unbound'})
     config={'schema':1,'software_version':manifest['software_version'],'source_rows':rows,
         'public_inventory_sha256':public_inventory_sha256,'frozen_sources_sha256':frozen_sources_sha256,
         'manifest_sha256':manifest_sha256,'manager_entry':'suite_core/manager/frozen_entry.py',
         'root_entry':'public_root_entry.py','root_package_pin_bound':False}
+    if component != 'manager':
+        config.update(component=component, manager_entry='suite_core/' + component + '/__main__.py', root_entry=None)
     (stage/'STAGE.json').write_text(json.dumps(config,indent=2)+'\n',encoding='utf-8')
     proof=dict(config,status='public_source_stage_only_not_frozen',freeze_or_product_execution=False,
         historical_stage_required=False,external_tools_or_sdk_enrolled=False)

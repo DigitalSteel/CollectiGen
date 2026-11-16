@@ -1498,55 +1498,14 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.apply_model_guidance(dialog.plan, dialog.selected_generation_configuration())
 
     def apply_model_guidance(self, guidance, configuration, *, expected_registry_revision=None, selected_resources=()) -> bool:
-        """Apply one reviewed preview to a new request revision, preserving source evidence."""
-        if configuration is None or guidance is None or guidance.request.workflow_kind != "generation":
-            return False
-        from .generation_workflow import _registered_resource_with_label, _updated_resource_labels
-        resources = [item.to_dict() for item in self.plan.request.resources]
-        changes = configuration.request_changes()
+        """Apply the canonical reviewed configuration without losing exact resource evidence."""
+        from core.generation_model_guidance import apply_reviewed_model_guidance
         try:
-            if (expected_registry_revision is not None and
-                    (self.registry is None or self.registry.snapshot()[1] != expected_registry_revision)):
-                raise ValueError("Registered models changed. Review a fresh recommendation before applying it.")
-            chosen = [(guidance.request.base_model_id, "checkpoint")] if guidance.request.base_model_id else []
-            for identity, role in selected_resources:
-                if role != "lora":
-                    raise ValueError("The selected model role changed; reopen Models and review it again.")
-                chosen.append((identity, role))
-            requirements = {item.slot: item for item in guidance.companion_requirements}
-            for binding in guidance.request.resource_bindings:
-                requirement = requirements.get(binding.slot)
-                if requirement is None:
-                    raise ValueError("A companion requirement changed; reopen Model Guidance.")
-                chosen.append((binding.resource_id, requirement.role))
-            if chosen and self.registry is None:
-                raise ValueError("Open this planner from Models or Dataset to apply exact registered model choices.")
-            selected_labels = []
-            for identity, role in chosen:
-                resource, label = _registered_resource_with_label(self.registry, identity, selected_role=role)
-                resources = [item for item in resources if not (
-                    item.get("role") == role and
-                    (role in {"checkpoint", "vae", "controlnet"} or item.get("id") == resource.id))]
-                resources.append(resource.to_dict())
-                selected_labels.append((resource.to_dict(), label))
-                if role == "checkpoint":
-                    changes.update(model="", model_hash=resource.hashes["sha256"])
-            changes["resources"] = resources
-            context = _updated_resource_labels(self.plan.target_context, resources)
-            for resource, label in selected_labels:
-                context = _updated_resource_labels(context, resources, selected=resource, label=label)
-            context["model_guidance"] = {"recipe_id": configuration.recipe_id,
-                "recipe_version": configuration.recipe_version, "family": configuration.target_model_family,
-                "model_version": configuration.target_model_version,
-                "record_id": getattr(guidance, "record_id", ""),
-                "source_urls": list(getattr(guidance, "source_urls", ())),
-                "authority": "reviewed_configuration_advice", "execution_readiness": "preflight_required",
-                "resource_bindings": [{"slot": item.slot, "resource_id": item.resource_id} for item in guidance.request.resource_bindings]}
-            if (expected_registry_revision is not None and
-                    self.registry.snapshot()[1] != expected_registry_revision):
-                raise ValueError("Registered models changed. Review a fresh recommendation before applying it.")
-            self.plan = self.plan.revise({"request": changes, "target_context": context, "goal": guidance.request.goal}, source="model_guidance",
-                consequence="Applied reviewed model-specific generation settings and selected resources; exact adapter preflight remains required")
+            plan = apply_reviewed_model_guidance(self.plan, self.registry, guidance, configuration,
+                expected_registry_revision=expected_registry_revision, selected_resources=selected_resources)
+            if plan is None:
+                return False
+            self.plan = plan
         except (ValueError, RuntimeError, GenerationPlanError) as exc:
             self.status.setText(str(exc)); return False
         self.binding = self.prepared = self.receipt = None
@@ -1876,6 +1835,8 @@ class GenerationDialog(FeedbackEnabledDialog):
         layout.addWidget(self.memory_status)
         self.connection_detail = QTextEdit(); self.connection_detail.setReadOnly(True); self.connection_detail.setAccessibleName("Local adapter capability probe")
         layout.addWidget(self.connection_detail, 1)
+        self.connection_detail.setVisible(self.manual_connection.isChecked())
+        self.manual_connection.toggled.connect(self.connection_detail.setVisible)
         return page
 
     def _build_results_tab(self) -> QWidget:
@@ -3051,10 +3012,83 @@ class GenerationDialog(FeedbackEnabledDialog):
         def finished(_result):
             if self._image_setup_dialog is dialog:
                 self._image_setup_dialog=None
+            if _result == QDialog.Accepted and 'unfinished_image_setup_review' in self.plan.target_context:
+                context = dict(self.plan.target_context)
+                context.pop('unfinished_image_setup_review')
+                self.plan = self.plan.revise({'target_context': context}, source='image_setup_saved',
+                    consequence='Reusable setup save completed; unfinished review marker cleared, recovery history retained')
+                self._generation += 1
+                self._refresh_from_plan()
             self.workspace_closed.disconnect(close_review)
         self.workspace_closed.connect(close_review)
         dialog.finished.connect(finished)
         dialog.open()
+
+    def restore_saved_image_setup_review(self, *, resume_admission=None):
+        """Reopen proposal state with fresh admitted services and source checks."""
+        value = self.plan.target_context.get('unfinished_image_setup_review')
+        if value is None:
+            return False
+        if self._closed or self._shutdown_requested or self._pending or self._execution_active():
+            return False
+        existing = getattr(self, '_image_setup_dialog', None)
+        if existing is not None:
+            existing.raise_(); existing.activateWindow()
+            return True
+        from core.generation_setup_review_draft import validate_review_snapshot
+        from core.annotation import GenerationRecord
+        from .generation_workflow import _source_identity
+        try:
+            snapshot = validate_review_snapshot(value)
+            if snapshot['source_identity'] != self.source_identity:
+                raise ValueError('The original image setup source binding differs from this draft.')
+            source = snapshot['suggestion_source']
+            authorized = False
+            if resume_admission is not None:
+                from .generation_workflow import _generation_workspace_host
+                from suite_core.workflow_modules.session import ModuleEntrySession
+                from core.generation_module_handoff import read_reviewed_handoff
+                host = _generation_workspace_host(self)
+                session = getattr(host, 'module_session', None)
+                if (type(session) is ModuleEntrySession and resume_admission is session.initial_draft
+                        and resume_admission.get('resume_image_review') is True):
+                    session.assert_ready()
+                    saved_plan, _path, _token = read_reviewed_handoff(session.workspace_root, resume_admission)
+                    authorized = saved_plan.digest == self.plan.digest
+            if not authorized and source is not None:
+                # A locator inside imported JSON grants no access. Only the
+                # original authenticated live handoff can resume automatically;
+                # after restart/import, require an explicit source selection.
+                chosen, _filter = QFileDialog.getOpenFileName(self,
+                    'Reconnect the original image for this unfinished review', '',
+                    'Images (*.png *.jpg *.jpeg *.webp)')
+                if not chosen:
+                    self.status.setText('The unfinished review remains saved. Reconnect its original image to resume.')
+                    return False
+                source = chosen
+                snapshot['suggestion_source'] = chosen
+            self.source_records = tuple(GenerationRecord.from_dict(row) for row in snapshot['records'])
+            self.setup_suggestion_source = Path(source) if source is not None else None
+            expected = deepcopy(snapshot['source_identity'])
+            if source is not None:
+                def current_source():
+                    options = {}
+                    if 'derived_frame' in expected:
+                        options['frame_reference_provider'] = lambda: deepcopy(expected['derived_frame'])
+                    return _source_identity((Path(source),), **options)
+                self.source_current_provider = current_source
+            else:
+                # An absent original is not evidence that a nonempty source is
+                # still valid. The existing review will hold Save on mismatch.
+                self.source_current_provider = lambda: {} if not expected else None
+            self.start_setup_from_image()
+            review = getattr(self, '_image_setup_dialog', None)
+            if review is None:
+                raise ValueError('Finish the active check before reopening the saved image review.')
+            return review.restore_unfinished_review_snapshot(snapshot)
+        except (ValueError, RuntimeError, OSError) as error:
+            self.status.setText('The unfinished review remains saved; it was not accepted or analysed. ' + str(error))
+            return False
 
     def load_recipe(self, *, selected_path=None, selected_digest=None, on_unapplied=None):
         if self._pending or self._execution_active(): return
@@ -3360,7 +3394,7 @@ class GenerationDialog(FeedbackEnabledDialog):
                 else:
                     readiness, next_step = "No verified result is open.", "Choose Refresh Recent Jobs to look for saved results."
                 self.workflow_context.update_context(
-                    using=self._opened_result_name() if opened else "Saved Manager results.",
+                    using=self._opened_result_name() if opened else "Saved generation results.",
                     model="Saved job receipt and image metadata.",
                     result="A receipt path for copy review in Organizer.",
                     readiness=readiness, next_step=next_step)
@@ -3377,10 +3411,24 @@ class GenerationDialog(FeedbackEnabledDialog):
 
         if not self.runtime_allowed:
             if self._checked_image_submission and self._review_verified_results and self._execution_active():
-                self.results_status.setText("Manager is tracking this image job. You can cancel submitted work here.")
+                self.results_status.setText("This image job is in progress. You can cancel submitted work here.")
                 self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
                     result="A retained job outcome in Manager.", readiness="Image job in progress.",
                     next_step="Wait for the outcome or cancel submitted work in Verified Results.")
+                self._next_step_tab = 3
+                return
+            terminal = self._submission_state() if self._submission_terminal_seen else ''
+            if self._checked_image_submission and self._review_verified_results and terminal in {'complete', 'failed', 'cancelled'}:
+                messages = {
+                    'cancelled': ('Image job cancelled.', 'Review the retained outcome before starting another request.'),
+                    'failed': ('Image job failed.', 'Review its retained receipt and resolve the reported problem before retrying.'),
+                    'complete': ('Image job finished.', 'Open the saved result to verify it and review it in Organizer.'),
+                }
+                summary, next_step = messages[terminal]
+                self.results_status.setText(summary + ' ' + next_step)
+                self.results_status.show()
+                self.workflow_context.update_context(using=using, model=self._chosen_model_summary(),
+                    result='The retained image job outcome.', readiness=summary, next_step=next_step)
                 self._next_step_tab = 3
                 return
             if self._checked_connection is not None:
@@ -4489,6 +4537,57 @@ class GenerationDialog(FeedbackEnabledDialog):
             self.status.setText("Plan saved. Return from Setup to check and prepare this request again.")
             self.setup_requested.emit()
         self._run("save-for-setup", lambda: self._save_path(path, snapshot), saved)
+
+    def save_for_manager_return(self, *, on_saved, review_snapshot=None, on_failed=None):
+        """Guard the original local draft before a cross-process settings return.
+
+        The unfinished review is proposal data, never a saved/accepted recipe.
+        Failed saves keep this request and the caller's exact review open.
+        """
+        if (self._closed or self._shutdown_requested or self._pending or self._execution_active()
+                or self._planning_file_picker_open or not self._draft_inputs_valid()):
+            self.status.setText('Finish the current check or invalid edits before saving and returning to Manager.')
+            return False
+        before = self.plan
+        snapshot = before
+        if review_snapshot is not None:
+            from core.generation_setup_review_draft import validate_review_snapshot
+            try:
+                context = dict(before.target_context)
+                context['unfinished_image_setup_review'] = validate_review_snapshot(review_snapshot)
+                snapshot = before.revise({'target_context': context}, source='manager_settings_return',
+                    consequence='Saved unfinished image setup choices for explicit return; no recipe or analysis accepted')
+            except (ValueError, RuntimeError, TypeError) as error:
+                self.status.setText('The unfinished review could not be saved. All choices remain open. ' + str(error))
+                return False
+        path = self._draft_path
+        def work():
+            from core.generation_planning import load_plan_with_digest
+            target, token = self._save_path(path, snapshot)
+            loaded, observed = load_plan_with_digest(target)
+            if loaded != snapshot or observed != token:
+                raise ValueError('The saved return draft changed during readback.')
+            return target, token
+        def failed(error):
+            self.status.setText('The return draft was not confirmed saved. Your review remains open. ' + str(error))
+            if callable(on_failed):
+                on_failed(str(error))
+        def saved(result):
+            from core.generation_module_handoff import draft_descriptor
+            self._remember_saved(*result)
+            self._draft_saved_digest = snapshot.digest
+            self._draft_save_error = False
+            if self.plan != before:
+                failed('The request changed while saving; save its current revision before returning.')
+                return
+            self.plan = snapshot
+            self._generation += 1
+            self._refresh_from_plan('Draft and unfinished review saved. Returning to Manager does not start analysis or generation.')
+            descriptor = draft_descriptor({'relative_path': result[0].relative_to(self.storage_root.parent).as_posix(),
+                                           'sha256': result[1]})
+            QTimer.singleShot(0, lambda: on_saved(descriptor))
+        self._run('save-for-manager-return', work, saved, failed)
+        return True
 
     def _open_checked_connection_review(self):
         review = self._review_generator_connection

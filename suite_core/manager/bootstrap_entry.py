@@ -427,7 +427,7 @@ class NormalEntrySession:
                     raise
         require(frame['kind'] == 'offer' and frame['sequence'] == 1 and
                 {'binding','scope'}.issubset(frame['payload'])
-                and set(frame['payload']).issubset({'binding','scope','update_profile','reader_selection','organizer_selection','training_baseline'}),
+                and set(frame['payload']).issubset({'binding','scope','update_profile','reader_selection','organizer_selection','workflow_selections','workflow_contract_version','training_baseline'}),
                 'initial_normal_offer_required')
         document = frame['payload']['binding']
         binding = _binding_document(document)
@@ -453,6 +453,17 @@ class NormalEntrySession:
             session.reader_selection = selected
         session.organizer_selection = (organizer_selection_from_offer(frame['payload']['organizer_selection'],admitted)
             if 'organizer_selection' in frame['payload'] else None)
+        from core.workflow_root_selection import selection_from_offer
+        from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
+        workflow_offers = frame['payload'].get('workflow_selections', {})
+        require(type(workflow_offers) is dict and set(workflow_offers).issubset(WORKFLOW_EXECUTABLES),
+                'finite_root_workflow_offers_required')
+        session.workflow_selections = {component: selection_from_offer(value, admitted, component)
+                                       for component, value in workflow_offers.items()}
+        workflow_contract = frame['payload'].get('workflow_contract_version', 0)
+        require(type(workflow_contract) is int and workflow_contract in (0, 1), 'workflow_bootstrap_contract')
+        require(not workflow_offers or workflow_contract == 1, 'workflow_bootstrap_contract_required')
+        session.workflow_contract_version = workflow_contract
         return session
 
     def __init__(self, channel, document, proof, *, timeout=1):
@@ -513,13 +524,13 @@ class NormalEntrySession:
         if component is None:
             component = ComponentId('collectigen.tag-encyclopedia')
         require(type(component) is ComponentId and component.value in
-                {'collectigen.tag-encyclopedia','collectigen.media-organizer'},
+                {'collectigen.tag-encyclopedia','collectigen.media-organizer','collectigen.generate','collectigen.train'},
                 'explicit_supported_stage_component_required')
         require(operation in {'begin','check','release'} and self.state=='ready',
                 'live_component_stage_request_required')
         payload={'schema':1,'operation':operation,'scope_id':scope_id,'component':component.value}
         scope_keys={'scope_id','owner_generation','code_root','data_root'}
-        if component.value == 'collectigen.media-organizer':
+        if component.value in {'collectigen.media-organizer','collectigen.generate','collectigen.train'}:
             scope_keys.add('component')
         with self.wire.lock:
             try:
@@ -538,12 +549,12 @@ class NormalEntrySession:
             except BaseException as error:
                 self.state,self.error='held',error
                 channel=getattr(self.wire,'channel',None)
-                if component.value=='collectigen.media-organizer' and type(channel) is _native().WindowsControlChannel:
+                if component.value in {'collectigen.media-organizer','collectigen.generate','collectigen.train'} and type(channel) is _native().WindowsControlChannel:
                     # Cache disposal never settles an uncertain original stage.
                     channel._end_image_scope()
                 raise
             channel=getattr(self.wire,'channel',None)
-            if component.value=='collectigen.media-organizer' and type(channel) is _native().WindowsControlChannel:
+            if component.value in {'collectigen.media-organizer','collectigen.generate','collectigen.train'} and type(channel) is _native().WindowsControlChannel:
                 try:
                     if operation=='begin':channel._begin_image_scope(reply['scope']['scope_id'])
                     elif operation=='release':channel._end_image_scope(scope_id)
@@ -780,7 +791,31 @@ class EntryHelperAdapter:
         adapter.organizer_selection=selection
         return adapter
 
+    @classmethod
+    def for_workflow(cls, session, native, selection):
+        from core.workflow_root_selection import RootWorkflowSelection
+        require(type(selection) is RootWorkflowSelection
+                and selection is getattr(session, 'workflow_selections', {}).get(selection.component_id)
+                and selection.root == session.admitted.layout.code_root
+                and selection.data_root == session.admitted.layout.data_root,
+                'original_root_workflow_offer_required')
+        context, program_sha256 = selection.helper_snapshot()
+        adapter = cls(session, native, None, context, program_sha256, workflow_context=True)
+        adapter.workflow_selection = selection
+        adapter.role_base = selection.helper_role
+        return adapter
+
     def validate_launch(self,command,cwd,environment):
+        if self.role_base in {'owned-generate', 'owned-train'}:
+            selection = self.workflow_selection
+            require(selection is getattr(self.session, 'workflow_selections', {}).get(selection.component_id)
+                    and selection.context() == dict(self.reviewed), 'original_workflow_launch_selection_changed')
+            require(tuple(command) == selection.command and str(cwd) == str(selection.selected.directory),
+                    'exact_workflow_command_required')
+            require(not any(key.upper() in {'PYTHONHOME','PYTHONPATH','QT_PLUGIN_PATH',
+                    'QT_QPA_PLATFORM_PLUGIN_PATH','QML2_IMPORT_PATH'} for key in environment),
+                    'workflow_runtime_environment_override_refused')
+            return
         if self.role_base!='owned-organizer':return
         selection=self.organizer_selection
         require(selection is self.session.organizer_selection and selection.context()==dict(self.reviewed),
@@ -791,13 +826,13 @@ class EntryHelperAdapter:
                 'QT_QPA_PLATFORM_PLUGIN_PATH','QML2_IMPORT_PATH'} for key in environment),
                 'organizer_runtime_environment_override_refused')
 
-    def __init__(self, session, native, accounting, reviewed, program_pin, *, duplicate_query=None,direct_context=False,reader_context=False,organizer_context=False):
+    def __init__(self, session, native, accounting, reviewed, program_pin, *, duplicate_query=None,direct_context=False,reader_context=False,organizer_context=False,workflow_context=False):
         from core.ollama_owned_windows import WindowsOwnedProcess
         from types import MappingProxyType
         require(type(session) is NormalEntrySession and type(native) is WindowsOwnedProcess,
                 'original_typed_entry_and_runtime_required')
         required = ({'component','directory','inventory_sha256','manifest_sha256','version','program',
-                    'settings_path','profile_root','working_directory','argv_sha256'} if organizer_context else
+                    'settings_path','profile_root','working_directory','argv_sha256'} if organizer_context or workflow_context else
                     {'directory','inventory_sha256','version','program','settings_path'} if reader_context else
                     {'descriptor_sha256','runtime_inventory_sha256','runtime_version_sha256','model_resource_id','program',
                     'working_directory','environment_sha256','command_kind','port','argv_sha256'} if direct_context else
@@ -1376,7 +1411,7 @@ class NormalOwnerRoute:
     """
     @classmethod
     def spawn(cls, owner, admitted, *, manager_executable, manager_sha256,
-              helper_pins, environment, timeout=1, abort_scope=None, manager_update_host=None,reader_selection=None,organizer_selection=None):
+              helper_pins, environment, timeout=1, abort_scope=None, manager_update_host=None,reader_selection=None,organizer_selection=None,workflow_selections=None):
         from pathlib import Path
         from .entry_binding import validate_normal_launch
         checked = validate_normal_launch(admitted.restart_arguments, executable=manager_executable)
@@ -1391,10 +1426,10 @@ class NormalOwnerRoute:
         _, channel = _native().WindowsNormalTransport.spawn(owner,
             (str(manager_executable), *admitted.restart_arguments), **options)
         return cls(owner, channel, admitted, manager_sha256=manager_sha256,
-                   helper_pins=helper_pins, timeout=timeout, manager_update_host=manager_update_host,reader_selection=reader_selection,organizer_selection=organizer_selection)
+                   helper_pins=helper_pins, timeout=timeout, manager_update_host=manager_update_host,reader_selection=reader_selection,organizer_selection=organizer_selection,workflow_selections=workflow_selections)
 
     def __init__(self, owner, channel, admitted, *, manager_sha256, helper_pins, timeout=1,
-                 manager_update_host=None, successor_selection=None, peer_role='manager', successor_ready=None,reader_selection=None,organizer_selection=None):
+                 manager_update_host=None, successor_selection=None, peer_role='manager', successor_ready=None,reader_selection=None,organizer_selection=None,workflow_selections=None):
         native = _native()
         require(type(owner) is native.DeploymentOwner and type(channel) is native.WindowsControlChannel
                 and channel.transport is owner.native_transport, 'same_native_owner_required')
@@ -1439,9 +1474,20 @@ class NormalOwnerRoute:
         self.manager_update_profile_sha256 = None
         self.manager_update_request_ids = set()
         self.manager_update_profile = None
-        offer={'binding':document,'scope':self.scope}
+        offer={'binding':document,'scope':self.scope, 'workflow_contract_version': 1}
         self.reader_helper_selection = reader_selection
         self.organizer_helper_selection = organizer_selection
+        from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
+        self.workflow_helper_selections = dict(workflow_selections or {})
+        require(set(self.workflow_helper_selections).issubset(WORKFLOW_EXECUTABLES),
+                'finite_root_workflow_selections_required')
+        if self.workflow_helper_selections:
+            require(successor_selection is None, 'workflow_successor_admission_unqualified')
+            offer['workflow_selections'] = {}
+            for component, selection in self.workflow_helper_selections.items():
+                require(selection.component_id == component, 'same_workflow_component_required')
+                owner.admit_helper_wire_workflow(selection)
+                offer['workflow_selections'][component] = selection.document()
         if organizer_selection is not None:
             require(successor_selection is None,'organizer_successor_admission_unqualified')
             owner.admit_helper_wire_organizer(organizer_selection)
@@ -1521,7 +1567,8 @@ class NormalOwnerRoute:
                         direct=getattr(self,'direct_helper_selection',None)
                         reader=getattr(self,'reader_helper_selection',None)
                         organizer=getattr(self,'organizer_helper_selection',None)
-                        require((selection is not None or direct is not None or reader is not None or organizer is not None) and kind=='helper-reserve','trusted_owned_helper_selection_required')
+                        workflows=getattr(self, 'workflow_helper_selections', {})
+                        require((selection is not None or direct is not None or reader is not None or organizer is not None or workflows) and kind=='helper-reserve','trusted_owned_helper_selection_required')
                         if direct is not None:
                             require(selection is None,'one_explicit_runtime_admission_required')
                             admission=self.owner.admit_helper_wire_direct(direct)
@@ -1542,6 +1589,8 @@ class NormalOwnerRoute:
                             admissions['owned-encyclopedia']=self.owner.admit_helper_wire_reader(reader)
                         if organizer is not None:
                             admissions['owned-organizer']=self.owner.admit_helper_wire_organizer(organizer)
+                        for workflow in workflows.values():
+                            admissions[workflow.helper_role] = self.owner.admit_helper_wire_workflow(workflow)
                         self.owner.prepare_helper_wire(self,admissions,entry_module=__import__(__name__,fromlist=['NormalOwnerRoute']))
                         self.owner._helper_wire_sequence=frame['sequence']-1
                     reply_kind, reply_payload = self.owner.dispatch_helper_wire(self, frame)
@@ -1561,7 +1610,7 @@ class NormalOwnerRoute:
                 require(type(payload) is dict and set(payload)=={'schema','operation','scope_id','component'}
                         and type(payload['schema']) is int and payload['schema']==1
                         and type(payload['component']) is str
-                        and payload['component'] in {'collectigen.tag-encyclopedia','collectigen.media-organizer'}
+                        and payload['component'] in {'collectigen.tag-encyclopedia','collectigen.media-organizer','collectigen.generate','collectigen.train'}
                         and payload['operation'] in {'begin','check','release'},'component_stage_schema')
                 try:
                     scope=self.owner.component_stage_scope(self,payload['operation'],payload['scope_id'],

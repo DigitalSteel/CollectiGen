@@ -14,14 +14,15 @@ from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QPushButton, QDialogButtonBox
 from core import training_run_index as index_module
 from core.training_run_index import TrainingRunRecord, TrainingRunPage, TrainingRunIndexError
-from suite_core.manager.window import create_window, unconfigured
+from suite_core.train.window import create_window as create_train_window
+from suite_core.tests.workflow_ui_fixtures import synthetic_module_session, trigger_more
 
 
 @pytest.mark.parametrize('mode', ['open', 'transient', 'stale', 'revoked', 'selection', 'close', 'foreign'])
 def test_manager_history_retained_handoff_uses_current_selection(tmp_path, monkeypatch, mode):
     app = QApplication.instance() or QApplication([])
-    session = NS(state='ready', admitted=NS(layout=NS(data_root=tmp_path)))
-    manager = tmp_path / 'Manager'
+    session = synthetic_module_session(tmp_path, 'train')
+    manager = tmp_path / 'Suite/Data/Manager'
     registry = manager / 'model_resources.json'
     record = TrainingRunRecord('a' * 32, 'execution', str(manager / 'training/runs/run.execution-review.json'),
         'b' * 64, 'c' * 64, str(manager / 'training/runs/run'),
@@ -53,14 +54,12 @@ def test_manager_history_retained_handoff_uses_current_selection(tmp_path, monke
             return 'exited_unverified', 0, None
 
     monkeypatch.setattr(index_module, 'ScopedTrainingHistory', lambda *a, **k: History())
-    window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+    window = create_train_window(session)
     window.sdxl_preparation_controller = lambda selected_registry: NS(
         _open_retained=lambda selected, selected_revision: calls.append(
             (selected, selected_revision, selected_registry.path, window._training_history_dialog)))
     window.show()
-    item = window.navigation.item(window.page_rows['Training'])
-    QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
-        pos=window.navigation.visualItemRect(item).center())
+    assert window.surface.isVisible()
     state = {'done': False, 'selected': False, 'clicked': False, 'changed': False}
     deadline = time.monotonic() + 12
 
@@ -134,7 +133,7 @@ def test_manager_history_retained_handoff_uses_current_selection(tmp_path, monke
 
     try:
         QTimer.singleShot(20, drive)
-        QTest.mouseClick(window.training_history_button, Qt.LeftButton)
+        QTest.mouseClick(window.surface.history, Qt.LeftButton)
         state['done'] = True
         assert not errors, errors
         if mode in {'open', 'transient'}:

@@ -899,7 +899,7 @@ def section_help(topic_id: str) -> str:
 MANAGER_WORKSPACE_HELP = {
     "generation": """## Start an image or video
 
-Open **Generate** in Suite Manager. Choose **New or Saved Image…** to start an image request or reopen a saved draft. Use the video planning controls for a video request; **Set Up Video Components…** reviews the separate video runtime.
+Open **Applications** in Suite Manager, then **Open Generate**. In Generate, choose **New Image…** or **Resume Draft…**. Select Video for a video request. Other workflows and component setup are available under **More…**; installation and connections stay in Manager.
 
 ## Keep and switch work
 
@@ -907,22 +907,22 @@ Image and video requests stay in the draft selector. Switching drafts does not r
 
 ## Review before generating
 
-Choose your model, prompt and output settings in the shared editor. Configure a local generator separately, review readiness, then deliberately submit the request. Drafting and saving do not start generation or download models.
+Choose your model, prompt and output settings in the shared editor. Configure a local generator in Manager, review readiness, then deliberately submit the request. Returning to Manager saves the current draft and unfinished image review before closing Generate. Resume it from Applications after reviewing settings. An imported review may ask you to reconnect its original image; nothing is analysed automatically. Drafting and saving do not start generation or download models.
 
 ## Results and recovery
 
-Use **Review Generation Jobs…** for saved jobs and their recovery actions. **Plan Remix from Verified Result…** starts from checked output. Bring verified output into Media Organizer through **Add Images**; review its image facts there. Generation prompts remain lineage rather than confirmed image descriptions. A failed request retains its draft; review its reported state before retrying.""",
+Use **More… → Review Saved Results…** for saved jobs and their recovery actions. **Plan Remix from Verified Result…** starts from checked output. Bring verified output into Media Organizer through **Add Images**; review its image facts there. Generation prompts remain lineage rather than confirmed image descriptions. A failed request retains its draft; review its reported state before retrying.""",
     "training": """## 1. Prepare data in Media Organizer
 
-Use Organizer's **Dataset** workspace to choose images, review captions and prepare a Training package. Organizer owns collection membership and image corrections. Export a saved Dataset draft when you want to review its planned sources in Manager; a draft is not a built package.
+Use Organizer's **Dataset** workspace to choose images, review captions and prepare a Training package. Organizer owns collection membership and image corrections. Export a saved Dataset draft when you want to review its planned sources in Train; a draft is not a built package.
 
 ## 2. Review the package and trainer
 
-In Suite Manager's **Training** workspace, choose **Review Training Package…** for the built package. **Review a Dataset Draft…** opens an exported plan for review instead. Use **Review Existing Trainer…** to review your local trainer, then return to the package. Follow its SDXL or Anima preparation and readiness checks before choosing Start. Opening a review does not start training.
+In Suite Manager's **Applications**, choose **Open Train**, then **Open Training Package…**. **More… → Open Saved Training Draft…** opens an exported plan for review instead. **Set Up Trainer…** returns to Manager to review local trainer software after the training workspace can close safely. Follow the package's SDXL or Anima preparation and readiness checks before choosing Start. Opening a review does not start training.
 
 ## 3. Review results
 
-Use **Return to Open Review** for a review already open. **Review Saved Training Runs…** reopens saved runs and results; **Review Saved SDXL Preparations…** reopens a prepared run. **Training Experiments…** retains comparisons and planning choices. **Compare Training Samples…** compares saved samples or prepares a generation comparison. A completed run or a numerical measurement does not establish visual quality.
+Use **Continue Review** for a review already open. **Saved Runs…** reopens saved runs and results; **More… → Saved Preparations…** reopens a prepared run. **Training Experiments…** retains comparisons and planning choices. **Compare Samples…** compares saved samples or prepares a generation comparison. A completed run or a numerical measurement does not establish visual quality.
 
 ## Return and recover
 

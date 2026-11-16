@@ -20,7 +20,8 @@ from suite_core.discovery.offline_component_producer import produce_inventory
 from suite_core.discovery.component_payload_policy import select_payload_policy, payload_relative
 
 COMPONENTS = {'collectigen.suite-manager': 'manager', 'collectigen.tag-encyclopedia': 'encyclopedia',
-              'collectigen.media-organizer': 'organizer'}
+              'collectigen.media-organizer': 'organizer', 'collectigen.generate': 'generate',
+              'collectigen.train': 'train'}
 MUTABLE = {'data', 'models', 'catalogs', 'saves', 'logs', 'backups', '.git', '.venv', '__pycache__'}
 ORGANIZER_PTH = b'python313.zip\n.\nLib\\site-packages\n..\\..\nimport site\n'
 

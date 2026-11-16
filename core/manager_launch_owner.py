@@ -208,6 +208,9 @@ class OrganizerHelperWireAdmission:
     selection: object
 
 
+from core.workflow_root_selection import RootWorkflowSelection, WorkflowHelperWireAdmission
+
+
 def _organizer_settings_path(data_root, settings_path):
     """Reject traversal before filesystem/store access; retain reparse guards."""
     from suite_core.discovery.component_staging import guard
@@ -590,7 +593,7 @@ class DeploymentOwner:
         wrapper does not qualify pretransfer recovery or enable a live factory.
         """
         if (type(admissions) is not dict or not admissions
-                or not set(admissions).issubset({'owned-ollama','owned-llamacpp','owned-encyclopedia','owned-organizer'})
+                or not set(admissions).issubset({'owned-ollama','owned-llamacpp','owned-encyclopedia','owned-organizer','owned-generate','owned-train'})
                 or {'owned-ollama','owned-llamacpp'}.issubset(admissions)):
             raise LaunchHold('exact_normal_package_admission_required')
         self._bind_helper_wire(route, admissions, entry_module=entry_module)
@@ -605,6 +608,8 @@ class DeploymentOwner:
         return DirectHelperWireAdmission(selection.context('version',0),selection.program_sha256,selection)
 
     def _fresh_helper_admission(self, admission):
+        if type(admission) is WorkflowHelperWireAdmission:
+            return self.admit_helper_wire_workflow(admission.selection)
         if type(admission) is OrganizerHelperWireAdmission:
             return self.admit_helper_wire_organizer(admission.selection)
         if type(admission) is ReaderHelperWireAdmission:
@@ -648,6 +653,36 @@ class DeploymentOwner:
             raise LaunchHold('original_root_organizer_selection_required')
         context,program_sha256=selection.helper_snapshot()
         return OrganizerHelperWireAdmission(context,program_sha256,selection)
+
+    @_serialized
+    def issue_workflow_selection(self, component_id, settings_path, *, manifest_bytes, signature_bytes, trust_bytes):
+        from core.workflow_connection_settings import WorkflowConnectionStore
+        self._owned()
+        settings_path = Path(settings_path)
+        if settings_path.suffix.casefold() == '.ini':
+            settings_path = settings_path.with_suffix('.json')
+        settings_path = _organizer_settings_path(self.data_root, settings_path)
+        store = WorkflowConnectionStore(settings_path, component_id)
+        selected = store.selected(store.observe())
+        if selected is None:
+            raise LaunchHold('saved_workflow_selection_required')
+        selection = RootWorkflowSelection(self.root, self.data_root, settings_path, selected,
+                                          manifest_bytes, signature_bytes, trust_bytes)
+        selection.validate()
+        if not hasattr(self, '_issued_workflow_selections'):
+            self._issued_workflow_selections = []
+        self._issued_workflow_selections.append(selection)
+        return selection
+
+    @_serialized
+    def admit_helper_wire_workflow(self, selection):
+        self._owned(allow_pending=True, allow_reservations=True)
+        if (type(selection) is not RootWorkflowSelection or selection.root != self.root
+                or selection.data_root != self.data_root
+                or not any(item is selection for item in getattr(self, '_issued_workflow_selections', ()))):
+            raise LaunchHold('original_root_workflow_selection_required')
+        context, program_sha256 = selection.helper_snapshot()
+        return WorkflowHelperWireAdmission(context, program_sha256, selection)
 
     @_serialized
     def admit_helper_wire_package(self, layout, plan, environment, *, executor_module):
@@ -694,7 +729,8 @@ class DeploymentOwner:
             direct=role=='owned-llamacpp' and type(admission) is DirectHelperWireAdmission
             reader=role=='owned-encyclopedia' and type(admission) is ReaderHelperWireAdmission
             organizer=role=='owned-organizer' and type(admission) is OrganizerHelperWireAdmission
-            if (not direct and not reader and not organizer and (not (role=='owned-ollama' or re.fullmatch('owned-ollama-(?:[1-9]|[1-9][0-9]|1[01][0-9]|12[0-7])',role)) or type(admission) is not HelperWireAdmission)):
+            workflow=(type(admission) is WorkflowHelperWireAdmission and role == admission.selection.helper_role)
+            if (not direct and not reader and not organizer and not workflow and (not (role=='owned-ollama' or re.fullmatch('owned-ollama-(?:[1-9]|[1-9][0-9]|1[01][0-9]|12[0-7])',role)) or type(admission) is not HelperWireAdmission)):
                 raise LaunchHold('bounded_admitted_helper_role_required')
             fresh=self._fresh_helper_admission(admission)
             if fresh.context!=admission.context or fresh.program_sha256!=admission.program_sha256:raise LaunchHold('helper_admission_changed')
@@ -758,9 +794,9 @@ class DeploymentOwner:
                 type(payload['attempt_id']) is not str or not re.fullmatch('[0-9a-f]{32}',payload['attempt_id']) or
                 type(payload['context_sha256']) is not str or not re.fullmatch('[0-9a-f]{64}',payload['context_sha256']) or
                 type(payload['role']) is not str or not (payload['role'] in self._helper_wire_admissions or
-                    any(base in self._helper_wire_admissions and payload['role']==base+'-'+payload['attempt_id'] for base in ('owned-ollama','owned-llamacpp','owned-encyclopedia','owned-organizer')))):
+                    any(base in self._helper_wire_admissions and payload['role']==base+'-'+payload['attempt_id'] for base in ('owned-ollama','owned-llamacpp','owned-encyclopedia','owned-organizer','owned-generate','owned-train')))):
             raise LaunchHold('exact_correlated_helper_payload_required')
-        base=next((base for base in ('owned-llamacpp','owned-encyclopedia','owned-organizer','owned-ollama')
+        base=next((base for base in ('owned-llamacpp','owned-encyclopedia','owned-organizer','owned-generate','owned-train','owned-ollama')
             if payload['role']==base or payload['role'].startswith(base+'-')),'owned-ollama')
         admission,context,pin=self._helper_wire_admissions.get(payload['role'],self._helper_wire_admissions.get(base))
         data=self.record.get('helper_attempts',{}).get(payload['attempt_id'])
@@ -798,9 +834,26 @@ class DeploymentOwner:
         self._helper_wire_request={'kind':kind,'attempt_id':payload['attempt_id']}
         try:
             if kind=='helper-reserve':
+                if type(admission) is WorkflowHelperWireAdmission and any(
+                        row['attempt_id'] != data['attempt_id']
+                        and row.get('role', '').startswith(('owned-generate-', 'owned-train-'))
+                        and row.get('phase') not in {'drained', 'non_creation', 'non_grant'}
+                        for row in self.record.get('helper_attempts', {}).values()):
+                    raise LaunchHold('exclusive_original_workflow_writer_required')
                 if route.state not in ('ready','sealing','sealed') or not self.record['helper_grants_open']:
                     next_record=deepcopy(self.record);next_record['helper_attempts'][data['attempt_id']]['phase']='non_grant';self._persist(next_record)
-                else:self.reserve_helper(data['role'],pin,verify_entry=lambda subject:subject is self and route._live_peer())
+                else:
+                    if type(admission) is WorkflowHelperWireAdmission:
+                        from core.workflow_native_channel import WorkflowImageScope
+                        # Retain before grant publication/ACK. This changes only
+                        # image-read handle lifetime, never helper authority.
+                        image_scope = WorkflowImageScope(route.channel, admission.selection.component_id,
+                            custodian=route, owner_generation=self.record['owner'],
+                            attempt_id=data['attempt_id'])
+                    self.reserve_helper(data['role'],pin,verify_entry=lambda subject:subject is self and route._live_peer())
+                    if type(admission) is WorkflowHelperWireAdmission:
+                        committed = self.record['helper_attempts'][data['attempt_id']]
+                        image_scope.bind(self.record['owner'], committed['attempt_id'], committed['reservation'])
                 reply_kind='helper-grant'
             elif kind=='helper-register':
                 if data['phase']!='granted' or route.state not in ('ready','sealing') or type(payload['cleanup_only']) is not bool:
@@ -826,7 +879,7 @@ class DeploymentOwner:
                     from core.manager_direct_admission import direct_command
                     expected_argv=direct_command(admission.selection.selection,expected_context['command_kind'],int(expected_context['port']))
                     if _native_process_argv(duplicate)!=expected_argv:raise LaunchHold('native_direct_command_line_changed')
-                if type(admission) is OrganizerHelperWireAdmission:
+                if type(admission) in (OrganizerHelperWireAdmission, WorkflowHelperWireAdmission):
                     if _native_process_argv(duplicate)!=admission.selection.command:
                         raise LaunchHold('native_organizer_command_line_changed')
                 self._helper_wire_request['transfer']={'identity':identity,'source_process_handle':payload['source_handle'],
@@ -855,7 +908,22 @@ class DeploymentOwner:
                     self._persist(next_record)
                 reply_kind='helper-drained'
             else:reply_kind='helper-status'
-            return reply_kind,self._helper_wire_reply(self.record['helper_attempts'][data['attempt_id']])
+            committed = self.record['helper_attempts'][data['attempt_id']]
+            if type(admission) is WorkflowHelperWireAdmission:
+                image_scope = getattr(route.channel, '_workflow_image_owner', None)
+                if image_scope is not None:
+                    from core.workflow_native_channel import WorkflowImageScope
+                    if (type(image_scope) is not WorkflowImageScope or image_scope.custodian is not route
+                            or image_scope.component_id != admission.selection.component_id
+                            or image_scope.owner_generation != self.record['owner']
+                            or image_scope.attempt_id != committed['attempt_id']):
+                        raise LaunchHold('exact_original_workflow_image_lifetime_required')
+                    image_scope.bind(self.record['owner'], committed['attempt_id'], committed['reservation'])
+                    if committed['phase'] in {'drained', 'non_creation_settled'}:
+                        # Only original positive helper settlement reaches here.
+                        # Lost reply keeps Manager's independent scope retained.
+                        image_scope.close()
+            return reply_kind,self._helper_wire_reply(committed)
         finally:self._helper_wire_request=None
 
     def _retire_drained_helper_queries(self):
@@ -2156,7 +2224,7 @@ class DeploymentOwner:
         The component transaction engine independently validates all those inputs.
         """
         self._owned()
-        if type(component) is not str or component not in {'collectigen.tag-encyclopedia', 'collectigen.media-organizer'}:
+        if type(component) is not str or component not in {'collectigen.tag-encyclopedia', 'collectigen.media-organizer', 'collectigen.generate', 'collectigen.train'}:
             raise LaunchHold('explicit_supported_stage_component_required')
         from suite_core.manager.bootstrap_entry import NormalOwnerRoute
         if (type(route) is not NormalOwnerRoute or route.owner is not self or not route._live_peer() or route.state!='ready'
@@ -2194,7 +2262,7 @@ class DeploymentOwner:
                     or stage['epoch']!=route.wire.proof.channel_epoch):
                 raise LaunchHold('exact_original_component_stage_required')
         stage=deepcopy(self.record['component_stage'])
-        if component == 'collectigen.media-organizer':
+        if component in {'collectigen.media-organizer', 'collectigen.generate', 'collectigen.train'}:
             if operation == 'begin':
                 route.channel._begin_image_scope(stage['id'])
             elif operation == 'release':
@@ -2206,7 +2274,7 @@ class DeploymentOwner:
         reply = {'scope_id':stage['id'],'owner_generation':stage['owner'],
                  'code_root':str(self.root),'data_root':str(self.data_root)}
         # Preserve the Reader wire contract; Organizer requires explicit reply binding.
-        if component == 'collectigen.media-organizer':
+        if component in {'collectigen.media-organizer', 'collectigen.generate', 'collectigen.train'}:
             reply['component'] = component
         return reply
 
@@ -3537,7 +3605,12 @@ class WindowsControlChannel:
         self._image_scope = scope_id
 
     @_serialized
-    def _end_image_scope(self, scope_id=None):
+    def _end_image_scope(self, scope_id=None, *, workflow_owner=None):
+        retained = getattr(self, '_workflow_image_owner', None)
+        if retained is not None and workflow_owner is not retained:
+            # A failed/overlapping legacy stage may request unscoped disposal.
+            # It must never steal a retained workflow lifetime's read handles.
+            raise LaunchHold('original_workflow_image_owner_required')
         if scope_id is not None and getattr(self, '_image_scope', None) not in (None, scope_id):
             raise LaunchHold('same_original_organizer_image_scope_required')
         for role, image in tuple(getattr(self, '_image_witnesses', {}).items()):
@@ -3652,7 +3725,11 @@ class WindowsControlChannel:
 
     @_serialized
     def close(self):
-        self._end_image_scope()
+        workflow = getattr(self, '_workflow_image_owner', None)
+        if workflow is not None:
+            workflow.close()
+        else:
+            self._end_image_scope()
         for name in ("reader","writer"):
             fd = getattr(self,name)
             if fd is not None: os.close(fd); setattr(self,name,None)

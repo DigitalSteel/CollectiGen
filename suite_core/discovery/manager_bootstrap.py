@@ -220,7 +220,7 @@ def recovery_reference(plan, *, phase, observed_active, prior_available, healthy
 # Stable public launcher protocol. Existing diagnostics/replacement APIs above
 # remain unchanged. This contract does not launch, import Qt, or invoke Velopack.
 STABLE_LAUNCH_PROTOCOL = 1
-STABLE_BOOTSTRAP_VERSION = "0.1.0"
+STABLE_BOOTSTRAP_VERSION = "0.1.1"
 
 
 @dataclass(frozen=True)

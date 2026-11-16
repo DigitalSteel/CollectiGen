@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QPushButton
 from test_manager_generator_setup_ui import application, wait_until, capture
-from suite_core.manager.window import create_window, unconfigured
+from suite_core.tests.workflow_ui_fixtures import workflow_window, trigger_more
 from qt_app.generation_workflow import open_generation_workspace, _source_identity
 from core.generation_planning import load_plan_with_digest
 
@@ -18,8 +18,7 @@ from core.generation_planning import load_plan_with_digest
 @pytest.mark.parametrize('route', ['file', 'cancel', 'verified', 'changed'])
 def test_remix_retains_original_saved_draft(tmp_path, monkeypatch, route):
     app = application()
-    session = NS(state='ready', admitted=NS(layout=NS(data_root=tmp_path)))
-    window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
+    app, session, window = workflow_window(tmp_path, 'generate')
     window.resize(1920, 1040); window.show()
     window.generation_state()
     open_generation_workspace(window, force_new=True)
@@ -48,13 +47,11 @@ def test_remix_retains_original_saved_draft(tmp_path, monkeypatch, route):
             pending = window._verified_result_remix
             if route == 'changed':
                 Image.new('RGB', (64, 64), '#cc1144').save(image)
-            QTest.mouseClick(window.verified_result_remix_button, Qt.LeftButton)
+            trigger_more(window, 'Plan Remix from Verified Result…')
         else:
             monkeypatch.setattr('PySide6.QtWidgets.QFileDialog.getOpenFileName',
                 lambda *args, **kwargs: ('' if route == 'cancel' else str(image), 'Images'))
-            button = next(b for b in window.findChildren(QPushButton) if b.text().startswith('Plan a Remix'))
-            assert button.isVisible() and button.isEnabled()
-            QTest.mouseClick(button, Qt.LeftButton)
+            trigger_more(window, 'Plan a Remix…')
         wait_until(app, lambda: getattr(window, '_generation_source_task', None) is None)
         if route in {'file', 'verified'}:
             wait_until(app, lambda: len(window.generation_page.retained_workspaces()) == 2)

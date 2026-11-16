@@ -112,7 +112,8 @@ def write_new(path, raw):
     require(path.read_bytes() == raw, 'output_readback_failed')
 
 
-def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw):
+def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw, *, component='manager'):
+    require(component in {'manager', 'generate', 'train'}, 'finite_frozen_component_required')
     receipt_raw = pinned(stage / 'STAGE.json', stage_sha256)
     receipt = decode(receipt_raw)
     require(type(receipt) is dict and receipt.get('schema') == 1, 'source_stage_schema_required')
@@ -126,6 +127,14 @@ def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw):
     required_entries = {'core/manager_launch_owner.py', 'suite_core/manager/bootstrap_entry.py',
                         'suite_core/manager/entry_binding.py', 'suite_core/manager/frozen_entry.py',
                         'suite_core/manager/launcher_main.py', 'suite_core/manager/MODULE_MANIFEST.json'}
+    if component != 'manager':
+        require(receipt.get('component') == component, 'same_frozen_component_required')
+        require(not {'suite_core/manager/window.py', 'suite_core/manager/__main__.py',
+                     'suite_core/manager/launcher_main.py', 'suite_core/manager/frozen_entry.py'} & expected,
+                'workflow_management_entry_forbidden')
+        required_entries = {'suite_core/' + component + '/__main__.py',
+                            'suite_core/' + component + '/MODULE_MANIFEST.json',
+                            'suite_core/workflow_modules/entry.py', 'suite_core/workflow_modules/session.py'}
     require(required_entries <= expected, 'canonical_manager_entries_required')
     require(all(n.startswith(('core/', 'suite_core/', 'qt_app/', 'licenses/', 'tools/'))
                 or n in {'LICENSE', 'LICENSES.md', 'THIRD_PARTY_NOTICES.md', 'version.py',
@@ -137,8 +146,12 @@ def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw):
     require(inventory.get('schema_version') == 1 and inventory.get('manifest_excludes_self') is True
             and type(inventory.get('files')) is dict, 'public_inventory_required')
     all_rows = rows(receipt.get('source_rows'), adapter=True)
-    require('public_root_entry.py' in all_rows, 'generated_unbound_root_required')
-    generated = {'public_root_entry.py': all_rows.pop('public_root_entry.py')}
+    if component == 'manager':
+        require('public_root_entry.py' in all_rows, 'generated_unbound_root_required')
+        generated = {'public_root_entry.py': all_rows.pop('public_root_entry.py')}
+    else:
+        require('public_root_entry.py' not in all_rows, 'workflow_root_launcher_forbidden')
+        generated = {}
     source_rows = all_rows
     require(set(source_rows) == expected, 'undeclared_or_missing_source')
     sources = {}
@@ -151,7 +164,10 @@ def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw):
     version = receipt.get('software_version')
     require(type(version) is str and re.fullmatch(r'0\.\d+\.\d+(?:-[A-Za-z0-9.]+)?', version),
             'existing_manager_version_required')
-    module = decode(sources.get('suite_core/manager/MODULE_MANIFEST.json', b'{}'))
+    module = decode(sources.get('suite_core/' + component + '/MODULE_MANIFEST.json', b'{}'))
+    if component != 'manager':
+        require(module.get('schema_version') == 1 and module.get('module_id') == 'collectigen.' + component,
+                'same_workflow_runtime_manifest_required')
     require(module.get('software_version') == version, 'manager_version_changed')
     require({name for name in expected if name.endswith('.py') or name.startswith(('tools/', 'resources/'))}
             <= set(module.get('runtime_files', [])),
@@ -228,10 +244,10 @@ def isolated_environment(output, interpreter):
     return environment
 
 
-def freeze(output, interpreter, environment, name):
+def freeze(output, interpreter, environment, name, *, recipe=None):
     command = [str(interpreter), '-I', '-B', '-m', 'PyInstaller', '--noconfirm',
                '--distpath', str(output / 'dist'), '--workpath', str(output / 'work'),
-               str(output / 'stage' / (name + '.spec'))]
+               str(output / 'stage' / ((recipe or name) + '.spec'))]
     write_new(output / (name + '_BUILD_COMMAND.json'), json_bytes({'command': command, 'app_launch': False}))
     with (output / (name + '_FREEZER.log')).open('xb') as stream:
         result = subprocess.run(command, cwd=output / 'stage', env=environment,
@@ -454,7 +470,7 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         child_inventory = tree_inventory(child.parent)
         validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw)
         package = {'schema': 1, 'manager_version': receipt['software_version'], 'manager_sha256': digest(read(child)),
-                   'protocol': 1, 'minimum_bootstrap': '0.1.0',
+                   'protocol': 1, 'minimum_bootstrap': '0.1.1',
                    'maximum_bootstrap_exclusive': '0.2.0',
                    'manager_relative': 'Apps/Manager/current/CollectiGenManager.exe'}
         package_raw = json_bytes(package)
@@ -502,6 +518,133 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         raise
 
 
+def retain_workflow_manager_admission(suite_root, *, archive, manifest_bytes, signature_bytes,
+        trust_bytes, expected_trust_sha256, detached_inventory_bytes, software_version, channel='beta'):
+    """Retain already signed stock Manager evidence for independently built modules.
+
+    Called by the existing release assembly after its signed nupkg exists. No
+    key, signing, new trust, updater, qualification or mutable-data access occurs.
+    """
+    from suite_core.discovery.manager_runtime_detached_admission import admit_installed_detached, PROFILE
+    root = unredirected(suite_root)
+    require(root.is_dir(), 'completed_suite_distribution_required')
+    executable = root / 'Apps/Manager/current/CollectiGenManager.exe'
+    program_pin = digest(read(executable))
+    plan = admit_installed_detached(archive, installed_executable_sha256=program_pin,
+        inventory_profile=PROFILE, detached_inventory_bytes=detached_inventory_bytes,
+        manifest_bytes=manifest_bytes, signature_bytes=signature_bytes, trust_bytes=trust_bytes,
+        expected_trust_sha256=expected_trust_sha256,
+        expected_inventory_sha256=digest(detached_inventory_bytes),
+        expected_version=software_version, expected_channel=channel)
+    destination = root / '_bootstrap/workflow-manager-admission/initial'
+    unredirected(destination)
+    require(not destination.exists(), 'fresh_initial_workflow_manager_evidence_required')
+    # Reuse the child's signed installed-row verifier before writing anything.
+    # Original release assembly still seals the resulting complete ZIP and
+    # retains the Recovery baseline independently for worker provisioning.
+    from core.manager_successor_admission import installed_manager_payload_path
+    from suite_core.discovery.manager_runtime_detached_admission import manager_inventory_json
+    for row in manager_inventory_json(detached_inventory_bytes)['files']:
+        path = installed_manager_payload_path(root, row['path'], stock_applied=False)
+        raw = read(path)
+        require(len(raw) == row['size_bytes'] and digest(raw) == row['sha256'],
+                'initial_workflow_manager_payload_changed')
+    files = {'release.json': manifest_bytes, 'release.sig.json': signature_bytes,
+             'inventory.json': detached_inventory_bytes}
+    for name, raw in files.items():
+        write_new(destination / name, raw)
+    require(digest(read(executable)) == program_pin, 'initial_workflow_manager_changed_during_retention')
+    return dict(status='SIGNED_SOFTWARE_EVIDENCE_RETAINED_NOT_NATIVE_QUALIFICATION',
+        manager_version=software_version, manager_sha256=program_pin,
+        signed_archive_sha256=plan.artifact_sha256,
+        files={name: dict(bytes=len(raw), sha256=digest(raw)) for name, raw in files.items()},
+        apps_launched=False, native_qualified=False, signing_performed=False)
+
+
+def build_workflow_distribution(source_stage, output, *, component, stage_sha256,
+        public_inventory, interpreter, sdk_root, notice_root, source_manifest,
+        tool_inputs=HERE / 'tool-inputs.json'):
+    """Independent frozen module using the existing sealed producer and recipe.
+
+    No Manager binary is copied/relabelled, no Root is built, no program is run,
+    and no signing, release or native-health assertion is made.
+    """
+    require(component in {'generate', 'train'}, 'finite_workflow_component_required')
+    name = component.title()
+    source_stage, output, interpreter = map(unredirected, (source_stage, output, interpreter))
+    require(not output.exists() and not output.is_relative_to(source_stage)
+            and not source_stage.is_relative_to(output), 'fresh_separate_output_required')
+    manifest_raw, inventory_raw, profile_raw = read(source_manifest), read(public_inventory), read(tool_inputs)
+    receipt, _manifest, sources = validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw,
+                                                  component=component)
+    profile = decode(profile_raw)
+    require(profile.get('schema') == 1 and set(profile.get('templates', {})) == TEMPLATES,
+            'public_tool_profile_required')
+    require(profile.get('msvc') == {'architecture': 'x64', 'minimum_version': '14.44.35211.0',
+                                  'policy': 'existing-system-prerequisite'}, 'stock_msvc_policy_required')
+    sdk = {safe_path(path): pinned(Path(sdk_root) / path, pin) for path, pin in profile['sdk']['files'].items()}
+    require(all(safe_path(row['source']).startswith('licenses/') for row in profile['notices'].values()),
+            'public_notice_source_required')
+    notices = {safe_path(path): pinned(Path(notice_root) / row['source'], row['sha256'])
+               for path, row in profile['notices'].items()}
+    metadata = {path: pinned(HERE / path, pin) for path, pin in profile['templates'].items()}
+    environment = isolated_environment(output, interpreter)
+    inspect_tools(interpreter, profile, environment)
+    output.mkdir(parents=True)
+    stage = output / 'stage'
+    config = dict(schema=1, component=component, software_version=receipt['software_version'],
+                  source_rows=[], sdk_rows=[], notice_rows=[],
+                  sdk_extension_sha256=profile['sdk']['files']['velopack/velopack.pyd'])
+    for path, raw in sources.items():
+        write_new(stage / 'source' / path, raw)
+        config['source_rows'].append(dict(path=path, bytes=len(raw), sha256=digest(raw)))
+    for path, raw in sdk.items():
+        write_new(stage / 'sdk' / path, raw)
+        config['sdk_rows'].append(dict(path=path, bytes=len(raw), sha256=digest(raw)))
+    for path, raw in notices.items():
+        write_new(stage / 'notices' / path, raw)
+        config['notice_rows'].append(dict(path='notices/' + path, bytes=len(raw), sha256=digest(raw)))
+    for path, raw in metadata.items():
+        write_new(stage / path, raw)
+    write_new(stage / 'STAGE.json', json_bytes(config))
+    write_new(output / 'SEALED_INPUTS.json', json_bytes(dict(component=component,
+        stage_sha256=stage_sha256, source_manifest_sha256=digest(manifest_raw),
+        tool_inputs_sha256=digest(profile_raw), public_inventory_sha256=digest(inventory_raw))))
+    try:
+        verify_working(stage, config, metadata)
+        require(len(pinned(interpreter, profile['python']['sha256'])) == profile['python']['bytes'],
+                'interpreter_size_changed')
+        freeze(output, interpreter, environment, name, recipe='CollectiGenManager')
+        verify_working(stage, config, metadata)
+        exe = verify_freeze(output, name, '_internal', config)
+        validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw, component=component)
+        payload = output / 'Payload'
+        shutil.copytree(exe.parent, payload)
+        require(tree_inventory(payload) == tree_inventory(exe.parent), 'workflow_distribution_copy_changed')
+        module = sources['suite_core/' + component + '/MODULE_MANIFEST.json']
+        write_new(payload / 'MODULE_MANIFEST.json', module)
+        runtime = dict(schema_version=1, component=component, feature_version=receipt['software_version'],
+            os='windows', architecture='x86_64', inventory_excludes_itself='RUNTIME_MANIFEST.json',
+            GUI_qualified=False, native_qualified=False, source_stage_sha256=stage_sha256, files=[])
+        for path in sorted(payload.rglob('*')):
+            unredirected(path)
+            if path.is_file():
+                raw = read(path)
+                runtime['files'].append(dict(path=path.relative_to(payload).as_posix(),
+                                             size_bytes=len(raw), sha256=digest(raw)))
+        write_new(payload / 'RUNTIME_MANIFEST.json', json_bytes(runtime))
+        result = dict(status='BUILD_ONLY_NOT_EXECUTED', component_id='collectigen.' + component,
+            software_version=receipt['software_version'], executable=name + '.exe', payload=str(payload),
+            source_stage_sha256=stage_sha256, files=tree_inventory(payload), apps_launched=False,
+            signed=False, native_qualified=False, clean_machine_qualified=False)
+        write_new(output / 'BUILD_RESULT.json', json_bytes(result))
+        return result
+    except BaseException as error:
+        write_new(output / 'BUILD_FAILED.json', json_bytes(dict(component=component,
+            error=type(error).__name__ + ': ' + str(error), apps_launched=False, signed=False)))
+        raise
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('source-stage', 'output', 'public-inventory', 'interpreter', 'sdk-root', 'notice-root', 'root-renderer'):
@@ -509,9 +652,24 @@ def main(argv=None):
     parser.add_argument('--stage-sha256', required=True)
     parser.add_argument('--training-worker-root', type=Path)
     parser.add_argument('--training-worker-inventory-sha256')
+    parser.add_argument('--component', choices=('manager', 'generate', 'train'), default='manager')
+    parser.add_argument('--source-manifest', type=Path)
     args = parser.parse_args(argv)
     try:
-        print(build_distribution(**vars(args)))
+        inputs = vars(args)
+        component = inputs.pop('component')
+        subset = inputs.pop('source_manifest')
+        if component == 'manager':
+            if subset is not None:
+                inputs['source_manifest'] = subset
+            print(build_distribution(**inputs))
+        else:
+            require(subset is not None, 'explicit_workflow_frozen_subset_required')
+            require(inputs.pop('training_worker_root') is None
+                    and inputs.pop('training_worker_inventory_sha256') is None,
+                    'workflow_training_worker_closure_not_qualified')
+            inputs.pop('root_renderer')
+            print(build_workflow_distribution(component=component, source_manifest=subset, **inputs))
     except (BuildHold, OSError, subprocess.SubprocessError) as error:
         parser.exit(2, 'Manager build held: ' + str(error) + '\n')
     return 0

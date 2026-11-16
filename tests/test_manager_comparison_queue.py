@@ -217,7 +217,8 @@ def test_manager_visible_comparison_opens_saved_batch_and_returns(tmp_path, monk
     from core.training_evaluation import create_evaluation
     from qt_app import training_evaluation_dialog as evaluation
     from qt_app import training_workflow_controller as workflow
-    from suite_core.manager.window import create_window, unconfigured
+    from suite_core.train.window import create_window as create_train_window
+    from suite_core.tests.workflow_ui_fixtures import synthetic_module_session, trigger_more
     monkeypatch.setattr(evaluation, "CoordinatedCallTask", ImmediateTask)
     monkeypatch.setattr(workflow, "CoordinatedCallTask", ImmediateTask)
     monkeypatch.setattr(groups, "CoordinatedCallTask", ImmediateTask)
@@ -225,14 +226,12 @@ def test_manager_visible_comparison_opens_saved_batch_and_returns(tmp_path, monk
     save_plan(saved, create_evaluation(plan(), prompts=["generated blue cube"], seeds=[7, 8]))
     before = saved.read_bytes()
     monkeypatch.setattr(evaluation.QFileDialog, "getOpenFileName", lambda *a, **k: (str(saved), ""))
-    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
-    manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
-    manager.checked_image_connection = lambda: ("http://127.0.0.1:7801", "fixture-v1")
+    session = synthetic_module_session(tmp_path, 'train')
+    manager = create_train_window(session)
+    manager.state.checked_image_connection = lambda: ("http://127.0.0.1:7801", "fixture-v1")
     manager.resize(1500, 960); manager.show()
-    item = manager.navigation.item(manager.page_rows["Training"])
-    QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
-                     pos=manager.navigation.visualItemRect(item).center())
-    click(manager.training_comparison_button)
+    assert manager.surface.isVisible()
+    trigger_more(manager, 'Compare Samples…')
     controller = manager._training_comparison_controller
     review, = tuple(controller.dialogs)
     assert not review.batch_review_only
@@ -277,25 +276,24 @@ def test_manager_visible_comparison_opens_saved_batch_and_returns(tmp_path, monk
 
 @pytest.mark.parametrize("return_mode", ["button", "close"])
 def test_manager_single_comparison_image_returns_to_saved_review(tmp_path, monkeypatch, return_mode):
-    """Use the real Manager entry and visible image-review and return controls."""
+    """Use the standalone Train entry with an explicit synthetic module channel and visible image-review and return controls."""
     application = app()
     from core.training_evaluation import create_evaluation
     from qt_app import training_evaluation_dialog as evaluation
-    from suite_core.manager.window import create_window, unconfigured
+    from suite_core.train.window import create_window as create_train_window
+    from suite_core.tests.workflow_ui_fixtures import synthetic_module_session, trigger_more
     monkeypatch.setattr(evaluation, "CoordinatedCallTask", ImmediateTask)
     saved = tmp_path / "single-image-comparison.json"
     fixed = create_evaluation(plan(), prompts=["generated blue cube"], seeds=[7, 8])
     save_plan(saved, fixed)
     before = saved.read_bytes()
     monkeypatch.setattr(evaluation.QFileDialog, "getOpenFileName", lambda *a, **k: (str(saved), ""))
-    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
-    manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
-    manager.checked_image_connection = lambda: ("http://127.0.0.1:7801", "fixture-v1")
+    session = synthetic_module_session(tmp_path, 'train')
+    manager = create_train_window(session)
+    manager.state.checked_image_connection = lambda: ("http://127.0.0.1:7801", "fixture-v1")
     manager.resize(1500, 960); manager.show()
-    item = manager.navigation.item(manager.page_rows["Training"])
-    QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
-                    pos=manager.navigation.visualItemRect(item).center())
-    click(manager.training_comparison_button)
+    assert manager.surface.isVisible()
+    trigger_more(manager, 'Compare Samples…')
     review, = tuple(manager._training_comparison_controller.dialogs)
     click(review.open_saved)
     assert review.session is not None, review.status.text()
@@ -317,7 +315,8 @@ def test_manager_single_comparison_image_returns_to_saved_review(tmp_path, monke
     else:
         close_clean(generation)
     settle(review.isVisible)
-    assert manager.navigation.currentRow() == manager.page_rows["Training"]
+    assert manager.module_session.component_id == 'collectigen.train'
+    assert manager.centralWidget() is manager.surface and manager.surface.isVisible()
     assert review.path == saved
     assert saved.read_bytes() == before
     assert review.session.digest == fixed.digest

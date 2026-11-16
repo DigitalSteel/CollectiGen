@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import dataclass
 import json
 import math
 from pathlib import Path
@@ -20,6 +21,13 @@ from .components import DisclosureButton
 from .gallery import ProtectedImageView, content_safety_policy
 from .generation_setup_save import SetupSaveDialog
 from .workers import AsyncCallTask
+
+
+@dataclass(frozen=True)
+class _RegisteredResourceChoice:
+    """Keep raw JSON opaque to QVariant's bounded integer conversion."""
+
+    row: dict
 
 
 class _SavedTextPartDialog(QDialog):
@@ -469,6 +477,268 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
             choice.toggled.connect(self._invalidate)
         self._record_changed()
 
+    def _require_unfinished_review_idle(self, *, allow_source_preview=False):
+        if (self._suggestion_task is not None or self.save_in_progress
+                or self._source_preview_task is not None and not allow_source_preview
+                or any(dialog.isVisible() for dialog in self.findChildren(QDialog))):
+            raise ValueError('Finish the current image preview, suggestion, edit or save before retaining this review.')
+
+    def unfinished_review_snapshot(self):
+        """Copy all choices without applying a recipe or starting any work.
+
+        The caller saves this JSON through the original guarded GenerationPlan
+        transaction. A returned snapshot is not save/readback or drain evidence.
+        """
+        from core.generation_setup_review_draft import validate_review_snapshot
+        self._require_unfinished_review_idle()
+        snapshot = deepcopy(getattr(self, '_unfinished_snapshot_base', {}))
+        state = snapshot.setdefault('state', {})
+        record_index = (self.record_choice.currentData()
+                        if type(self.record_choice.currentData()) is int else -1)
+        same_record = state.get('record_index', record_index) == record_index
+        def checked(item):
+            return item.checkState(0) == Qt.Checked
+        def selection(tree):
+            return tree.indexOfTopLevelItem(tree.currentItem())
+        old_text = state.get('text_rows', [])
+        text_rows = []
+        for index in range(self.text_tree.topLevelItemCount()):
+            item = self.text_tree.topLevelItem(index)
+            old = old_text[index] if index < len(old_text) else {}
+            text_rows.append({**old, 'text': item.text(1), 'source': item.text(2),
+                'data': item.data(0, Qt.UserRole), 'checked': checked(item)})
+        lora_rows = []
+        prior_loras = {row['resource_index']: row for row in state.get('lora_rows', [])} if same_record else {}
+        for index in range(self.lora_tree.topLevelItemCount()):
+            item = self.lora_tree.topLevelItem(index)
+            resource_index = item.data(0, Qt.UserRole)
+            old = prior_loras.get(resource_index, {})
+            strengths = deepcopy(old.get('strengths', {}))
+            for key, (change, value) in self._lora_strength_controls[resource_index].items():
+                strengths[key] = {**strengths.get(key, {}), 'checked': change.isChecked(), 'value': value.value()}
+            lora_rows.append({**old, 'resource_index': resource_index, 'checked': checked(item),
+                              'strengths': strengths})
+        prior_recorded = {row['resource_index']: row for row in state.get('recorded_rows', [])} if same_record else {}
+        recorded_rows = []
+        for index in range(self.recorded_resource_tree.topLevelItemCount()):
+            item = self.recorded_resource_tree.topLevelItem(index)
+            resource_index = item.data(0, Qt.UserRole)
+            recorded_rows.append({**prior_recorded.get(resource_index, {}),
+                'resource_index': resource_index, 'checked': checked(item)})
+        prior_chosen = {(row['resource']['role'], row['resource']['id']): row
+                        for row in state.get('chosen_resources', [])}
+        chosen = []
+        for index in range(self.chosen_resource_tree.topLevelItemCount()):
+            item = self.chosen_resource_tree.topLevelItem(index)
+            resource = deepcopy(item.data(0, Qt.UserRole).row)
+            weights = ({key: self.chosen_resource_tree.itemWidget(item, column).value()
+                        for column, key in ((2, 'model'), (3, 'text_encoder'))}
+                       if resource['role'] == 'lora' else {})
+            chosen.append({**prior_chosen.get((resource['role'], resource['id']), {}),
+                'resource': resource, 'checked': checked(item), 'weights': weights})
+        candidates = deepcopy(self._suggestion_candidates)
+        for index, candidate in enumerate(candidates):
+            candidate['choice_label'] = self.suggestion_choice.itemText(index)
+        current = self.suggestion_choice.currentIndex()
+        if 0 <= current < len(candidates):
+            candidates[current]['text'] = self.suggestion_text.toPlainText()
+            candidates[current]['target'] = self.suggestion_target.currentData()
+        parts = deepcopy(state.get('parts', {}))
+        for kind in self.part_fields:
+            parts[kind] = {**parts.get(kind, {}), 'text': self._part_text(kind),
+                           'checked': self.part_checks[kind].isChecked()}
+        include = deepcopy(state.get('include', {}))
+        for key in ('model', 'sampling', 'prompt', 'negative'):
+            include[key] = getattr(self, 'include_' + key).isChecked()
+        disclosures = deepcopy(state.get('disclosures', {}))
+        for key, control in (('lora', self.lora_toggle), ('resources', self.resource_toggle),
+                ('manual_parts', self.manual_parts_toggle), ('suggestion_source', self.suggestion_source_toggle),
+                ('exact', self.exact_toggle)):
+            disclosures[key] = control.isChecked()
+        state.update(name=self.name.text(), record_index=(self.record_choice.currentData()
+            if type(self.record_choice.currentData()) is int else -1),
+            text_rows=text_rows, text_index=selection(self.text_tree), parts=parts, include=include,
+            lora_rows=lora_rows, recorded_rows=recorded_rows, chosen_resources=chosen,
+            suggestions=candidates, suggestion_index=current,
+            suggestion_goal=list(self.suggestion_goal.currentData() or ('other',)),
+            tab=self.task_tabs.currentIndex(), disclosures=disclosures,
+            scrolls=[scroll.verticalScrollBar().value()
+                     for scroll in (self.scroll, self.suggestions_scroll, self.models_scroll)],
+            tree_selection={**state.get('tree_selection', {}), 'lora': selection(self.lora_tree),
+                'recorded': selection(self.recorded_resource_tree), 'chosen': selection(self.chosen_resource_tree)},
+            saved_text_status=self.saved_text_status.text(),
+            saved_text_status_visible=not self.saved_text_status.isHidden(),
+            suggestion_status=self.suggestion_status.text(),
+            reviewed_proposal=deepcopy(self.recipe if self.recipe is not None else
+                getattr(self, '_unfinished_review_proposal', None)), notes=list(self.notes),
+            exact_text=self.exact.toPlainText(), strength_text=self.strength_review.text(),
+            strength_visible=not self.strength_review.isHidden(),
+            exact_toggle_visible=not self.exact_toggle.isHidden())
+        snapshot.update(schema_version=1, kind='image-setup-unfinished-review',
+            records=[record.to_dict() for record in self.records], fragments=list(self.fragments),
+            source_identity=deepcopy(self.source_identity),
+            suggestion_source=None if self.suggestion_source is None else str(self.suggestion_source))
+        return validate_review_snapshot(snapshot)
+
+    def restore_unfinished_review_snapshot(self, snapshot):
+        """Restore choices on the reconstructed image review, then recheck its source.
+
+        Providers, settings, registry, jobs and source pixels belong to the new
+        admitted host. Proposed setup acceptance and saving remain explicit.
+        """
+        from core.generation_setup_review_draft import validate_review_snapshot
+        from PySide6.QtCore import QSignalBlocker
+        self._require_unfinished_review_idle(allow_source_preview=True)
+        snapshot = validate_review_snapshot(snapshot)
+        # The constructor starts a read-only preview. Its pixels and worker are
+        # not review choices; compare immutable constructor evidence directly.
+        current = dict(records=[record.to_dict() for record in self.records],
+            fragments=list(self.fragments), source_identity=deepcopy(self.source_identity),
+            suggestion_source=None if self.suggestion_source is None else str(self.suggestion_source))
+        for key in ('records', 'fragments', 'source_identity', 'suggestion_source'):
+            if json.dumps(current[key], sort_keys=True, ensure_ascii=False) != json.dumps(
+                    snapshot[key], sort_keys=True, ensure_ascii=False):
+                raise ValueError('The unfinished review belongs to a different image or recorded evidence.')
+        state = snapshot['state']
+        record = self.records[state['record_index']] if state['record_index'] >= 0 else None
+        for name, roles in (('lora_rows', ('lora',)), ('recorded_rows', ('checkpoint', 'vae'))):
+            expected = [index for index, resource in enumerate(record.resources)
+                if resource.role in roles and type(resource.hashes.get('sha256')) is str
+                and SHA.fullmatch(resource.hashes['sha256'])] if record is not None else []
+            if [row['resource_index'] for row in state[name]] != expected:
+                raise ValueError('The recorded component choices changed; the unfinished review was not applied.')
+        # All schema/constructor/row checks above precede the first widget edit.
+        controls = [self.name, self.record_choice, self.text_tree, self.suggestion_choice,
+            self.suggestion_target, self.suggestion_goal, *self.part_fields.values(),
+            *self.part_checks.values(), *(getattr(self, 'include_' + key)
+                for key in ('model', 'sampling', 'prompt', 'negative'))]
+        blockers = [QSignalBlocker(control) for control in controls]
+        try:
+            self.name.setText(state['name'])
+            self.record_choice.setCurrentIndex(state['record_index'] + 1)
+            self._record_changed()
+            for index, row in enumerate(state['text_rows']):
+                item = self.text_tree.topLevelItem(index)
+                item.setText(1, row['text']); item.setText(2, row['source'])
+                item.setData(0, Qt.UserRole, row['data'])
+                item.setCheckState(0, Qt.Checked if row['checked'] else Qt.Unchecked)
+            self.text_tree.setCurrentItem(self.text_tree.topLevelItem(state['text_index'])
+                if state['text_index'] >= 0 else None)
+            for kind in self.part_fields:
+                field = self.part_fields[kind]
+                (field.setPlainText if isinstance(field, QTextEdit) else field.setText)(state['parts'][kind]['text'])
+                self.part_checks[kind].setChecked(state['parts'][kind]['checked'])
+            for name in ('lora_rows', 'recorded_rows'):
+                tree = self.lora_tree if name == 'lora_rows' else self.recorded_resource_tree
+                for index, row in enumerate(state[name]):
+                    tree.topLevelItem(index).setCheckState(0, Qt.Checked if row['checked'] else Qt.Unchecked)
+                    if name == 'lora_rows':
+                        for key, data in row['strengths'].items():
+                            if key in self._lora_strength_controls[row['resource_index']]:
+                                change, value = self._lora_strength_controls[row['resource_index']][key]
+                                value.setValue(data['value']); change.setChecked(data['checked'])
+                        self._lora_selection_changed(tree.topLevelItem(index), 0)
+            self.chosen_resource_tree.clear()
+            for row in state['chosen_resources']:
+                self._append_resource_choice(row['resource'], checked=row['checked'], weights=row['weights'])
+            for key in ('model', 'sampling', 'prompt', 'negative'):
+                getattr(self, 'include_' + key).setChecked(state['include'][key])
+            self._model_inclusion_changed()
+            self._suggestion_candidates = deepcopy(state['suggestions'])
+            self.suggestion_choice.clear()
+            for row in self._suggestion_candidates:
+                self.suggestion_choice.addItem(row.get('choice_label', row['kind'] + ' — uncertain local suggestion'))
+            self.suggestion_choice.setCurrentIndex(state['suggestion_index'])
+            self._show_suggestion_candidate(state['suggestion_index'])
+            self._invalidate()
+            self.notes = tuple(deepcopy(state['notes']))
+            self._unfinished_review_proposal = deepcopy(state['reviewed_proposal'])
+            self.exact.setPlainText(state['exact_text'])
+            self.exact_toggle.setVisible(state.get('exact_toggle_visible', bool(state['exact_text'])))
+            self.strength_review.setText(state['strength_text'])
+            self.strength_review.setVisible(state.get('strength_visible', bool(state['strength_text'])))
+            self.saved_text_status.setText(state['saved_text_status'])
+            self.saved_text_status.setVisible(state['saved_text_status_visible'])
+            for key, control in (('lora', self.lora_toggle), ('resources', self.resource_toggle),
+                    ('manual_parts', self.manual_parts_toggle), ('suggestion_source', self.suggestion_source_toggle),
+                    ('exact', self.exact_toggle)):
+                control.setChecked(state['disclosures'][key])
+            for key, tree in (('lora', self.lora_tree), ('recorded', self.recorded_resource_tree),
+                              ('chosen', self.chosen_resource_tree)):
+                index = state['tree_selection'][key]
+                tree.setCurrentItem(tree.topLevelItem(index) if index >= 0 else None)
+            self._unfinished_snapshot_base = deepcopy(snapshot)
+        finally:
+            for blocker in blockers:
+                blocker.unblock()
+        self.edit_saved_text_button.setEnabled(self.text_tree.currentItem() is not None)
+        self.review_status.setText('Your unfinished choices are restored. Review Proposed Setup again before saving.')
+        # A previously reviewed proposal is retained as evidence, never accepted
+        # automatically under changed settings or resource/runtime observations.
+        self.recipe = None
+        self.save_button.setEnabled(False)
+        self._unfinished_unavailable_goal = None
+        result = self.resume_description_setup()
+        goal = tuple(state['suggestion_goal'])
+        index = next((i for i in range(self.suggestion_goal.count())
+                      if tuple(self.suggestion_goal.itemData(i) or ()) == goal), -1)
+        if index < 0:
+            self.suggestion_goal.addItem('Saved goal — choose a compatible description model or another goal', goal)
+            index = self.suggestion_goal.count() - 1
+            self.suggestion_goal.model().item(index).setEnabled(False)
+            self.suggest_button.setEnabled(False)
+            if result:
+                self.suggestion_status.setText('Your saved suggestion goal is retained but unavailable with the current description model. Choose another goal or review Description Setup.')
+            self._unfinished_unavailable_goal = goal
+            if not getattr(self, '_unfinished_goal_connected', False):
+                self.suggestion_goal.currentIndexChanged.connect(self._unfinished_goal_changed)
+                self._unfinished_goal_connected = True
+        self.suggestion_goal.setCurrentIndex(index)
+        self.task_tabs.setCurrentIndex(state['tab'])
+        def restore_scrolls():
+            from shiboken6 import isValid
+            if isValid(self):
+                for scroll, value in zip((self.scroll, self.suggestions_scroll, self.models_scroll), state['scrolls']):
+                    scroll.verticalScrollBar().setValue(value)
+        QTimer.singleShot(0, restore_scrolls)
+        issue = self._unfinished_registered_resource_issue()
+        if issue:
+            self.review_status.setText(issue)
+        return result and not issue
+
+    def _unfinished_registered_resource_issue(self):
+        """Recheck bounded registry identity/declarations, never model file contents."""
+        chosen = self._chosen_registered_resources()
+        if not chosen:
+            return ''
+        message = ('Your registered component choices and authored strengths are retained, but '
+            'a selected component is unavailable or changed. Uncheck it or explicitly choose '
+            'a current registered replacement before reviewing and saving this setup.')
+        if self.registry is None:
+            return message
+        try:
+            records = self.registry.snapshot()[0]['resources']
+            for resource in chosen:
+                current = records.get(resource['id'])
+                if (not isinstance(current, dict)
+                        or current.get('identity', {}).get('resource_id') != resource['id']
+                        or not any(row.get('role') == resource['role']
+                                   for row in current.get('declarations', []))):
+                    return message
+                if resource['id'].startswith('sha256:') and resource.get('hashes', {}).get('sha256') != resource['id'][7:]:
+                    return message
+        except (ValueError, RuntimeError, OSError, KeyError, TypeError, AttributeError):
+            return message
+        return ''
+
+    def _unfinished_goal_changed(self, *_args):
+        saved = getattr(self, '_unfinished_unavailable_goal', None)
+        if saved is not None and tuple(self.suggestion_goal.currentData() or ()) != saved:
+            self._unfinished_unavailable_goal = None
+            if self.resume_description_setup():
+                self.suggest_button.setEnabled(self.jobs is not None and self.settings is not None
+                    and self.suggestion_source is not None and self._suggestion_task is None and not self.save_in_progress)
+
     def _suggestion_source_toggled(self, checked):
         if checked:
             QTimer.singleShot(0, self._scroll_to_suggestion_review)
@@ -712,7 +982,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
             item = self.chosen_resource_tree.topLevelItem(index)
             if item.checkState(0) != Qt.Checked:
                 continue
-            row = deepcopy(item.data(0, Qt.UserRole))
+            row = deepcopy(item.data(0, Qt.UserRole).row)
             if row["role"] == "lora":
                 row["weights"] = {
                     key: self.chosen_resource_tree.itemWidget(item, column).value()
@@ -740,7 +1010,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         if row is None:
             return
         for index in reversed(range(self.chosen_resource_tree.topLevelItemCount())):
-            existing = self.chosen_resource_tree.topLevelItem(index).data(0, Qt.UserRole)
+            existing = self.chosen_resource_tree.topLevelItem(index).data(0, Qt.UserRole).row
             if (row["role"] in {"checkpoint", "vae"} and existing["role"] == row["role"]) or (
                     row["role"] == existing["role"] == "lora" and existing["id"] == row["id"]):
                 self.chosen_resource_tree.takeTopLevelItem(index)
@@ -749,10 +1019,14 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
                 recorded = self.recorded_resource_tree.topLevelItem(index)
                 if recorded.text(2).lower() == row["role"]:
                     recorded.setCheckState(0, Qt.Unchecked)
+        self._append_resource_choice(row)
+
+    def _append_resource_choice(self, row, *, checked=True, weights=None):
+        """Render a reviewed choice without discovery, lookup or substitution."""
         item = QTreeWidgetItem(("", row.get("display_label") or row["name"], "", ""))
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-        item.setCheckState(0, Qt.Checked)
-        item.setData(0, Qt.UserRole, row)
+        item.setCheckState(0, Qt.Checked if checked else Qt.Unchecked)
+        item.setData(0, Qt.UserRole, _RegisteredResourceChoice(deepcopy(row)))
         item.setToolTip(1, row.get("display_label") or row["name"])
         self.chosen_resource_tree.addTopLevelItem(item)
         if row["role"] == "lora":
@@ -761,7 +1035,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
                 strength.setRange(-10, 10)
                 strength.setDecimals(6)
                 strength.setSingleStep(.05)
-                strength.setValue(float(row["weights"].get(key, 1)))
+                strength.setValue(float((weights if weights is not None else row["weights"]).get(key, 1)))
                 strength.setAccessibleName(f"Chosen {label} strength for {item.text(1)}")
                 strength.valueChanged.connect(self._invalidate)
                 self.chosen_resource_tree.setItemWidget(item, column, strength)
@@ -805,6 +1079,7 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         self._invalidate()
 
     def _invalidate(self, *_args):
+        self._unfinished_review_proposal = None
         self.recipe = None
         self.notes = ()
         self.save_button.setEnabled(False)
@@ -993,6 +1268,12 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         )
 
     def review(self):
+        if getattr(self, '_unfinished_snapshot_base', None) is not None:
+            issue = self._unfinished_registered_resource_issue()
+            if issue:
+                self._invalidate()
+                self.review_status.setText(issue)
+                return
         index = self.record_choice.currentData()
         record = self.records[index] if isinstance(index, int) else None
         strength_changes = self._selected_lora_weight_overrides() if self.include_model.isChecked() else {}
@@ -1073,6 +1354,12 @@ class ImageGenerationSetupDialog(SetupSaveDialog):
         self.save_button.setEnabled(True)
 
     def _save_reviewed(self):
+        if getattr(self, '_unfinished_snapshot_base', None) is not None:
+            issue = self._unfinished_registered_resource_issue()
+            if issue:
+                self._invalidate()
+                self.review_status.setText(issue)
+                return
         if self.recipe is not None:
             self.save_button.setEnabled(False)
             self.save_requested(self.recipe)

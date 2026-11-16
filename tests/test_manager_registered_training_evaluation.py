@@ -13,7 +13,8 @@ from PySide6.QtTest import QTest
 from qt_app import training_evaluation_dialog as evaluation
 from core.model_resource_registry import inspect_model_resource
 from qt_app.generation_workflow import _generation_model_registry
-from suite_core.manager.window import create_window, unconfigured
+from suite_core.train.window import create_window as create_train_window
+from suite_core.tests.workflow_ui_fixtures import synthetic_module_session, trigger_more
 from test_manager_comparison_queue import app, click, settle, close_clean, capture, ImmediateTask
 
 
@@ -33,13 +34,11 @@ def registered_fixture(manager, tmp_path):
 def test_manager_registered_result_comparison_uses_manager_return(tmp_path, monkeypatch, origin):
     application = app()
     monkeypatch.setattr(evaluation, "CoordinatedCallTask", ImmediateTask)
-    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
-    manager = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
-    manager.checked_image_connection = lambda: ("http://127.0.0.1:7801", "generated-test")
+    session = synthetic_module_session(tmp_path, 'train')
+    manager = create_train_window(session)
+    manager.state.checked_image_connection = lambda: ("http://127.0.0.1:7801", "generated-test")
     manager.resize(1500, 960); manager.show()
-    item = manager.navigation.item(manager.page_rows["Training"])
-    QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
-                    pos=manager.navigation.visualItemRect(item).center())
+    assert manager.surface.isVisible()
     state = manager.generation_state()
     state.generation_data_root.mkdir(parents=True, exist_ok=True)
     registry, resource = registered_fixture(manager, tmp_path)
@@ -78,7 +77,8 @@ def test_manager_registered_result_comparison_uses_manager_return(tmp_path, monk
     capture(generation, "manager-registered-" + origin + "-return")
     click(generation.training_comparison_return_button)
     settle(review.isVisible)
-    assert manager.navigation.currentRow() == manager.page_rows["Training"]
+    assert manager.module_session.component_id == 'collectigen.train'
+    assert manager.centralWidget() is manager.surface and manager.surface.isVisible()
     assert review.run_id == selected_run and review.required_resource == resource
     assert generation.plan.digest == before
     assert registry.path.read_bytes() == registry_before

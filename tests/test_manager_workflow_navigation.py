@@ -1,6 +1,6 @@
-"""Named Manager task homes; synthetic UI, no model or worker execution."""
+"""Standalone workflows and Manager-only navigation; synthetic channel evidence."""
 import os
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 from datetime import datetime, timezone
 from types import SimpleNamespace as NS
 import pytest
@@ -8,108 +8,103 @@ from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 from suite_core.manager.window import create_window, unconfigured
+from suite_core.tests.workflow_ui_fixtures import workflow_window
 
 
 @pytest.fixture
 def manager_window(tmp_path):
     app = QApplication.instance() or QApplication([])
-    session = NS(state="ready", admitted=NS(layout=NS(data_root=tmp_path)))
-    window = create_window(unconfigured(datetime.now(timezone.utc)), normal_entry_session=session)
-    window.resize(1500, 960)
-    window.show()
-    app.processEvents()
-    yield app, window
-    window.close()
-    app.processEvents()
-
-
-def test_visible_workflow_navigation_keeps_one_panel_and_retained_routes(manager_window):
-    app, window = manager_window
-    # Existing component/setup route identities are preserved.
-    for index, name in enumerate(("Dashboard", "Servers", "Applications", "Databases", "Dependencies", "Settings")):
-        assert window.page_rows[name] == index
-    assert window.generate_page.isAncestorOf(window.generation_panel)
-    assert window.training_page.isAncestorOf(window.training_panel)
-    assert not window.applications_page.isAncestorOf(window.generation_panel)
-    assert not window.applications_page.isAncestorOf(window.training_panel)
-    for name, panel, other in (("Generate", window.generation_panel, window.training_panel),
-                                ("Training", window.training_panel, window.generation_panel)):
-        item = window.navigation.item(window.page_rows[name])
-        QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
-                        pos=window.navigation.visualItemRect(item).center())
-        app.processEvents()
-        assert window.stack.currentIndex() == window.page_rows[name]
-        assert panel.isVisible() and panel.isEnabled()
-        assert not other.isVisible()
-    assert not hasattr(window, "state")  # Navigation itself does not start jobs or create a runtime.
-
-
-def test_unconfigured_task_homes_do_not_enable_runtime(tmp_path):
-    app = QApplication.instance() or QApplication([])
     window = create_window(unconfigured(datetime.now(timezone.utc)))
-    try:
-        for name, panel in (("Generate", window.generation_panel), ("Training", window.training_panel)):
-            window.navigation.setCurrentRow(window.page_rows[name])
-            app.processEvents()
-            assert not panel.isEnabled()
-        assert not hasattr(window, "state")
-    finally:
-        window.close()
-        app.processEvents()
+    window.resize(1500, 960); window.show(); app.processEvents()
+    yield app, window
+    window.close(); app.processEvents()
 
 
-def test_retained_drafts_switch_without_replacing_original_owners(manager_window):
+@pytest.fixture
+def generate_window(tmp_path):
+    app, session, window = workflow_window(tmp_path, 'generate')
+    yield app, window
+    for draft in tuple(window.generation_page.retained_workspaces()): draft.close()
+    window.close(); app.processEvents()
+
+
+@pytest.fixture
+def train_window(tmp_path):
+    app, session, window = workflow_window(tmp_path, 'train')
+    yield app, window
+    window.close(); app.processEvents()
+
+
+def test_visible_workflow_navigation_keeps_one_panel_and_retained_routes(manager_window, generate_window, train_window):
+    app, manager = manager_window
+    for index, name in enumerate(('Dashboard', 'Servers', 'Applications', 'Databases', 'Dependencies', 'Settings')):
+        assert manager.page_rows[name] == index
+    assert 'Generate' not in manager.page_rows and 'Training' not in manager.page_rows
+    item = manager.navigation.item(manager.page_rows['Applications'])
+    QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton, pos=manager.navigation.visualItemRect(item).center())
+    app.processEvents()
+    assert manager.stack.currentIndex() == manager.page_rows['Applications']
+    for _app, module in (generate_window, train_window):
+        assert module.centralWidget() is module.surface and module.surface.isVisible()
+        assert not manager.isAncestorOf(module.surface)
+        assert module.module_session.lease_release_authorized is False
+        assert not module.state.jobs.active()
+    assert not hasattr(manager, 'state')
+    assert not hasattr(manager, 'generation_page') and not hasattr(manager, 'training_panel')
+    assert not any(command.key == 'workflow-help' for command in manager.commands)
+
+
+def test_unconfigured_task_homes_do_not_enable_runtime(manager_window):
+    app, window = manager_window
+    window.navigation.setCurrentRow(window.page_rows['Applications']); app.processEvents()
+    for _component, (status, opening, manage, group) in window.workflow_applications.rows.items():
+        assert not opening.isEnabled() and not manage.isEnabled()
+        assert 'No installable release is available' in status.text()
+    assert not hasattr(window, 'state')
+
+
+def test_retained_drafts_switch_without_replacing_original_owners(generate_window):
     from PySide6.QtCore import Signal
     from PySide6.QtWidgets import QDialog
-    app, window = manager_window
-
+    app, window = generate_window
     class Draft(QDialog):
         workspace_closed = Signal()
         draft_picker_open = False
         def has_active_background_work(self): return False
         def closeEvent(self, event):
-            self.workspace_closed.emit()
-            event.accept()
-
+            self.workspace_closed.emit(); event.accept()
     first, second, video = Draft(), Draft(), Draft()
     page = window.generation_page
-    page.add_workspace(first, label="New Image")
-    page.add_workspace(second, label="New Image")
+    page.add_workspace(first, label='New Image'); page.add_workspace(second, label='New Image')
     assert page.draft_choice.itemText(0) != page.draft_choice.itemText(1)
-    page.add_workspace(video, label="Retained video", media_type="video", task="video")
+    page.add_workspace(video, label='Retained video', media_type='video', task='video')
     assert page.retained_workspaces() == (first, second, video)
     page.show_workspace(first)
     assert page.active_workspace() is first
-    assert window._generation_dialog is first
-    assert window._video_generation_dialog is video
+    assert window._generation_dialog is first and window._video_generation_dialog is video
     page.show_workspace(video)
-    assert page.active_workspace() is video
-    assert page.retained_workspaces() == (first, second, video)
-    assert not page.begin_button.isVisible()  # Manager keeps its original launch controls.
-    assert not hasattr(window, "state")
+    assert page.active_workspace() is video and page.retained_workspaces() == (first, second, video)
+    assert not page.begin_button.isVisible()
+    assert not window.surface.new.isVisible() and window.surface.more.isVisible()
+    assert not window.state.jobs.active()
 
 
-def test_close_cannot_drop_an_inactive_busy_draft(manager_window):
+def test_close_cannot_drop_an_inactive_busy_draft(generate_window):
     from PySide6.QtCore import Signal
     from PySide6.QtWidgets import QDialog
-    app, window = manager_window
+    app, window = generate_window
     closed = []
-
     class Draft(QDialog):
         workspace_closed = Signal()
         draft_picker_open = False
         def __init__(self, name, busy=False):
-            super().__init__()
-            self.name, self.busy = name, busy
+            super().__init__(); self.name, self.busy = name, busy
         def has_active_background_work(self): return self.busy
         def closeEvent(self, event):
-            closed.append(self.name)
-            self.workspace_closed.emit()
-            event.accept()
-
-    busy, visible = Draft("original", busy=True), Draft("newer")
-    window.generation_page.add_workspace(busy, label="Original running request")
-    window.generation_page.add_workspace(visible, label="Newer idle request")
+            closed.append(self.name); self.workspace_closed.emit(); event.accept()
+    busy, visible = Draft('original', True), Draft('newer')
+    window.generation_page.add_workspace(busy, label='Original running request')
+    window.generation_page.add_workspace(visible, label='Newer idle request')
     assert window.generation_page.active_workspace() is visible
     assert not window.close()
     assert window.isVisible() and not closed
@@ -117,117 +112,81 @@ def test_close_cannot_drop_an_inactive_busy_draft(manager_window):
     assert window.generation_page.retained_workspaces() == (busy, visible)
     busy.busy = False
     assert window.close()
-    assert closed == ["original", "newer"]
+    assert closed == ['original', 'newer']
 
 
-def test_training_open_review_selection_retains_exact_controller_owner(manager_window):
+def test_training_open_review_selection_retains_exact_controller_owner(train_window):
     from PySide6.QtWidgets import QDialog
-    app, window = manager_window
+    app, window = train_window
     first, second = QDialog(window), QDialog(window)
-    first.setWindowTitle("Retained SDXL review")
-    second.setWindowTitle("Retained comparison")
+    first.setWindowTitle('Retained SDXL review'); second.setWindowTitle('Retained comparison')
     calls = []
     class Reviews:
         def __init__(self, *dialogs): self.dialogs = list(dialogs)
         def open_reviews(self): return tuple(self.dialogs)
         def show_review(self, dialog):
             if dialog not in self.dialogs: return False
-            calls.append(dialog)
-            return True
+            calls.append(dialog); return True
         def has_active_background_work(self): return False
     preparation, comparison = Reviews(first), Reviews(second)
-    window._sdxl_preparation_controller = preparation
-    window._training_comparison_controller = comparison
+    window._sdxl_preparation_controller = preparation; window._training_comparison_controller = comparison
     window.refresh_open_training_reviews()
-    assert window.training_open_reviews.count() == 2
-    window.training_open_reviews.setCurrentIndex(1)
-    window.refresh_open_training_reviews()
-    assert window.training_open_reviews.currentData() == (comparison, second)
-    window.return_to_open_training_review()
+    assert window.surface.reviews.count() == 2
+    window.surface.reviews.setCurrentIndex(1); window.refresh_open_training_reviews()
+    assert window._training_reviews[window.surface.reviews.currentData()] == (comparison, second)
+    assert window.surface.continue_review.isVisible() and window.surface.continue_review.isEnabled()
+    QTest.mouseClick(window.surface.continue_review, Qt.LeftButton)
     assert calls == [second]
-    assert window.navigation.currentRow() == window.page_rows["Training"]
-    # A review that finishes while selected is not reopened or duplicated.
-    comparison.dialogs.clear()
-    window.return_to_open_training_review()
-    assert calls == [second]
-    assert window.training_open_reviews.count() == 1
-    preparation.dialogs.clear()
-    window.refresh_open_training_reviews()
-    assert not window.training_open_review_button.isEnabled()
-    window._sdxl_preparation_controller = None
-    window._training_comparison_controller = None
+    comparison.dialogs.clear(); QTest.mouseClick(window.surface.continue_review, Qt.LeftButton)
+    assert calls == [second] and window.surface.reviews.count() == 1
+    preparation.dialogs.clear(); window.refresh_open_training_reviews()
+    assert not window.surface.continue_review.isEnabled()
+    window._sdxl_preparation_controller = window._training_comparison_controller = None
     first.close(); second.close()
 
 
-@pytest.mark.parametrize("theme", ("dark", "light"))
-@pytest.mark.parametrize("section,topic,required", (
-    ("Generate", "generation", ("New or Saved Image", "Review Generation Jobs", "Media Organizer")),
-    ("Training", "training", ("Review Training Package", "Review a Dataset Draft", "Review Saved Training Runs")),
+@pytest.mark.parametrize('theme', ('dark', 'light'))
+@pytest.mark.parametrize('component,section,topic,required', (
+    ('generate', 'Generate', 'generation', ('New Image', 'Review Saved Results', 'Media Organizer')),
+    ('train', 'Train', 'training', ('Open Training Package', 'Open Saved Training Draft', 'Saved Runs')),
 ))
-def test_workflow_help_ribbon_f1_and_close_keep_scope(manager_window, tmp_path, theme, section, topic, required):
+def test_workflow_help_ribbon_f1_and_close_keep_scope(tmp_path, theme, component, section, topic, required):
     from pathlib import Path
     from PySide6.QtWidgets import QAbstractButton, QTextBrowser
-    from qt_app.theme import apply_theme
     from qt_app.help_content import manager_workspace_help
-    app, window = manager_window
-    from test_manager_comparison_queue import app as configure_ui_fonts
-    assert configure_ui_fonts() is app
-    apply_theme(app, theme)
-    window.resize(1920, 1040)
-    item = window.navigation.item(window.page_rows[section])
-    QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
-                    pos=window.navigation.visualItemRect(item).center())
-    app.processEvents()
-    selected = window.navigation.currentRow()
-    control = window._workflow_help_controls[section]
-    assert control.help_text == manager_workspace_help(topic)
-    assert not control.isVisible()  # The command bar owns the one visible home.
-    command, = (c for c in window.commands if c.key == "workflow-help")
-    assert command.source is control and command.label == "Help for " + section
-    tab = next(i for i in range(window.bar.tabs.count()) if window.bar.tabs.tabText(i) == "Help")
-    QTest.mouseClick(window.bar.tabs, Qt.LeftButton, pos=window.bar.tabs.tabRect(tab).center())
-    app.processEvents()
-    visible = [b for b in window.bar.findChildren(QAbstractButton)
-               if b.isVisible() and b.text() == "Help for " + section]
-    assert len(visible) == 1
-    out = Path(os.environ.get("CG_WORKFLOW_HELP_CAPTURES", str(tmp_path)))
-    out.mkdir(parents=True, exist_ok=True)
-    assert window.grab().save(str(out / (section.lower() + "-" + theme + "-entry.png")))
-    QTest.mouseClick(visible[0], Qt.LeftButton)
-    app.processEvents()
+    from test_manager_comparison_queue import app as configured_app
+    app = configured_app()
+    app, session, window = workflow_window(tmp_path, component, theme=theme)
+    from qt_app.components import WindowStatusBar
+    assert isinstance(window.statusBar(), WindowStatusBar)
+    assert window.statusBar().geometry().top() >= window.surface.geometry().bottom()
+    assert not hasattr(window, '_window_status_footer'), 'No floating footer may cover the workflow heading'
+    control = window.workflow_help
+    assert control.help_text == manager_workspace_help(topic) and not control.isVisible()
+    visible = [b for b in window.findChildren(QAbstractButton) if b.isVisible() and b.text() == 'Help']
+    assert visible == [window.surface.help]
+    out = Path(os.environ.get('CG_WORKFLOW_HELP_CAPTURES', str(tmp_path))); out.mkdir(parents=True, exist_ok=True)
+    assert window.grab().save(str(out / (component + '-' + theme + '-entry.png')))
+    QTest.mouseClick(window.surface.help, Qt.LeftButton); app.processEvents()
     guide = control._help_dialog
-    assert guide is not None and guide.isVisible() and guide.windowTitle() == section + " Help"
-    text = "\n".join(b.toPlainText() for b in guide.findChildren(QTextBrowser))
-    assert all(word in text for word in required), text
-    assert "Dataset Collections" not in text  # No nonexistent all-in-one navigation.
-    assert not hasattr(window, "state")  # Help starts no generator, trainer or model work.
-    assert window.navigation.currentRow() == selected
-    assert guide.grab().save(str(out / (section.lower() + "-" + theme + "-guide.png")))
-    assert guide.close()
-    app.processEvents()
+    assert guide is not None and guide.isVisible() and guide.windowTitle() == section + ' Help'
+    text = '\n'.join(b.toPlainText() for b in guide.findChildren(QTextBrowser))
+    for expected in required: assert expected in text
+    assert 'Dataset Collections' not in text
+    assert window.navigation.currentRow() == 0
+    assert not window.state.jobs.active() and not getattr(window, '_generation_dialog', None)
+    assert guide.grab().save(str(out / (component + '-' + theme + '-guide.png')))
+    assert guide.close(); app.processEvents()
     window.activateWindow(); window.setFocus(); app.processEvents()
-    QTest.keyClick(window, Qt.Key_F1)
-    app.processEvents()
+    QTest.keyClick(window, Qt.Key_F1); app.processEvents()
     assert control._help_dialog is not None and control._help_dialog.isVisible()
-    assert window.navigation.currentRow() == selected and not hasattr(window, "state")
-    assert control._help_dialog.close()
-    app.processEvents()
-    assert window.grab().save(str(out / (section.lower() + "-" + theme + "-return.png")))
-    # Other workspaces do not acquire a disabled/no-op Help command.
-    other = window.navigation.item(window.page_rows["Dashboard"])
-    QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
-                    pos=window.navigation.visualItemRect(other).center())
-    app.processEvents()
-    assert not window._workflow_help_shortcut.isEnabled()
-    assert not any(c.key == "workflow-help" for c in window.commands)
-    # Normal Manager Close settles its own open guide as well.
-    QTest.mouseClick(window.navigation.viewport(), Qt.LeftButton,
-                    pos=window.navigation.visualItemRect(item).center())
-    app.processEvents(); window.activateWindow(); window.setFocus(); app.processEvents()
+    assert not window.state.jobs.active()
+    assert control._help_dialog.close(); app.processEvents()
+    assert window.grab().save(str(out / (component + '-' + theme + '-return.png')))
+    window.activateWindow(); window.setFocus(); app.processEvents()
     QTest.keyClick(window, Qt.Key_F1); app.processEvents()
     assert control._help_dialog.isVisible()
-    assert window.close()
-    app.processEvents()
+    assert window.close(); app.processEvents()
     assert not window.isVisible()
     from shiboken6 import isValid
     remaining = control._help_dialog
@@ -285,22 +244,33 @@ def test_responsive_workflow_actions_keep_scope_and_keyboard(tmp_path, monkeypat
     out = Path(os.environ.get("CG_RESPONSIVE_CAPTURES", str(tmp_path / "captures")))
     out.mkdir(parents=True, exist_ok=True)
     try:
-        go("Generate")
-        grid = window.generation_actions_grid
-        controls = tuple(grid.cards)
-        assert len(controls) == 7 and controls[0] is window.generate_plan_button
+        generated_app, generated_session, generated = workflow_window(tmp_path / 'generate-ui', 'generate', theme=theme)
+        generated.resize(*size); settle()
+        assert generated.surface.header.isVisible()
+        assert generated.surface.header.y() < generated.surface.new.y()
+        assert generated.surface.page.empty.isHidden()  # Module guidance replaces all-in-one routes.
+        controls = (generated.surface.new, generated.surface.resume, generated.surface.more, generated.surface.help)
         assert controls[0].property("primary") is True
-        assert len({id(button) for button in controls}) == 7
-        assert window.generate_page.horizontalScrollBar().maximum() == 0
+        assert len({id(button) for button in controls}) == 4
+        expert_labels = [action.text() for action in generated.surface.more.menu().actions()]
+        assert expert_labels.count('Create Generation Setup…') == 1
+        assert expert_labels.count('Plan a Remix…') == 1
+        assert expert_labels.count('Import Prompt Catalog…') == 1
         for control in controls:
             assert control.isVisible()
-            inside(control, window.generate_page.viewport())
-        assert not hasattr(window, "state") and not requests
-        assert window.grab().save(str(out / ("generate-%sx%s-%s.png" % (*size, theme))))
-        # Layout changes keep the original source controls and never open drafts.
-        window.resize(size[0] + 28, size[1]); settle()
-        window.resize(*size); settle()
-        assert tuple(grid.cards) == controls and not hasattr(window, "state")
+            inside(control, generated.surface)
+        generated.surface.new.setFocus(); settle()
+        QTest.keyClick(generated.surface.new, Qt.Key_Tab); settle()
+        assert application.focusWidget() is generated.surface.resume
+        assert not generated.generation_page.retained_workspaces() and not generated.state.jobs.active()
+        assert not requests
+        assert generated.grab().save(str(out / ("generate-%sx%s-%s.png" % (*size, theme))))
+        generated.resize(size[0] + 28, size[1]); settle()
+        generated.resize(*size); settle()
+        assert controls == (generated.surface.new, generated.surface.resume, generated.surface.more, generated.surface.help)
+        assert not generated.generation_page.retained_workspaces()
+        assert generated.close(); settle()
+        window.activateWindow(); window.setFocus(); settle()
         go("Settings")
         panel = window.manager_update_panel
         actions = (panel.check, panel.stage, panel.apply, panel.cancel)

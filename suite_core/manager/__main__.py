@@ -115,6 +115,9 @@ class EntryLifetimeOwner:
         self.organizer_acquisition_executor = self.organizer_acquisition_panel = None
         self.models_workspace_host = None
         self.tag_content_host = None
+        self.workflow_workspace_owner = None
+        self.workflow_services = []
+        self.workflow_applications = None
 
     def _drain_acquisition(self):
         if self.acquisition_panel is not None and not self.acquisition_panel.close_ready(): return False
@@ -137,6 +140,20 @@ class EntryLifetimeOwner:
             executor.begin_close()
             if executor.close_held:return False
         self.organizer_acquisition_executor=self.organizer_acquisition_panel=None
+        return True
+
+    def _drain_workflows(self):
+        if self.workflow_applications is not None and not self.workflow_applications.close_ready():
+            return False
+        owner = self.workflow_workspace_owner
+        if owner is not None and not owner.begin_close():
+            return False
+        for _component_id, _service, executor in self.workflow_services:
+            executor.begin_close()
+            if executor.close_held:
+                return False
+        self.workflow_services = []
+        self.workflow_workspace_owner = self.workflow_applications = None
         return True
 
     def acquire_direct_model(self, host):
@@ -221,6 +238,9 @@ class EntryLifetimeOwner:
         if self.closed:
             return True
         try:
+            if not self._drain_workflows():
+                self.state = 'held'
+                return False
             if not self._drain_tag_content():
                 self.state = "held"
                 return False
@@ -512,6 +532,21 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             if type(organizer_acquisition) is not OrganizerInstallation or type(organizer_executor) is not ResourceExecutorOwner:
                 raise ValueError('typed_organizer_acquisition_and_worker_required')
             entry_owner.organizer_acquisition_executor=organizer_executor
+        workflow_workspace_owner = None
+        workflow_services = []
+        if normal_entry_session is not None and not args.demo:
+            from core.workflow_native_owner import WorkflowWorkspaceOwner
+            from .workflow_acquisition_binding import factory_for_session as workflow_factory_for_session
+            workflow_workspace_owner = WorkflowWorkspaceOwner(normal_entry_session, reader_owner)
+            entry_owner.workflow_workspace_owner = workflow_workspace_owner
+            for component_id in ('collectigen.generate', 'collectigen.train'):
+                factory = workflow_factory_for_session(normal_entry_session, component_id)
+                if factory is not None:
+                    service, executor = factory(reader_owner, connection_settings,
+                        workspace_owner=workflow_workspace_owner)
+                    workflow_services.append((component_id, service, executor))
+                    # Retain each original executor immediately, before fallible UI composition.
+                    entry_owner.workflow_services = list(workflow_services)
         organizer_connection_factory=organizer_factory_for_entry(organizer_connection_factory,normal_entry_session)
         organizer_connection_host = None
         if organizer_connection_factory is not None:
@@ -542,6 +577,7 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             encyclopedia_acquisition=encyclopedia_acquisition, encyclopedia_executor=encyclopedia_executor,
             organizer_connection_host=organizer_connection_host,
             organizer_acquisition=organizer_acquisition, organizer_executor=organizer_executor,
+            workflow_workspace_owner=workflow_workspace_owner, workflow_services=tuple(workflow_services),
             shared_settings_controller=shared_settings_controller,
             shared_settings_submit=shared_settings_submit,
             shared_settings_close_choice=shared_settings_close_choice,
@@ -554,6 +590,7 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
             krea_registry_path=(Path(app_settings_path).parent / "model_resources.json"
                                 if not args.demo and app_settings_path is not None else None))
         entry_owner.window = window
+        entry_owner.workflow_applications = window.workflow_applications
         entry_owner.acquisition_panel = getattr(window, "acquisition_panel", None)
         entry_owner.organizer_acquisition_panel = getattr(window, "organizer_acquisition_panel", None)
         entry_owner.update_panel = getattr(window, "manager_update_panel", None)
@@ -568,7 +605,10 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
         return result
     except BaseException as error:
         entry_owner.preserve_failure(error)
-        if (entry_owner.organizer_acquisition_executor is not None and entry_owner.organizer_acquisition_executor.close_held
+        if (entry_owner.workflow_workspace_owner is not None and entry_owner.workflow_workspace_owner.close_held
+                or any(executor.close_held for _component_id, _service, executor in entry_owner.workflow_services)
+                or entry_owner.workflow_applications is not None and entry_owner.workflow_applications.close_held
+                or entry_owner.organizer_acquisition_executor is not None and entry_owner.organizer_acquisition_executor.close_held
                 or entry_owner.organizer_acquisition_panel is not None and entry_owner.organizer_acquisition_panel.close_held
                 or entry_owner.acquisition_executor is not None and entry_owner.acquisition_executor.close_held or entry_owner.acquisition_panel is not None and entry_owner.acquisition_panel.close_held or entry_owner.reader_owner is not None and entry_owner.reader_owner.close_held or entry_owner.tag_recovery_required() or entry_owner.chat_host is not None
                 and entry_owner.chat_host.close_held or entry_owner.direct_model_host is not None
