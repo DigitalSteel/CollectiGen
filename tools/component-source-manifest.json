@@ -1025,6 +1025,7 @@
     "tests/test_manager_caption_components_ui.py",
     "tests/test_manager_channel_image_reuse.py",
     "tests/test_manager_comparison_queue.py",
+    "tests/test_manager_default_organizer_profile.py",
     "tests/test_manager_dependency_status.py",
     "tests/test_manager_description_settings.py",
     "tests/test_manager_description_setup_return_ui.py",

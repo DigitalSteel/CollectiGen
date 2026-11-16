@@ -106,7 +106,7 @@ def test_candidate_marker_rechecked_and_native_session_still_required(profile, m
         binding._check_candidate(profile, admission.suite_root, admission.data_root)
 
 
-@pytest.mark.parametrize('component', ['collectigen.generate', 'collectigen.train'])
+@pytest.mark.parametrize('component', ['collectigen.generate', 'collectigen.train', 'collectigen.media-organizer'])
 def test_sealed_transport_explicit_finite_components_only(tmp_path, component):
     root = tmp_path / 'sealed'; (root / '_bootstrap').mkdir(parents=True)
     payload = root / '_qualification/asset.bin'; payload.parent.mkdir(); payload.write_bytes(b'INERT ASSET')
@@ -135,7 +135,26 @@ def test_sealed_transport_refuses_unbounded_or_foreign_components(components):
         SealedLocalQualificationOpener(component_ids=components)
 
 
-def test_exact_offer_repository_identity_is_mapped_only_for_workflows(tmp_path):
+def test_sealed_organizer_refuses_other_component_even_when_mapped(tmp_path, monkeypatch):
+    import urllib.request
+    monkeypatch.setattr(urllib.request,'urlopen',lambda *args,**kwargs: pytest.fail('No network fallback'))
+    root=tmp_path/'sealed-organizer';(root/'_bootstrap').mkdir(parents=True)
+    payload=root/'_qualification/asset.bin';payload.parent.mkdir();payload.write_bytes(b'INERT ASSET')
+    urls={component:f'https://github.com/{REPOSITORY}/releases/download/{component}%2Fv0.1.0-alpha.1/candidate.zip'
+          for component in ('collectigen.media-organizer','collectigen.generate')}
+    mapping=raw({'schema':1,'responses':{url:{'path':'_qualification/asset.bin','size':11,
+        'sha256':sha256(payload.read_bytes()).hexdigest()} for url in urls.values()}})
+    descriptor=root/'_bootstrap/qualification-responses.json';descriptor.write_bytes(mapping)
+    opener=SealedLocalQualificationOpener(sha256(mapping).hexdigest(),root,('collectigen.media-organizer',))
+    with opener(Request(urls['collectigen.media-organizer'])) as response:assert response.read()==b'INERT ASSET'
+    with pytest.raises(ValueError,match='unknown_qualification_url'):
+        opener(Request(urls['collectigen.generate']))
+    descriptor.write_bytes(mapping+b' ')
+    with pytest.raises(ValueError,match='sealed_qualification_mapping_changed'):
+        opener(Request(urls['collectigen.media-organizer']))
+
+
+def test_exact_offer_repository_identity_is_mapped_only_for_explicit_components(tmp_path):
     root = tmp_path / 'sealed'; (root / '_bootstrap').mkdir(parents=True)
     repository = root / '_qualification/repository.json'; repository.parent.mkdir()
     contents = raw({'id': 1301951104, 'full_name': REPOSITORY}); repository.write_bytes(contents)
@@ -146,7 +165,7 @@ def test_exact_offer_repository_identity_is_mapped_only_for_workflows(tmp_path):
     pin = sha256(mapping).hexdigest()
     with pytest.raises(ValueError, match='unknown_qualification_url'):
         SealedLocalQualificationOpener(pin, root)(Request(url))
-    for component in ('collectigen.generate', 'collectigen.train'):
+    for component in ('collectigen.generate', 'collectigen.train', 'collectigen.media-organizer'):
         with SealedLocalQualificationOpener(pin, root, (component,))(Request(url)) as response:
             assert response.read() == contents
         with pytest.raises(ValueError, match='unknown_qualification_url'):

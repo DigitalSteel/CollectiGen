@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+from dataclasses import dataclass
 import hashlib
 import json
 import os
@@ -233,6 +234,22 @@ def canonical_candidate_renderer(raw, expected_ast, *, helper_pins=None):
     return namespace['render_workflow_candidate_configs']
 
 
+def canonical_organizer_qualification_renderer(raw, pins):
+    """Admit only the explicit Organizer renderer and its pinned stock helpers."""
+    try:
+        functions = [node for node in ast.parse(raw).body if isinstance(node, ast.FunctionDef)
+                     and node.name == 'render_organizer_qualification_configs']
+    except SyntaxError as error:
+        raise BuildHold('invalid_organizer_qualification_renderer') from error
+    require(len(functions) == 1 and digest(ast.dump(functions[0], include_attributes=False).encode())
+        == pins.get('organizer_qualification_renderer_ast_sha256'),
+        'canonical_organizer_qualification_renderer_changed')
+    namespace = {'ast': ast, 're': re}
+    namespace.update(canonical_update_renderers(raw, pins))
+    exec(compile(ast.Module(body=functions, type_ignores=[]), '<canonical-organizer-qualification>', 'exec'), namespace)
+    return namespace['render_organizer_qualification_configs']
+
+
 def inspect_tools(interpreter, profile, environment):
     require(profile['platform'] == {'os': 'windows', 'architecture': 'x86_64', 'python_abi': 'cp314'},
             'windows_x64_abi_required')
@@ -451,12 +468,19 @@ def candidate_render_inputs(admission, *, component, sources, software_version, 
 
 
 def seal_candidate_inputs(output, stage, config, sources, generated, admission, *, mapping_sha256=None,
-                          renderer_raw=None):
+                          renderer_raw=None, organizer_qualification=None):
     """Keep original admitted bytes separately; seal generated working identities."""
-    if admission is None:
+    if admission is None and organizer_qualification is None:
         require(not generated, 'candidate_generated_sources_without_admission')
         return {}
-    inputs = {'document.json': admission.document_bytes, 'trust.json': admission.trust_bytes}
+    require(admission is None or organizer_qualification is None, 'unmixed_qualification_kind_required')
+    if organizer_qualification is not None:
+        identity = organizer_qualification_identity(organizer_qualification, output)
+        require(identity.suite_root == output / 'Suite' and mapping_sha256 == organizer_qualification['mapping_sha256'],
+                'organizer_qualification_scope_changed')
+        inputs = {'organizer-qualification.json': json_bytes(organizer_qualification)}
+    else:
+        inputs = {'document.json': admission.document_bytes, 'trust.json': admission.trust_bytes}
     if renderer_raw is not None:
         require(type(renderer_raw) is bytes, 'candidate_renderer_bytes_required')
         inputs['renderer.py'] = renderer_raw
@@ -477,9 +501,38 @@ def seal_candidate_inputs(output, stage, config, sources, generated, admission, 
     for name, raw in sorted(inputs.items()):
         write_new(output / 'candidate-inputs' / name, raw)
         config['candidate_input_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
-    return {'document_sha256': admission.document_sha256, 'trust_sha256': admission.trust_sha256,
+    return {'document_sha256': (digest(inputs['organizer-qualification.json']) if organizer_qualification is not None
+                              else admission.document_sha256),
+            'trust_sha256': identity.trust_sha256 if organizer_qualification is not None else admission.trust_sha256,
             'mapping_sha256': mapping_sha256, 'generated_sources': identities,
             'input_rows': config['candidate_input_rows'], 'status': 'pending'}
+
+
+@dataclass(frozen=True)
+class _ManagerBaselineIdentity:
+    """Producer verification facts only; not runtime or component-stage authority."""
+    suite_root: Path
+    manager_version: str
+    trust_bytes: bytes
+    trust_sha256: str
+
+
+def organizer_qualification_identity(document, output):
+    require(type(document) is dict and set(document) == {'schema','kind','suite_root','manager_version',
+        'trust_hex','trust_sha256','mapping_sha256'} and type(document['schema']) is int and document['schema'] == 1
+        and document['kind'] == 'organizer-only', 'exact_organizer_qualification_document_required')
+    require(type(document['suite_root']) is str and Path(document['suite_root']) == output / 'Suite'
+        and type(document['manager_version']) is str and document['manager_version']
+        and all(type(document[key]) is str and re.fullmatch('[0-9a-f]{64}', document[key])
+                for key in ('trust_sha256','mapping_sha256')),
+        'exact_organizer_qualification_identity_required')
+    require(type(document['trust_hex']) is str and len(document['trust_hex']) <= 2*1024*1024,
+            'bounded_organizer_qualification_trust_required')
+    trust = bytes.fromhex(document['trust_hex'])
+    require(digest(trust) == document['trust_sha256'], 'organizer_qualification_trust_changed')
+    from suite_core.discovery.component_release_signature import _trust
+    _trust(trust)
+    return _ManagerBaselineIdentity(output / 'Suite', document['manager_version'], trust, document['trust_sha256'])
 
 
 def build_distribution(source_stage, output, *, stage_sha256, public_inventory, interpreter, sdk_root,
@@ -487,7 +540,22 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
                        tool_inputs=HERE / 'tool-inputs.json', training_worker_root=None,
                        training_worker_inventory_sha256=None, candidate_admission=None,
                        candidate_mapping_sha256=None, candidate_offers=None,
-                       candidate_child_only=False, candidate_update_profile=None):
+                       candidate_child_only=False, candidate_update_profile=None,
+                       organizer_qualification_mapping_sha256=None, organizer_qualification_update_profile=None):
+    organizer_only = (organizer_qualification_mapping_sha256 is not None
+                      or organizer_qualification_update_profile is not None)
+    if organizer_only:
+        require(candidate_admission is None and candidate_mapping_sha256 is None and candidate_offers is None
+                and candidate_child_only is False and candidate_update_profile is None,
+                'unmixed_organizer_qualification_build_required')
+        require(type(organizer_qualification_mapping_sha256) is str
+                and re.fullmatch('[0-9a-f]{64}', organizer_qualification_mapping_sha256)
+                and type(organizer_qualification_update_profile) is dict
+                and training_worker_root is not None and training_worker_inventory_sha256 is not None,
+                'complete_organizer_qualification_build_required')
+    deferred_child = candidate_child_only or organizer_only
+    child_update_profile = organizer_qualification_update_profile if organizer_only else candidate_update_profile
+    mapping_pin = organizer_qualification_mapping_sha256 if organizer_only else candidate_mapping_sha256
     require(type(candidate_child_only) is bool, 'explicit_candidate_child_only_flag_required')
     require(candidate_admission is None or candidate_child_only,
             'workflow_candidate_requires_deferred_signed_baseline')
@@ -521,8 +589,19 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         mapping_sha256=candidate_mapping_sha256, offers=candidate_offers,
         renderer_raw=renderer_raw, renderer_ast_sha256=profile.get('workflow_candidate_renderer_ast_sha256'),
         candidate_update_profile=candidate_update_profile, helper_pins=profile if candidate_update_profile is not None else None)
+    organizer_document = None
+    if organizer_only:
+        require(child_update_profile.get('stock_review_sha256') == profile.get('candidate_stock_review_sha256'),
+                'pinned_genuine_organizer_stock_review_required')
+        generate = canonical_organizer_qualification_renderer(renderer_raw, profile)
+        candidate_sources = generate(source_bytes=sources, mapping_sha256=mapping_pin,
+                                     update_profile=child_update_profile)
+        organizer_document = dict(schema=1,kind='organizer-only',suite_root=str(output / 'Suite'),
+            manager_version=receipt['software_version'],trust_hex=child_update_profile['trust_hex'],
+            trust_sha256=child_update_profile['trust_sha256'],mapping_sha256=mapping_pin)
+        organizer_qualification_identity(organizer_document, output)
     render = canonical_renderer(renderer_raw, profile['root_entry_ast_sha256'],
-                                helper_pins=profile if candidate_update_profile is not None else None)
+                                helper_pins=profile if child_update_profile is not None else None)
     unbound = render()
     require('manager_package_pin_not_finalized' in unbound and 'EXPECTED_MANAGER_PACKAGE_SHA256 = None' in unbound,
             'refusing_unbound_root_required')
@@ -552,16 +631,18 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
     for name, raw in metadata.items():
         write_new(stage / name, raw)
     candidate_seal = seal_candidate_inputs(output, stage, config, sources, candidate_sources,
-        candidate_admission, mapping_sha256=candidate_mapping_sha256, renderer_raw=renderer_raw)
-    if candidate_update_profile is not None:
-        raw = json_bytes(candidate_update_profile)
+        candidate_admission, mapping_sha256=mapping_pin, renderer_raw=renderer_raw,
+        organizer_qualification=organizer_document)
+    if child_update_profile is not None:
+        raw = json_bytes(child_update_profile)
         write_new(output / 'candidate-inputs/child-update-profile.json', raw)
         config['candidate_input_rows'].append({'path': 'child-update-profile.json', 'bytes': len(raw), 'sha256': digest(raw)})
     write_new(output / 'SEALED_INPUTS.json', json_bytes({'stage_sha256': stage_sha256,
         'source_manifest_sha256': digest(manifest_raw), 'tool_inputs_sha256': digest(profile_raw),
         'root_renderer_sha256': digest(renderer_raw), 'public_inventory_sha256': receipt['public_inventory_sha256'],
         'training_worker_inventory_sha256': training_worker_inventory_sha256,
-        **({'workflow_candidate': candidate_seal} if candidate_admission is not None else {})}))
+        **({'workflow_candidate': candidate_seal} if candidate_admission is not None else {}),
+        **({'organizer_qualification': candidate_seal} if organizer_only else {})}))
     set_root_entry(stage, config, unbound)
     try:
         verify_working(stage, config, metadata)
@@ -586,14 +667,14 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         package_raw = json_bytes(package)
         write_new(output / 'MANAGER_PACKAGE.json', package_raw)
         package_pin = digest(package_raw)
-        if candidate_child_only:
+        if deferred_child:
             return write_candidate_child_checkpoint(output, stage=stage, config=config,
                 child=child, child_inventory=child_inventory, package_raw=package_raw,
                 source_stage=source_stage, stage_sha256=stage_sha256, manifest_raw=manifest_raw,
                 inventory_raw=inventory_raw, profile_raw=profile_raw, renderer_raw=renderer_raw,
                 interpreter=interpreter, receipt=receipt,
                 training_worker_inventory_sha256=training_worker_inventory_sha256,
-                mapping_sha256=candidate_mapping_sha256)
+                mapping_sha256=mapping_pin)
         return _finish_manager_distribution(
             output=output,
             stage=stage,
@@ -685,9 +766,12 @@ def load_candidate_child_checkpoint(output, checkpoint_sha256):
 
 def verify_candidate_signed_baseline(admission, update_profile, recovery_root, child, child_inventory):
     """Use the stock signed detached verifier on the actual current child."""
+    from core.workflow_candidate_admission import CandidateWorkflowAdmission
     from suite_core.discovery.manager_runtime_detached_admission import admit_checkpointed_baseline, manager_inventory_json, PACKAGE_STUB
     from core.manager_successor_admission import installed_manager_payload_path
     import zipfile
+    require(type(admission) in (CandidateWorkflowAdmission, _ManagerBaselineIdentity),
+            'typed_manager_baseline_identity_required')
     require(type(update_profile) is dict and update_profile.get('trust_hex') == admission.trust_bytes.hex()
         and update_profile.get('trust_sha256') == admission.trust_sha256
         and update_profile.get('channel') == 'beta' and update_profile.get('transport_id') == 'sealed-local-qualification'
@@ -739,17 +823,33 @@ def finalize_candidate_distribution(output, *, child_checkpoint_sha256, candidat
     from core.workflow_candidate_admission import CandidateWorkflowAdmission
     output = unredirected(output)
     checkpoint, inputs, profile, metadata, child, package_raw = load_candidate_child_checkpoint(output, child_checkpoint_sha256)
-    seal = decode(read(output / 'SEALED_INPUTS.json'))['workflow_candidate']
-    admission = CandidateWorkflowAdmission(read(output / 'candidate-inputs/document.json'), seal['document_sha256'],
-        read(output / 'candidate-inputs/trust.json'), seal['trust_sha256']).validate()
-    require(not admission.suite_root.exists() and admission.suite_root == output / 'Suite',
+    sealed = decode(read(output / 'SEALED_INPUTS.json'))
+    require(('workflow_candidate' in sealed) != ('organizer_qualification' in sealed),
+            'unmixed_checkpoint_qualification_required')
+    admission = None
+    baseline_identity = None
+    if 'workflow_candidate' in sealed:
+        seal = sealed['workflow_candidate']
+        admission = CandidateWorkflowAdmission(read(output / 'candidate-inputs/document.json'), seal['document_sha256'],
+            read(output / 'candidate-inputs/trust.json'), seal['trust_sha256']).validate()
+        identity = admission
+    else:
+        seal = sealed['organizer_qualification']
+        document = decode(pinned(output / 'candidate-inputs/organizer-qualification.json', seal['document_sha256']))
+        baseline_identity = organizer_qualification_identity(document, output)
+        require(document['mapping_sha256'] == checkpoint['mapping_sha256'] == seal['mapping_sha256']
+                and baseline_identity.manager_version == checkpoint['receipt']['software_version']
+                and baseline_identity.trust_sha256 == seal['trust_sha256'],
+                'organizer_checkpoint_identity_changed')
+        identity = baseline_identity
+    require(not identity.suite_root.exists() and identity.suite_root == output / 'Suite',
             'fresh_isolated_candidate_suite_required')
     child_profile = decode(read(output / 'candidate-inputs/child-update-profile.json'))
     require(type(candidate_update_profile) is dict
             and {k:v for k,v in candidate_update_profile.items() if k != 'initial_prior'}
                 == {k:v for k,v in child_profile.items() if k != 'initial_prior'},
             'candidate_root_child_profile_changed')
-    retained, generated, baseline_evidence = verify_candidate_signed_baseline(admission, candidate_update_profile, recovery_root,
+    retained, generated, baseline_evidence = verify_candidate_signed_baseline(identity, candidate_update_profile, recovery_root,
                                                                             child, checkpoint['child_inventory'])
     renderer_raw = inputs['renderer.py']
     render = canonical_renderer(renderer_raw, profile['root_entry_ast_sha256'], helper_pins=profile)
@@ -778,7 +878,8 @@ def finalize_candidate_distribution(output, *, child_checkpoint_sha256, candidat
         profile=profile, renderer_raw=renderer_raw, render=render, unbound=inputs['unbound-root-entry.py'].decode(),
         candidate_admission=admission, training_worker_inventory_sha256=checkpoint['training_worker_inventory_sha256'],
         candidate_update_profile=candidate_update_profile, qualification_mapping_sha256=checkpoint['mapping_sha256'],
-        retained_files={**retained, **generated}, baseline_evidence=baseline_evidence)
+        retained_files={**retained, **generated}, baseline_evidence=baseline_evidence,
+        baseline_identity=baseline_identity)
 
 
 def set_root_entry(stage, config, text):
@@ -792,14 +893,15 @@ def set_root_entry(stage, config, text):
 
 
 def _finish_manager_distribution(*, output, stage, config, metadata, interpreter, environment, child, child_inventory, child_config, package, package_raw, package_pin, source_stage, stage_sha256, manifest_raw, inventory_raw, receipt, profile, renderer_raw, render, unbound, candidate_admission, training_worker_inventory_sha256,
-        candidate_update_profile=None, qualification_mapping_sha256=None, retained_files=None, baseline_evidence=None):
+        candidate_update_profile=None, qualification_mapping_sha256=None, retained_files=None, baseline_evidence=None,
+        baseline_identity=None):
     bound_root = (render(package_pin, candidate_admission=candidate_admission,
         compiled_update_profile=True, compiled_profile_input=candidate_update_profile,
         qualification_test_build=True, qualification_mapping_sha256=qualification_mapping_sha256)
         if candidate_update_profile is not None else
         render(package_pin, candidate_admission=candidate_admission)
                   if candidate_admission is not None else render(package_pin))
-    if candidate_admission is not None:
+    if candidate_admission is not None or baseline_identity is not None:
         # Root's exact package pin exists only after the child freeze. Seal
         # this second generated identity before the original Root freeze.
         root_inputs = {'original-unbound-root-entry.py': unbound.encode(),
@@ -808,7 +910,8 @@ def _finish_manager_distribution(*, output, stage, config, metadata, interpreter
             write_new(output / 'candidate-inputs' / name, raw)
             config['candidate_input_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
         write_new(output / 'CANDIDATE_ROOT_INPUTS.json', json_bytes({
-            'document_sha256': candidate_admission.document_sha256,
+            'document_sha256': (candidate_admission.document_sha256 if candidate_admission is not None else
+                digest(read(output / 'candidate-inputs/organizer-qualification.json'))),
             'manager_package_sha256': package_pin, 'root_renderer_sha256': digest(renderer_raw),
             'original_root_sha256': digest(unbound.encode()),
             'generated_root_sha256': digest(bound_root.encode()), 'status': 'pending'}))
@@ -834,9 +937,11 @@ def _finish_manager_distribution(*, output, stage, config, metadata, interpreter
     for relative, raw in sorted((retained_files or {}).items()):
         write_new(suite / safe_path(relative), raw)
     if baseline_evidence is not None:
+        identity = candidate_admission if candidate_admission is not None else baseline_identity
+        require(identity is not None, 'signed_baseline_identity_required')
         retain_workflow_manager_admission(suite, archive=suite / baseline_evidence['archive_relative'],
             manifest_bytes=baseline_evidence['manifest_bytes'], signature_bytes=baseline_evidence['signature_bytes'],
-            trust_bytes=candidate_admission.trust_bytes, expected_trust_sha256=candidate_admission.trust_sha256,
+            trust_bytes=identity.trust_bytes, expected_trust_sha256=identity.trust_sha256,
             detached_inventory_bytes=baseline_evidence['detached_inventory_bytes'], software_version=receipt['software_version'])
         retained_files = dict(retained_files)
         for name, key in (('release.json','manifest_bytes'), ('release.sig.json','signature_bytes'), ('inventory.json','detached_inventory_bytes')):

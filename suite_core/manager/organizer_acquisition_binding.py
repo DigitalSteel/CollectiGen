@@ -41,6 +41,37 @@ class CompiledOrganizerAcquisitionProfile:
         if not self.asset_redirect_origins:raise ValueError('qualified_asset_origins_required')
 
 
+@dataclass(frozen=True)
+class CompiledOrganizerQualificationProfile:
+    """Explicit build-only transport selection; never a stage or native grant."""
+    production: CompiledOrganizerAcquisitionProfile
+    mapping_sha256: str
+
+    def __post_init__(self):
+        if (type(self.production) is not CompiledOrganizerAcquisitionProfile
+                or type(self.mapping_sha256) is not str
+                or re.fullmatch('[0-9a-f]{64}', self.mapping_sha256) is None):
+            raise ValueError('typed_sealed_organizer_profile_required')
+
+
+def _compiled_profile(value):
+    if type(value) is CompiledOrganizerAcquisitionProfile:
+        return value, None
+    if type(value) is CompiledOrganizerQualificationProfile:
+        return value.production, value
+    raise ValueError('typed_compiled_organizer_profile_required')
+
+
+def _check_qualification_session(profile, session):
+    from core.manager_update_host import SealedLocalQualificationOpener
+    update = getattr(session, 'update_profile', None)
+    expected = SealedLocalQualificationOpener(profile.mapping_sha256).transport_id
+    if (type(update) is not dict or update.get('transport_id') != expected
+            or update.get('trust_sha256') != profile.production.trust_sha256
+            or update.get('channel') != profile.production.channel):
+        raise ValueError('original_sealed_organizer_profile_binding_required')
+
+
 class OrganizerStageOwner:
     """Retain original session/Reader exclusion; never issue a local root lease."""
     def __init__(self, session, reader_owner, native_owner=None):
@@ -82,12 +113,12 @@ class OrganizerStageOwner:
 def factory_for_session(session):
     from .compiled_organizer_config import PROFILE
     if PROFILE is None:return None
-    if type(PROFILE) is not CompiledOrganizerAcquisitionProfile:
-        raise ValueError('typed_compiled_organizer_profile_required')
+    profile, qualification = _compiled_profile(PROFILE)
     from .bootstrap_entry import NormalEntrySession
     if type(session) is not NormalEntrySession or session.state not in ('offered','ready'):
         raise ValueError('original_native_normal_session_required')
-    profile=PROFILE
+    if qualification is not None:
+        _check_qualification_session(qualification, session)
     def create(reader_owner, settings_path, *, native_owner=None):
         from uuid import uuid4
         from core.component_acquisition import ComponentAcquisition
@@ -101,6 +132,8 @@ def factory_for_session(session):
         if native_owner is None:native_owner=OwnedOrganizer(session,reader_owner)
         if type(native_owner) is not OwnedOrganizer or native_owner.normal_entry_session is not session or native_owner.reader_owner is not reader_owner:
             raise ValueError('original_organizer_native_owner_required')
+        if qualification is not None:
+            _check_qualification_session(qualification, session)
         stage=OrganizerStageOwner(session,reader_owner,native_owner)
         admitted=Path(session.admitted.settings_path)
         expected=admitted.with_suffix('.json') if admitted.suffix.casefold()=='.ini' else admitted
@@ -110,8 +143,14 @@ def factory_for_session(session):
         # The compiled offer supplies qualified metadata names, not a release pin.
         # Stock discovery authenticates the newest compatible offer; review
         # revalidates its exact identity before any install transaction.
+        if qualification is None:
+            opener=ComponentReleaseTransport(ReleaseTransportPolicy(profile.asset_redirect_origins))
+        else:
+            from core.manager_update_host import SealedLocalQualificationOpener
+            opener=SealedLocalQualificationOpener(qualification.mapping_sha256,
+                session.admitted.layout.code_root,(COMPONENT.value,))
         acquisition=ComponentAcquisition(cache_root=cache,cache_owner=cache.name,
-            opener=ComponentReleaseTransport(ReleaseTransportPolicy(profile.asset_redirect_origins)),
+            opener=opener,
             host_version=VERSION,trust_bytes=profile.trust_bytes,trust_sha256=profile.trust_sha256,
             os_name='windows',architecture='x86_64',max_artifact_bytes=profile.max_artifact_bytes,
             manifest_name=profile.expected_offer.manifest.name,
@@ -126,8 +165,7 @@ def root_selection_for_owner(owner, admitted):
     """Read signed original transaction evidence, then ask the retained root to issue."""
     from .compiled_organizer_config import PROFILE
     if PROFILE is None:return None
-    if type(PROFILE) is not CompiledOrganizerAcquisitionProfile:
-        raise ValueError('typed_compiled_organizer_profile_required')
+    PROFILE, _qualification = _compiled_profile(PROFILE)
     from core.manager_launch_owner import DeploymentOwner
     from core.organizer_connection_settings import OrganizerConnectionStore
     from suite_core.discovery.component_staging import (guard, read_json, validate_journal,

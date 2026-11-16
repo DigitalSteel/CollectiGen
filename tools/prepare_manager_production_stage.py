@@ -172,6 +172,63 @@ def render_workflow_candidate_configs(admission, *, component, source_bytes,
     return result
 
 
+def render_organizer_qualification_configs(*, source_bytes, mapping_sha256, update_profile):
+    """Seal only the existing Organizer transport and Manager update defaults."""
+    from suite_core.discovery.component_release_signature import _json, _trust
+    if (type(source_bytes) is not dict or type(mapping_sha256) is not str
+            or re.fullmatch('[0-9a-f]{64}', mapping_sha256) is None
+            or type(update_profile) is not dict or update_profile.get('initial_prior') is not None
+            or update_profile.get('enable_training_baseline') is not True
+            or update_profile.get('channel') != 'beta'):
+        raise ValueError('explicit_organizer_qualification_inputs_required')
+    defaults = {}
+    for name in ('suite_core/manager/compiled_organizer_config.py',
+                 'suite_core/manager/compiled_update_config.py'):
+        raw = source_bytes.get(name)
+        if type(raw) is not bytes:
+            raise ValueError('original_organizer_default_source_required')
+        text = raw.decode('utf-8')
+        assignments = [node for node in ast.parse(text).body if isinstance(node, ast.Assign)
+            and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == 'PROFILE']
+        if len(assignments) != 1:
+            raise ValueError('unmixed_organizer_default_required')
+        defaults[name] = text, assignments[0]
+    name = 'suite_core/manager/compiled_update_config.py'
+    if not isinstance(defaults[name][1].value, ast.Constant) or defaults[name][1].value.value is not None:
+        raise ValueError('unmixed_organizer_update_default_required')
+    name = 'suite_core/manager/compiled_organizer_config.py'
+    text, node = defaults[name]
+    if (not isinstance(node.value, ast.Call) or not isinstance(node.value.func, ast.Name)
+            or node.value.func.id != 'CompiledOrganizerAcquisitionProfile' or node.value.args
+            or any(key.arg is None for key in node.value.keywords)):
+        raise ValueError('original_production_organizer_profile_required')
+    keywords = {key.arg:key.value for key in node.value.keywords}
+    trust = ast.literal_eval(keywords['trust_bytes'])
+    trust_pin = ast.literal_eval(keywords['trust_sha256'])
+    if (type(trust) is not bytes or update_profile.get('trust_hex') != trust.hex()
+            or update_profile.get('trust_sha256') != trust_pin):
+        raise ValueError('organizer_qualification_trust_changed')
+    _trust(trust)
+    report = _json(bytes.fromhex(update_profile.get('stock_review_hex', '')), 'organizer stock review')
+    if (report.get('status') != 'stock_cli_native_qualified' or report.get('stock_version') != '1.2.161'
+            or report.get('updater_sha256') != update_profile.get('updater_sha256')
+            or report.get('platform') != {'os':'windows','architecture':'x86_64'}
+            or report.get('hook_mode') != 'All' or report.get('elevation_mode') != 'none'
+            or report.get('exact_full_package_apply') is not True
+            or report.get('prerequisites_verified') is not True or not report.get('evidence_refs')):
+        raise ValueError('organizer_genuine_stock_review_required')
+    child_update = render_qualification_update_config(update_profile, include_prior=False,
+        mapping_sha256=mapping_sha256).encode()
+    expression = ast.get_source_segment(text, node.value)
+    lines = text.splitlines(keepends=True)
+    replacement = ('from suite_core.manager.organizer_acquisition_binding import CompiledOrganizerQualificationProfile\n'
+        'PROFILE = CompiledOrganizerQualificationProfile(production=' + expression +
+        ', mapping_sha256=' + repr(mapping_sha256) + ')\n')
+    return {name: (''.join(lines[:node.lineno-1]) + replacement + ''.join(lines[node.end_lineno:])).encode(),
+            'suite_core/manager/compiled_update_config.py': child_update}
+
+
 def render_compiled_update_config(value, *, include_prior=False):
     """Render only reviewed public JSON data into the fixed trusted template."""
     required={'schema','trust_hex','trust_sha256','channel','transport_id','initial_prior',

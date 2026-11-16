@@ -89,5 +89,6 @@
   "workflow_candidate_renderer_ast_sha256": "7468969e65fbed5033cbc6e5cef91d2b411be8c8d800cc0d767876ec44797862",
   "compiled_update_renderer_ast_sha256": "b808d2d58c6019c229c244cb6da54dd167ffaef2c1c8ce9018d45467740db5cd",
   "qualification_update_renderer_ast_sha256": "428b1d55a423401567108ce43effa3a55244c6d77d6fc6d43f7f65a6e2504e50",
-  "candidate_stock_review_sha256": "62e88668f8d1bb4f6790fb92739322d62d046867bf4913eff63221586658a3de"
+  "candidate_stock_review_sha256": "62e88668f8d1bb4f6790fb92739322d62d046867bf4913eff63221586658a3de",
+  "organizer_qualification_renderer_ast_sha256": "123995dea662df1a40b8f38f494c7fc5f4d46bc9a009790d128973e2ecbaa64f"
 }

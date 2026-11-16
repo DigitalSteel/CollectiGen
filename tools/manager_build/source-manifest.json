@@ -1023,8 +1023,8 @@
     },
     {
       "path": "core/manager_update_host.py",
-      "bytes": 29430,
-      "sha256": "c085230a75942f25895ef975b44063f0fe07c009e920539388beb74f7d696bb6"
+      "bytes": 29462,
+      "sha256": "3a4ec1f635f85ed0c385f677a91e007410f05f15cac679682e67bf0246db9218"
     },
     {
       "path": "core/manager_update_service.py",
@@ -3613,8 +3613,8 @@
     },
     {
       "path": "suite_core/manager/organizer_acquisition_binding.py",
-      "bytes": 9804,
-      "sha256": "1100ab65e938c32f74b9392a019bfb26bf2a92ff4a4843efa10b0e4f0cc10834"
+      "bytes": 11519,
+      "sha256": "1370431ce79ae2b80061e406f08cc068389701c1947f8ee5137265be27461f09"
     },
     {
       "path": "suite_core/manager/organizer_acquisition_ui.py",

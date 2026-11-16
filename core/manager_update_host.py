@@ -52,8 +52,9 @@ class SealedLocalQualificationOpener:
     prefix = 'sealed-local-qualification:'
 
     def __post_init__(self):
-        allowed = {'collectigen.suite-manager', 'collectigen.generate', 'collectigen.train'}
-        require(type(self.component_ids) is tuple and 1 <= len(self.component_ids) <= 3
+        allowed = {'collectigen.suite-manager', 'collectigen.generate', 'collectigen.train',
+                   'collectigen.media-organizer'}
+        require(type(self.component_ids) is tuple and 1 <= len(self.component_ids) <= 4
                 and all(type(value) is str and value in allowed for value in self.component_ids)
                 and len(set(self.component_ids)) == len(self.component_ids),
                 'finite_qualification_components_required')
@@ -91,7 +92,7 @@ class SealedLocalQualificationOpener:
             'closed_qualification_response_map_required')
         url=request.full_url
         listing={f'https://api.github.com/repos/{REPOSITORY}/releases?per_page=50&page={page}' for page in (1,2,3)}
-        if any(component in {'collectigen.generate', 'collectigen.train'} for component in self.component_ids):
+        if any(component != 'collectigen.suite-manager' for component in self.component_ids):
             # ExactComponentOffer first checks repository identity. Keep this
             # one fixed metadata URL inside the same sealed, no-fallback map.
             listing.add(f'https://api.github.com/repos/{REPOSITORY}')

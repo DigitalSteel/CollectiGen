@@ -4,6 +4,7 @@ from copy import deepcopy
 from dataclasses import replace
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -21,7 +22,8 @@ def pins():
     names = {'root_entry': 'root_entry_ast_sha256',
         'render_workflow_candidate_configs': 'workflow_candidate_renderer_ast_sha256',
         'render_compiled_update_config': 'compiled_update_renderer_ast_sha256',
-        'render_qualification_update_config': 'qualification_update_renderer_ast_sha256'}
+        'render_qualification_update_config': 'qualification_update_renderer_ast_sha256',
+        'render_organizer_qualification_configs': 'organizer_qualification_renderer_ast_sha256'}
     return raw, {key: sha256(ast.dump(next(n for n in ast.parse(raw).body
         if isinstance(n, ast.FunctionDef) and n.name == name), include_attributes=False).encode()).hexdigest()
         for name,key in names.items()}
@@ -167,10 +169,14 @@ def test_finalizer_rejects_changed_profile_and_requires_actual_signed_baseline(c
     assert 'CollectiGen' not in calls and not (args['output']/'Suite').exists()
 
 
-def test_signed_baseline_uses_stock_checkpoint_admission_and_exact_generated_mapping(candidate_inputs, tmp_path, monkeypatch):
+@pytest.mark.parametrize('kind', ['workflow', 'organizer'])
+def test_signed_baseline_uses_stock_checkpoint_admission_and_exact_generated_mapping(candidate_inputs, tmp_path, monkeypatch, kind):
     import zipfile
     import suite_core.discovery.manager_runtime_detached_admission as detached
     admission,_sources=candidate_inputs
+    if kind == 'organizer':
+        admission=build._ManagerBaselineIdentity(admission.suite_root, admission.manager_version,
+            admission.trust_bytes, admission.trust_sha256)
     child=tmp_path/'frozen-child/CollectiGenManager.exe';child.parent.mkdir();child.write_bytes(b'inert frozen child')
     child_tree=build.tree_inventory(child.parent)
     generated={detached.PACKAGE_STUB:b'inert stub','Squirrel.exe':b'inert vendor updater','sq.version':b'inert stock version'}
@@ -209,3 +215,136 @@ def test_signed_baseline_uses_stock_checkpoint_admission_and_exact_generated_map
     with pytest.raises(ValueError,match='distinct_candidate_recovery_files'):
         build.verify_candidate_signed_baseline(admission,wrong,recovery,child,child_tree)
     assert len(admitted)==1
+
+
+def organizer_sources():
+    return {name:(ROOT/name).read_bytes() for name in (
+        'suite_core/manager/compiled_organizer_config.py','suite_core/manager/compiled_update_config.py')}
+
+
+def organizer_stock_input():
+    from suite_core.manager.compiled_organizer_config import PROFILE
+    return stock_input(SimpleNamespace(trust_bytes=PROFILE.trust_bytes, trust_sha256=PROFILE.trust_sha256))
+
+
+def test_organizer_renderer_preserves_production_profile_and_pins_both_stock_helpers():
+    from tools.prepare_manager_production_stage import render_organizer_qualification_configs
+    from suite_core.manager.compiled_organizer_config import PROFILE
+    from suite_core.manager.organizer_acquisition_binding import CompiledOrganizerQualificationProfile
+    sources=organizer_sources(); value=organizer_stock_input(); raw,profile=pins()
+    render=build.canonical_organizer_qualification_renderer(raw+b'\nraise AssertionError("No module top level")\n',profile)
+    generated=render(source_bytes=sources,mapping_sha256='b'*64,update_profile=value)
+    assert generated==render_organizer_qualification_configs(source_bytes=sources,mapping_sha256='b'*64,update_profile=value)
+    assert set(generated)==set(sources)
+    scope={};exec(generated['suite_core/manager/compiled_organizer_config.py'],scope)
+    result=scope['PROFILE']
+    assert type(result) is CompiledOrganizerQualificationProfile
+    assert result.production==PROFILE and result.mapping_sha256=='b'*64
+    scope={};exec(generated['suite_core/manager/compiled_update_config.py'],scope)
+    assert scope['PROFILE'].check().opener.mapping_sha256=='b'*64
+    assert scope['PROFILE'].initial_prior is None
+    assert 'CandidateWorkflowAdmission' not in b''.join(generated.values()).decode()
+    for function in ('render_organizer_qualification_configs','render_compiled_update_config','render_qualification_update_config'):
+        altered=raw.replace(('def '+function+'(').encode(),('def changed_'+function+'(').encode())
+        with pytest.raises(build.BuildHold):build.canonical_organizer_qualification_renderer(altered,profile)
+    for changes in ({'trust_sha256':'0'*64},{'trust_hex':b'{}'.hex()},{'channel':'stable'},
+                    {'initial_prior':{}},{'transport_id':'github-release-assets-https'},
+                    {'enable_training_baseline':False},{'stock_review_sha256':'0'*64}):
+        with pytest.raises(ValueError):render(source_bytes=sources,mapping_sha256='b'*64,update_profile={**value,**changes})
+    for pin in (None,'','0'*63,'not-a-pin'):
+        with pytest.raises(ValueError):render(source_bytes=sources,mapping_sha256=pin,update_profile=value)
+    mixed=dict(sources);mixed['suite_core/manager/compiled_update_config.py']=b'PROFILE = object()\n'
+    with pytest.raises(ValueError,match='unmixed_organizer_update_default'):
+        render(source_bytes=mixed,mapping_sha256='b'*64,update_profile=value)
+
+
+@pytest.fixture
+def organizer_child_build(inputs, tmp_path, monkeypatch):
+    args,calls=inputs; source=args['public_inventory'].parent
+    sources=organizer_sources()
+    for name,raw in sources.items():
+        path=source/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(raw)
+    module=source/'suite_core/manager/MODULE_MANIFEST.json'
+    runtime=build.decode(module.read_bytes());runtime['runtime_files']+=list(sources)
+    save(module,runtime)
+    files={path.relative_to(source).as_posix():path.read_bytes() for path in source.rglob('*')
+           if path.is_file() and path.name!='public-source.json'}
+    save(args['public_inventory'],{'schema_version':1,'manifest_excludes_self':True,
+        'files':{name:{'size_bytes':len(raw),'sha256':build.digest(raw)} for name,raw in files.items()}})
+    save(args['source_manifest'],{'schema':1,'source_rows':[row(name,raw) for name,raw in files.items()]})
+    stage=prepare_public_stage(source,tmp_path/'organizer-stage',
+        public_inventory_sha256=build.digest(args['public_inventory'].read_bytes()),
+        frozen_sources=args['source_manifest'],frozen_sources_sha256=build.digest(args['source_manifest'].read_bytes()),
+        manifest_sha256=build.digest(module.read_bytes()))
+    value=organizer_stock_input();_raw,pinned=pins()
+    profile=build.decode(args['tool_inputs'].read_bytes());profile.update(pinned,candidate_stock_review_sha256=value['stock_review_sha256'])
+    save(args['tool_inputs'],profile)
+    worker=tmp_path/'synthetic-organizer-worker';worker.mkdir();(worker/'python.exe').write_bytes(b'inert worker fixture')
+    args.update(source_stage=stage,stage_sha256=build.digest((stage/'STAGE.json').read_bytes()),
+        training_worker_root=worker,training_worker_inventory_sha256=build.digest(build.json_bytes(build.tree_inventory(worker))),
+        organizer_qualification_mapping_sha256='b'*64,organizer_qualification_update_profile=value)
+    fake_freeze(monkeypatch,calls)
+    return args,calls
+
+
+def test_organizer_child_checkpoint_does_not_enroll_workflow_candidates(organizer_child_build):
+    args,calls=organizer_child_build;result=build.build_distribution(**args)
+    assert result['status']=='CHILD_ONLY_AWAITING_SIGNED_BASELINE'
+    assert calls==['tools-inspected-synthetically','CollectiGenManager']
+    output=args['output'];sealed=build.decode((output/'SEALED_INPUTS.json').read_bytes())
+    assert 'organizer_qualification' in sealed and 'workflow_candidate' not in sealed
+    assert not (output/'candidate-inputs/document.json').exists() and not (output/'Suite').exists()
+    checkpoint,*_=build.load_candidate_child_checkpoint(output,result['checkpoint_sha256'])
+    assert checkpoint['mapping_sha256']=='b'*64
+    descriptor=build.decode((output/'candidate-inputs/organizer-qualification.json').read_bytes())
+    assert descriptor['kind']=='organizer-only' and descriptor['manager_version']==checkpoint['receipt']['software_version']
+    child=output/checkpoint['child_relative'];original=child.read_bytes();child.write_bytes(original+b'drift')
+    with pytest.raises(ValueError):build.load_candidate_child_checkpoint(output,result['checkpoint_sha256'])
+
+
+def test_organizer_build_rejects_mixed_or_incomplete_inputs_before_freeze(organizer_child_build, candidate_inputs):
+    args,calls=organizer_child_build
+    for changes in ({'candidate_admission':candidate_inputs[0]}, {'candidate_child_only':True},
+                    {'organizer_qualification_mapping_sha256':None}, {'organizer_qualification_update_profile':None},
+                    {'training_worker_root':None,'training_worker_inventory_sha256':None}):
+        with pytest.raises(ValueError):build.build_distribution(**{**args,**changes})
+    bad={**args['organizer_qualification_update_profile'],'stock_review_sha256':'0'*64}
+    with pytest.raises(ValueError,match='pinned_genuine_organizer_stock_review'):
+        build.build_distribution(**{**args,'organizer_qualification_update_profile':bad})
+    assert calls==[] and not args['output'].exists()
+
+
+def test_organizer_finalizer_requires_profile_agreement_and_actual_signed_child(organizer_child_build):
+    args,calls=organizer_child_build;result=build.build_distribution(**args)
+    value=args['organizer_qualification_update_profile'];wrong={**value,'updater_sha256':'e'*64}
+    for profile,reason in [(wrong,'root_child_profile_changed'),(value,'current_signed_candidate_baseline')]:
+        with pytest.raises(ValueError,match=reason):
+            build.finalize_candidate_distribution(args['output'],child_checkpoint_sha256=result['checkpoint_sha256'],
+                candidate_update_profile=profile,recovery_root=args['output'].parent/'absent')
+    assert 'CollectiGen' not in calls and not (args['output']/'Suite').exists()
+
+
+def test_organizer_continuation_preserves_original_signed_baseline_identity(organizer_child_build, monkeypatch):
+    args,calls=organizer_child_build;result=build.build_distribution(**args)
+    value=deepcopy(args['organizer_qualification_update_profile'])
+    value['initial_prior']={'version':'0.3.1-alpha.1','channel':'beta',
+        'platform':{'os':'windows','architecture':'x86_64'},'files':{name:{'path':'Recovery/'+name,'size':1,'sha256':'d'*64}
+        for name in ('archive','manifest','signature','trust','proof','inventory','executable')}}
+    observed=[]
+    def verify(identity,profile,recovery,child,inventory):
+        assert type(identity) is build._ManagerBaselineIdentity
+        assert identity.suite_root==args['output']/'Suite' and identity.manager_version=='0.3.1-alpha.1'
+        assert profile==value and build.tree_inventory(child.parent)==inventory
+        observed.append('signed-baseline-verifier')
+        return {},{},None  # Synthetic composition only; real verifier is covered separately.
+    def finish(**kwargs):
+        assert observed==['signed-baseline-verifier'] and kwargs['candidate_admission'] is None
+        assert type(kwargs['baseline_identity']) is build._ManagerBaselineIdentity
+        assert kwargs['candidate_update_profile']==value and kwargs['qualification_mapping_sha256']=='b'*64
+        assert 'CandidateWorkflowAdmission' not in kwargs['render'](kwargs['package_pin'],compiled_update_profile=True,
+            compiled_profile_input=value,qualification_test_build=True,qualification_mapping_sha256='b'*64)
+        return 'source-composition-only'
+    monkeypatch.setattr(build,'verify_candidate_signed_baseline',verify)
+    monkeypatch.setattr(build,'_finish_manager_distribution',finish)
+    assert build.finalize_candidate_distribution(args['output'],child_checkpoint_sha256=result['checkpoint_sha256'],
+        candidate_update_profile=value,recovery_root=args['output'].parent/'synthetic-baseline')=='source-composition-only'
