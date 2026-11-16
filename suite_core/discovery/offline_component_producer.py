@@ -10,7 +10,7 @@ from .component_release_signature import VerifiedComponentRelease, verify_compon
 from .component_staging import (INVENTORY, canonical, require,
                                 guard, owned, verify_directory)
 
-from .component_payload_policy import select_payload_policy, payload_relative
+from .component_payload_policy import select_payload_policy, payload_relative, WORKFLOW_FROZEN_PAYLOAD_POLICY
 
 ADAPTER_VERSION = "0.1.0-alpha.1"
 
@@ -41,7 +41,7 @@ def produce_inventory(members, *, component_id, software_version, os_name, archi
         "software_version": software_version, "platform": {"os": os_name, "architecture": architecture},
         "runtime_kind": policy.runtime_kind, "files": sorted(files, key=lambda row: row["path"])})
     require(len(raw) <= policy.max_inventory_json_bytes, "inventory_size")
-    if policy.runtime_kind == "interpreter-portable":
+    if policy.runtime_kind == "interpreter-portable" or policy is WORKFLOW_FROZEN_PAYLOAD_POLICY:
         require(total + len(raw) <= policy.max_unpacked_bytes, "payload_bounds")
     return raw
 

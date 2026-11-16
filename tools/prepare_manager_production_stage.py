@@ -25,7 +25,8 @@ def stock_path(baseline,name):
     return path
 
 def root_entry(package_pin=None, *, compiled_update_profile=False, compiled_profile_input=None,
-               qualification_test_build=False, qualification_mapping_sha256=None):
+               qualification_test_build=False, qualification_mapping_sha256=None,
+               candidate_admission=None):
     if package_pin is not None and not re.fullmatch('[0-9a-f]{64}',package_pin):
         raise ValueError('exact_manager_package_digest_required')
     if compiled_update_profile and compiled_profile_input is None:
@@ -38,17 +39,107 @@ def root_entry(package_pin=None, *, compiled_update_profile=False, compiled_prof
         raise ValueError('sealed_test_root_profile_required')
     if not qualification_test_build and qualification_mapping_sha256 is not None:
         raise ValueError('explicit_test_build_only_mapping_required')
+    candidate_profile=''
+    candidate_check=''
+    if candidate_admission is not None:
+        from core.workflow_candidate_admission import CandidateWorkflowAdmission
+        if (type(candidate_admission) is not CandidateWorkflowAdmission or package_pin is None
+                or compiled_update_profile or compiled_profile_input is not None
+                or qualification_test_build or qualification_mapping_sha256 is not None):
+            raise ValueError('unmixed_pending_candidate_root_required')
+        candidate_admission.validate()
+        candidate_profile=('from core.workflow_candidate_admission import CandidateWorkflowAdmission\n'
+            '_WORKFLOW_CANDIDATE = CandidateWorkflowAdmission(document_bytes='+repr(candidate_admission.document_bytes)+
+            ', document_sha256='+repr(candidate_admission.document_sha256)+
+            ', trust_bytes='+repr(candidate_admission.trust_bytes)+
+            ', trust_sha256='+repr(candidate_admission.trust_sha256)+')\n')
+        candidate_check=('    from pathlib import Path\n    import sys\n'
+            '    _WORKFLOW_CANDIDATE.check_marker(Path(sys.executable).parent, '
+            'Path(sys.executable).parent / "Data", manager_version='+repr(candidate_admission.manager_version)+')\n')
     require_profile=''
     root_profile=(render_qualification_update_config(compiled_profile_input,include_prior=True,
         mapping_sha256=qualification_mapping_sha256) if qualification_test_build else
         render_compiled_update_config(compiled_profile_input,include_prior=True) if compiled_update_profile else '')
     profile_option=", compiled_update_profile=PROFILE" if compiled_update_profile else ""
-    return (root_profile+"EXPECTED_MANAGER_PACKAGE_SHA256 = "+repr(package_pin)+"\n"
+    return (root_profile+candidate_profile+"EXPECTED_MANAGER_PACKAGE_SHA256 = "+repr(package_pin)+"\n"
         "if __name__ == '__main__':\n"
         "    if EXPECTED_MANAGER_PACKAGE_SHA256 is None:\n"
-        "        raise RuntimeError('manager_package_pin_not_finalized')\n"
-        "    from suite_core.manager.launcher_main import main\n"+require_profile+
+        "        raise RuntimeError('manager_package_pin_not_finalized')\n"+
+        candidate_check+"    from suite_core.manager.launcher_main import main\n"+require_profile+
         "    raise SystemExit(main(expected_package_sha256=EXPECTED_MANAGER_PACKAGE_SHA256"+profile_option+"))\n")
+
+def render_workflow_candidate_configs(admission, *, component, source_bytes,
+                                      mapping_sha256=None, offers=None):
+    """Render finite defaults only; callers retain the original public stage."""
+    from core.workflow_candidate_admission import CandidateWorkflowAdmission
+    from core.component_acquisition import ExactComponentOffer, ExactOfferAsset
+    from dataclasses import fields
+    if type(admission) is not CandidateWorkflowAdmission or component not in {'manager','generate','train'}:
+        raise ValueError('typed_pending_candidate_render_required')
+    admission.validate()
+    if type(source_bytes) is not dict or any(type(k) is not str or type(v) is not bytes for k,v in source_bytes.items()):
+        raise ValueError('exact_admitted_source_bytes_required')
+    def default(name, target, expression):
+        raw=source_bytes.get(name)
+        if type(raw) is not bytes:raise ValueError('candidate_default_source_required:'+name)
+        text=raw.decode('utf-8')
+        tree=ast.parse(text)
+        assignments=[node for node in tree.body if isinstance(node,ast.Assign)
+                     and any(isinstance(t,ast.Name) and t.id==target for t in node.targets)]
+        expected=ast.dump(ast.parse(expression,mode='eval').body,include_attributes=False)
+        if (len(assignments)!=1 or len(assignments[0].targets)!=1
+                or ast.dump(assignments[0].value,include_attributes=False)!=expected):
+            raise ValueError('unmixed_candidate_default_required:'+name+':'+target)
+        return text,assignments[0]
+    def replace_assignment(text,node,expression):
+        lines=text.splitlines(keepends=True)
+        return ''.join(lines[:node.lineno-1])+expression+'\n'+''.join(lines[node.end_lineno:])
+    expression=('CandidateWorkflowAdmission(document_bytes='+repr(admission.document_bytes)+
+        ', document_sha256='+repr(admission.document_sha256)+', trust_bytes='+repr(admission.trust_bytes)+
+        ', trust_sha256='+repr(admission.trust_sha256)+')')
+    result={}
+    default('suite_core/workflow_modules/compiled_admission.py','PROFILE','None')
+    candidate='suite_core/workflow_modules/compiled_candidate.py'
+    text,node=default(candidate,'PROFILE','None')
+    if component!='manager':
+        if mapping_sha256 is not None or offers is not None:
+            raise ValueError('module_candidate_precedes_exact_offers')
+        component_id='collectigen.'+component
+        admission.version_for(component_id)
+        result[candidate]=replace_assignment(text,node,
+            'PROFILE = CompiledWorkflowCandidateAdmission('+repr(component_id)+', '+expression+')').encode()
+        return result
+    config='suite_core/manager/compiled_workflow_config.py'
+    default('suite_core/manager/compiled_update_config.py','PROFILE','None')
+    default(config,'PROFILES','MappingProxyType({})')
+    text,node=default(config,'CANDIDATE_PROFILES','MappingProxyType({})')
+    if (type(mapping_sha256) is not str or re.fullmatch('[0-9a-f]{64}',mapping_sha256) is None
+            or type(offers) is not dict or set(offers)!=set(admission.document()['components'])):
+        raise ValueError('exact_candidate_mapping_and_offers_required')
+    from suite_core.manager.workflow_acquisition_binding import CompiledWorkflowCandidateAcquisitionProfile
+    profiles=[]
+    for component_id,offer in sorted(offers.items()):
+        if type(offer) is not ExactComponentOffer:raise ValueError('typed_exact_candidate_offer_required')
+        CompiledWorkflowCandidateAcquisitionProfile(component_id,admission,mapping_sha256,offer)
+        def asset(value):
+            if type(value) is not ExactOfferAsset:raise ValueError('typed_exact_candidate_asset_required')
+            return 'ExactOfferAsset('+', '.join(f.name+'='+repr(getattr(value,f.name)) for f in fields(value))+')'
+        arguments=[]
+        for field in fields(offer):
+            value=getattr(offer,field.name)
+            rendered=('ComponentId('+repr(value.value)+')' if field.name=='component_id' else
+                      asset(value) if field.name in {'manifest','signature','artifact'} else repr(value))
+            arguments.append(field.name+'='+rendered)
+        profiles.append(repr(component_id)+': CompiledWorkflowCandidateAcquisitionProfile('+repr(component_id)+
+            ', '+expression+', '+repr(mapping_sha256)+', ExactComponentOffer('+', '.join(arguments)+'))')
+    imports=('from core.workflow_candidate_admission import CandidateWorkflowAdmission\n'
+        'from core.component_acquisition import ExactComponentOffer, ExactOfferAsset\n'
+        'from suite_core.installation import ComponentId\n'
+        'from suite_core.manager.workflow_acquisition_binding import CompiledWorkflowCandidateAcquisitionProfile\n')
+    result[config]=(imports+replace_assignment(text,node,
+        'CANDIDATE_PROFILES = MappingProxyType({'+', '.join(profiles)+'})')).encode()
+    return result
+
 
 def render_compiled_update_config(value, *, include_prior=False):
     """Render only reviewed public JSON data into the fixed trusted template."""

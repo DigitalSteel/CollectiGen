@@ -10,7 +10,7 @@ from pathlib import Path
 
 from core.workflow_connection import review_existing_package, review_inventory
 from core.workflow_connection_settings import WorkflowConnectionStore
-from suite_core.discovery.component_payload_policy import FROZEN_PAYLOAD_POLICY
+from suite_core.discovery.component_payload_policy import WORKFLOW_FROZEN_PAYLOAD_POLICY
 from suite_core.discovery.component_release_signature import inventory_json
 from suite_core.discovery.component_staging import guard
 from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
@@ -84,12 +84,12 @@ class RootWorkflowSelection:
     def _program_sha256(self):
         path = self.selected.directory / 'BOOTSTRAP_INVENTORY.json'
         guard(path)
-        if path.stat().st_size > FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes:
+        if path.stat().st_size > WORKFLOW_FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes:
             raise ValueError('workflow_inventory_size')
         raw = path.read_bytes()
         if sha256(raw).hexdigest() != self.selected.inventory_sha256:
             raise ValueError('workflow_inventory_changed')
-        rows = inventory_json(raw, max_bytes=FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes)['files']
+        rows = inventory_json(raw, max_bytes=WORKFLOW_FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes)['files']
         return next(row['sha256'] for row in rows if row['path'] == WORKFLOW_EXECUTABLES[self.component_id])
 
     @property

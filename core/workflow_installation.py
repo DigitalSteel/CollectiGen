@@ -12,7 +12,7 @@ from uuid import uuid4
 from core.encyclopedia_installation import EncyclopediaInstallation
 from core.workflow_connection import workflow_component, review_existing_package
 from core.workflow_connection_settings import WorkflowConnectionStore
-from suite_core.discovery.component_payload_policy import FROZEN_PAYLOAD_POLICY
+from suite_core.discovery.component_payload_policy import WORKFLOW_FROZEN_PAYLOAD_POLICY
 from suite_core.discovery.component_staging import (
     read_json, validate_journal, prior_journal_bytes, require, verify_directory)
 from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
@@ -52,7 +52,7 @@ class _WorkflowPublication:
 
 class WorkflowInstallation(EncyclopediaInstallation):
     """Stock serial install/recovery with optional original workflow native owner."""
-    payload_policy = FROZEN_PAYLOAD_POLICY
+    payload_policy = WORKFLOW_FROZEN_PAYLOAD_POLICY
 
     def __init__(self, component_id, acquisition, store, *, admission=None, native_owner=None):
         self.component = workflow_component(component_id)

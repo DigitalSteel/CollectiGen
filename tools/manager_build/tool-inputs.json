@@ -60,7 +60,7 @@
     "upstream": "https://www.python.org/downloads/release/python-3147/",
     "version": "3.14.7"
   },
-  "root_entry_ast_sha256": "45824982973557d9b0e83b5f4e98b2849b7ae1dec499c52afd04a89282e3d209",
+  "root_entry_ast_sha256": "c34f4aff12264407ba43fa7692e460e1b6802bb2b31575e42999c6722ef19ad6",
   "schema": 1,
   "sdk": {
     "files": {
@@ -85,5 +85,6 @@
     "sdk_binary_origin.py": "84fc3756721a339dbee1e515b0179fcee6bea8212fb6472946578c9806cf8d1e",
     "windows_build_isolation.py": "8b6aa2dbb6901c8590b04ba9e039cf597b122061b5c708d5315074e9983b2d95",
     "hooks/hook-core.py": "00013af22a3b0adac8a26d73c971843885de70ea5b750d180d0a105e16b1546f"
-  }
+  },
+  "workflow_candidate_renderer_ast_sha256": "a63f674a112ffbce055aed85df7213d9682b4f3e843373daa07f928b75a577fb"
 }

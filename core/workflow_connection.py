@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 
 from suite_core.installation import ComponentId
-from suite_core.discovery.component_payload_policy import FROZEN_PAYLOAD_POLICY
+from suite_core.discovery.component_payload_policy import WORKFLOW_FROZEN_PAYLOAD_POLICY
 from suite_core.discovery.component_release_signature import _version, verify_component_release
 from suite_core.discovery.component_staging import guard, verify_directory
 from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
@@ -86,7 +86,7 @@ def review_inventory(selected, *, checkpoint=None):
         raise WorkflowConnectionHold('typed_workflow_connection_required')
     profile = verify_directory(selected.directory, selected.inventory_sha256,
         workflow_component(selected.component_id), selected.version,
-        payload_policy=FROZEN_PAYLOAD_POLICY,
+        payload_policy=WORKFLOW_FROZEN_PAYLOAD_POLICY,
         **({'checkpoint': checkpoint} if checkpoint is not None else {}))
     if (profile['platform'] != {'os': 'windows', 'architecture': 'x86_64'}
             or profile.get('runtime_kind') != 'frozen-portable'):

@@ -9,7 +9,7 @@ import re
 
 from core.component_acquisition import ExactComponentOffer
 from core.workflow_connection import workflow_component
-from suite_core.discovery.component_payload_policy import FROZEN_PAYLOAD_POLICY as POLICY
+from suite_core.discovery.component_payload_policy import WORKFLOW_FROZEN_PAYLOAD_POLICY as POLICY
 
 
 @dataclass(frozen=True)
@@ -44,6 +44,70 @@ class CompiledWorkflowAcquisitionProfile:
         ReleaseTransportPolicy(self.asset_redirect_origins)
         if not self.asset_redirect_origins:
             raise ValueError('qualified_asset_origins_required')
+
+
+@dataclass(frozen=True)
+class CompiledWorkflowCandidateAcquisitionProfile:
+    """Exact isolated evaluation offer, carrying no completed qualification claim."""
+    component_id: str
+    admission: object
+    mapping_sha256: str
+    expected_offer: ExactComponentOffer
+    channel: str = 'beta'
+    max_artifact_bytes: int = POLICY.max_archive_bytes
+
+    def __post_init__(self):
+        from core.workflow_candidate_admission import CandidateWorkflowAdmission
+        from suite_core.discovery.component_release_signature import _trust
+        component = workflow_component(self.component_id)
+        if type(self.admission) is not CandidateWorkflowAdmission:
+            raise ValueError('typed_pending_candidate_required')
+        self.admission.validate()
+        offer = self.expected_offer
+        if (type(self.mapping_sha256) is not str or re.fullmatch('[0-9a-f]{64}', self.mapping_sha256) is None
+                or self.channel != 'beta' or type(self.max_artifact_bytes) is not int
+                or not 0 < self.max_artifact_bytes <= POLICY.max_archive_bytes
+                or type(offer) is not ExactComponentOffer or offer.component_id != component
+                or offer.software_version != self.admission.version_for(self.component_id)
+                or offer.trust_sha256 != self.trust_sha256
+                or (offer.os, offer.architecture, offer.channel) != ('windows', 'x86_64', self.channel)
+                or offer.artifact.size_bytes > self.max_artifact_bytes):
+            raise ValueError('exact_pending_candidate_offer_required')
+        if not any(row['key_id'] == offer.key_id and row.get('status', 'active') == 'active'
+                   for row in _trust(self.trust_bytes)['keys']):
+            raise ValueError('explicit_public_publisher_required')
+
+    @property
+    def trust_bytes(self):
+        return self.admission.trust_bytes
+
+    @property
+    def trust_sha256(self):
+        return self.admission.trust_sha256
+
+
+def _profile(component_id):
+    from .compiled_workflow_config import PROFILES, CANDIDATE_PROFILES
+    workflow_component(component_id)
+    if component_id in PROFILES and component_id in CANDIDATE_PROFILES:
+        raise ValueError('mixed_workflow_admission_refused')
+    if component_id in PROFILES:
+        profile = PROFILES[component_id]
+        expected = CompiledWorkflowAcquisitionProfile
+    elif component_id in CANDIDATE_PROFILES:
+        profile = CANDIDATE_PROFILES[component_id]
+        expected = CompiledWorkflowCandidateAcquisitionProfile
+    else:
+        return None
+    if type(profile) is not expected or profile.component_id != component_id:
+        raise ValueError('typed_compiled_workflow_profile_required')
+    return profile
+
+
+def _check_candidate(profile, code_root, data_root):
+    if type(profile) is CompiledWorkflowCandidateAcquisitionProfile:
+        from .version import VERSION
+        profile.admission.check_marker(code_root, data_root, profile.component_id, VERSION)
 
 
 class WorkflowStageOwner:
@@ -86,18 +150,15 @@ class WorkflowStageOwner:
 
 
 def factory_for_session(session, component_id):
-    from .compiled_workflow_config import PROFILES
-    workflow_component(component_id)
-    profile = PROFILES.get(component_id)
+    profile = _profile(component_id)
     if profile is None:
         return None
-    if type(profile) is not CompiledWorkflowAcquisitionProfile or profile.component_id != component_id:
-        raise ValueError('typed_compiled_workflow_profile_required')
     from .bootstrap_entry import NormalEntrySession
     if type(session) is not NormalEntrySession or session.state not in {'offered', 'ready'}:
         raise ValueError('original_native_normal_session_required')
     if getattr(session, 'workflow_contract_version', 0) != 1:
         return None  # Manager-only update cannot upgrade the original launcher.
+    _check_candidate(profile, session.admitted.layout.code_root, session.admitted.layout.data_root)
     def create(reader_owner, settings_path, *, workspace_owner):
         from uuid import uuid4
         from core.component_acquisition import ComponentAcquisition
@@ -115,37 +176,49 @@ def factory_for_session(session, component_id):
         from core.workflow_native_owner import WorkflowWorkspaceOwner
         if type(workspace_owner) is not WorkflowWorkspaceOwner or workspace_owner.session is not session:
             raise ValueError('original_workflow_native_owner_required')
+        _check_candidate(profile, session.admitted.layout.code_root, session.admitted.layout.data_root)
+        def assert_workspace_idle():
+            _check_candidate(profile, session.admitted.layout.code_root, session.admitted.layout.data_root)
+            workspace_owner.assert_idle()
         stage = WorkflowStageOwner(session, reader_owner, component_id,
-                                   assert_workspace_idle=workspace_owner.assert_idle)
+                                   assert_workspace_idle=assert_workspace_idle)
         cache = session.admitted.layout.data_root / 'Manager' / 'WorkflowAcquisition' / component_id / uuid4().hex
         guard(cache)
         cache.mkdir(parents=True, exist_ok=False)
+        candidate = type(profile) is CompiledWorkflowCandidateAcquisitionProfile
+        if candidate:
+            from core.manager_update_host import SealedLocalQualificationOpener
+            opener = SealedLocalQualificationOpener(profile.mapping_sha256,
+                session.admitted.layout.code_root, (component_id,))
+        else:
+            opener = ComponentReleaseTransport(ReleaseTransportPolicy(profile.asset_redirect_origins))
         acquisition = ComponentAcquisition(cache_root=cache, cache_owner=cache.name,
-            opener=ComponentReleaseTransport(ReleaseTransportPolicy(profile.asset_redirect_origins)),
+            opener=opener,
             host_version=VERSION, trust_bytes=profile.trust_bytes, trust_sha256=profile.trust_sha256,
             os_name='windows', architecture='x86_64', max_artifact_bytes=profile.max_artifact_bytes,
-            manifest_name=profile.expected_offer.manifest.name, signature_name=profile.expected_offer.signature.name)
-        return (WorkflowInstallation(component_id, acquisition, WorkflowConnectionStore(settings_path, component_id),
-                    admission=ComponentStageAdmission(stage.hold), native_owner=workspace_owner), ResourceExecutorOwner())
+            manifest_name=profile.expected_offer.manifest.name, signature_name=profile.expected_offer.signature.name,
+            **({'expected_offer': profile.expected_offer} if candidate else {}))
+        service = WorkflowInstallation(component_id, acquisition, WorkflowConnectionStore(settings_path, component_id),
+                    admission=ComponentStageAdmission(stage.hold), native_owner=workspace_owner)
+        service.candidate_admission = profile.admission if candidate else None
+        return service, ResourceExecutorOwner()
     return create
 
 
 def root_selection_for_owner(owner, admitted, component_id):
     """Only original Root issuance from signed retained transaction history."""
-    from .compiled_workflow_config import PROFILES
     from core.manager_launch_owner import DeploymentOwner
     from core.workflow_connection_settings import WorkflowConnectionStore
     from suite_core.discovery.component_staging import (guard, read_json, validate_journal,
                                                         component_stage_owner, prior_journal_bytes)
     component = workflow_component(component_id)
-    profile = PROFILES.get(component_id)
+    profile = _profile(component_id)
     if profile is None:
         return None
-    if type(profile) is not CompiledWorkflowAcquisitionProfile or profile.component_id != component_id:
-        raise ValueError('typed_compiled_workflow_profile_required')
     if (type(owner) is not DeploymentOwner or owner.root != admitted.layout.code_root
             or owner.data_root != admitted.layout.data_root):
         raise ValueError('original_workflow_roots_required')
+    _check_candidate(profile, owner.root, owner.data_root)
     settings = Path(admitted.settings_path)
     if settings.suffix.casefold() == '.ini':
         settings = settings.with_suffix('.json')
@@ -168,9 +241,16 @@ def root_selection_for_owner(owner, admitted, component_id):
         target = journal['target']
         if (owner.root / target['directory'], target['version'], target['inventory_sha256']) == (
                 selected.directory, selected.version, selected.inventory_sha256):
+            manifest = base64.b64decode(journal['manifest'], validate=True)
+            signature = base64.b64decode(journal['signature'], validate=True)
+            if type(profile) is CompiledWorkflowCandidateAcquisitionProfile:
+                if (target['version'] != profile.expected_offer.software_version
+                        or sha256(manifest).hexdigest() != profile.expected_offer.manifest.sha256
+                        or sha256(signature).hexdigest() != profile.expected_offer.signature.sha256):
+                    raise ValueError('exact_pending_candidate_origin_required')
+                _check_candidate(profile, owner.root, owner.data_root)
             return owner.issue_workflow_selection(component_id, settings,
-                manifest_bytes=base64.b64decode(journal['manifest'], validate=True),
-                signature_bytes=base64.b64decode(journal['signature'], validate=True), trust_bytes=profile.trust_bytes)
+                manifest_bytes=manifest, signature_bytes=signature, trust_bytes=profile.trust_bytes)
         raw = prior_journal_bytes(base, journal, component, origin, profile.trust_bytes)
         if raw is None:
             raise ValueError('signed_workflow_origin_unavailable')

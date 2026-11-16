@@ -120,6 +120,7 @@ class ModuleEntrySession:
         self.local_drain_reported = False
         self.worker_baseline = None
         self.initial_draft = None
+        self.candidate_admission = None
 
     @property
     def component_id(self):
@@ -167,6 +168,11 @@ class ModuleEntrySession:
         """Call at workflow admission/checkpoints; peer loss forbids new work."""
         with self.wire.lock:
             require(self.state == 'ready', 'workflow_session_not_ready')
+            candidate = self.candidate_admission
+            if candidate is not None:
+                from core.workflow_candidate_admission import CandidateWorkflowAdmission
+                require(type(candidate) is CandidateWorkflowAdmission, 'original_candidate_admission_required')
+                candidate.check_marker(self.offer.code_root, self.offer.data_root, self.component_id)
             self._exchange('workflow-check', {}, 'workflow-check-ack', {'state': 'ready'})
         return self
 

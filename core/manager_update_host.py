@@ -48,7 +48,15 @@ class SealedLocalQualificationOpener:
     """
     mapping_sha256: str | None = None
     root: Path | None = None
+    component_ids: tuple[str, ...] = ('collectigen.suite-manager',)
     prefix = 'sealed-local-qualification:'
+
+    def __post_init__(self):
+        allowed = {'collectigen.suite-manager', 'collectigen.generate', 'collectigen.train'}
+        require(type(self.component_ids) is tuple and 1 <= len(self.component_ids) <= 3
+                and all(type(value) is str and value in allowed for value in self.component_ids)
+                and len(set(self.component_ids)) == len(self.component_ids),
+                'finite_qualification_components_required')
 
     @property
     def transport_id(self):
@@ -64,7 +72,7 @@ class SealedLocalQualificationOpener:
             'authenticated_qualification_transport_required')
         pin=transport_id[len(self.prefix):]
         require(self.mapping_sha256 is None or self.mapping_sha256==pin,'qualification_mapping_pin_changed')
-        return SealedLocalQualificationOpener(pin,Path(root))
+        return SealedLocalQualificationOpener(pin,Path(root),self.component_ids)
 
     def __call__(self,request,**options):
         import io,re
@@ -85,7 +93,8 @@ class SealedLocalQualificationOpener:
         listing={f'https://api.github.com/repos/{REPOSITORY}/releases?per_page=50&page={page}' for page in (1,2,3)}
         parts=urlsplit(url)
         asset=(parts.scheme=='https' and parts.netloc=='github.com' and not parts.query and not parts.fragment
-            and parts.path.startswith('/'+REPOSITORY+'/releases/download/collectigen.suite-manager%2Fv')
+            and any(parts.path.startswith('/'+REPOSITORY+'/releases/download/'+component+'%2Fv')
+                    for component in self.component_ids)
             and len(parts.path.split('/'))==7)
         require(request.get_method()=='GET' and (url in listing or asset)
             and url in document['responses'],'unknown_qualification_url')

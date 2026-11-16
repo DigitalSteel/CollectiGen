@@ -19,13 +19,13 @@ import sys
 
 from core.training_source_io import read_stable_training_source
 from core.workflow_connection import WorkflowConnection, review_existing_package, workflow_component
-from suite_core.discovery.component_payload_policy import FROZEN_PAYLOAD_POLICY
 from suite_core.discovery.component_release_signature import _json, _version, verify_component_release
 from suite_core.discovery.component_staging import (
     component_origin, component_stage_owner, guard, prior_journal_bytes, validate_journal,
 )
-from suite_core.workflow_modules import compiled_admission
+from suite_core.workflow_modules import compiled_admission, compiled_candidate
 from suite_core.workflow_modules.compiled_admission import CompiledWorkflowAdmission
+from suite_core.workflow_modules.compiled_candidate import CompiledWorkflowCandidateAdmission
 from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
 from suite_core.workflow_modules.entry_binding import admit_module_entry, require
 from suite_core.workflow_modules.session import ModuleEntrySession
@@ -205,9 +205,13 @@ def manager_peer_pin(root, profile):
         stock_applied = False
     metadata = _json(manifest, 'Manager parent signed release')
     version = _version(metadata['version'])
-    require(version.compare(_version(profile.minimum_manager_version)) >= 0
-            and version.compare(_version(profile.maximum_manager_version_exclusive)) < 0,
-            'manager_parent_version_outside_compiled_contract')
+    if type(profile) is CompiledWorkflowCandidateAdmission:
+        require(metadata['version'] == profile.admission.manager_version,
+                'candidate_manager_version_changed')
+    else:
+        require(version.compare(_version(profile.minimum_manager_version)) >= 0
+                and version.compare(_version(profile.maximum_manager_version_exclusive)) < 0,
+                'manager_parent_version_outside_compiled_contract')
     verified = verify_component_release(manifest, signature, profile.trust_bytes,
         expected_component=MANAGER, expected_version=metadata['version'], expected_channel=metadata['channel'],
         expected_os='windows', expected_architecture='x86_64')
@@ -287,10 +291,18 @@ def _exact_parent_path(channel, root):
 
 def entry_session(component_id, *, argv=None, timeout=30):
     """Return a ready authenticated child session; never construct workspace services."""
-    profile = compiled_admission.PROFILE
-    require(type(profile) is CompiledWorkflowAdmission, 'compiled_workflow_admission_unavailable')
+    ordinary, candidate = compiled_admission.PROFILE, compiled_candidate.PROFILE
+    require(ordinary is None or candidate is None, 'mixed_workflow_admission_profiles_refused')
+    if ordinary is not None:
+        require(type(ordinary) is CompiledWorkflowAdmission, 'compiled_workflow_admission_unavailable')
+        profile = ordinary  # Invalid ordinary policy never falls back to a candidate.
+    else:
+        require(type(candidate) is CompiledWorkflowCandidateAdmission, 'compiled_workflow_admission_unavailable')
+        profile = candidate
     profile.validate(component_id)
     locations = entry_locations(component_id, argv)
+    if type(profile) is CompiledWorkflowCandidateAdmission:
+        profile.admission.check_marker(locations.code_root, locations.data_root, component_id)
     selected, manifest, signature = _module_admission(locations, profile)
     peer_pin = manager_peer_pin(locations.code_root, profile)
     admitted = admit_module_entry(code_root=locations.code_root, data_root=locations.data_root,
@@ -309,6 +321,9 @@ def entry_session(component_id, *, argv=None, timeout=30):
         session = ModuleEntrySession.accept(channel, admitted, timeout=timeout)
         image_scope.bind(session.offer.owner_generation, session.offer.attempt_id, session.offer.grant_id)
         _exact_parent_path(channel, locations.code_root)
+        if type(profile) is CompiledWorkflowCandidateAdmission:
+            profile.admission.check_marker(locations.code_root, locations.data_root, component_id)
+            session.candidate_admission = profile.admission
         return session
     except BaseException:
         channel.close()

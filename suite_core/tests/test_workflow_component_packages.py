@@ -7,7 +7,7 @@ import pytest
 
 from tools import public_source as exporter
 from tools.build_component_package import build_package
-from suite_core.discovery.component_payload_policy import FROZEN_PAYLOAD_POLICY, select_payload_policy
+from suite_core.discovery.component_payload_policy import WORKFLOW_FROZEN_PAYLOAD_POLICY, select_payload_policy
 from suite_core.discovery.component_release_signature import verify_component_release
 from suite_core.installation import ComponentId
 from suite_core.tests.test_component_staging import TRUST, sign
@@ -41,7 +41,7 @@ def frozen_input(tmp_path, workflow, *, module_id=None, module_version='0.1.0-al
 def test_workflow_package_uses_existing_frozen_inventory_and_signed_envelope(tmp_path, workflow):
     args = frozen_input(tmp_path, workflow)
     component = ComponentId(args['component_id'])
-    assert select_payload_policy(component, 'windows', 'x86_64') is FROZEN_PAYLOAD_POLICY
+    assert select_payload_policy(component, 'windows', 'x86_64') is WORKFLOW_FROZEN_PAYLOAD_POLICY
     receipt = build_package(**args)
     output = args['output_root']
     raw = (output / 'release-manifest.input.json').read_bytes()

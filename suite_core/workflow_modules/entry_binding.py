@@ -11,7 +11,7 @@ import re
 import sys
 
 from core.workflow_connection import WorkflowConnection, review_existing_package
-from suite_core.discovery.component_payload_policy import FROZEN_PAYLOAD_POLICY
+from suite_core.discovery.component_payload_policy import WORKFLOW_FROZEN_PAYLOAD_POLICY
 from suite_core.discovery.component_release_signature import inventory_json
 from suite_core.discovery.component_staging import guard
 from suite_core.installation import InstallMode, SuiteLayout
@@ -83,11 +83,11 @@ class ModuleEntryBinding:
             binding_revision=self.selected.binding_revision, expected=self.selected)
         path = self.selected.directory / 'BOOTSTRAP_INVENTORY.json'
         guard(path)
-        require(path.stat().st_size <= FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes,
+        require(path.stat().st_size <= WORKFLOW_FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes,
                 'workflow_inventory_size')
         raw = path.read_bytes()
         require(sha256(raw).hexdigest() == self.selected.inventory_sha256, 'workflow_inventory_changed')
-        rows = inventory_json(raw, max_bytes=FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes)['files']
+        rows = inventory_json(raw, max_bytes=WORKFLOW_FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes)['files']
         matches = [row for row in rows if row['path'] == WORKFLOW_EXECUTABLES[self.component_id]]
         require(len(matches) == 1, 'exact_workflow_executable_inventory_row')
         return digest(matches[0]['sha256'])

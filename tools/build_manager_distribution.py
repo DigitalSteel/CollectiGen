@@ -200,6 +200,20 @@ def canonical_renderer(raw, expected_ast):
     return namespace['root_entry']
 
 
+def canonical_candidate_renderer(raw, expected_ast):
+    """Extract only the separately pinned candidate renderer and its imports."""
+    try:
+        functions = [node for node in ast.parse(raw).body if isinstance(node, ast.FunctionDef)
+                     and node.name == 'render_workflow_candidate_configs']
+    except SyntaxError as error:
+        raise BuildHold('invalid_candidate_renderer') from error
+    require(len(functions) == 1 and digest(ast.dump(functions[0], include_attributes=False).encode()) == expected_ast,
+            'canonical_candidate_renderer_changed')
+    namespace = {'ast': ast, 're': re}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), '<canonical-candidate-config>', 'exec'), namespace)
+    return namespace['render_workflow_candidate_configs']
+
+
 def inspect_tools(interpreter, profile, environment):
     require(profile['platform'] == {'os': 'windows', 'architecture': 'x86_64', 'python_abi': 'cp314'},
             'windows_x64_abi_required')
@@ -264,6 +278,8 @@ def pe_x64(raw):
 
 
 def verify_working(stage, config, metadata):
+    for row in config.get('candidate_input_rows', ()):
+        check_row(stage.parent / 'candidate-inputs' / row['path'], row)
     for row in config['source_rows']:
         check_row(stage / 'source' / row['path'], row)
     for row in config['sdk_rows']:
@@ -388,10 +404,64 @@ def stage_training_worker(worker_root, expected_inventory_sha256, manager_root):
             "training_worker_stage_readback_changed")
 
 
+def candidate_render_inputs(admission, *, component, sources, software_version, output,
+                            mapping_sha256=None, offers=None, renderer_raw=None, renderer_ast_sha256=None):
+    """Validate explicit pending inputs before creating any producer output."""
+    if admission is None:
+        require(mapping_sha256 is None and offers is None, 'explicit_candidate_admission_required')
+        return {}
+    from core.workflow_candidate_admission import CandidateWorkflowAdmission
+    require(type(admission) is CandidateWorkflowAdmission, 'typed_pending_candidate_required')
+    admission.validate()
+    require(not admission.suite_root.exists(), 'fresh_isolated_candidate_suite_required')
+    expected = admission.manager_version if component == 'manager' else admission.version_for('collectigen.' + component)
+    require(software_version == expected, 'candidate_source_version_changed')
+    if component == 'manager':
+        require(admission.suite_root == output / 'Suite', 'candidate_producer_suite_root_changed')
+    require(type(renderer_raw) is bytes and type(renderer_ast_sha256) is str,
+            'pinned_candidate_renderer_required')
+    render = canonical_candidate_renderer(renderer_raw, renderer_ast_sha256)
+    return render(admission, component=component, source_bytes=sources,
+                  mapping_sha256=mapping_sha256, offers=offers)
+
+
+def seal_candidate_inputs(output, stage, config, sources, generated, admission, *, mapping_sha256=None,
+                          renderer_raw=None):
+    """Keep original admitted bytes separately; seal generated working identities."""
+    if admission is None:
+        require(not generated, 'candidate_generated_sources_without_admission')
+        return {}
+    inputs = {'document.json': admission.document_bytes, 'trust.json': admission.trust_bytes}
+    if renderer_raw is not None:
+        require(type(renderer_raw) is bytes, 'candidate_renderer_bytes_required')
+        inputs['renderer.py'] = renderer_raw
+    identities = []
+    for name, raw in sorted(generated.items()):
+        require(name in sources and type(raw) is bytes, 'candidate_finite_source_overlay_required')
+        inputs['original-source/' + name] = sources[name]
+        inputs['generated-source/' + name] = raw
+        path = stage / 'source' / name
+        require(read(path) == sources[name], 'candidate_original_working_source_changed')
+        path.write_bytes(raw)
+        require(read(path) == raw, 'candidate_generated_readback_changed')
+        config['source_rows'] = [r for r in config['source_rows'] if r['path'] != name]
+        config['source_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
+        identities.append({'path': name, 'original_sha256': digest(sources[name]),
+                           'generated_sha256': digest(raw), 'bytes': len(raw)})
+    config['candidate_input_rows'] = []
+    for name, raw in sorted(inputs.items()):
+        write_new(output / 'candidate-inputs' / name, raw)
+        config['candidate_input_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
+    return {'document_sha256': admission.document_sha256, 'trust_sha256': admission.trust_sha256,
+            'mapping_sha256': mapping_sha256, 'generated_sources': identities,
+            'input_rows': config['candidate_input_rows'], 'status': 'pending'}
+
+
 def build_distribution(source_stage, output, *, stage_sha256, public_inventory, interpreter, sdk_root,
                        notice_root, root_renderer, source_manifest=HERE / 'source-manifest.json',
                        tool_inputs=HERE / 'tool-inputs.json', training_worker_root=None,
-                       training_worker_inventory_sha256=None):
+                       training_worker_inventory_sha256=None, candidate_admission=None,
+                       candidate_mapping_sha256=None, candidate_offers=None):
     require((training_worker_root is None) == (training_worker_inventory_sha256 is None),
             'complete_training_worker_pins_required')
     if training_worker_root is not None:
@@ -411,6 +481,10 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
     require(profile.get('msvc') == {'architecture': 'x64', 'minimum_version': '14.44.35211.0',
                                   'policy': 'existing-system-prerequisite'}, 'stock_msvc_policy_required')
     renderer_raw = read(root_renderer)
+    candidate_sources = candidate_render_inputs(candidate_admission, component='manager', sources=sources,
+        software_version=receipt['software_version'], output=output,
+        mapping_sha256=candidate_mapping_sha256, offers=candidate_offers,
+        renderer_raw=renderer_raw, renderer_ast_sha256=profile.get('workflow_candidate_renderer_ast_sha256'))
     render = canonical_renderer(renderer_raw, profile['root_entry_ast_sha256'])
     unbound = render()
     require('manager_package_pin_not_finalized' in unbound and 'EXPECTED_MANAGER_PACKAGE_SHA256 = None' in unbound,
@@ -440,10 +514,13 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         config['notice_rows'].append({'path': 'notices/' + name, 'bytes': len(raw), 'sha256': digest(raw)})
     for name, raw in metadata.items():
         write_new(stage / name, raw)
+    candidate_seal = seal_candidate_inputs(output, stage, config, sources, candidate_sources,
+        candidate_admission, mapping_sha256=candidate_mapping_sha256, renderer_raw=renderer_raw)
     write_new(output / 'SEALED_INPUTS.json', json_bytes({'stage_sha256': stage_sha256,
         'source_manifest_sha256': digest(manifest_raw), 'tool_inputs_sha256': digest(profile_raw),
         'root_renderer_sha256': digest(renderer_raw), 'public_inventory_sha256': receipt['public_inventory_sha256'],
-        'training_worker_inventory_sha256': training_worker_inventory_sha256}))
+        'training_worker_inventory_sha256': training_worker_inventory_sha256,
+        **({'workflow_candidate': candidate_seal} if candidate_admission is not None else {})}))
     def set_root(text):
         raw = text.encode()
         path = stage / 'source/public_root_entry.py'
@@ -476,7 +553,22 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         package_raw = json_bytes(package)
         write_new(output / 'MANAGER_PACKAGE.json', package_raw)
         package_pin = digest(package_raw)
-        set_root(render(package_pin))
+        bound_root = (render(package_pin, candidate_admission=candidate_admission)
+                      if candidate_admission is not None else render(package_pin))
+        if candidate_admission is not None:
+            # Root's exact package pin exists only after the child freeze. Seal
+            # this second generated identity before the original Root freeze.
+            root_inputs = {'original-unbound-root-entry.py': unbound.encode(),
+                           'generated-root-entry.py': bound_root.encode()}
+            for name, raw in root_inputs.items():
+                write_new(output / 'candidate-inputs' / name, raw)
+                config['candidate_input_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
+            write_new(output / 'CANDIDATE_ROOT_INPUTS.json', json_bytes({
+                'document_sha256': candidate_admission.document_sha256,
+                'manager_package_sha256': package_pin, 'root_renderer_sha256': digest(renderer_raw),
+                'original_root_sha256': digest(unbound.encode()),
+                'generated_root_sha256': digest(bound_root.encode()), 'status': 'pending'}))
+        set_root(bound_root)
         verify_working(stage, config, metadata)
         require(len(pinned(interpreter, profile['python']['sha256'])) == profile['python']['bytes'],
                 'interpreter_size_changed')
@@ -488,11 +580,16 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         require(digest(read(child)) == package['manager_sha256'], 'child_changed_after_package_binding')
         validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw)
         suite = output / 'Suite'
+        if candidate_admission is not None:
+            require(not suite.exists(), 'fresh_isolated_candidate_suite_required')
         shutil.copytree(root_exe.parent, suite)
         shutil.copytree(child.parent, suite / 'Apps/Manager/current')
         require(tree_inventory(suite / 'Apps/Manager/current') == child_inventory,
                 'child_distribution_copy_changed')
         write_new(suite / 'MANAGER_PACKAGE.json', package_raw)
+        if candidate_admission is not None:
+            write_new(suite / '_bootstrap/workflow-candidate.json', candidate_admission.document_bytes)
+            candidate_admission.check_marker(suite, suite / 'Data', manager_version=receipt['software_version'])
         require(not (suite / 'Data').exists(), 'mutable_data_in_distribution')
         files = []
         for path in sorted(suite.rglob('*')):
@@ -502,7 +599,7 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
                 source = root_exe.parent / path.relative_to(suite)
                 if path.is_relative_to(suite / 'Apps/Manager/current'):
                     source = child.parent / path.relative_to(suite / 'Apps/Manager/current')
-                if path.name != 'MANAGER_PACKAGE.json':
+                if path.name != 'MANAGER_PACKAGE.json' and path != suite / '_bootstrap/workflow-candidate.json':
                     require(raw == read(source), 'distribution_copy_changed')
                 files.append({'path': path.relative_to(suite).as_posix(), 'bytes': len(raw), 'sha256': digest(raw)})
         result = {'status': 'BUILD_ONLY_NOT_EXECUTED', 'software_version': receipt['software_version'],
@@ -563,7 +660,7 @@ def retain_workflow_manager_admission(suite_root, *, archive, manifest_bytes, si
 
 def build_workflow_distribution(source_stage, output, *, component, stage_sha256,
         public_inventory, interpreter, sdk_root, notice_root, source_manifest,
-        tool_inputs=HERE / 'tool-inputs.json'):
+    tool_inputs=HERE / 'tool-inputs.json', candidate_admission=None):
     """Independent frozen module using the existing sealed producer and recipe.
 
     No Manager binary is copied/relabelled, no Root is built, no program is run,
@@ -578,6 +675,10 @@ def build_workflow_distribution(source_stage, output, *, component, stage_sha256
     receipt, _manifest, sources = validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw,
                                                   component=component)
     profile = decode(profile_raw)
+    candidate_renderer_raw = read(Path(__file__).with_name('prepare_manager_production_stage.py')) if candidate_admission is not None else None
+    candidate_sources = candidate_render_inputs(candidate_admission, component=component, sources=sources,
+        software_version=receipt['software_version'], output=output, renderer_raw=candidate_renderer_raw,
+        renderer_ast_sha256=profile.get('workflow_candidate_renderer_ast_sha256'))
     require(profile.get('schema') == 1 and set(profile.get('templates', {})) == TEMPLATES,
             'public_tool_profile_required')
     require(profile.get('msvc') == {'architecture': 'x64', 'minimum_version': '14.44.35211.0',
@@ -606,10 +707,13 @@ def build_workflow_distribution(source_stage, output, *, component, stage_sha256
         config['notice_rows'].append(dict(path='notices/' + path, bytes=len(raw), sha256=digest(raw)))
     for path, raw in metadata.items():
         write_new(stage / path, raw)
+    candidate_seal = seal_candidate_inputs(output, stage, config, sources, candidate_sources, candidate_admission,
+        renderer_raw=candidate_renderer_raw)
     write_new(stage / 'STAGE.json', json_bytes(config))
     write_new(output / 'SEALED_INPUTS.json', json_bytes(dict(component=component,
         stage_sha256=stage_sha256, source_manifest_sha256=digest(manifest_raw),
-        tool_inputs_sha256=digest(profile_raw), public_inventory_sha256=digest(inventory_raw))))
+        tool_inputs_sha256=digest(profile_raw), public_inventory_sha256=digest(inventory_raw),
+        **({'workflow_candidate': candidate_seal} if candidate_admission is not None else {}))))
     try:
         verify_working(stage, config, metadata)
         require(len(pinned(interpreter, profile['python']['sha256'])) == profile['python']['bytes'],

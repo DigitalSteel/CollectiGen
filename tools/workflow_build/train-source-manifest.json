@@ -2157,9 +2157,14 @@
       "sha256": "631dda4ecdc6aa36835bbc026b32933aa9432b878c977711947dc278de3f476c"
     },
     {
+      "path": "core/workflow_candidate_admission.py",
+      "bytes": 5938,
+      "sha256": "3796a4814f9c22dba1257ae30398a5d4e299fd6f652210098c668b61fd76c48f"
+    },
+    {
       "path": "core/workflow_connection.py",
-      "bytes": 4370,
-      "sha256": "b322febb6912d32995f59f8d718cc039b09ef03ab466c141e2401a1c259f7e9d"
+      "bytes": 4388,
+      "sha256": "5865b1628cbf85bca34481bc12077453938047c8dc7984cda4ff33a6903f7625"
     },
     {
       "path": "core/workflow_connection_settings.py",
@@ -2173,8 +2178,8 @@
     },
     {
       "path": "core/workflow_root_selection.py",
-      "bytes": 6272,
-      "sha256": "dbb26900601dfcd71cf2535db54c3b9be11abad317d5c674f69f582fa0e01677"
+      "bytes": 6299,
+      "sha256": "4934cbd6f73767c41992d90af994ca9a1c21fc801833ce86af168acd57160786"
     },
     {
       "path": "core/workflow_semantic_proof.py",
@@ -3018,8 +3023,8 @@
     },
     {
       "path": "suite_core/discovery/component_payload_policy.py",
-      "bytes": 3853,
-      "sha256": "d9b91930d74c04aba251c0431859258f811aa93e7f8e8db9bf93eb244e6df0a8"
+      "bytes": 4697,
+      "sha256": "44ccbc2daa8be3e73302044c913e37f4815a67404c2d12a2fe1ea0584e300fa8"
     },
     {
       "path": "suite_core/discovery/component_release_signature.py",
@@ -3028,8 +3033,8 @@
     },
     {
       "path": "suite_core/discovery/component_staging.py",
-      "bytes": 32955,
-      "sha256": "acae906e62239e2ca147b72329de6e6b50a17cf85679425b300599365069c85a"
+      "bytes": 33031,
+      "sha256": "3e7bf7baa0c03b69485fb36a4f54211cc639910aabe0e02e3dd589fc6aca4bb5"
     },
     {
       "path": "suite_core/discovery/github_component_releases.py",
@@ -3048,8 +3053,8 @@
     },
     {
       "path": "suite_core/discovery/offline_component_producer.py",
-      "bytes": 6114,
-      "sha256": "ae8399f38fa12af7f5329056ec1291bcd7a49dcf7368e6359ae16f02c4c72ef8"
+      "bytes": 6190,
+      "sha256": "997db5e415f8d13c6295b08022b052ab98fe7d2c070c2b7fe96bd1890ff31f7b"
     },
     {
       "path": "suite_core/discovery/ollama_readonly.py",
@@ -3388,8 +3393,8 @@
     },
     {
       "path": "suite_core/train/MODULE_MANIFEST.json",
-      "bytes": 36994,
-      "sha256": "c87d5e704dcb2904265cffe0dbf7b6ec3929431c52e5916483897195f2a4108f"
+      "bytes": 37095,
+      "sha256": "290e50f0edaff71520c88c9472787898b4e26244d7dcd66bb55466cc5b175ce0"
     },
     {
       "path": "suite_core/train/WHATS_NEW.md",
@@ -3437,6 +3442,11 @@
       "sha256": "1f82c66fcf395c75b8fab46e807e2a3a470e404793e3a271423618516713257e"
     },
     {
+      "path": "suite_core/workflow_modules/compiled_candidate.py",
+      "bytes": 1521,
+      "sha256": "204804898eff352a1a3cab04dfaafdc7a2a3b33f95a9f5716f4ee8b9426e30e3"
+    },
+    {
       "path": "suite_core/workflow_modules/contracts.py",
       "bytes": 4134,
       "sha256": "c05a993bffc2dc17eb11ea6b3ba477fba3720fc31f7dd453db559076326a9f36"
@@ -3448,18 +3458,18 @@
     },
     {
       "path": "suite_core/workflow_modules/entry.py",
-      "bytes": 19048,
-      "sha256": "760e65c8f00f23bc4df12ee26a2014893eb5b15f7c28ea38223079e1d3deb1de"
+      "bytes": 20078,
+      "sha256": "6b825264ae4bb6babf6d006a2fc64784c6a77064245e0dc9f9a08c0e13980e9a"
     },
     {
       "path": "suite_core/workflow_modules/entry_binding.py",
-      "bytes": 5339,
-      "sha256": "0dabb683a21ff19d80555655d235ca2730e624cc901e184ba511acd77ed60efb"
+      "bytes": 5366,
+      "sha256": "5998dcbdf6c439c97f6e7fde0703b39fa3a6f46df5d0cce5949464f26480f434"
     },
     {
       "path": "suite_core/workflow_modules/session.py",
-      "bytes": 11636,
-      "sha256": "05671127ba4deeb5ca1e25dfb95cff73ee9a422f82ed1e7124d5edb2012b215d"
+      "bytes": 12066,
+      "sha256": "283dd8da7758b8012eea8d322bf8ee4c66bee8b47c06757f491a79edbdd78452"
     },
     {
       "path": "suite_core/workflow_modules/window.py",

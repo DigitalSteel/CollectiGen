@@ -19,6 +19,9 @@ class ComponentPayloadPolicy:
 FROZEN_PAYLOAD_POLICY = ComponentPayloadPolicy(
     "frozen-portable", 512, 1024, 256 * 1024 * 1024, 64 * 1024 * 1024,
     128 * 1024, None, 1024, False)
+WORKFLOW_FROZEN_PAYLOAD_POLICY = ComponentPayloadPolicy(
+    "frozen-portable", 1536, 1537, 256 * 1024 * 1024, 64 * 1024 * 1024,
+    1024 * 1024, 2048, 1024, False)
 ORGANIZER_INTERPRETER_PAYLOAD_POLICY = ComponentPayloadPolicy(
     "interpreter-portable", 5120, 5121, 384 * 1024 * 1024, 384 * 1024 * 1024,
     1024 * 1024, 6144, 512, True)
@@ -28,6 +31,9 @@ def select_payload_policy(component_id, os_name, architecture, runtime_kind="fro
             or architecture not in ("x86_64", "aarch64")):
         raise ValueError("payload_policy_expectations")
     if runtime_kind == "frozen-portable":
+        if (component_id.value in {'collectigen.generate', 'collectigen.train'}
+                and os_name == 'windows' and architecture == 'x86_64'):
+            return WORKFLOW_FROZEN_PAYLOAD_POLICY
         return FROZEN_PAYLOAD_POLICY
     if (runtime_kind == "interpreter-portable" and component_id.value == "collectigen.media-organizer"
             and os_name == "windows" and architecture == "x86_64"):
@@ -37,8 +43,14 @@ def select_payload_policy(component_id, os_name, architecture, runtime_kind="fro
 def require_payload_policy(policy, component_id=None, platform=None):
     if policy is None:
         return FROZEN_PAYLOAD_POLICY
-    if policy is not FROZEN_PAYLOAD_POLICY and policy is not ORGANIZER_INTERPRETER_PAYLOAD_POLICY:
+    if not any(policy is known for known in (FROZEN_PAYLOAD_POLICY,
+            ORGANIZER_INTERPRETER_PAYLOAD_POLICY, WORKFLOW_FROZEN_PAYLOAD_POLICY)):
         raise ValueError("finite_payload_policy_required")
+    if policy is WORKFLOW_FROZEN_PAYLOAD_POLICY:
+        if component_id is not None and component_id.value not in {'collectigen.generate', 'collectigen.train'}:
+            raise ValueError('payload_policy_component')
+        if platform is not None and platform != {'os': 'windows', 'architecture': 'x86_64'}:
+            raise ValueError('payload_policy_platform')
     if component_id is not None and policy is ORGANIZER_INTERPRETER_PAYLOAD_POLICY:
         if component_id.value != "collectigen.media-organizer":
             raise ValueError("payload_policy_component")
@@ -62,7 +74,7 @@ def payload_relative(value, *, payload_policy=None):
     Frozen callers retain the original validator.
     """
     policy = require_payload_policy(payload_policy)
-    if policy is FROZEN_PAYLOAD_POLICY:
+    if policy is FROZEN_PAYLOAD_POLICY or policy is WORKFLOW_FROZEN_PAYLOAD_POLICY:
         return _relative(value)
     if type(value) is not str or not value:
         raise ValueError("invalid_payload_relative_path")

@@ -1023,8 +1023,8 @@
     },
     {
       "path": "core/manager_update_host.py",
-      "bytes": 28511,
-      "sha256": "4f2998473f836b79a0f8b95eaff10158d03b505dce438c409660d6a115803ee3"
+      "bytes": 29092,
+      "sha256": "91ce90c32c529ea028a395384e70e9fa510c031f3b6dcbbefe6af8758bb61c56"
     },
     {
       "path": "core/manager_update_service.py",
@@ -2247,9 +2247,14 @@
       "sha256": "631dda4ecdc6aa36835bbc026b32933aa9432b878c977711947dc278de3f476c"
     },
     {
+      "path": "core/workflow_candidate_admission.py",
+      "bytes": 5938,
+      "sha256": "3796a4814f9c22dba1257ae30398a5d4e299fd6f652210098c668b61fd76c48f"
+    },
+    {
       "path": "core/workflow_connection.py",
-      "bytes": 4370,
-      "sha256": "b322febb6912d32995f59f8d718cc039b09ef03ab466c141e2401a1c259f7e9d"
+      "bytes": 4388,
+      "sha256": "5865b1628cbf85bca34481bc12077453938047c8dc7984cda4ff33a6903f7625"
     },
     {
       "path": "core/workflow_connection_settings.py",
@@ -2258,8 +2263,8 @@
     },
     {
       "path": "core/workflow_installation.py",
-      "bytes": 8976,
-      "sha256": "e47cd29d0acc9b27b0d488ff9d93c1bb2a2892bbb00a7d976a9271be37506682"
+      "bytes": 8994,
+      "sha256": "a776e895e5a45ee3b6a1bcad16921a9c24a454f61af477948cdea71dca77ba3a"
     },
     {
       "path": "core/workflow_native_channel.py",
@@ -2273,8 +2278,8 @@
     },
     {
       "path": "core/workflow_root_selection.py",
-      "bytes": 6272,
-      "sha256": "dbb26900601dfcd71cf2535db54c3b9be11abad317d5c674f69f582fa0e01677"
+      "bytes": 6299,
+      "sha256": "4934cbd6f73767c41992d90af994ca9a1c21fc801833ce86af168acd57160786"
     },
     {
       "path": "core/workflow_semantic_proof.py",
@@ -3143,8 +3148,8 @@
     },
     {
       "path": "suite_core/discovery/component_payload_policy.py",
-      "bytes": 3853,
-      "sha256": "d9b91930d74c04aba251c0431859258f811aa93e7f8e8db9bf93eb244e6df0a8"
+      "bytes": 4697,
+      "sha256": "44ccbc2daa8be3e73302044c913e37f4815a67404c2d12a2fe1ea0584e300fa8"
     },
     {
       "path": "suite_core/discovery/component_release_signature.py",
@@ -3153,8 +3158,8 @@
     },
     {
       "path": "suite_core/discovery/component_staging.py",
-      "bytes": 32955,
-      "sha256": "acae906e62239e2ca147b72329de6e6b50a17cf85679425b300599365069c85a"
+      "bytes": 33031,
+      "sha256": "3e7bf7baa0c03b69485fb36a4f54211cc639910aabe0e02e3dd589fc6aca4bb5"
     },
     {
       "path": "suite_core/discovery/github_component_releases.py",
@@ -3178,8 +3183,8 @@
     },
     {
       "path": "suite_core/discovery/offline_component_producer.py",
-      "bytes": 6114,
-      "sha256": "ae8399f38fa12af7f5329056ec1291bcd7a49dcf7368e6359ae16f02c4c72ef8"
+      "bytes": 6190,
+      "sha256": "997db5e415f8d13c6295b08022b052ab98fe7d2c070c2b7fe96bd1890ff31f7b"
     },
     {
       "path": "suite_core/discovery/ollama_readonly.py",
@@ -3368,8 +3373,8 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 42407,
-      "sha256": "f273227a371e17499a70436318d539a0f4013aa0cc29fa35b4eab6ff0b99910f"
+      "bytes": 42451,
+      "sha256": "5fbb06627a1d5ecda2fbcef770776aa0d6913296c9f154edd0dc9b6b84153355"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -3458,8 +3463,8 @@
     },
     {
       "path": "suite_core/manager/compiled_workflow_config.py",
-      "bytes": 356,
-      "sha256": "94ed97a36d9bd28780d4cd314d8ec0abdb389bcca89c6db2eacb8d0bae538aaf"
+      "bytes": 476,
+      "sha256": "3be06beab141faa660cd802175ac3c31c124a4b6561deda388742d0823d96906"
     },
     {
       "path": "suite_core/manager/current_build.py",
@@ -3728,13 +3733,13 @@
     },
     {
       "path": "suite_core/manager/workflow_acquisition_binding.py",
-      "bytes": 10225,
-      "sha256": "c1091706639b41e61e1cfd98015d62b784fa6a984f06926a79718a5a6b41b179"
+      "bytes": 14264,
+      "sha256": "7903a6f20dbd2db32cb424768ebe8581cb18246eb3fa373e6761a567f67fcfcd"
     },
     {
       "path": "suite_core/manager/workflow_applications_ui.py",
-      "bytes": 12619,
-      "sha256": "d7aacc4105086383c13e61fcbb4304981282aff8c5f8a412acee6a6fee1de794"
+      "bytes": 13059,
+      "sha256": "ea11bcfca716edc1a12179ce5f12fd1dfa851a83d00e626b344a1940adf9e65e"
     },
     {
       "path": "suite_core/media_examples.py",
@@ -3813,8 +3818,8 @@
     },
     {
       "path": "suite_core/workflow_modules/entry_binding.py",
-      "bytes": 5339,
-      "sha256": "0dabb683a21ff19d80555655d235ca2730e624cc901e184ba511acd77ed60efb"
+      "bytes": 5366,
+      "sha256": "5998dcbdf6c439c97f6e7fde0703b39fa3a6f46df5d0cce5949464f26480f434"
     },
     {
       "path": "suite_core/workflow_modules/owner_route.py",
@@ -3823,8 +3828,8 @@
     },
     {
       "path": "suite_core/workflow_modules/session.py",
-      "bytes": 11636,
-      "sha256": "05671127ba4deeb5ca1e25dfb95cff73ee9a422f82ed1e7124d5edb2012b215d"
+      "bytes": 12066,
+      "sha256": "283dd8da7758b8012eea8d322bf8ee4c66bee8b47c06757f491a79edbdd78452"
     },
     {
       "path": "tools/optional-ai-profiles.json",

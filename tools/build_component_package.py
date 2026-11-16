@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import re
 import shutil
 from hashlib import sha256
 from pathlib import Path
@@ -280,10 +281,59 @@ def assemble_organizer_interpreter(runtime_root,source_inputs_root,output_root,*
         raise
 
 
+def _frozen_workflow_catalog(source, producer, stage_sha256, component_id, software_version, runtime_kind):
+    """Mirror the stock freezer's one public catalog exception, explicitly bound."""
+    if producer is None and stage_sha256 is None:
+        return None, lambda: None
+    require(producer is not None and type(stage_sha256) is str
+            and re.fullmatch('[0-9a-f]{64}', stage_sha256)
+            and component_id in {'collectigen.generate', 'collectigen.train'}
+            and runtime_kind == 'frozen-portable', 'explicit_frozen_workflow_catalog_binding_required')
+    producer = Path(producer)
+    guard(producer)
+    require(producer.is_absolute() and producer.resolve() == producer
+            and source == producer / 'Payload', 'original_frozen_workflow_payload_required')
+    stage = producer / 'stage/STAGE.json'
+    canonical_source = ROOT / 'data/model_workflow_baseline.json'
+    catalog = source / '_internal/data/model_workflow_baseline.json'
+    def read_bounded(path, limit):
+        guard(path)
+        require(path.is_file() and path.stat().st_size <= limit, 'bounded_immutable_model_catalog_required')
+        raw = path.read_bytes()
+        guard(path)
+        require(len(raw) <= limit, 'bounded_immutable_model_catalog_required')
+        return raw
+    stage_raw = read_bounded(stage, 1024 * 1024)
+    require(sha256(stage_raw).hexdigest() == stage_sha256, 'frozen_catalog_stage_changed')
+    value = inventory_json(stage_raw, max_bytes=1024 * 1024)
+    require(type(value.get('schema')) is int and value['schema'] == 1
+            and value.get('component') == COMPONENTS[component_id]
+            and value.get('software_version') == software_version
+            and type(value.get('source_rows')) is list and 0 < len(value['source_rows']) <= 1536,
+            'frozen_catalog_producer_identity_required')
+    rows = value['source_rows']
+    require(all(type(row) is dict and type(row.get('path')) is str for row in rows),
+            'frozen_catalog_source_rows_required')
+    selected = [row for row in rows if row['path'].casefold() == 'data/model_workflow_baseline.json']
+    require(len(selected) == 1 and set(selected[0]) == {'path', 'bytes', 'sha256'}
+            and selected[0]['path'] == 'data/model_workflow_baseline.json', 'unique_frozen_catalog_declaration_required')
+    raw = read_bounded(canonical_source, MAX_METADATA_BYTES)
+    pin = sha256(raw).hexdigest()
+    require(type(selected[0]['bytes']) is int and selected[0]['bytes'] == len(raw)
+            and selected[0]['sha256'] == pin and read_bounded(catalog, MAX_METADATA_BYTES) == raw,
+            'canonical_public_model_catalog_required')
+    def check():
+        require(read_bounded(stage, 1024 * 1024) == stage_raw
+                and read_bounded(canonical_source, MAX_METADATA_BYTES) == raw
+                and read_bounded(catalog, MAX_METADATA_BYTES) == raw, 'immutable_model_catalog_changed')
+    return {'producer_stage_sha256': stage_sha256, 'source': 'data/model_workflow_baseline.json',
+            'payload': '_internal/data/model_workflow_baseline.json', 'bytes': len(raw), 'sha256': pin}, check
+
+
 def build_package(payload_root, output_root, *, runtime_manifest, module_manifest,
                   component_id, software_version, os_name, architecture, artifact_name,
                   supported_from, published_at, release_notes, require_update_data_contract=False,
-                  runtime_kind="frozen-portable"):
+                  runtime_kind="frozen-portable", frozen_producer=None, frozen_producer_stage_sha256=None):
     """Fail closed on mismatched inventory/identity; output is unsigned and inactive."""
     require(component_id in COMPONENTS, 'suite_component_required')
     policy=select_payload_policy(ComponentId(component_id),os_name,architecture,runtime_kind)
@@ -309,6 +359,8 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
     guard(output)
     require(source.is_dir() and not output.exists(), 'explicit_payload_and_fresh_output_required')
     require(not output.is_relative_to(source) and not source.is_relative_to(output), 'separate_output_required')
+    catalog_binding, check_catalog = _frozen_workflow_catalog(source, frozen_producer,
+        frozen_producer_stage_sha256, component_id, software_version, runtime_kind)
     members = []
     count = total = 0
     for path in source.rglob('*'):
@@ -321,7 +373,10 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
         orphan_cache=(runtime_kind=='interpreter-portable' and blocked=={'__pycache__'}
             and name.startswith('Runtime/python/') and (path.is_dir()
                 or (path.suffix.casefold() in {'.pyc','.pyo'} and _generated_cache_source(path) is None)))
-        require(not blocked or orphan_cache, 'mutable_or_generated_payload')
+        immutable_catalog = catalog_binding is not None and (
+            (name == '_internal/data' and path.is_dir()) or
+            (name == catalog_binding['payload'] and path.is_file()))
+        require(not blocked or orphan_cache or immutable_catalog, 'mutable_or_generated_payload')
         require(not any(p.casefold() == INVENTORY.casefold() for p in parts), 'inventory_already_present')
         if path.is_dir():
             continue
@@ -333,8 +388,7 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
     by_name = dict(members)
     require(len(by_name) == len(members) and runtime_manifest in by_name and module_manifest in by_name,
             'required_manifests')
-    runtime = (_json(by_name[runtime_manifest], 'runtime manifest') if runtime_kind=='frozen-portable'
-               else inventory_json(by_name[runtime_manifest],max_bytes=policy.max_inventory_json_bytes))
+    runtime = inventory_json(by_name[runtime_manifest], max_bytes=policy.max_inventory_json_bytes)
     module = _json(by_name[module_manifest], 'module manifest')
     if runtime_kind=='interpreter-portable':
         require(runtime.get('runtime_kind')==runtime_kind and runtime.get('capability_profile')=='organizer-image',
@@ -387,6 +441,7 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
     require(all((source / n).is_file() and (source / n).read_bytes() == v for n, v in members), 'payload_changed')
     require({p.relative_to(source).as_posix() for p in source.rglob('*') if p.is_file()} == set(by_name),
             'payload_closure_changed')
+    check_catalog()
     output.mkdir()  # no force/overwrite, no deletion or alteration of input
     incomplete = output / 'INCOMPLETE.json'
     incomplete.write_bytes(canonical({'state': 'incomplete', 'production_install_authorized': False}))
@@ -416,6 +471,9 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
         'manifest_sha256': sha256(envelope).hexdigest(), 'inventory_sha256': sha256(inventory).hexdigest(),
         'production_install_authorized': False, 'native_health_verified': False, 'signed': False,
         'update_data_contract_schema_validated': update_contract_validated}
+    if catalog_binding is not None:
+        check_catalog()
+        receipt['immutable_model_catalog'] = catalog_binding
     (output / 'packaging-receipt.json').write_bytes(canonical(receipt))
     incomplete.unlink()  # only the exact marker just created in this fresh output
     return receipt
@@ -428,6 +486,8 @@ def main():
                  'published-at', 'release-notes-file'):
         parser.add_argument('--' + name, required=True)
     parser.add_argument('--runtime-kind',choices=('frozen-portable','interpreter-portable'),default='frozen-portable')
+    parser.add_argument('--frozen-producer', type=Path)
+    parser.add_argument('--frozen-producer-stage-sha256')
     parser.add_argument('--require-update-data-contract', action='store_true',
         help='Require the existing Encyclopedia module compatibility schema; does not attest data compatibility.')
     values = vars(parser.parse_args())

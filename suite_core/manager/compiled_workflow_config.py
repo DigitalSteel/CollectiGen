@@ -7,3 +7,6 @@ build as an available update. No private signing material belongs in this file.
 from types import MappingProxyType
 
 PROFILES = MappingProxyType({})
+
+# Candidate-only build configuration; pending intent is not native evidence.
+CANDIDATE_PROFILES = MappingProxyType({})

@@ -20,7 +20,7 @@ from release_contract import safe_zip_members, sha256_file, verify_artifact, ver
 from suite_core.installation import ComponentId, _relative, _path
 from .component_release_signature import verify_component_release, _json, _version, MAX_METADATA_BYTES, inventory_json
 
-from .component_payload_policy import require_payload_policy, payload_relative
+from .component_payload_policy import require_payload_policy, payload_relative, WORKFLOW_FROZEN_PAYLOAD_POLICY
 
 ADAPTER_VERSION = "0.1.0-alpha.3"
 INVENTORY = "BOOTSTRAP_INVENTORY.json"
@@ -184,7 +184,7 @@ def verify_directory(directory, expected_hash, component, version, *, payload_po
         require(type(entry["size_bytes"]) is int and entry["size_bytes"] >= 0
                 and file.is_file() and file.stat().st_size == entry["size_bytes"], "payload_size")
         total += entry["size_bytes"]
-        if policy.runtime_kind == "interpreter-portable":
+        if policy.runtime_kind == "interpreter-portable" or policy is WORKFLOW_FROZEN_PAYLOAD_POLICY:
             require(total <= policy.max_unpacked_bytes, "payload_bounds")
         require(type(entry["sha256"]) is str
                 and sha256_file(file, should_cancel=should_cancel) == entry["sha256"], "payload_hash")
