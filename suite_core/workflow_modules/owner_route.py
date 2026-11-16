@@ -243,7 +243,7 @@ class WorkflowControlActor:
                 self._peer()
                 try:
                     self.phase = 'receive'
-                    frame = self.wire.receive(timeout=timeout)
+                    frame = self.wire.receive(idle_timeout=timeout)
                 except LaunchHold as error:
                     channel = self.control.channel
                     if (str(error) == 'control_channel_idle_timeout'

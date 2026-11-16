@@ -150,7 +150,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             raise ValueError('explicit_non_demo_organizer_connection_host_required')
     from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter,
         QStackedWidget, QListWidgetItem, QTableView, QTextBrowser, QComboBox, QDialog, QDialogButtonBox,
-        QPushButton, QScrollArea, QFrame, QLineEdit, QToolButton, QGroupBox, QSizePolicy)
+        QPushButton, QScrollArea, QFrame, QLineEdit, QToolButton, QGroupBox, QSizePolicy, QTabWidget)
     from qt_app.navigation_icons import PageNavigationList, NavigationItemDelegate, navigation_icon
     from suite_core.manager.command_bar import CommandBar, UiCommand, CommandSearchDialog, bind_source
     from PySide6.QtGui import QKeySequence, QShortcut
@@ -339,6 +339,24 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             applications_page = QWidget(); applications_layout = workspace_layout(applications_page)
             applications_layout.addWidget(workspace_heading("Applications")); applications_layout.addWidget(self.summary)
             self.summary.setMaximumHeight(48)
+            self.application_sections = QTabWidget()
+            self.application_sections.setAccessibleName("Application tasks")
+            workflow_page = QWidget()
+            workflow_layout = workspace_layout(workflow_page)
+            workflow_intro = QLabel("Open Generate or Train below. Browse other applications in App catalog; manage shared tools in Connections.")
+            workflow_intro.setWordWrap(True)
+            workflow_layout.addWidget(workflow_intro)
+            catalog_page = QWidget()
+            application_catalog_layout = workspace_layout(catalog_page)
+            connections_page = QWidget()
+            application_connections_layout = workspace_layout(connections_page)
+            connection_intro = QLabel("Manage shared software and connections. Generate and Train open in their own applications.")
+            connection_intro.setWordWrap(True)
+            application_connections_layout.addWidget(connection_intro)
+            self.application_sections.addTab(workflow_page, "Generate and Train")
+            self.application_sections.addTab(catalog_page, "App catalog")
+            self.application_sections.addTab(connections_page, "Connections")
+            applications_layout.addWidget(self.application_sections, 1)
             self.disposable_panel = QFrame()
             self.disposable_panel.setObjectName('disposableModuleLifecycle')
             module_layout = QVBoxLayout(self.disposable_panel)
@@ -361,7 +379,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 module_actions.addWidget(control)
             module_layout.addLayout(module_actions)
             self.disposable_panel.setVisible(self.lifecycle_bridge is not None and self.lifecycle_bridge.module_enabled)
-            applications_layout.addWidget(self.disposable_panel)
+            application_catalog_layout.addWidget(self.disposable_panel)
             self.disposable_operation = 'install'
             self.render_disposable_module()
             library_controls = QHBoxLayout()
@@ -387,8 +405,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.categories_toggle.setCheckable(True); self.categories_toggle.setChecked(True)
             self.categories_toggle.setAccessibleName("Show application categories")
             self.categories_toggle.toggled.connect(category_side.setVisible)
-            applications_layout.addWidget(self.categories_toggle, 0, Qt.AlignLeft)
-            applications_layout.addWidget(self.application_categories, 1)
+            application_catalog_layout.addWidget(self.categories_toggle, 0, Qt.AlignLeft)
+            application_catalog_layout.addWidget(self.application_categories, 1)
             self.library_search = QLineEdit(); self.library_search.setPlaceholderText("Search name, description or capability")
             self.library_search.setAccessibleName("Search supported applications"); self.library_search.setClearButtonEnabled(True)
             clear = QPushButton("Clear filters"); clear.clicked.connect(self.clear_library_filters)
@@ -416,8 +434,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.library_search.textChanged.connect(self.render_library)
             self.applications.setMaximumHeight(130)
             self.app_observation_heading = QLabel("Configured applications")
-            applications_layout.addWidget(self.app_observation_heading)
-            applications_layout.addWidget(self.applications)
+            application_catalog_layout.addWidget(self.app_observation_heading)
+            application_catalog_layout.addWidget(self.applications)
             dashboard_page = QWidget(); dashboard_layout = QVBoxLayout(dashboard_page)
             dashboard_layout.setContentsMargins(0, 0, 0, 0)
             from qt_app.module_card import ModuleCard, ModuleCardPresentation
@@ -558,13 +576,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 and callable(getattr(model_workspace_factory, 'open_local_models', None)))
             self.local_models_button.setToolTip('Register and organize existing model files, review notes and storage, or choose models for Generate and Training.')
             self.local_models_button.clicked.connect(self.open_local_models)
-            applications_layout.addWidget(self.local_models_button, 0, Qt.AlignLeft)
+            application_connections_layout.addWidget(self.local_models_button, 0, Qt.AlignLeft)
             self.repository_inspection_button = compact_action(QPushButton('Inspect a model repository'))
             self.repository_inspection_button.setEnabled(model_workspace_factory is not None and not view.synthetic)
             self.repository_inspection_button.setToolTip('Review public model metadata in the existing Models workspace.'
                 if model_workspace_factory is not None else 'Repository inspection is unavailable in this launch.')
             self.repository_inspection_button.clicked.connect(self.open_repository_inspection)
-            applications_layout.addWidget(self.repository_inspection_button, 0, Qt.AlignLeft)
+            application_connections_layout.addWidget(self.repository_inspection_button, 0, Qt.AlignLeft)
             # Workflow execution belongs to separately admitted application modules.
             self._generation_setup_dialog = self._trainer_setup_dialog = None
             self._trainer_setup_loading_task = None
@@ -578,7 +596,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from .workflow_applications_ui import WorkflowApplications
             self.workflow_applications = WorkflowApplications(workspace_owner=workflow_workspace_owner,
                 services=workflow_services, launch_allowed=self.workflow_launch_allowed, parent=self)
-            applications_layout.addWidget(self.workflow_applications)
+            workflow_layout.addWidget(self.workflow_applications)
+            workflow_layout.addStretch(1)
             management = QGroupBox('Workflow software and connections')
             management_layout = QHBoxLayout(management)
             for label, callback in (('Generator connection…', self.review_generator_connection),
@@ -595,8 +614,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 management_layout.addWidget(button)
             management.setEnabled(not view.synthetic and normal_entry_session is not None)
             self.workflow_management = management
-            applications_layout.addWidget(management)
-            applications_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
+            application_connections_layout.addWidget(management)
+            application_connections_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
+            application_connections_layout.addStretch(1)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
             external.setWordWrap(True)
             external.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -759,6 +779,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
         def open_workflow_application(self, component_id):
             from core.workflow_connection import workflow_component
             workflow_component(component_id)
+            self.application_sections.setCurrentIndex(0)
             self.navigation.setCurrentRow(self.page_rows['Applications'])
             self.workflow_applications.render()
             status, _opening, _manage, group = self.workflow_applications.rows[component_id]
@@ -946,15 +967,17 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if not self.workflow_management_allowed(): return
             self.navigation.setCurrentRow(self.page_rows["Applications"])
             if not self.ollama_workspace.isVisible():
-                self._ollama_return_visibility = {name: getattr(self, name).isVisible() for name in
+                self._ollama_return_visibility = {name: not getattr(self, name).isHidden() for name in
                     ("application_categories", "categories_toggle", "app_observation_heading", "applications")}
             self.application_categories.hide(); self.categories_toggle.hide()
             self.app_observation_heading.hide(); self.applications.hide()
+            self.application_sections.hide()
             self.ollama_workspace.show()
             self.render_ollama()
 
         def close_ollama_workspace(self):
             self.ollama_workspace.hide()
+            self.application_sections.show()
             self.dependency_route_settled()
             for name, visible in self._ollama_return_visibility.items():
                 getattr(self, name).setVisible(visible)
@@ -1996,7 +2019,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             selected = self.library_filter.currentText()
             query = self.library_search.text().strip().casefold()
             category = self.application_filter_state.category
-            self.workflow_applications.set_filter(query, selected, category)
+            # Catalog filters never hide the separate Generate/Train task home.
             self.application_filter_state = ApplicationFilterState(category, selected, query)
             self.category_description.setText(CATEGORY_DESCRIPTIONS.get(category, "No category description available."))
             self.category_description.setVisible(category != "All categories")

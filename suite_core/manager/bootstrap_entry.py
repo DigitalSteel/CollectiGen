@@ -363,7 +363,7 @@ class _NormalWire:
         self.channel.write_frame(framed, timeout=INITIAL_OFFER_TIMEOUT if kind=='offer' else self.timeout)
         self.outgoing += 1
 
-    def receive(self, kind=None, *, timeout=None):
+    def receive(self, kind=None, *, timeout=None, idle_timeout=None):
         # Retain a complete decoded reply before fallible sequence bookkeeping.
         # Partial/invalid frames never become retained authenticated receipts.
         if self.received_pending is None:
@@ -371,7 +371,13 @@ class _NormalWire:
                 require(type(timeout) in {int,float} and math.isfinite(timeout) and 0<timeout<=30,
                         'bounded_retained_reply_wait_required')
             wait=self.timeout if timeout is None else min(self.timeout,timeout)
-            self.received_pending = decode_control_frame(self.channel.read_frame(timeout=wait), message_kinds=self.message_kinds)
+            if idle_timeout is None:
+                raw = self.channel.read_frame(timeout=wait)
+            else:
+                require(type(idle_timeout) in {int, float} and math.isfinite(idle_timeout)
+                        and 0 < idle_timeout <= 30, 'bounded_retained_reply_wait_required')
+                raw = self.channel.read_frame(timeout=wait, idle_timeout=min(wait, idle_timeout))
+            self.received_pending = decode_control_frame(raw, message_kinds=self.message_kinds)
         frame = self.received_pending
         check_frame_sequence(frame, binding_sha256=self.proof.binding_sha256,
                              next_sequence=self.incoming + 1)

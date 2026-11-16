@@ -918,8 +918,8 @@
     },
     {
       "path": "core/manager_launch_owner.py",
-      "bytes": 278651,
-      "sha256": "a6f7903dbb619fd0f2665a97f5a7bb81be5c1382f60aa98cfd8d7ad396266e1b"
+      "bytes": 279554,
+      "sha256": "71bee44415dedbcf59ef785ca9dd9c3eefda26d14abd599305d40d14d4d47c96"
     },
     {
       "path": "core/manager_llamacpp_provider.py",
@@ -3248,8 +3248,8 @@
     },
     {
       "path": "suite_core/manager/bootstrap_entry.py",
-      "bytes": 109778,
-      "sha256": "667171b48118c27f20b1d290cb98b96adad7e9e583f95daa7be866c073cd6fdc"
+      "bytes": 110159,
+      "sha256": "b0b7a3916cbf824a226b31eed7a49bc67bd9c61da305366df881f79e2b15d3ea"
     },
     {
       "path": "suite_core/manager/caption_components_ui.py",

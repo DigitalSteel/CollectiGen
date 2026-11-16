@@ -3541,25 +3541,35 @@ class WindowsControlChannel:
                 raise
 
     @_serialized
-    def read_frame(self, timeout=5):
+    def read_frame(self, timeout=5, *, idle_timeout=None):
         if self.transport is not None and (self.transport.owner._abort_ticket is not None or self.transport.owner._normal_terminal is not None):raise LaunchHold('normal_dispatch_aborted')
         if not 0 < timeout <= 30: raise LaunchHold("bounded_channel_wait_required")
         if self.read_fault is not None: raise LaunchHold("control_read_recovery_required")
+        if idle_timeout is not None and (type(idle_timeout) not in (int, float)
+                or not 0 < idle_timeout <= timeout):
+            raise LaunchHold("bounded_channel_idle_wait_required")
         self._read_progress=0
         try:
-            return self._read_frame(timeout)
+            if idle_timeout is None:
+                return self._read_frame(timeout)
+            return self._read_frame(timeout, idle_timeout=idle_timeout)
         except BaseException as exc:
             if isinstance(exc,LaunchHold) and str(exc)=="control_channel_timeout" and self._read_progress==0:
                 raise LaunchHold("control_channel_idle_timeout") from exc
             self.read_fault={"bytes_received":self._read_progress,"reason":type(exc).__name__}
             raise
 
-    def _read_frame(self, timeout=5):
+    def _read_frame(self, timeout=5, *, idle_timeout=None):
         import msvcrt
         from ctypes import wintypes as W
         if not 0 < timeout <= 30: raise LaunchHold("bounded_channel_wait_required")
-        deadline = time.monotonic()+timeout
+        # Existing callers retain one total deadline. Workflow polling opts in:
+        # idle waits may be short, but the first bytes start one nonrenewing
+        # assembly budget for the entire prefix/body, never a per-chunk renewal.
+        deadline = time.monotonic()+(timeout if idle_timeout is None else idle_timeout)
+        frame_started = False
         def exact(count):
+            nonlocal deadline, frame_started
             data = bytearray()
             while len(data) < count:
                 if time.monotonic() >= deadline:
@@ -3568,6 +3578,9 @@ class WindowsControlChannel:
                 if not self.api.PeekNamedPipe(msvcrt.get_osfhandle(self.reader),None,0,None,ctypes.byref(available),None):
                     raise LaunchHold("control_channel_eof_or_unavailable")
                 if available.value:
+                    if idle_timeout is not None and not frame_started:
+                        frame_started = True
+                        deadline = time.monotonic()+timeout
                     chunk = os.read(self.reader,min(count-len(data),available.value))
                     if not chunk: raise LaunchHold("control_channel_eof")
                     data.extend(chunk)

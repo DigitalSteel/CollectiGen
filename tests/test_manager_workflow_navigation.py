@@ -300,3 +300,66 @@ def test_responsive_workflow_actions_keep_scope_and_keyboard(tmp_path, monkeypat
     finally:
         window.close(); settle()
     assert not window.isVisible() and not requests
+
+
+@pytest.mark.parametrize('theme', ('dark', 'light'))
+def test_application_task_tabs_keep_workflows_clear_and_catalog_state(manager_window, theme):
+    from pathlib import Path
+    from qt_app.theme import apply_theme
+    from test_manager_comparison_queue import app as configured_app
+    app, manager = manager_window
+    assert configured_app() is app
+    apply_theme(app, theme)
+    manager.resize(1920, 1080)
+    out = Path('.tmp/workflow-dataset-boundary-20261116/application-captures-final')
+    out.mkdir(parents=True, exist_ok=True)
+    def capture(name):
+        app.processEvents()
+        QTest.qWait(30)
+        assert manager.grab().save(str(out / (theme + "-" + name + ".png")))
+    item = manager.navigation.item(manager.page_rows['Applications'])
+    QTest.mouseClick(manager.navigation.viewport(), Qt.LeftButton,
+                     pos=manager.navigation.visualItemRect(item).center())
+    tabs = manager.application_sections
+    assert [tabs.tabText(i) for i in range(tabs.count())] == [
+        'Generate and Train', 'App catalog', 'Connections']
+    assert tabs.currentIndex() == 0
+    capture("workflows-unavailable")
+    assert manager.workflow_applications.isVisible()
+    assert not manager.application_categories.isVisible()
+    assert not manager.workflow_management.isVisible()
+    QTest.mouseClick(tabs.tabBar(), Qt.LeftButton, pos=tabs.tabBar().tabRect(1).center())
+    manager.library_search.setText('synthetic catalog query')
+    app.processEvents()
+    assert manager.application_categories.isVisible()
+    capture("catalog-filtered")
+    assert not manager.workflow_applications.isVisible()
+    QTest.mouseClick(tabs.tabBar(), Qt.LeftButton, pos=tabs.tabBar().tabRect(2).center())
+    assert manager.workflow_management.isVisible()
+    capture("connections-unavailable")
+    assert manager.local_models_button.isVisible()
+    assert not manager.application_categories.isVisible()
+    QTest.mouseClick(tabs.tabBar(), Qt.LeftButton, pos=tabs.tabBar().tabRect(0).center())
+    app.processEvents()
+    assert manager.workflow_applications.isVisible()
+    assert all(not row[3].isHidden() for row in manager.workflow_applications.rows.values())
+    QTest.mouseClick(tabs.tabBar(), Qt.LeftButton, pos=tabs.tabBar().tabRect(1).center())
+    assert manager.library_search.text() == 'synthetic catalog query'
+    manager.open_generate_plan()  # Existing routes return to the named task home.
+    assert tabs.currentIndex() == 0
+
+    # Component seam into the existing embedded connection; visible Back returns
+    # to the exact tab. Inactive catalog ancestry must not become explicit hide.
+    QTest.mouseClick(tabs.tabBar(), Qt.LeftButton, pos=tabs.tabBar().tabRect(2).center())
+    manager.open_ollama_workspace()
+    assert not tabs.isVisible() and manager.ollama_workspace.isVisible()
+    from PySide6.QtWidgets import QPushButton
+    back, = [button for button in manager.ollama_workspace.findChildren(QPushButton)
+             if button.text() == 'Back to applications']
+    QTest.mouseClick(back, Qt.LeftButton)
+    app.processEvents()
+    assert tabs.isVisible() and tabs.currentIndex() == 2
+    QTest.mouseClick(tabs.tabBar(), Qt.LeftButton, pos=tabs.tabBar().tabRect(1).center())
+    assert manager.application_categories.isVisible()
+    assert manager.library_search.text() == 'synthetic catalog query'
+    capture('catalog-after-connection-return')

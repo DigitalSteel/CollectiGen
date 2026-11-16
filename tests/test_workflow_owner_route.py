@@ -15,6 +15,8 @@ from suite_core.manager.bootstrap_entry import EntryHelperAdapter, NormalEntrySe
 from suite_core.workflow_modules.owner_route import WorkflowControlActor
 from suite_core.workflow_modules.session import MESSAGE_KINDS
 
+_ORIGINAL_READ_FRAME = WindowsControlChannel.read_frame
+
 
 @pytest.fixture
 def route(tmp_path, monkeypatch):
@@ -36,7 +38,7 @@ def route(tmp_path, monkeypatch):
     monkeypatch.setattr(WindowsControlChannel, 'local_witness', lambda self: self._synthetic_local.copy())
     monkeypatch.setattr(WindowsControlChannel, 'peer_witness', lambda self: self._synthetic_peer.copy())
     incoming, sent = [], []
-    def read_frame(self, timeout=1):
+    def read_frame(self, timeout=1, *, idle_timeout=None):
         if not incoming:
             raise LaunchHold('control_channel_idle_timeout')
         return incoming.pop(0)
@@ -98,7 +100,7 @@ def ready(f):
 def test_first_partial_frame_fault_retains_pre_hold_state_and_original_ownership(route, monkeypatch):
     f = route
     ready(f)
-    def partial_frame(channel, timeout=1):
+    def partial_frame(channel, timeout=1, *, idle_timeout=None):
         channel._read_progress=4
         channel.read_fault={'bytes_received':4,'reason':'LaunchHold'}
         raise LaunchHold('control_channel_timeout')
@@ -230,7 +232,7 @@ def test_acknowledged_drain_exit_during_read_retains_native_settlement(route, mo
     f.actor.handle_next()
     f.request('workflow-drained-report', {'local_drained': True})
     f.actor.handle_next()
-    def exit_during_read(_channel, timeout=1):
+    def exit_during_read(_channel, timeout=1, *, idle_timeout=None):
         f.api.waits[102] = 0
         f.job.poll = lambda: 0
         f.channel.read_fault = {'bytes_received': 0, 'reason': 'LaunchHold'}
@@ -290,3 +292,100 @@ def test_actor_checkpoints_reuse_enrolled_images_and_keep_scopes_on_peer_failure
         f.actor.handle_next()
     assert all(not scope.closed for scope in scopes)
     assert f.native.helper_accounting_held
+
+
+@pytest.fixture
+def timed_native_route(route, monkeypatch):
+    """Actual framing/wire/actor; only OS bytes and monotonic time are synthetic."""
+    import core.manager_launch_owner as native
+    import msvcrt
+    f = route
+    ready(f)
+    state = SimpleNamespace(now=0.0, stream=bytearray(), reads=[], available_at=None,
+                            header_delay=.02, body_at=None)
+    def sleep(seconds):
+        target = state.now + seconds
+        if state.available_at is not None and state.now < state.available_at < target:
+            target = state.available_at
+        state.now = target
+    def peek(handle, buffer, size, read, available, remaining):
+        visible = state.available_at is not None and state.now >= state.available_at
+        count = len(state.stream) if visible else 0
+        if state.reads and state.body_at is not None and state.now < state.body_at:
+            count = 0
+        available._obj.value = count
+        return True
+    def read(handle, count):
+        data = bytes(state.stream[:count])
+        del state.stream[:count]
+        state.reads.append(len(data))
+        if len(state.reads) == 1:
+            state.now += state.header_delay
+        return data
+    monkeypatch.setattr(WindowsControlChannel, 'read_frame', _ORIGINAL_READ_FRAME)
+    monkeypatch.setattr(native.time, 'monotonic', lambda: state.now)
+    monkeypatch.setattr(native.time, 'sleep', sleep)
+    monkeypatch.setattr(native.os, 'read', read)
+    monkeypatch.setattr(msvcrt, 'get_osfhandle', lambda fd: fd)
+    f.api.PeekNamedPipe = peek
+    def queue():
+        f.request('workflow-check')
+        state.stream.extend(f.incoming.pop())
+        state.available_at = state.now + .249
+    state.queue = queue
+    return f, state
+
+
+def test_real_frame_survives_idle_poll_boundary_after_quiet_cycles(timed_native_route):
+    f, timing = timed_native_route
+    for _ in range(3):
+        assert f.actor.handle_next(timeout=.25) is False
+        assert f.actor.state == 'ready' and f.channel.read_fault is None
+    timing.queue()
+    sent = len(f.sent)
+    assert f.actor.handle_next(timeout=.25) is True
+    assert timing.reads[0] == 4 and len(timing.reads) == 2
+    assert f.actor.wire.incoming == 2 and len(f.sent) == sent + 1
+    assert f.sent[-1]['kind'] == 'workflow-check-ack'
+    assert f.channel.read_fault is None and f.actor.state == 'ready'
+    assert f.native.helper_accounting_held and not f.actor.grant_release_authorized
+
+
+@pytest.mark.parametrize('late_body', [False, True])
+def test_real_incomplete_frame_holds_without_ack_replay_or_release(timed_native_route, late_body):
+    f, timing = timed_native_route
+    timing.queue()
+    if late_body:
+        timing.body_at = timing.available_at + 1.1
+    else:
+        del timing.stream[4:]
+    sent = len(f.sent)
+    with pytest.raises(LaunchHold, match='control_channel_timeout'):
+        f.actor.handle_next(timeout=.25)
+    assert 1.249 <= timing.now < 1.28
+    assert f.channel.read_fault['bytes_received'] == 4
+    assert f.actor.state == 'held' and f.actor.first_failure['phase'] == 'receive'
+    assert f.actor.wire.incoming == 1 and len(f.sent) == sent
+    assert f.native.helper_accounting_held and not f.actor.grant_release_authorized
+    assert not f.actor.is_drained and timing.reads == [4]
+    timing.now += 1  # Even a now-complete late body cannot be replayed or ACKed.
+    with pytest.raises(LaunchHold, match='control_read_recovery_required'):
+        f.channel.read_frame(timeout=1, idle_timeout=.25)
+    assert timing.reads == [4] and len(f.sent) == sent
+
+
+def test_default_total_frame_deadline_remains_unchanged(timed_native_route):
+    f, timing = timed_native_route
+    timing.queue()
+    with pytest.raises(LaunchHold, match='control_channel_timeout'):
+        f.channel.read_frame(timeout=.25)
+    assert timing.reads == [4] and f.channel.read_fault['bytes_received'] == 4
+
+
+@pytest.mark.parametrize('idle', [0, -1, float('nan'), float('inf'), True, 2])
+def test_invalid_idle_budget_refuses_before_consuming_bytes(timed_native_route, idle):
+    f, timing = timed_native_route
+    timing.queue()
+    with pytest.raises(LaunchHold, match='bounded_channel_idle_wait_required'):
+        f.channel.read_frame(timeout=1, idle_timeout=idle)
+    assert timing.reads == [] and f.channel.read_fault is None

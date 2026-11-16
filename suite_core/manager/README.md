@@ -7,6 +7,12 @@ controls while unrelated shared edits stay locked; save/recovery and rejected
 download messages name the available next action. This candidate is not yet a
 qualified public download. The links below identify the historical release.
 
+Applications separates Generate and Train, App catalog, and Connections into
+named tabs. Catalog searches stay in the catalog; workflow windows remain
+independent. The workflow owner separates quiet polling from one bounded
+frame-assembly wait; partial frames still require recovery. These source
+changes still require matching packaged workflow and recovery qualification.
+
 **Suite Manager a.0.7.6** provides component installation plus dedicated Generate
 and Training workspaces. Use the complete Windows ZIP for a fresh installation.
 
