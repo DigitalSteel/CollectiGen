@@ -1064,6 +1064,7 @@
     "tests/test_workflow_entry_intake.py",
     "tests/test_workflow_generation_feedback_ui.py",
     "tests/test_workflow_image_scope.py",
+    "tests/test_workflow_install_confirmation.py",
     "tests/test_workflow_installation.py",
     "tests/test_workflow_native_channel.py",
     "tests/test_workflow_owner_route.py",

@@ -1,5 +1,12 @@
 # CollectiGen Suite Manager
 
+The **0.8.0-alpha.1 source candidate** makes Manager the home for Applications,
+installation, updates, connections and shared settings. Generate and Train are
+separate versioned applications. Installer confirmations retain their own
+controls while unrelated shared edits stay locked; save/recovery and rejected
+download messages name the available next action. This candidate is not yet a
+qualified public download. The links below identify the historical release.
+
 **Suite Manager a.0.7.6** provides component installation plus dedicated Generate
 and Training workspaces. Use the complete Windows ZIP for a fresh installation.
 

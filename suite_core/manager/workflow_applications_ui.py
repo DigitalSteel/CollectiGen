@@ -31,8 +31,20 @@ class WorkflowAcquisitionPanel(EncyclopediaAcquisitionPanel):
 
     def initial_status_text(self):
         if getattr(self.service, 'candidate_admission', None) is not None:
-            return 'Evaluation candidate. Check Again reads only the sealed local release evidence; no GitHub download is enabled.'
-        return 'Choose Check Again to review signed ' + self.label + ' releases. Opening this window downloads nothing.'
+            return 'Evaluation candidate. Find ' + self.label + ' checks the sealed local release evidence. No GitHub download is enabled.'
+        return 'Choose Find ' + self.label + ' to review signed releases. Opening this window downloads nothing.'
+
+    def application_name(self):
+        return self.label
+
+    def installation_title(self, verb):
+        return verb + ' ' + self.label
+
+    def first_check_label(self):
+        return 'Find ' + self.label
+
+    def preserved_data_text(self):
+        return 'Your saved drafts, runs and images will not be changed.'
 
     def package_review_name(self):
         return self.label
@@ -85,6 +97,16 @@ class WorkflowReturnBar(QGroupBox):
 
 
 class WorkflowApplications(QWidget):
+    def owns_dialog(self, dialog):
+        # QWidget.isAncestorOf stops at top-level window boundaries. Native
+        # confirmations still retain their exact acquisition parent chain.
+        current = dialog
+        while current is not None:
+            if any(current is owned for owned in self.dialogs.values()):
+                return True
+            current = current.parentWidget()
+        return False
+
     def __init__(self, *, workspace_owner=None, services=(), launch_allowed=lambda: True, parent=None):
         super().__init__(parent)
         if workspace_owner is not None and type(workspace_owner) is not WorkflowWorkspaceOwner:

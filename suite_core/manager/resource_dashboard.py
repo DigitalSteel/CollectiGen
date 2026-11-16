@@ -39,7 +39,7 @@ def server_views(report, jobs=()):
 
 
 def create_dashboard(report, jobs=(), *, synthetic=False, open_servers=None,
-                     supported_apps=(), development_apps=(), reader_available=False, organizer_available=False):
+                     supported_apps=(), development_apps=(), reader_available=False, organizer_available=False, workflow_apps=()):
     """Concise supplied observations; no collectors, zero telemetry or launch claims."""
     from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea, QFrame
     from PySide6.QtCore import Qt
@@ -64,7 +64,8 @@ def create_dashboard(report, jobs=(), *, synthetic=False, open_servers=None,
         pane.addWidget(summary); pane.addStretch()
         pane.addWidget(details_panel("Details", detail)); cards.append(frame)
         return summary
-    app_lines = [item.title + " · Catalog entry" for item in supported_apps]
+    app_lines = [name + " · Manage or open in Applications" for name in workflow_apps]
+    app_lines += [item.title + " · Catalog entry" for item in supported_apps]
     supplied_keys = {item.component_id.value for item in supported_apps}
     if reader_available and "collectigen.tag-encyclopedia" not in supplied_keys:
         app_lines.append("Tag Encyclopedia Reader · Browse in Applications")

@@ -42,6 +42,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
         self.progress = SimpleQueue()
         self.confirming = False
         self.check_attempted = False
+        self.settlement_guidance = None
         self.started_at = None
         layout = workspace_layout(self)
         title = workspace_heading("Tag Encyclopedia")
@@ -146,6 +147,18 @@ class EncyclopediaAcquisitionPanel(QWidget):
     def package_review_name(self):
         return "Reader"
 
+    def application_name(self):
+        return "reader"
+
+    def installation_title(self, verb):
+        return verb + " Tag Encyclopedia"
+
+    def first_check_label(self):
+        return "Find reader"
+
+    def preserved_data_text(self):
+        return "Your catalogs and images will not be changed."
+
     def available_status_text(self, offer):
         return f"Reader {offer.release.software_version} is available. Choose Install or Update to review it."
 
@@ -158,6 +171,8 @@ class EncyclopediaAcquisitionPanel(QWidget):
             return
         self.cancel = Event()
         self.operation = operation
+        if operation not in ('Checking recovery options', 'Checking cancellation outcome'):
+            self.settlement_guidance = None
         self.started_at = monotonic()
         self.status.setText(f"{operation}. Please wait.")
         self.activity.setRange(0, 0)
@@ -166,7 +181,12 @@ class EncyclopediaAcquisitionPanel(QWidget):
             self.future = self.executor.submit(work)
         except Exception as error:
             self.operation = None
-            self.status.setText("Could not start. Choose Check Again to retry; your installation is unchanged.")
+            self.status.setText(
+                "Saving could not start. Choose Retry Save; the installed app files are retained."
+                if operation == "Saving installed connection" else
+                "Recovery could not start. Confirm recovery again, then choose Recover installation. Your installation is unchanged."
+                if operation == "Recovering installation" else
+                "Could not start. Choose Check Again to retry; your installation is unchanged.")
             self.details.setPlainText(str(error))
         self.render()
 
@@ -201,16 +221,16 @@ class EncyclopediaAcquisitionPanel(QWidget):
         offer = reviewed.offer
         current = None if self.installed is None else self.installed.selected
         verb = "Update" if current is not None else "Install"
-        box = QMessageBox(self); box.setWindowTitle(verb + " Tag Encyclopedia")
+        box = QMessageBox(self); box.setWindowTitle(self.installation_title(verb))
         box.setIcon(QMessageBox.Question); box.setTextFormat(Qt.PlainText)
-        box.setText(f"{verb} reader {offer.release.software_version}?")
+        box.setText(f"{verb} {self.application_name()} {offer.release.software_version}?")
         before = "None installed" if current is None else current.version
-        consequence = ("The reader must be closed before executable replacement." if current is not None else
-            "The reader will not open automatically.")
+        consequence = (f"{self.package_review_name()} must be closed before executable replacement." if current is not None else
+            f"{self.package_review_name()} will not open automatically.")
         compatibility = ("\n\nCompatibility will be checked before installation. Confirm to download this exact package and install only if compatible."
             if getattr(self.service, "standalone_compatibility", False) else "")
-        box.setInformativeText(f"Current reader: {before}\nDownload: {offer.release.artifact.size_bytes / (1024*1024):.1f} MB\n"
-            f"\nYour catalogs and images will not be changed. {consequence}{compatibility}")
+        box.setInformativeText(f"Current {self.application_name()}: {before}\nDownload: {offer.release.artifact.size_bytes / (1024*1024):.1f} MB\n"
+            f"\n{self.preserved_data_text()} {consequence}{compatibility}")
         box.setDetailedText(f"Installation folder: {reviewed.destination}\nPackage SHA256: {offer.release.artifact.sha256}")
         box.setStandardButtons(QMessageBox.Yes | QMessageBox.No); box.setDefaultButton(QMessageBox.No)
         box.button(QMessageBox.Yes).setText(verb); box.button(QMessageBox.No).setText("Cancel")
@@ -268,7 +288,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
                     self.status.setText(f"Downloading reader: {percent}% of {values[1]/(1024*1024):.1f} MB. Installation has not finished.")
                 else:
                     self.activity.setRange(0,0)
-                    self.status.setText("Downloading reader. Installation has not finished.")
+                    self.status.setText(f"Downloading {self.application_name()}. Installation has not finished.")
         if self.future is None:
             self.render()
             if self.reconcile_queued and not self.close_held:
@@ -291,9 +311,10 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 cancelled = operation == 'Checking cancellation outcome'
                 self.status.setText(('Installation stopped. Review the recovery action below.' if cancelled else
                     'Setup was interrupted. Review the available recovery action below.') if result.pending else
-                    'The reader files are retained. Choose Retry Save to finish connecting the app.' if result.connection_pending else
+                    f'The {self.application_name()} files are retained. Choose Retry Save to finish connecting the app.' if result.connection_pending else
                     self.pending_setup_guidance() if result.phase == 'activated' else
                     'Installation cancelled. Choose Check Again for a fresh review.' if cancelled else
+                    self.settlement_guidance or
                     'The operation did not finish. Choose Check Again for a fresh review; your previous installation is retained.')
             elif operation == "Refreshing releases":
                 offers, self.installed = result
@@ -304,7 +325,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 self.status.setText(empty if self.offer is None else
                     self.available_status_text(self.offer) +
                     (" Compatibility will be checked before installation." if getattr(self.service, "standalone_compatibility", False) else ""))
-                if self.offer is None: self.release_notes.setPlainText("No available reader notes.")
+                if self.offer is None: self.release_notes.setPlainText(f"No available {self.application_name()} notes.")
                 else: self.release_notes.setMarkdown(self.offer.release_notes)
             elif operation == "Reviewing installation":
                 self.reviewed = result
@@ -329,6 +350,8 @@ class EncyclopediaAcquisitionPanel(QWidget):
         except Exception as error:
             self.reviewed = None
             from core.component_acquisition import AcquisitionCacheFull, ExactOfferHold
+            from release_contract import ReleaseContractError
+            from suite_core.discovery.component_staging import StagingHold
             from core.encyclopedia_update_binding import StandaloneReaderCompatibilityHold
             if operation in ("Checking app status", "Refreshing releases"):
                 self.observation_stale = self.installed is not None
@@ -351,7 +374,20 @@ class EncyclopediaAcquisitionPanel(QWidget):
                     recovery_check = 'Checking cancellation outcome'
             elif isinstance(error, AcquisitionCacheFull) and operation == "Installing reviewed package":
                 self.offer = None
-                self.status.setText("This download cache has reached its limit. Restart Manager to try again with a fresh cache. Your installation is unchanged.")
+                self.status.setText("The download cache limit has been reached. Restart Manager to use a fresh cache. Your installation is unchanged.")
+            elif (isinstance(error, ReleaseContractError)
+                    and str(error).endswith("Retry to fetch a fresh copy.")
+                    and operation == "Installing reviewed package"):
+                self.offer = None
+                self.settlement_guidance = ("The cached package could not be verified. Choose Check Again to review and "
+                    "download a fresh copy. Your previous installation is retained.")
+                self.status.setText(self.settlement_guidance)
+                if not self.recovery_only:
+                    recovery_check = 'Checking recovery options'
+            elif (isinstance(error, StagingHold) and str(error) == 'artifact_exceeds_cache_capacity'
+                    and operation == "Refreshing releases"):
+                self.offer = None
+                self.status.setText("This release exceeds the download size supported by this Manager. No app files were downloaded. Use a compatible Manager or a smaller qualified release.")
             elif operation == "Refreshing releases":
                 self.status.setText("The release check could not finish. Your installation is unchanged. Choose Check Again to retry.")
             elif isinstance(error, StandaloneReaderCompatibilityHold):
@@ -456,7 +492,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
         self.install.setText("Update" if selected is not None else "Install")
         self.install.setVisible(self.offer is not None and not busy and not self.publication_pending and not pending and not launch_pending)
         self.refresh.setEnabled(admitted and not busy)
-        self.refresh.setText('Check Again' if self.check_attempted or self.installed is not None else 'Find reader')
+        self.refresh.setText('Check Again' if self.check_attempted or self.installed is not None else self.first_check_label())
         self.refresh.setVisible(not busy and not self.publication_pending and not pending)
         self.install.setEnabled(admitted and not busy and self.offer is not None and not launch_pending)
         _primary_action(self.install, self.install.isVisible())

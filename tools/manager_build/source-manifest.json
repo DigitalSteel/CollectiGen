@@ -3513,8 +3513,8 @@
     },
     {
       "path": "suite_core/manager/encyclopedia_acquisition_ui.py",
-      "bytes": 29620,
-      "sha256": "a84aca466e31e63c88b0333dea2b041c32e9aaceae6c53a5b59aaecab0163325"
+      "bytes": 31788,
+      "sha256": "6344300e826809071ffe3032fa82aff716ec4582b084bde0364ebbea28041794"
     },
     {
       "path": "suite_core/manager/encyclopedia_connection_ui.py",
@@ -3643,8 +3643,8 @@
     },
     {
       "path": "suite_core/manager/resource_dashboard.py",
-      "bytes": 6432,
-      "sha256": "b2bdd0a25b4b11c876411788334348d6e4bea97f667fe3d1a885e8d078efea2d"
+      "bytes": 6544,
+      "sha256": "aeb80affa07a93a319f31ec19010c9e6a442df5abb6169e0c1fb7b5291fff47b"
     },
     {
       "path": "suite_core/manager/resource_executor.py",
@@ -3728,8 +3728,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 229684,
-      "sha256": "22d69a7970f9ccd172486257368fbcd037cffacf1bbb16a6145dd7b96c0e6176"
+      "bytes": 230049,
+      "sha256": "7a43bd7019c318d2df255cc7f024596b9697cafc68c2e2dde87440bcc846d5d4"
     },
     {
       "path": "suite_core/manager/workflow_acquisition_binding.py",
@@ -3738,8 +3738,8 @@
     },
     {
       "path": "suite_core/manager/workflow_applications_ui.py",
-      "bytes": 13059,
-      "sha256": "ea11bcfca716edc1a12179ce5f12fd1dfa851a83d00e626b344a1940adf9e65e"
+      "bytes": 13792,
+      "sha256": "c3d14a3f52af268dc9a57f06709c46c562c29a4baabfd4caca1ca8557ecfdbd9"
     },
     {
       "path": "suite_core/media_examples.py",

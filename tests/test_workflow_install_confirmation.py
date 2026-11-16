@@ -1,0 +1,100 @@
+"""Actual nested Qt confirmation and shared lock regression; synthetic source only."""
+from datetime import datetime, timezone
+from types import SimpleNamespace as NS
+import json
+
+import pytest
+from PySide6.QtCore import QTimer, Qt
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication, QDialog, QLineEdit, QMessageBox, QPushButton
+
+from suite_core.manager.window import create_window, unconfigured
+from suite_core.manager.workflow_applications_ui import WorkflowAcquisitionPanel
+
+
+@pytest.mark.parametrize('component', ('generate', 'train'))
+def test_module_confirmation_stays_actionable_while_other_shared_edits_are_locked(monkeypatch, tmp_path, component):
+    app = QApplication.instance() or QApplication([])
+    manager = create_window(unconfigured(datetime.now(timezone.utc)))
+    manager.workflow_applications.timer.stop()
+    manager.show()
+    owned = QDialog(manager)
+    manager.workflow_applications.dialogs['collectigen.' + component] = owned
+    service = NS(install_available=True, candidate_admission=object())
+    panel = WorkflowAcquisitionPanel('collectigen.' + component, service, NS(close_held=False), parent=owned)
+    owned.show()
+    panel.show()
+    other = QDialog(manager)
+    edit = QLineEdit(other)
+    apply = QPushButton('Apply', other)
+    cancel = QPushButton('Cancel', other)
+    other.show()
+    app.processEvents()
+    panel.confirming = True
+    monkeypatch.setattr(type(manager.workflow_applications), 'close_held', property(lambda _self: True))
+    reviewed = NS(offer=NS(release=NS(software_version='0.1.0-alpha.1',
+        artifact=NS(size_bytes=1234, sha256='a' * 64))), destination=tmp_path / 'synthetic-package')
+    seen = []
+    timer = QTimer()
+    def answer():
+        box = app.activeModalWidget()
+        if not isinstance(box, QMessageBox):
+            return
+        timer.stop()
+        manager.poll_workflow_applications()
+        yes, no = box.button(QMessageBox.Yes), box.button(QMessageBox.No)
+        seen.append(dict(title=box.windowTitle(), text=box.text(), info=box.informativeText(),
+            yes_enabled=yes.isEnabled(), no_enabled=no.isEnabled(), edit_enabled=edit.isEnabled(),
+            apply_enabled=apply.isEnabled(), cancel_enabled=cancel.isEnabled(),
+            owned_ancestor=owned.isAncestorOf(box), box_parent_is_panel=box.parentWidget() is panel))
+        # Never bypass a disabled product control to make a test pass.
+        QTest.mouseClick(yes if yes.isEnabled() else no, Qt.LeftButton)
+    timer.timeout.connect(answer)
+    timer.start(10)
+    try:
+        assert panel.refresh.text() == 'Find ' + component.title()
+        assert 'Check Again' not in panel.status.text()
+        assert panel.confirm_installation(reviewed), json.dumps(seen)
+        assert len(seen) == 1
+        observation = seen[0]
+        assert observation['title'] == 'Install ' + component.title()
+        assert observation['text'] == 'Install ' + component.title() + ' 0.1.0-alpha.1?'
+        assert 'reader' not in observation['info'].lower()
+        assert 'saved drafts, runs and images' in observation['info']
+        assert observation['yes_enabled'] and observation['no_enabled']
+        assert not observation['edit_enabled'] and not observation['apply_enabled']
+        assert observation['cancel_enabled']
+    finally:
+        timer.stop()
+        panel.confirming = False
+        monkeypatch.undo()
+        manager.poll_workflow_applications()
+        assert edit.isEnabled() and apply.isEnabled()
+        other.close()
+        owned.close()
+        manager.workflow_applications.dialogs.clear()
+        manager.close()
+        app.processEvents()
+
+
+def test_dashboard_exposes_module_entry_and_navigation_does_not_keep_other_section_hint():
+    app = QApplication.instance() or QApplication([])
+    manager = create_window(unconfigured(datetime.now(timezone.utc)))
+    manager.show()
+    app.processEvents()
+    try:
+        assert 'application' in manager.statusBar().currentMessage().lower()
+        assert 'Databases' not in manager.statusBar().currentMessage()
+        from PySide6.QtWidgets import QLabel
+        labels = [label.text() for label in manager.findChildren(QLabel)]
+        assert any('Generate · Manage or open in Applications' in value
+            and 'Train · Manage or open in Applications' in value for value in labels)
+        manager.navigation.setCurrentRow(manager.page_rows['Applications'])
+        app.processEvents()
+        assert 'Generate, Train and Media Organizer' in manager.statusBar().currentMessage()
+        manager.navigation.setCurrentRow(manager.page_rows['Servers'])
+        app.processEvents()
+        assert 'Use Applications' not in manager.statusBar().currentMessage()
+    finally:
+        manager.close()
+        app.processEvents()

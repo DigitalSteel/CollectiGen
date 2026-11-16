@@ -723,7 +723,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     "Use Applications to connect an existing approved reader package." if self.reader_panel is not None else
                     "Qualified owned Ollama controls supplied; review each action." if self.owned_runtime_panel.ready else
                     "Preview only \u2022 Installation and application setup are not available yet")
-            self.statusBar().showMessage(status)
+            self.statusBar().showMessage("Choose an application in Applications, or review your computer and connections in Servers.")
             self.render_ollama()
 
         def workflow_launch_allowed(self):
@@ -781,7 +781,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if held:
                 from PySide6.QtWidgets import QAbstractButton, QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit, QPlainTextEdit
                 for dialog in self.findChildren(QDialog):
-                    if dialog in self.workflow_applications.dialogs.values():
+                    if self.workflow_applications.owns_dialog(dialog):
                         continue
                     for control in dialog.findChildren(QWidget):
                         editable = isinstance(control, (QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit, QPlainTextEdit))
@@ -1910,7 +1910,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             dashboard = create_dashboard(detached.report, detached.jobs, synthetic=detached.synthetic,
                 supported_apps=detached.supported_apps, development_apps=DEVELOPMENT_APPLICATIONS,
                 reader_available=self.reader_panel is not None,
-                organizer_available=self.organizer_acquisition_panel is not None)
+                organizer_available=self.organizer_acquisition_panel is not None,
+                workflow_apps=('Generate', 'Train'))
             while self.dashboard_slot.count():
                 old = self.dashboard_slot.takeAt(0).widget()
                 if old is not None: old.hide(); old.deleteLater()
@@ -2702,12 +2703,17 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.workflow_management.setEnabled(session_ready)
             section = next((name for name, row in self.page_rows.items() if row == self.navigation.currentRow()), "Dashboard")
             databases_hint = "Use Databases to connect a catalog, review content and recover interrupted work."
-            applications_hint = "Use Applications to install or open Media Organizer; your libraries and images stay separate."
-            if self.statusBar().currentMessage() in (databases_hint, applications_hint):
-                if section == "Applications" and self.organizer_acquisition_panel is not None and self.organizer_acquisition_panel.service.install_available:
+            applications_hint = "Use Applications to install, update or open Generate, Train and Media Organizer. Saved workflow data stays separate."
+            dashboard_hint = "Choose an application in Applications, or review your computer and connections in Servers."
+            if self.statusBar().currentMessage() in (databases_hint, applications_hint, dashboard_hint):
+                if section == "Dashboard":
+                    self.statusBar().showMessage(dashboard_hint)
+                elif section == "Applications":
                     self.statusBar().showMessage(applications_hint)
                 elif section == "Databases" and self.tag_database_pane is not None and self.tag_database_pane.controller.settings_path is not None:
                     self.statusBar().showMessage(databases_hint)
+                else:
+                    self.statusBar().clearMessage()
             if not hasattr(self, "view") or self.resource_panel is None:
                 return
             from core.manager_server_inventory import section_command_keys
