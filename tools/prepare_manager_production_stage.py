@@ -43,11 +43,22 @@ def root_entry(package_pin=None, *, compiled_update_profile=False, compiled_prof
     candidate_check=''
     if candidate_admission is not None:
         from core.workflow_candidate_admission import CandidateWorkflowAdmission
-        if (type(candidate_admission) is not CandidateWorkflowAdmission or package_pin is None
-                or compiled_update_profile or compiled_profile_input is not None
-                or qualification_test_build or qualification_mapping_sha256 is not None):
+        if type(candidate_admission) is not CandidateWorkflowAdmission or package_pin is None:
             raise ValueError('unmixed_pending_candidate_root_required')
         candidate_admission.validate()
+        if compiled_update_profile:
+            if (not qualification_test_build or type(compiled_profile_input) is not dict
+                    or type(compiled_profile_input.get('schema')) is not int or compiled_profile_input['schema']!=1
+                    or compiled_profile_input.get('transport_id')!='sealed-local-qualification'
+                    or compiled_profile_input.get('trust_hex')!=candidate_admission.trust_bytes.hex()
+                    or compiled_profile_input.get('trust_sha256')!=candidate_admission.trust_sha256
+                    or compiled_profile_input.get('channel')!='beta'
+                    or compiled_profile_input.get('enable_training_baseline') is not True
+                    or type(compiled_profile_input.get('initial_prior')) is not dict
+                    or compiled_profile_input['initial_prior'].get('version')!=candidate_admission.manager_version):
+                raise ValueError('candidate_current_signed_baseline_profile_required')
+        elif compiled_profile_input is not None or qualification_test_build or qualification_mapping_sha256 is not None:
+            raise ValueError('unmixed_pending_candidate_root_required')
         candidate_profile=('from core.workflow_candidate_admission import CandidateWorkflowAdmission\n'
             '_WORKFLOW_CANDIDATE = CandidateWorkflowAdmission(document_bytes='+repr(candidate_admission.document_bytes)+
             ', document_sha256='+repr(candidate_admission.document_sha256)+
@@ -69,7 +80,7 @@ def root_entry(package_pin=None, *, compiled_update_profile=False, compiled_prof
         "    raise SystemExit(main(expected_package_sha256=EXPECTED_MANAGER_PACKAGE_SHA256"+profile_option+"))\n")
 
 def render_workflow_candidate_configs(admission, *, component, source_bytes,
-                                      mapping_sha256=None, offers=None):
+                                      mapping_sha256=None, offers=None, candidate_update_profile=None):
     """Render finite defaults only; callers retain the original public stage."""
     from core.workflow_candidate_admission import CandidateWorkflowAdmission
     from core.component_acquisition import ExactComponentOffer, ExactOfferAsset
@@ -98,11 +109,11 @@ def render_workflow_candidate_configs(admission, *, component, source_bytes,
         ', document_sha256='+repr(admission.document_sha256)+', trust_bytes='+repr(admission.trust_bytes)+
         ', trust_sha256='+repr(admission.trust_sha256)+')')
     result={}
-    default('suite_core/workflow_modules/compiled_admission.py','PROFILE','None')
-    candidate='suite_core/workflow_modules/compiled_candidate.py'
-    text,node=default(candidate,'PROFILE','None')
     if component!='manager':
-        if mapping_sha256 is not None or offers is not None:
+        default('suite_core/workflow_modules/compiled_admission.py','PROFILE','None')
+        candidate='suite_core/workflow_modules/compiled_candidate.py'
+        text,node=default(candidate,'PROFILE','None')
+        if mapping_sha256 is not None or offers is not None or candidate_update_profile is not None:
             raise ValueError('module_candidate_precedes_exact_offers')
         component_id='collectigen.'+component
         admission.version_for(component_id)
@@ -138,6 +149,26 @@ def render_workflow_candidate_configs(admission, *, component, source_bytes,
         'from suite_core.manager.workflow_acquisition_binding import CompiledWorkflowCandidateAcquisitionProfile\n')
     result[config]=(imports+replace_assignment(text,node,
         'CANDIDATE_PROFILES = MappingProxyType({'+', '.join(profiles)+'})')).encode()
+    if candidate_update_profile is not None:
+        from suite_core.discovery.component_release_signature import _json, _trust
+        value=candidate_update_profile
+        if (type(value) is not dict or type(value.get('schema')) is not int or value['schema']!=1
+                or value.get('trust_hex')!=admission.trust_bytes.hex()
+                or value.get('trust_sha256')!=admission.trust_sha256
+                or value.get('channel')!='beta' or value.get('transport_id')!='sealed-local-qualification'
+                or value.get('initial_prior') is not None or value.get('enable_training_baseline') is not True):
+            raise ValueError('candidate_child_stock_profile_binding_required')
+        _trust(admission.trust_bytes)
+        report=_json(bytes.fromhex(value.get('stock_review_hex','')),'candidate stock review')
+        if (report.get('status')!='stock_cli_native_qualified' or report.get('stock_version')!='1.2.161'
+                or report.get('updater_sha256')!=value.get('updater_sha256')
+                or report.get('platform')!={'os':'windows','architecture':'x86_64'}
+                or report.get('hook_mode')!='All' or report.get('elevation_mode')!='none'
+                or report.get('exact_full_package_apply') is not True
+                or report.get('prerequisites_verified') is not True or not report.get('evidence_refs')):
+            raise ValueError('candidate_genuine_stock_review_required')
+        result['suite_core/manager/compiled_update_config.py']=render_qualification_update_config(
+            value,include_prior=False,mapping_sha256=mapping_sha256).encode()
     return result
 
 

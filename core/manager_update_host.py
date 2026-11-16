@@ -91,6 +91,10 @@ class SealedLocalQualificationOpener:
             'closed_qualification_response_map_required')
         url=request.full_url
         listing={f'https://api.github.com/repos/{REPOSITORY}/releases?per_page=50&page={page}' for page in (1,2,3)}
+        if any(component in {'collectigen.generate', 'collectigen.train'} for component in self.component_ids):
+            # ExactComponentOffer first checks repository identity. Keep this
+            # one fixed metadata URL inside the same sealed, no-fallback map.
+            listing.add(f'https://api.github.com/repos/{REPOSITORY}')
         parts=urlsplit(url)
         asset=(parts.scheme=='https' and parts.netloc=='github.com' and not parts.query and not parts.fragment
             and any(parts.path.startswith('/'+REPOSITORY+'/releases/download/'+component+'%2Fv')

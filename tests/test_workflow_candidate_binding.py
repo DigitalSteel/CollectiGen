@@ -135,6 +135,24 @@ def test_sealed_transport_refuses_unbounded_or_foreign_components(components):
         SealedLocalQualificationOpener(component_ids=components)
 
 
+def test_exact_offer_repository_identity_is_mapped_only_for_workflows(tmp_path):
+    root = tmp_path / 'sealed'; (root / '_bootstrap').mkdir(parents=True)
+    repository = root / '_qualification/repository.json'; repository.parent.mkdir()
+    contents = raw({'id': 1301951104, 'full_name': REPOSITORY}); repository.write_bytes(contents)
+    url = f'https://api.github.com/repos/{REPOSITORY}'
+    mapping = raw({'schema': 1, 'responses': {url: {'path': '_qualification/repository.json',
+        'size': len(contents), 'sha256': sha256(contents).hexdigest()}}})
+    (root / '_bootstrap/qualification-responses.json').write_bytes(mapping)
+    pin = sha256(mapping).hexdigest()
+    with pytest.raises(ValueError, match='unknown_qualification_url'):
+        SealedLocalQualificationOpener(pin, root)(Request(url))
+    for component in ('collectigen.generate', 'collectigen.train'):
+        with SealedLocalQualificationOpener(pin, root, (component,))(Request(url)) as response:
+            assert response.read() == contents
+        with pytest.raises(ValueError, match='unknown_qualification_url'):
+            SealedLocalQualificationOpener(pin, root, (component,))(Request(url + '/contents'))
+
+
 def test_mixed_entry_policy_refused_before_read_or_channel(profile, monkeypatch):
     from suite_core.workflow_modules import entry, compiled_admission, compiled_candidate
     monkeypatch.setattr(compiled_admission, 'PROFILE', object())

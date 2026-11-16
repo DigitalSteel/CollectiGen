@@ -992,6 +992,7 @@
     "suite_core/workflow_modules/window.py",
     "suite_core/workflow_modules/worker_runtime.py",
     "tests/organizer_synthetic_shell.py",
+    "tests/test_candidate_manager_worker_composition.py",
     "tests/test_component_acquisition.py",
     "tests/test_component_release_identity.py",
     "tests/test_component_release_presentation.py",

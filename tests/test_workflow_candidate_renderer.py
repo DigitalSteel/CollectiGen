@@ -94,18 +94,19 @@ def test_manager_render_binds_exact_offers_map_and_empty_production(inputs):
     with pytest.raises(ValueError): render_workflow_candidate_configs(admission, **{**kwargs, 'offers': wrong})
 
 
-@pytest.mark.parametrize('name,target,replacement', [
-    ('suite_core/workflow_modules/compiled_admission.py', 'PROFILE = None', 'PROFILE = object()'),
-    ('suite_core/workflow_modules/compiled_candidate.py', 'PROFILE = None', 'PROFILE = object()'),
-    ('suite_core/manager/compiled_workflow_config.py', 'PROFILES = MappingProxyType({})', 'PROFILES = MappingProxyType({"foreign": 1})'),
-    ('suite_core/manager/compiled_update_config.py', 'PROFILE = None', 'PROFILE = object()'),
+@pytest.mark.parametrize('component,name,target,replacement', [
+    ('generate', 'suite_core/workflow_modules/compiled_admission.py', 'PROFILE = None', 'PROFILE = object()'),
+    ('generate', 'suite_core/workflow_modules/compiled_candidate.py', 'PROFILE = None', 'PROFILE = object()'),
+    ('manager', 'suite_core/manager/compiled_workflow_config.py', 'PROFILES = MappingProxyType({})', 'PROFILES = MappingProxyType({"foreign": 1})'),
+    ('manager', 'suite_core/manager/compiled_update_config.py', 'PROFILE = None', 'PROFILE = object()'),
 ])
-def test_mixed_or_already_configured_inputs_refused(inputs, name, target, replacement):
+def test_mixed_or_already_configured_inputs_refused(inputs, component, name, target, replacement):
     admission, sources = inputs
     sources[name] = sources[name].replace(target.encode(), replacement.encode())
     with pytest.raises(ValueError):
-        render_workflow_candidate_configs(admission, component='manager', source_bytes=sources,
-            mapping_sha256='b' * 64, offers={c: offer(admission, c) for c in admission.document()['components']})
+        render_workflow_candidate_configs(admission, component=component, source_bytes=sources,
+            **({'mapping_sha256': 'b' * 64, 'offers': {c: offer(admission, c)
+                for c in admission.document()['components']}} if component == 'manager' else {}))
 
 
 def test_canonical_root_ast_pins_candidate_guard_and_keeps_launcher(inputs):

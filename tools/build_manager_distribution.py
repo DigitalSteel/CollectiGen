@@ -185,7 +185,22 @@ def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw, *, compon
     return receipt, manifest, sources
 
 
-def canonical_renderer(raw, expected_ast):
+def canonical_update_renderers(raw, pins):
+    """Admit both stock renderer dependencies without executing module top-level."""
+    names = {'render_compiled_update_config': 'compiled_update_renderer_ast_sha256',
+             'render_qualification_update_config': 'qualification_update_renderer_ast_sha256'}
+    functions = []
+    for name, key in names.items():
+        found = [node for node in ast.parse(raw).body if isinstance(node, ast.FunctionDef) and node.name == name]
+        require(len(found) == 1 and digest(ast.dump(found[0], include_attributes=False).encode()) == pins.get(key),
+                'canonical_stock_update_renderer_changed:' + name)
+        functions.extend(found)
+    namespace = {'re': re, 'hashlib': __import__('hashlib'), 'Path': Path}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), '<canonical-stock-update-renderers>', 'exec'), namespace)
+    return namespace
+
+
+def canonical_renderer(raw, expected_ast, *, helper_pins=None):
     try:
         tree = ast.parse(raw)
     except SyntaxError as error:
@@ -196,11 +211,13 @@ def canonical_renderer(raw, expected_ast):
     # Execute only the independently AST-pinned canonical function, not supplied
     # module-level statements or imports. The default call has no profile activation.
     namespace = {'re': re}
+    if helper_pins is not None:
+        namespace.update(canonical_update_renderers(raw, helper_pins))
     exec(compile(ast.Module(body=functions, type_ignores=[]), '<canonical-root-entry>', 'exec'), namespace)
     return namespace['root_entry']
 
 
-def canonical_candidate_renderer(raw, expected_ast):
+def canonical_candidate_renderer(raw, expected_ast, *, helper_pins=None):
     """Extract only the separately pinned candidate renderer and its imports."""
     try:
         functions = [node for node in ast.parse(raw).body if isinstance(node, ast.FunctionDef)
@@ -210,6 +227,8 @@ def canonical_candidate_renderer(raw, expected_ast):
     require(len(functions) == 1 and digest(ast.dump(functions[0], include_attributes=False).encode()) == expected_ast,
             'canonical_candidate_renderer_changed')
     namespace = {'ast': ast, 're': re}
+    if helper_pins is not None:
+        namespace.update(canonical_update_renderers(raw, helper_pins))
     exec(compile(ast.Module(body=functions, type_ignores=[]), '<canonical-candidate-config>', 'exec'), namespace)
     return namespace['render_workflow_candidate_configs']
 
@@ -405,10 +424,12 @@ def stage_training_worker(worker_root, expected_inventory_sha256, manager_root):
 
 
 def candidate_render_inputs(admission, *, component, sources, software_version, output,
-                            mapping_sha256=None, offers=None, renderer_raw=None, renderer_ast_sha256=None):
+                            mapping_sha256=None, offers=None, renderer_raw=None, renderer_ast_sha256=None,
+                            candidate_update_profile=None, helper_pins=None):
     """Validate explicit pending inputs before creating any producer output."""
     if admission is None:
-        require(mapping_sha256 is None and offers is None, 'explicit_candidate_admission_required')
+        require(mapping_sha256 is None and offers is None and candidate_update_profile is None,
+                'explicit_candidate_admission_required')
         return {}
     from core.workflow_candidate_admission import CandidateWorkflowAdmission
     require(type(admission) is CandidateWorkflowAdmission, 'typed_pending_candidate_required')
@@ -420,9 +441,13 @@ def candidate_render_inputs(admission, *, component, sources, software_version, 
         require(admission.suite_root == output / 'Suite', 'candidate_producer_suite_root_changed')
     require(type(renderer_raw) is bytes and type(renderer_ast_sha256) is str,
             'pinned_candidate_renderer_required')
-    render = canonical_candidate_renderer(renderer_raw, renderer_ast_sha256)
+    if candidate_update_profile is not None:
+        require(type(candidate_update_profile) is dict and type(helper_pins) is dict
+                and candidate_update_profile.get('stock_review_sha256') == helper_pins.get('candidate_stock_review_sha256'),
+                'pinned_genuine_candidate_stock_review_required')
+    render = canonical_candidate_renderer(renderer_raw, renderer_ast_sha256, helper_pins=helper_pins)
     return render(admission, component=component, source_bytes=sources,
-                  mapping_sha256=mapping_sha256, offers=offers)
+                  mapping_sha256=mapping_sha256, offers=offers, candidate_update_profile=candidate_update_profile)
 
 
 def seal_candidate_inputs(output, stage, config, sources, generated, admission, *, mapping_sha256=None,
@@ -461,7 +486,17 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
                        notice_root, root_renderer, source_manifest=HERE / 'source-manifest.json',
                        tool_inputs=HERE / 'tool-inputs.json', training_worker_root=None,
                        training_worker_inventory_sha256=None, candidate_admission=None,
-                       candidate_mapping_sha256=None, candidate_offers=None):
+                       candidate_mapping_sha256=None, candidate_offers=None,
+                       candidate_child_only=False, candidate_update_profile=None):
+    require(type(candidate_child_only) is bool, 'explicit_candidate_child_only_flag_required')
+    require(candidate_admission is None or candidate_child_only,
+            'workflow_candidate_requires_deferred_signed_baseline')
+    if candidate_child_only:
+        require(candidate_admission is not None and type(candidate_update_profile) is dict
+                and training_worker_root is not None and training_worker_inventory_sha256 is not None,
+                'candidate_stock_profile_and_worker_required')
+    else:
+        require(candidate_update_profile is None, 'candidate_worker_profile_requires_deferred_root')
     require((training_worker_root is None) == (training_worker_inventory_sha256 is None),
             'complete_training_worker_pins_required')
     if training_worker_root is not None:
@@ -484,8 +519,10 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
     candidate_sources = candidate_render_inputs(candidate_admission, component='manager', sources=sources,
         software_version=receipt['software_version'], output=output,
         mapping_sha256=candidate_mapping_sha256, offers=candidate_offers,
-        renderer_raw=renderer_raw, renderer_ast_sha256=profile.get('workflow_candidate_renderer_ast_sha256'))
-    render = canonical_renderer(renderer_raw, profile['root_entry_ast_sha256'])
+        renderer_raw=renderer_raw, renderer_ast_sha256=profile.get('workflow_candidate_renderer_ast_sha256'),
+        candidate_update_profile=candidate_update_profile, helper_pins=profile if candidate_update_profile is not None else None)
+    render = canonical_renderer(renderer_raw, profile['root_entry_ast_sha256'],
+                                helper_pins=profile if candidate_update_profile is not None else None)
     unbound = render()
     require('manager_package_pin_not_finalized' in unbound and 'EXPECTED_MANAGER_PACKAGE_SHA256 = None' in unbound,
             'refusing_unbound_root_required')
@@ -516,20 +553,16 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         write_new(stage / name, raw)
     candidate_seal = seal_candidate_inputs(output, stage, config, sources, candidate_sources,
         candidate_admission, mapping_sha256=candidate_mapping_sha256, renderer_raw=renderer_raw)
+    if candidate_update_profile is not None:
+        raw = json_bytes(candidate_update_profile)
+        write_new(output / 'candidate-inputs/child-update-profile.json', raw)
+        config['candidate_input_rows'].append({'path': 'child-update-profile.json', 'bytes': len(raw), 'sha256': digest(raw)})
     write_new(output / 'SEALED_INPUTS.json', json_bytes({'stage_sha256': stage_sha256,
         'source_manifest_sha256': digest(manifest_raw), 'tool_inputs_sha256': digest(profile_raw),
         'root_renderer_sha256': digest(renderer_raw), 'public_inventory_sha256': receipt['public_inventory_sha256'],
         'training_worker_inventory_sha256': training_worker_inventory_sha256,
         **({'workflow_candidate': candidate_seal} if candidate_admission is not None else {})}))
-    def set_root(text):
-        raw = text.encode()
-        path = stage / 'source/public_root_entry.py'
-        path.write_bytes(raw)
-        config['source_rows'] = [r for r in config['source_rows'] if r['path'] != 'public_root_entry.py']
-        config['source_rows'].append({'path': 'public_root_entry.py', 'bytes': len(raw), 'sha256': digest(raw)})
-        (stage / 'STAGE.json').write_bytes(json_bytes(config))
-        require(path.read_bytes() == raw, 'root_entry_readback_failed')
-    set_root(unbound)
+    set_root_entry(stage, config, unbound)
     try:
         verify_working(stage, config, metadata)
         require(len(pinned(interpreter, profile['python']['sha256'])) == profile['python']['bytes'],
@@ -553,66 +586,285 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         package_raw = json_bytes(package)
         write_new(output / 'MANAGER_PACKAGE.json', package_raw)
         package_pin = digest(package_raw)
-        bound_root = (render(package_pin, candidate_admission=candidate_admission)
-                      if candidate_admission is not None else render(package_pin))
-        if candidate_admission is not None:
-            # Root's exact package pin exists only after the child freeze. Seal
-            # this second generated identity before the original Root freeze.
-            root_inputs = {'original-unbound-root-entry.py': unbound.encode(),
-                           'generated-root-entry.py': bound_root.encode()}
-            for name, raw in root_inputs.items():
-                write_new(output / 'candidate-inputs' / name, raw)
-                config['candidate_input_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
-            write_new(output / 'CANDIDATE_ROOT_INPUTS.json', json_bytes({
-                'document_sha256': candidate_admission.document_sha256,
-                'manager_package_sha256': package_pin, 'root_renderer_sha256': digest(renderer_raw),
-                'original_root_sha256': digest(unbound.encode()),
-                'generated_root_sha256': digest(bound_root.encode()), 'status': 'pending'}))
-        set_root(bound_root)
-        verify_working(stage, config, metadata)
-        require(len(pinned(interpreter, profile['python']['sha256'])) == profile['python']['bytes'],
-                'interpreter_size_changed')
-        freeze(output, interpreter, environment, 'CollectiGen')
-        verify_working(stage, config, metadata)
-        root_exe = verify_freeze(output, 'CollectiGen', '_bootstrap', config)
-        require(tree_inventory(child.parent) == child_inventory, 'child_tree_changed_after_root_freeze')
-        verify_freeze(output, 'CollectiGenManager', '_internal', child_config)
-        require(digest(read(child)) == package['manager_sha256'], 'child_changed_after_package_binding')
-        validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw)
-        suite = output / 'Suite'
-        if candidate_admission is not None:
-            require(not suite.exists(), 'fresh_isolated_candidate_suite_required')
-        shutil.copytree(root_exe.parent, suite)
-        shutil.copytree(child.parent, suite / 'Apps/Manager/current')
-        require(tree_inventory(suite / 'Apps/Manager/current') == child_inventory,
-                'child_distribution_copy_changed')
-        write_new(suite / 'MANAGER_PACKAGE.json', package_raw)
-        if candidate_admission is not None:
-            write_new(suite / '_bootstrap/workflow-candidate.json', candidate_admission.document_bytes)
-            candidate_admission.check_marker(suite, suite / 'Data', manager_version=receipt['software_version'])
-        require(not (suite / 'Data').exists(), 'mutable_data_in_distribution')
-        files = []
-        for path in sorted(suite.rglob('*')):
-            unredirected(path)
-            if path.is_file():
-                raw = read(path)
-                source = root_exe.parent / path.relative_to(suite)
-                if path.is_relative_to(suite / 'Apps/Manager/current'):
-                    source = child.parent / path.relative_to(suite / 'Apps/Manager/current')
-                if path.name != 'MANAGER_PACKAGE.json' and path != suite / '_bootstrap/workflow-candidate.json':
-                    require(raw == read(source), 'distribution_copy_changed')
-                files.append({'path': path.relative_to(suite).as_posix(), 'bytes': len(raw), 'sha256': digest(raw)})
-        result = {'status': 'BUILD_ONLY_NOT_EXECUTED', 'software_version': receipt['software_version'],
-                  'manager_package_sha256': package_pin, 'files': files, 'apps_launched': False,
-                  'signed': False, 'native_qualified': False,
-                  'training_worker_inventory_sha256': training_worker_inventory_sha256}
-        write_new(output / 'BUILD_RESULT.json', json_bytes(result))
-        return suite
+        if candidate_child_only:
+            return write_candidate_child_checkpoint(output, stage=stage, config=config,
+                child=child, child_inventory=child_inventory, package_raw=package_raw,
+                source_stage=source_stage, stage_sha256=stage_sha256, manifest_raw=manifest_raw,
+                inventory_raw=inventory_raw, profile_raw=profile_raw, renderer_raw=renderer_raw,
+                interpreter=interpreter, receipt=receipt,
+                training_worker_inventory_sha256=training_worker_inventory_sha256,
+                mapping_sha256=candidate_mapping_sha256)
+        return _finish_manager_distribution(
+            output=output,
+            stage=stage,
+            config=config,
+            metadata=metadata,
+            interpreter=interpreter,
+            environment=environment,
+            child=child,
+            child_inventory=child_inventory,
+            child_config=child_config,
+            package=package,
+            package_raw=package_raw,
+            package_pin=package_pin,
+            source_stage=source_stage,
+            stage_sha256=stage_sha256,
+            manifest_raw=manifest_raw,
+            inventory_raw=inventory_raw,
+            receipt=receipt,
+            profile=profile,
+            renderer_raw=renderer_raw,
+            render=render,
+            unbound=unbound,
+            candidate_admission=candidate_admission,
+            training_worker_inventory_sha256=training_worker_inventory_sha256)
     except Exception as error:
         write_new(output / 'BUILD_FAILURE.json', json_bytes({'status': 'BUILD_HELD', 'reason': str(error),
                                                           'error_type': type(error).__name__,
                                                           'apps_launched': False, 'signed': False}))
         raise
+
+
+def write_candidate_child_checkpoint(output, *, stage, config, child, child_inventory, package_raw,
+        source_stage, stage_sha256, manifest_raw, inventory_raw, profile_raw, renderer_raw,
+        interpreter, receipt, training_worker_inventory_sha256, mapping_sha256):
+    """Retain the exact child before its separately signed baseline can exist."""
+    inputs = {'source-manifest.json': manifest_raw, 'public-inventory.json': inventory_raw,
+              'tool-inputs.json': profile_raw, 'renderer.py': renderer_raw,
+              'unbound-root-entry.py': read(stage / 'source/public_root_entry.py')}
+    rows = []
+    for name, raw in inputs.items():
+        write_new(output / 'child-checkpoint-inputs' / name, raw)
+        rows.append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
+    checkpoint = {'schema': 1, 'status': 'CHILD_ONLY_AWAITING_SIGNED_BASELINE',
+        'source_stage': str(source_stage), 'stage_sha256': stage_sha256,
+        'interpreter': str(interpreter), 'receipt': receipt, 'config': config,
+        'child_relative': child.relative_to(output).as_posix(), 'child_inventory': child_inventory,
+        'package_sha256': digest(package_raw), 'sealed_inputs_sha256': digest(read(output / 'SEALED_INPUTS.json')),
+        'training_worker_inventory_sha256': training_worker_inventory_sha256,
+        'mapping_sha256': mapping_sha256, 'input_rows': rows}
+    raw = json_bytes(checkpoint)
+    write_new(output / 'CHILD_CHECKPOINT.json', raw)
+    return {'status': checkpoint['status'], 'checkpoint': str(output / 'CHILD_CHECKPOINT.json'),
+            'checkpoint_sha256': digest(raw), 'manager_package_sha256': digest(package_raw),
+            'apps_launched': False, 'signed': False, 'native_qualified': False}
+
+
+def load_candidate_child_checkpoint(output, checkpoint_sha256):
+    """Read back pinned source/tool/profile/child bytes before Root continuation."""
+    output = unredirected(output)
+    value = decode(pinned(output / 'CHILD_CHECKPOINT.json', checkpoint_sha256))
+    require(type(value) is dict and set(value) == {'schema','status','source_stage','stage_sha256',
+        'interpreter','receipt','config','child_relative','child_inventory','package_sha256',
+        'sealed_inputs_sha256','training_worker_inventory_sha256','mapping_sha256','input_rows'}
+        and type(value['schema']) is int and value['schema'] == 1
+        and value['status'] == 'CHILD_ONLY_AWAITING_SIGNED_BASELINE', 'exact_child_checkpoint_required')
+    pinned(output / 'SEALED_INPUTS.json', value['sealed_inputs_sha256'])
+    inputs = {}
+    expected = {'source-manifest.json','public-inventory.json','tool-inputs.json','renderer.py','unbound-root-entry.py'}
+    checked_rows = rows(value['input_rows'])
+    require(set(checked_rows) == expected, 'exact_child_checkpoint_inputs_required')
+    for name, row in checked_rows.items():
+        inputs[name] = check_row(output / 'child-checkpoint-inputs' / name, row)
+    stage = output / 'stage'; config = value['config']; profile = decode(inputs['tool-inputs.json'])
+    metadata = {name: pinned(stage / name, pin) for name, pin in profile['templates'].items()}
+    verify_working(stage, config, metadata)
+    child = output / safe_path(value['child_relative'])
+    require(child == output / 'dist/CollectiGenManager/CollectiGenManager.exe', 'exact_checkpoint_child_location_required')
+    require(tree_inventory(child.parent) == value['child_inventory'], 'checkpoint_child_tree_changed')
+    verify_freeze(output, 'CollectiGenManager', '_internal', config)
+    package_raw = pinned(output / 'MANAGER_PACKAGE.json', value['package_sha256'])
+    package = decode(package_raw)
+    require(package['manager_sha256'] == digest(read(child))
+            and package['manager_version'] == value['receipt']['software_version'], 'checkpoint_child_package_changed')
+    source_stage = unredirected(value['source_stage'])
+    validate_sources(source_stage, value['stage_sha256'], inputs['source-manifest.json'], inputs['public-inventory.json'])
+    require(value['training_worker_inventory_sha256'] is not None, 'checkpoint_training_worker_required')
+    return value, inputs, profile, metadata, child, package_raw
+
+
+def verify_candidate_signed_baseline(admission, update_profile, recovery_root, child, child_inventory):
+    """Use the stock signed detached verifier on the actual current child."""
+    from suite_core.discovery.manager_runtime_detached_admission import admit_checkpointed_baseline, manager_inventory_json, PACKAGE_STUB
+    from core.manager_successor_admission import installed_manager_payload_path
+    import zipfile
+    require(type(update_profile) is dict and update_profile.get('trust_hex') == admission.trust_bytes.hex()
+        and update_profile.get('trust_sha256') == admission.trust_sha256
+        and update_profile.get('channel') == 'beta' and update_profile.get('transport_id') == 'sealed-local-qualification'
+        and update_profile.get('enable_training_baseline') is True, 'candidate_baseline_profile_changed')
+    prior = update_profile.get('initial_prior')
+    require(type(prior) is dict and prior.get('version') == admission.manager_version
+            and prior.get('channel') == 'beta' and prior.get('platform') == {'os':'windows','architecture':'x86_64'}
+            and type(prior.get('files')) is dict
+            and set(prior['files']) == {'archive','manifest','signature','trust','proof','inventory','executable'},
+            'current_signed_candidate_baseline_required')
+    root = unredirected(recovery_root)
+    retained = {}; identities = set()
+    for name, spec in prior['files'].items():
+        require(type(spec) is dict and set(spec) == {'path','size','sha256'}, 'exact_baseline_file_pin_required')
+        relative = safe_path(spec['path'])
+        require(relative.startswith('Recovery/') and relative.casefold() not in identities,
+                'distinct_candidate_recovery_files_required')
+        identities.add(relative.casefold())
+        raw = pinned(root / relative, spec['sha256'])
+        require(type(spec['size']) is int and len(raw) == spec['size'], 'candidate_baseline_size_changed')
+        retained[relative] = raw
+    def raw(name): return retained[prior['files'][name]['path']]
+    require(raw('trust') == admission.trust_bytes and raw('proof') == raw('inventory')
+            and raw('executable') == read(child), 'candidate_baseline_current_bytes_changed')
+    archive = root / prior['files']['archive']['path']
+    admit_checkpointed_baseline(archive, checkpoint={'child_tree': child_inventory,
+        'child_executable_bytes': len(read(child)), 'child_executable_sha256': digest(read(child)),
+        'software_version': admission.manager_version}, detached_inventory_bytes=raw('inventory'),
+        expected_channel='beta', manifest_bytes=raw('manifest'), signature_bytes=raw('signature'),
+        trust_bytes=raw('trust'), expected_trust_sha256=admission.trust_sha256,
+        expected_inventory_sha256=digest(raw('inventory')))
+    generated = {}; inventory = {row['path']: row for row in manager_inventory_json(raw('inventory'))['files']}
+    with zipfile.ZipFile(archive) as package:
+        for name in (PACKAGE_STUB, 'Squirrel.exe', 'sq.version'):
+            data = package.read('lib/app/' + name)
+            row = inventory[name]
+            require(len(data) == row['size_bytes'] and digest(data) == row['sha256'], 'candidate_generated_stock_member_changed')
+            destination = installed_manager_payload_path(admission.suite_root, name, stock_applied=False)
+            generated[destination.relative_to(admission.suite_root).as_posix()] = data
+    require(digest(generated['Apps/Manager/Update.exe']) == update_profile['updater_sha256'],
+            'candidate_stock_updater_changed')
+    evidence = {'archive_relative': prior['files']['archive']['path'], 'manifest_bytes': raw('manifest'),
+                'signature_bytes': raw('signature'), 'detached_inventory_bytes': raw('inventory')}
+    return retained, generated, evidence
+
+
+def finalize_candidate_distribution(output, *, child_checkpoint_sha256, candidate_update_profile, recovery_root):
+    """Continue the original Root/assembly tail only after actual child signing."""
+    from core.workflow_candidate_admission import CandidateWorkflowAdmission
+    output = unredirected(output)
+    checkpoint, inputs, profile, metadata, child, package_raw = load_candidate_child_checkpoint(output, child_checkpoint_sha256)
+    seal = decode(read(output / 'SEALED_INPUTS.json'))['workflow_candidate']
+    admission = CandidateWorkflowAdmission(read(output / 'candidate-inputs/document.json'), seal['document_sha256'],
+        read(output / 'candidate-inputs/trust.json'), seal['trust_sha256']).validate()
+    require(not admission.suite_root.exists() and admission.suite_root == output / 'Suite',
+            'fresh_isolated_candidate_suite_required')
+    child_profile = decode(read(output / 'candidate-inputs/child-update-profile.json'))
+    require(type(candidate_update_profile) is dict
+            and {k:v for k,v in candidate_update_profile.items() if k != 'initial_prior'}
+                == {k:v for k,v in child_profile.items() if k != 'initial_prior'},
+            'candidate_root_child_profile_changed')
+    retained, generated, baseline_evidence = verify_candidate_signed_baseline(admission, candidate_update_profile, recovery_root,
+                                                                            child, checkpoint['child_inventory'])
+    renderer_raw = inputs['renderer.py']
+    render = canonical_renderer(renderer_raw, profile['root_entry_ast_sha256'], helper_pins=profile)
+    # Validate the complete Root rendering before writing continuation inputs.
+    render(digest(package_raw), candidate_admission=admission, compiled_update_profile=True,
+        compiled_profile_input=candidate_update_profile, qualification_test_build=True,
+        qualification_mapping_sha256=checkpoint['mapping_sha256'])
+    child_config = decode(json_bytes(checkpoint['config']))
+    config = checkpoint['config']; stage = output / 'stage'
+    continuation = {'root-update-profile.json': json_bytes(candidate_update_profile)}
+    continuation.update({'retained-baseline/' + name: raw for name,raw in retained.items()})
+    continuation.update({'generated-stock/' + name: raw for name,raw in generated.items()})
+    for name, raw in sorted(continuation.items()):
+        write_new(output / 'candidate-inputs' / name, raw)
+        config['candidate_input_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
+    write_new(output / 'CANDIDATE_CONTINUATION_INPUTS.json', json_bytes({'checkpoint_sha256': child_checkpoint_sha256,
+        'mapping_sha256': checkpoint['mapping_sha256'], 'input_rows': config['candidate_input_rows'], 'status':'pending'}))
+    (stage / 'STAGE.json').write_bytes(json_bytes(config))
+    interpreter = unredirected(checkpoint['interpreter']); environment = isolated_environment(output, interpreter)
+    inspect_tools(interpreter, profile, environment)
+    return _finish_manager_distribution(output=output, stage=stage, config=config, metadata=metadata,
+        interpreter=interpreter, environment=environment, child=child, child_inventory=checkpoint['child_inventory'],
+        child_config=child_config, package=decode(package_raw), package_raw=package_raw, package_pin=digest(package_raw),
+        source_stage=unredirected(checkpoint['source_stage']), stage_sha256=checkpoint['stage_sha256'],
+        manifest_raw=inputs['source-manifest.json'], inventory_raw=inputs['public-inventory.json'], receipt=checkpoint['receipt'],
+        profile=profile, renderer_raw=renderer_raw, render=render, unbound=inputs['unbound-root-entry.py'].decode(),
+        candidate_admission=admission, training_worker_inventory_sha256=checkpoint['training_worker_inventory_sha256'],
+        candidate_update_profile=candidate_update_profile, qualification_mapping_sha256=checkpoint['mapping_sha256'],
+        retained_files={**retained, **generated}, baseline_evidence=baseline_evidence)
+
+
+def set_root_entry(stage, config, text):
+    raw = text.encode()
+    path = stage / 'source/public_root_entry.py'
+    path.write_bytes(raw)
+    config['source_rows'] = [r for r in config['source_rows'] if r['path'] != 'public_root_entry.py']
+    config['source_rows'].append({'path': 'public_root_entry.py', 'bytes': len(raw), 'sha256': digest(raw)})
+    (stage / 'STAGE.json').write_bytes(json_bytes(config))
+    require(read(path) == raw, 'root_entry_readback_failed')
+
+
+def _finish_manager_distribution(*, output, stage, config, metadata, interpreter, environment, child, child_inventory, child_config, package, package_raw, package_pin, source_stage, stage_sha256, manifest_raw, inventory_raw, receipt, profile, renderer_raw, render, unbound, candidate_admission, training_worker_inventory_sha256,
+        candidate_update_profile=None, qualification_mapping_sha256=None, retained_files=None, baseline_evidence=None):
+    bound_root = (render(package_pin, candidate_admission=candidate_admission,
+        compiled_update_profile=True, compiled_profile_input=candidate_update_profile,
+        qualification_test_build=True, qualification_mapping_sha256=qualification_mapping_sha256)
+        if candidate_update_profile is not None else
+        render(package_pin, candidate_admission=candidate_admission)
+                  if candidate_admission is not None else render(package_pin))
+    if candidate_admission is not None:
+        # Root's exact package pin exists only after the child freeze. Seal
+        # this second generated identity before the original Root freeze.
+        root_inputs = {'original-unbound-root-entry.py': unbound.encode(),
+                       'generated-root-entry.py': bound_root.encode()}
+        for name, raw in root_inputs.items():
+            write_new(output / 'candidate-inputs' / name, raw)
+            config['candidate_input_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
+        write_new(output / 'CANDIDATE_ROOT_INPUTS.json', json_bytes({
+            'document_sha256': candidate_admission.document_sha256,
+            'manager_package_sha256': package_pin, 'root_renderer_sha256': digest(renderer_raw),
+            'original_root_sha256': digest(unbound.encode()),
+            'generated_root_sha256': digest(bound_root.encode()), 'status': 'pending'}))
+    set_root_entry(stage, config, bound_root)
+    verify_working(stage, config, metadata)
+    require(len(pinned(interpreter, profile['python']['sha256'])) == profile['python']['bytes'],
+            'interpreter_size_changed')
+    freeze(output, interpreter, environment, 'CollectiGen')
+    verify_working(stage, config, metadata)
+    root_exe = verify_freeze(output, 'CollectiGen', '_bootstrap', config)
+    require(tree_inventory(child.parent) == child_inventory, 'child_tree_changed_after_root_freeze')
+    verify_freeze(output, 'CollectiGenManager', '_internal', child_config)
+    require(digest(read(child)) == package['manager_sha256'], 'child_changed_after_package_binding')
+    validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw)
+    suite = output / 'Suite'
+    if candidate_admission is not None:
+        require(not suite.exists(), 'fresh_isolated_candidate_suite_required')
+    shutil.copytree(root_exe.parent, suite)
+    shutil.copytree(child.parent, suite / 'Apps/Manager/current')
+    require(tree_inventory(suite / 'Apps/Manager/current') == child_inventory,
+            'child_distribution_copy_changed')
+    write_new(suite / 'MANAGER_PACKAGE.json', package_raw)
+    for relative, raw in sorted((retained_files or {}).items()):
+        write_new(suite / safe_path(relative), raw)
+    if baseline_evidence is not None:
+        retain_workflow_manager_admission(suite, archive=suite / baseline_evidence['archive_relative'],
+            manifest_bytes=baseline_evidence['manifest_bytes'], signature_bytes=baseline_evidence['signature_bytes'],
+            trust_bytes=candidate_admission.trust_bytes, expected_trust_sha256=candidate_admission.trust_sha256,
+            detached_inventory_bytes=baseline_evidence['detached_inventory_bytes'], software_version=receipt['software_version'])
+        retained_files = dict(retained_files)
+        for name, key in (('release.json','manifest_bytes'), ('release.sig.json','signature_bytes'), ('inventory.json','detached_inventory_bytes')):
+            retained_files['_bootstrap/workflow-manager-admission/initial/' + name] = baseline_evidence[key]
+    if candidate_admission is not None:
+        write_new(suite / '_bootstrap/workflow-candidate.json', candidate_admission.document_bytes)
+        candidate_admission.check_marker(suite, suite / 'Data', manager_version=receipt['software_version'])
+    require(not (suite / 'Data').exists(), 'mutable_data_in_distribution')
+    files = []
+    for path in sorted(suite.rglob('*')):
+        unredirected(path)
+        if path.is_file():
+            raw = read(path)
+            source = root_exe.parent / path.relative_to(suite)
+            if path.is_relative_to(suite / 'Apps/Manager/current'):
+                source = child.parent / path.relative_to(suite / 'Apps/Manager/current')
+            if (path.name != 'MANAGER_PACKAGE.json' and path != suite / '_bootstrap/workflow-candidate.json'
+                    and path.relative_to(suite).as_posix() not in (retained_files or {})):
+                require(raw == read(source), 'distribution_copy_changed')
+            if path.relative_to(suite).as_posix() in (retained_files or {}):
+                require(raw == retained_files[path.relative_to(suite).as_posix()], 'retained_baseline_copy_changed')
+            files.append({'path': path.relative_to(suite).as_posix(), 'bytes': len(raw), 'sha256': digest(raw)})
+    result = {'status': 'BUILD_ONLY_NOT_EXECUTED', 'software_version': receipt['software_version'],
+              'manager_package_sha256': package_pin, 'files': files, 'apps_launched': False,
+              'signed': False, 'native_qualified': False,
+              'training_worker_inventory_sha256': training_worker_inventory_sha256}
+    write_new(output / 'BUILD_RESULT.json', json_bytes(result))
+    return suite
 
 
 def retain_workflow_manager_admission(suite_root, *, archive, manifest_bytes, signature_bytes,
