@@ -336,6 +336,55 @@ def test_terminal_eof_handoff_waits_for_native_cleanup_and_zero_exit_health(rout
     assert owner.poll() is True and cleaned == [f.child]
     assert f.actor.is_drained and not f.actor.grant_release_authorized
     assert (owner.last_health is selected) == (exit_code == 0)
+    assert ('Setup remains unconfirmed' in owner.reason) == (exit_code != 0)
+
+
+@pytest.mark.parametrize('missing,expected', [
+    ('visible', 'no visible app window'), ('claim', 'did not confirm'),
+    ('actor', 'app connection reported an error'), ('owner', 'workflow owner reported an error'),
+])
+def test_closed_run_retains_finite_missing_health_reason_without_error_text(route, monkeypatch, missing, expected):
+    from threading import Event, RLock
+    from core.workflow_native_owner import WorkflowWorkspaceOwner
+    f=route
+    ready(f)
+    f.actor.local_drain_claimed = missing != 'claim'
+    f.actor.error = RuntimeError('Synthetic secret path and prompt') if missing == 'actor' else None
+    f.actor.state = 'awaiting-native-drain'
+    owner=WorkflowWorkspaceOwner.__new__(WorkflowWorkspaceOwner)
+    owner._lock,owner._stop=RLock(),Event()
+    owner.native,owner.child,owner.actor=f.native,f.child,f.actor
+    owner.selection,owner.identity=f.actor.selection,object()
+    owner.worker=owner.root_image_scope=owner.last_health=None
+    owner.error=RuntimeError('Synthetic secret path and prompt') if missing=='owner' else None
+    owner._visible_seen=missing!='visible'
+    monkeypatch.setattr(f.native,'check_identity',lambda *args:None)
+    from core.encyclopedia_connection import _visible_reader_window
+    monkeypatch.setattr('core.encyclopedia_connection._visible_reader_window',lambda _pid:False)
+    f.job.poll=lambda:0
+    def close_original(_child):
+        f.control.closed=True;f.native.logs.clear();f.child._handle=None
+        f.job.handle=f.job.process=None
+        f.native.helper_reservation=None;f.native.helper_accounting_held=False
+        f.slot['phase']='drained'
+    monkeypatch.setattr(f.native,'close',close_original)
+    assert owner.poll() is True and owner.last_health is None
+    assert expected in owner.reason and 'exit 0' in owner.reason
+    assert 'secret' not in owner.reason and 'prompt' not in owner.reason
+
+
+@pytest.mark.parametrize('changed', ['saved', 'admitted'])
+def test_health_selection_mismatch_keeps_gate_and_finite_reason(changed):
+    from core.workflow_native_owner import WorkflowWorkspaceOwner
+    owner=WorkflowWorkspaceOwner.__new__(WorkflowWorkspaceOwner)
+    selected=object()
+    owner.native=owner.worker=None
+    owner.poll=lambda:True
+    owner.last_health=SimpleNamespace(selected=selected if changed=='admitted' else object())
+    owner.selection_for=lambda _selected:object()
+    assert owner.native_health(selected) is False
+    assert 'Setup remains unconfirmed' in owner.reason
+    assert ('saved app' if changed=='saved' else 'admitted app') in owner.reason
 
 
 def test_root_peer_loss_and_changed_registration_refuse_new_work(route):

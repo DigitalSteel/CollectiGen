@@ -2273,8 +2273,8 @@
     },
     {
       "path": "core/workflow_native_owner.py",
-      "bytes": 9746,
-      "sha256": "db6cd1dadee8e47c32d85c99e2af254fe1d6bf9ba98d75a391c88062d8e9a0b8"
+      "bytes": 10785,
+      "sha256": "6767983d6a776fe1620b43bab2bb35312309d9d84ce067e8a1c0c56738dee909"
     },
     {
       "path": "core/workflow_root_selection.py",
@@ -3738,8 +3738,8 @@
     },
     {
       "path": "suite_core/manager/workflow_applications_ui.py",
-      "bytes": 15582,
-      "sha256": "8022af345669283a171b7fada7c7cb3fef217086f6e6bd3ee2d04d90a345c351"
+      "bytes": 15903,
+      "sha256": "2e7ad2f1317f50cfd48fc2658626fe002490f040d2e6b816939ab1e6a3ad128b"
     },
     {
       "path": "suite_core/media_examples.py",

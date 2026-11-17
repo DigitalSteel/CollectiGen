@@ -164,13 +164,31 @@ class WorkflowWorkspaceOwner:
                 self.root_image_scope = None
             self.native = self.child = self.identity = self.selection = self.actor = self.worker = None
             self.reason = f'Workflow closed (exit {code}); original process, Job and output are drained.'
+            if self.last_health is None:
+                if code != 0:
+                    issue = 'the app did not exit normally'
+                elif not self._visible_seen:
+                    issue = 'no visible app window was observed during the original run'
+                elif actor is None or not actor.local_drain_claimed:
+                    issue = 'the app did not confirm that its local work had finished'
+                elif actor.error is not None:
+                    issue = 'the original app connection reported an error'
+                else:
+                    issue = 'the original workflow owner reported an error'
+                self.reason += ' Setup remains unconfirmed: ' + issue + '.'
             return True
 
     def native_health(self, selected):
         self.poll()
-        if self.close_held or self.last_health is None or self.last_health.selected != selected:
+        if self.close_held or self.last_health is None:
             return False
-        return self.selection_for(selected) is self.last_health
+        if self.last_health.selected != selected:
+            self.reason = 'Setup remains unconfirmed: this saved app does not match the most recent confirmed workflow run.'
+            return False
+        if self.selection_for(selected) is not self.last_health:
+            self.reason = 'Setup remains unconfirmed: the admitted app changed since the most recent confirmed run.'
+            return False
+        return True
 
     def begin_close(self):
         return self.poll() and not self.close_held

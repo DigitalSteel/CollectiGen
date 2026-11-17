@@ -35,6 +35,32 @@ def test_workflow_busy_progress_names_the_actual_application(component):
         app.processEvents()
 
 
+@pytest.mark.parametrize('component', ['generate','train'])
+@pytest.mark.parametrize('phase', ['activated','healthy'])
+def test_completed_status_details_name_workflow_and_retain_safe_run_reason(tmp_path,component,phase):
+    app=QApplication.instance() or QApplication([])
+    owner=NS(reason='Workflow closed (exit 0); original process, Job and output are drained. Setup remains unconfirmed: no visible app window was observed during the original run.')
+    service=NS(install_available=True,candidate_admission=object(),native_owner=owner,launch_available=True)
+    panel=WorkflowAcquisitionPanel('collectigen.'+component,service,NS(close_held=False))
+    panel.timer.stop()
+    selected=NS(version='0.1.0-alpha.1',directory=tmp_path)
+    installed=NS(selected=selected,phase=phase,pending=False,connection_pending=False)
+    result=NS(installed=installed,connection_saved=True,reason='Reader setup is waiting for a successful reader run.')
+    panel.operation='Checking app status'
+    panel.future=NS(done=lambda:True,result=lambda:result)
+    try:
+        panel.show();app.processEvents();panel.poll();app.processEvents()
+        text=panel.details.toPlainText()
+        assert component.title() in text and 'reader' not in text.lower()
+        assert ('Most recent workflow:' in text)==(phase=='activated')
+        if phase=='activated':assert 'exit 0' in text and 'no visible app window' in text
+        # Base Reader presentation is unchanged; no Reader application is run.
+        from suite_core.manager.encyclopedia_acquisition_ui import EncyclopediaAcquisitionPanel
+        assert EncyclopediaAcquisitionPanel.installation_details_status(panel,result)==result.reason
+    finally:
+        panel.deleteLater();app.processEvents()
+
+
 @pytest.mark.parametrize('component', ('generate', 'train'))
 def test_module_confirmation_stays_actionable_while_other_shared_edits_are_locked(monkeypatch, tmp_path, component):
     app = QApplication.instance() or QApplication([])
@@ -132,9 +158,11 @@ def test_first_open_failure_keeps_matching_retry_and_inspectable_details(compone
     app = QApplication.instance() or QApplication([])
     surface = WorkflowApplications()
     surface.timer.stop()
+    identity = 'collectigen.' + component
     # Component service boundary only; this grants no original/native admission.
     surface.owner = NS(close_held=False, pending_generate_draft=None,
-        session=NS(workflow_contract_version=1), reason='Idle')
+        session=NS(workflow_contract_version=1,
+                   workflow_selections={identity:NS(selected=NS(version='0.1.0-alpha.1'))}), reason='Idle')
     calls = []
     def fail_launch(**options):
         calls.append(options)

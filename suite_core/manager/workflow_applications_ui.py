@@ -82,6 +82,13 @@ class WorkflowAcquisitionPanel(EncyclopediaAcquisitionPanel):
             return self.pending_setup_guidance()
         return self.label + ' setup status: ' + result.installed.phase + '. Saved workflow data was preserved.'
 
+    def installation_details_status(self, result):
+        text = self.installation_status_reason(result)
+        owner = getattr(self.service, 'native_owner', None)
+        if result.installed.phase == 'activated' and owner is not None:
+            text += '\nMost recent workflow: ' + owner.reason
+        return text
+
     def show_installed_details(self):
         selected = self.installed.selected
         self.details.setPlainText('No managed app is active. Saved workflow data was preserved.' if selected is None else
