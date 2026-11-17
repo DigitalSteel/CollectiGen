@@ -1,13 +1,24 @@
-# Suite Manager a.0.8.0 — development candidate — 2026-11-15
-
-This source candidate has not been qualified or published.
+# Suite Manager a.0.8.0 — 2026-11-17
 
 - Applications manages and opens independently versioned Generate and Train modules. Manager focuses on installation, updates, connections, shared settings and resources.
 - Existing workflow drafts, model identities, run records and recovery stay in their canonical workspace. Reviewed model choices continue into a separate saved Generate draft.
 - Shared model/settings edits wait while a workflow is open. Its original work and process must close safely before management resumes.
 - Fixes a spurious connection error during workflow shutdown, including after cancelled preparation. Original process cleanup still completes before installation health can be confirmed.
 
-Package downloads remain unavailable until signed, qualified component releases are enrolled. New native startup, update/recovery and visual acceptance remain pending. No automatic installation or restart is enabled.
+Start with the complete Suite 0.8.0-alpha.1 Windows ZIP, which includes launcher
+0.1.1. Extract it into a new, short writable folder, keep the folder together and
+open CollectiGen.exe. An update of Manager alone does not replace an older
+launcher. Close the existing Suite first, back up its Data folder and retain the
+verified prior package before moving saved work. Keep an interrupted update or
+recovery folder intact.
+
+In Applications, install and open Generate or Train a.0.1.0 for that workflow.
+Compatible backend resources are still required. The synthetic workflow checks
+cover saved requests, preparation, cancellation, normal Close and scoped recovery;
+they do not establish real model execution, training quality, video generation or
+hardware compatibility. Each distribution's validation record states its exact
+tested scope and remaining limitations. Installation, updates and restarts remain
+explicit choices.
 
 # Suite Manager a.0.7.11 — 2026-11-14
 
