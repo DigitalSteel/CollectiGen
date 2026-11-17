@@ -1,118 +1,56 @@
-# CollectiGen Suite Manager
+# CollectiGen Suite Manager a.0.8.0
 
-**Suite Manager a.0.7.11** provides component installation plus dedicated Generate
-and Training workspaces. Use the complete Windows ZIP for a fresh installation.
+Suite Manager installs, updates and launches independently versioned applications.
+It keeps shared settings, resources and connections together. Generate and Train
+open in their own workflow windows from **Applications**.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.11-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.11-alpha.1/SuiteManager-a.0.7.11-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.11-alpha.1/SuiteManager-a.0.7.11-windows-x64.zip.sha256)
+## Download and start
 
-Extract into a new, short writable folder such as `C:\CollectiGen`, keep the
-complete folder together, and run **CollectiGen.exe**. Long installation paths
-can prevent Qt's Windows plugin from loading. Keep the previous package and
-separate data backups. Review and confirm each installation; restart when asked.
+- [Complete Windows Suite ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.0-alpha.1/CollectiGen-Suite-a.0.8.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.0-alpha.1/CollectiGen-Suite-a.0.8.0-windows-x64.zip.sha256)
+- [Release notes and matching source](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.8.0-alpha.1)
 
-Generate and Manager update actions wrap to the available window width. Tab moves
-from update notes to the next action. Existing drafts, confirmation and recovery
-stay with their original owners.
+Extract the **complete** ZIP into a new, short writable folder, such as
+**C:\\CollectiGen**, keep the folder together and open **CollectiGen.exe**.
+This ZIP includes Manager 0.8.0-alpha.1 and launcher 0.1.1. A Manager-only update
+cannot replace an older launcher; use this complete ZIP to move from Manager 0.7.
+Keep the previous installation and separate Data/image/catalog backups. Do not
+overwrite a running installation or interrupted recovery folder. Older-profile
+migration is not qualified by this release.
 
-**Training > Set Up Trainer** can install the reviewed trainer software or verify an existing installation. **Other Setup Options** includes offline packs, repair, activation and rollback. Saved operations appear when work is available to review, resume or cancel. Installing software, activating it and starting training require separate reviews.
+## Install and open a workflow
 
-Find interrupted Training packages from **Training > Review Interrupted Training Package**. Use **Choose Package Location** to list packages by name, or **Browse Exact Receipt** for advanced selection. Search shows elapsed activity and **Cancel Safely**;review leaves package files unchanged.
+1. Choose **Applications > Generate and Train**.
+2. Open the app's **Manage install and updates…** window.
+3. Choose **Find Generate** or **Find Train**, review the release and confirm **Install**.
+4. Restart Manager when requested, then choose **Open Generate** or **Open Train**.
 
-Manager a.0.7.11 checks GitHub for newer compatible signed Reader and Organizer releases. Ordinary module updates no longer require a new Manager build. Review and confirm each installation in Applications. Generate and Training remain in Manager.
+Use **App catalog** for other applications and **Connections** for shared
+software and connection setup. The existing signed Organizer and Reader routes
+remain available. Opening an installation review starts no download. Installation,
+updates and restarts remain explicit choices.
 
-Training Package Review now shows the target, image counts and next preparation
-action. It distinguishes package verification from unchecked trainer readiness
-and returns to **Training**. History management remains included.
+[Generate](../generate/README.md) creates image/video requests and saves drafts.
+[Train](../train/README.md) reviews training packages, prepares SDXL datasets and
+reopens saved preparation receipts. Preparing a dataset does not start training.
+Close workflows normally before shared resource or installation changes. Cancel
+requests a safe stop; wait for the result before leaving. Keep prepared workspaces
+with their receipts and retain separate backups before recovery or updates.
 
-Training history and saved SDXL preparations now include **Forget From This List**
-and **Recover Saved List**. Forget removes only the saved-list entry; reviews,
-checkpoints, outputs and registrations remain in place. Recovery finishes the
-original pending list transaction within the active Manager session.
+## Tested scope
 
-Manager a.0.7.11 saves your theme, color-blind colors and tooltip choices in **Settings**, and restores them at the next launch. **Current build** identifies the bundled Python/Qt runtime and package version. The complete Windows ZIP avoids repeatedly reading the running executables during Organizer installation. Use the complete ZIP to update the launcher too; component-only Manager updates retain the existing launcher.
+Generated-profile checks cover signed module installation/restart, Generate Close
+to Train Open, normal Close, fresh native health, exact draft save/reopen,
+synthetic preparation/history/cancellation and supported Train rollback.
+Non-elevated execution used a filtered same-user medium-integrity token.
+Real generation, video output, training, model quality, hardware suitability,
+separate clean Windows profiles, Mark of the Web and Smart App Control behavior
+are not claimed. See each release's **VALIDATION.json** for exact identities.
 
-This patch restores the fixed Anima worker and a required Training execution/readiness source file in Manager's package. Existing model qualification and reviewed Start choices remain in place.
+Release metadata is RSA-signed. Windows executables are **not Authenticode-signed**
+and may show publisher warnings; do not disable Windows security policy. Microsoft
+Visual C++ v14 Redistributable x64 14.44.35211.0 or newer is required separately.
 
-## Workspaces
+[Suite overview](https://github.com/DigitalSteel/CollectiGen#readme) ·
+[Support](https://github.com/DigitalSteel/CollectiGen/blob/manager-a032-source-candidate-20261011/SUPPORT.md) ·
+[Privacy](https://github.com/DigitalSteel/CollectiGen/blob/manager-a032-source-candidate-20261011/PRIVACY.md)
 
-Use the **Help** group or **F1** in Generate and Training for the matching
-workflow guide. Reading Help preserves your open work and starts no operation.
-
-- **Dashboard** summarizes suite and saved generator readiness and links to the
-  work that needs attention.
-- **Generate** creates or reopens image and video drafts, reviews generation
-  jobs, and reconnects a checked local generator. The existing editor owns
-  prompts, model choices, settings, alternatives, queues, results and recovery.
-  The draft switcher retains multiple image and video requests. Model-guided
-  planning opens a separate request without replacing another draft; Close
-  consults every retained request. Saved setups also open in a separate draft
-  while retaining the image and video work already open. Plan a Remix and
-  Plan Remix from Verified Result now open separate drafts as well; cancelling
-  source selection or refusing a changed result preserves existing work.
-- **Training** opens an Organizer data package, reviews a local trainer, and
-  prepares SDXL or Anima training through the existing workflow controllers.
-  The open-review selector returns to an exact retained run or setup review
-  without starting it again. Saved runs, preparations, experiments, sample comparisons and interrupted
-  package recovery remain available here. Comparisons return to Training.
-- **Applications** installs or connects Reader and Organizer and provides the
-  existing Models and Ollama workspaces. Library files stay with Organizer.
-- **Databases** connects and reviews Tag Database content before Apply, retaining
-  local corrections and the existing content recovery route.
-- **Servers** reads local CPU, RAM and GPU observations on explicit refresh.
-  It also links to configured external model runners. Observations do not
-  establish that a model fits or that a generator is ready.
-- **Dependencies** and **Settings** retain component status, shared locations,
-  presentation and the existing recovery/setup links.
-
-## Working across components
-
-In **Generate > Use Organizer Prompt Catalog**, import the reviewed export from Organizer a.0.7.0. Search Tag names/aliases on Request or browse Character/Outfit choices in **Advanced > Reusable Prompt Text**. A saved draft retains its catalog snapshot; editing Knowledge stays in Organizer.
-
-**Create Generation Setup** offers manual text or a selected image. The image reference uses the existing blur and temporary Reveal/Hide controls. **Review Local Description Setup** saves choices and can open **Set Up Components** for readiness and explicitly confirmed caption-component/model downloads. Return keeps the unfinished setup; choose Suggest deliberately when ready. Opening or returning starts no download or analysis. Source/UI/readiness checks passed; actual model downloads and inference were not executed for this release.
-
-Prepare a collection, captions and a Training package in Organizer, then open
-that package in Manager's Training workspace. Saved Dataset drafts can also be
-exported from Organizer for source and caption review in Manager. Completed
-Training results can be registered and reviewed for use in Generate.
-
-Generate keeps neutral drafts available offline. Submission uses a separately
-checked local runtime and an explicit Start action. Verified generated output
-returns through Organizer's existing Add Images review; original output and
-raw generation lineage are preserved rather than promoted into confirmed tags.
-
-Applications discovers compatible signed Reader and Organizer releases.
-Currently available: Reader a.0.3.1 and [Organizer a.0.7.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.7.0-alpha.1). Review and confirm installation.
-
-[Organizer Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.7.0-alpha.1/MediaOrganizer-a.0.7.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.7.0-alpha.1/MediaOrganizer-a.0.7.0-windows-x64.zip.sha256).
-Organizer a.0.7.0 preserves long integer generation seeds and supports an
-optional one-request token for read-only LM Studio model-list refresh.
-Model listing does not establish inference readiness or load models.
-Generated-profile 0.6 to 0.7 update and prior-code rollback were qualified.
-Restart Manager after installing, updating or restoring Organizer before opening it.
-Tag Database is reviewed content, rather than another application installer.
-Manager a.0.7.9 and newer can use the reviewed Manager update for this Training
-fix. A launcher already updated to a.0.7.10 needs no replacement for it. Use the
-complete ZIP for a fresh installation or an older launcher. Close Manager first,
-back up Suite and preserve Data. Retain an interrupted recovery folder and
-extract separately. The exact a.0.7.11 ZIP passed startup, the Training page and
-normal Close. Signed prior a.0.7.10 was authenticated; retained recovery evidence
-is unchanged. No model/trainer execution or new forced rollback was run.
-Keep your previous folder and separate data backups.
-
-## Source startup
-
-Use the release tag or its matching source asset to reproduce this version; the
-default branch may be a landing/source checkpoint.
-
-Run `python -B -m suite_core.manager` from a checkout with Python and PySide6.
-Use `--theme system|dark|light|midnight` and `--color-blind-mode` for presentation.
-`--demo` displays synthetic data. No dated task directory or `--suite-source`
-is needed. A normal host supplies its own admitted profile and component
-services; Demo does not authorize installations, execution or private data reads.
-
-Keep component versions, signed package identities and rollback artifacts with
-their release. See `WHATS_NEW.md` for versioned release changes. Historical
-qualification receipts remain evidence for their exact original artifacts;
-they do not qualify a rebuilt candidate.
