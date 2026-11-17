@@ -5,6 +5,8 @@
 - Shared model/settings edits wait while a workflow is open. Its original work and process must close safely before management resumes.
 - Fixes a spurious connection error during workflow shutdown, including after cancelled preparation. Original process cleanup still completes before installation health can be confirmed.
 
+- First-time workflow setup names the installation action shown in Applications.
+
 Start with the complete Suite 0.8.0-alpha.1 Windows ZIP, which includes launcher
 0.1.1. Extract it into a new, short writable folder, keep the folder together and
 open CollectiGen.exe. An update of Manager alone does not replace an older

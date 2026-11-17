@@ -230,3 +230,52 @@ def test_first_open_failure_keeps_matching_retry_and_inspectable_details(compone
         dialog.close()
         surface.close()
         app.processEvents()
+
+
+@pytest.mark.parametrize('component', ('generate', 'train'))
+@pytest.mark.parametrize('theme', ('dark', 'light'))
+def test_initial_card_guidance_reaches_visible_find_without_lookup(component, theme, tmp_path, record_property):
+    from PySide6.QtWidgets import QVBoxLayout
+    from qt_app.theme import apply_theme
+    from suite_core.manager.workflow_applications_ui import WorkflowApplications
+    from suite_core.manager.resource_executor import ResourceExecutorOwner
+    app = QApplication.instance() or QApplication([])
+    apply_theme(app, theme)
+    surface = WorkflowApplications()
+    surface.timer.stop()
+    identity = 'collectigen.' + component
+    # Presentation seam only: no signed/native admission or network grant.
+    surface.owner = NS(close_held=False, pending_generate_draft=None, reason='Idle',
+        session=NS(workflow_contract_version=1, workflow_selections={identity:NS(selected=None)}))
+    service = NS(install_available=True, candidate_admission=None, qualification_only=False, launch_available=False)
+    executor = ResourceExecutorOwner()
+    dialog = QDialog(surface)
+    dialog.resize(1040, 700)
+    panel = WorkflowAcquisitionPanel(identity, service, executor, parent=dialog)
+    panel.timer.stop()
+    QVBoxLayout(dialog).addWidget(panel)
+    surface.services[identity] = (service, executor)
+    surface.panels[identity] = panel
+    surface.dialogs[identity] = dialog
+    surface.resize(1920, 1080)
+    surface.render();surface.show();app.processEvents()
+    try:
+        status, opening, manage, _group = surface.rows[identity]
+        assert not opening.isEnabled() and manage.isVisible() and manage.isEnabled()
+        assert manage.text() in status.text() and component.title() in status.text()
+        assert panel.refresh.text() not in status.text()
+        image = surface.grab()
+        assert (image.width(), image.height()) == (1920, 1080)
+        capture = tmp_path / (theme + '-' + component + '-initial.png')
+        assert image.save(str(capture))
+        record_property('source_component_capture', str(capture))
+        QTest.mouseClick(manage, Qt.LeftButton);app.processEvents()
+        assert dialog.isVisible() and panel.refresh.isVisible() and panel.refresh.isEnabled()
+        assert panel.refresh.text() == 'Find ' + component.title()
+        assert panel.refresh.text() in panel.status.text()
+        assert not panel.check_attempted and panel.future is None and not executor.close_held
+        capture = tmp_path / (theme + '-' + component + '-manage.png')
+        assert dialog.grab().save(str(capture))
+        record_property('source_component_dialog_capture', str(capture))
+    finally:
+        panel.timer.stop();executor.begin_close();dialog.close();surface.close();app.processEvents()

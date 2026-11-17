@@ -270,7 +270,13 @@ class WorkflowApplications(QWidget):
                 detail = panel.status.text()
                 text += ' Ready to open.' if detail == panel.initial_status_text() else ' ' + detail
             else:
-                text = panel.status.text()
+                detail = panel.status.text()
+                initial = detail == panel.initial_status_text()
+                ordinary = (not getattr(service, 'qualification_only', False)
+                            and getattr(service, 'candidate_admission', None) is None)
+                text = ('Choose Manage install and updates… to find and review '
+                        + WORKFLOW_NAMES[component_id] + ' releases.'
+                        if initial and ordinary else detail)
             status.setText(text)
 
     def poll(self):

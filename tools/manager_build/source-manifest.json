@@ -3738,8 +3738,8 @@
     },
     {
       "path": "suite_core/manager/workflow_applications_ui.py",
-      "bytes": 15903,
-      "sha256": "2e7ad2f1317f50cfd48fc2658626fe002490f040d2e6b816939ab1e6a3ad128b"
+      "bytes": 16348,
+      "sha256": "f2fce44eafa3cda493af06604ebf85785ebe1f28bb8523e76d3113be6e4384ae"
     },
     {
       "path": "suite_core/media_examples.py",

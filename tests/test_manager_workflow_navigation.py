@@ -345,6 +345,16 @@ def test_application_task_tabs_keep_workflows_clear_and_catalog_state(manager_wi
     assert all(not row[3].isHidden() for row in manager.workflow_applications.rows.values())
     QTest.mouseClick(tabs.tabBar(), Qt.LeftButton, pos=tabs.tabBar().tabRect(1).center())
     assert manager.library_search.text() == 'synthetic catalog query'
+    # Real tab-bar keyboard navigation must preserve the same catalog query.
+    tabs.tabBar().setFocus(Qt.TabFocusReason)
+    QTest.keyClick(tabs.tabBar(), Qt.Key_Right);app.processEvents()
+    assert tabs.currentIndex() == 2 and manager.workflow_management.isVisible()
+    QTest.keyClick(tabs.tabBar(), Qt.Key_Left);app.processEvents()
+    assert tabs.currentIndex() == 1 and manager.library_search.text() == 'synthetic catalog query'
+    QTest.keyClick(tabs.tabBar(), Qt.Key_Left);app.processEvents()
+    assert tabs.currentIndex() == 0 and manager.workflow_applications.isVisible()
+    QTest.keyClick(tabs.tabBar(), Qt.Key_Right);app.processEvents()
+    assert tabs.currentIndex() == 1 and manager.library_search.text() == 'synthetic catalog query'
     manager.open_generate_plan()  # Existing routes return to the named task home.
     assert tabs.currentIndex() == 0
 
