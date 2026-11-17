@@ -561,7 +561,7 @@ def complete_dataset_parser(tmp_path, monkeypatch):
             catalog=str(catalog_path), catalog_sha256=hashlib.sha256(catalog_path.read_bytes()).hexdigest(),
             operation='prepare', selected_dataset=chosen)
         yield SimpleNamespace(qualification=qualification, preflight=preflight, inspection=inspection,
-            plan=plan, parser=parser, value=value, request=request, helper=helper, source=Path(parser['source']))
+            plan=plan, parser=parser, value=value, request=request, helper=helper, source=Path(parser['source']), package=package)
     finally:
         memory.close()
 
@@ -630,3 +630,104 @@ def test_source_inventory_preserves_tokenizer_and_dataset_schema_roles(complete_
     f.qualification.verify_selected_tokenizer_source_inventory(f.inspection, plan, {**f.parser, 'schema_version':schema})
     with pytest.raises(f.qualification.TrainingProcessError, match='inventory_required'):
         f.qualification.verify_selected_tokenizer_source_inventory(f.inspection, replace(plan, inventories=plan.inventories[:-1]), {**f.parser, 'schema_version':schema})
+
+
+@pytest.fixture
+def admitted_preparation_owners(tmp_path):
+    """Real stock worker provisioning with generated, already-admitted file rows."""
+    from suite_core.discovery.manager_runtime_detached_admission import DetachedAdmissionPlan
+    code = tmp_path / 'installed-code'
+    data = tmp_path / 'owned-data'
+    worker = code / 'training-worker/python'
+    worker.mkdir(parents=True)
+    raw = b'generated worker identity; never executable'
+    (worker / 'python.exe').write_bytes(raw)
+    stable = data / 'Manager/TrainingReview'
+    stable.mkdir(parents=True)
+    rows = {'python.exe': {'bytes':len(raw), 'sha256':sha256(raw).hexdigest()}}
+    owner = SimpleNamespace(training_worker_file_rows=lambda proof: rows if proof == b'already-admitted-fixture' else None)
+    first = DetachedAdmissionPlan.provision_training_worker(owner, b'already-admitted-fixture', code_root=code, data_root=data)
+    second = DetachedAdmissionPlan.provision_training_worker(owner, b'already-admitted-fixture', code_root=code, data_root=data)
+    assert first.work_root != second.work_root
+    assert first.work_root.parent == second.work_root.parent == stable
+    assert Path(first.inventory.manifest_path).parent == first.work_root
+    assert Path(second.inventory.manifest_path).parent == second.work_root
+    return SimpleNamespace(first=first, second=second, stable=stable)
+
+
+@pytest.mark.parametrize('cancelled', [False, True])
+@pytest.mark.parametrize('stable_history', [False, True])
+def test_module_preparation_history_survives_owner_reopen_and_legacy_scope(complete_dataset_parser, admitted_preparation_owners, monkeypatch, cancelled, stable_history):
+    from threading import RLock
+    from core import training_dataset_binding as binding
+    from core import training_dataset_preparation as selected
+    from core.training_preflight import ContainedRuntimeQualificationService
+    from core.training_process import TrainingRunJournal, _bytes, _sha
+    from core.training_run_index import ScopedPreparationHistory
+    f, owners = complete_dataset_parser, admitted_preparation_owners
+    assert owners.first.history_root == owners.second.history_root == owners.stable
+    original = (owners.first if stable_history else
+        binding.ReviewedDatasetVerifier(owners.first.inventory, 'python.exe', owners.first.work_root))
+    expected_root = owners.stable if stable_history else original.work_root
+    assert original.history_root == expected_root
+    calls = []
+    def terminal_preflight(source, environment, root, jobs, **kwargs):
+        calls.append(root)
+        assert root.is_relative_to(original.work_root)
+        assert kwargs['profile'] == binding.ContainedDatasetPreparationService.prepare_package.__kwdefaults__['profile']
+        selection = selected.read_selection(kwargs['selected_dataset']['memory'])
+        assert Path(selection['root']) == f.package.destination
+        assert selected.binding(selection) == kwargs['selected_dataset']['binding']
+        if kwargs['should_cancel'](): raise InterruptedError('generated cancellation')
+        nonce = '9'*32
+        directory = root / ('preflight-'+nonce)
+        (directory / 'events').mkdir(parents=True)
+        receipt = dict(schema_version=1, nonce=nonce, operation='prepare', status='complete',
+            process_fingerprint='a'*64, request_sha256='b'*64, result_sha256='c'*64)
+        raw = _bytes(receipt)
+        (directory / 'preflight-result.json').write_bytes(raw)
+        journal = TrainingRunJournal(directory)
+        tip = journal.append('reserved', {'plan':{'process_fingerprint':receipt['process_fingerprint']}}, '')
+        tip = journal.append('starting', {}, tip)
+        tip = journal.append('running', {}, tip)
+        journal.append('exited_unverified', dict(exit_code=0, tree_stopped=True, preflight_receipt_sha256=_sha(raw)), tip)
+        return None, SimpleNamespace(root=str(directory / 'work/prepared')), None, receipt
+    monkeypatch.setattr(ContainedRuntimeQualificationService, 'from_reviewed_worker_inventory',
+        classmethod(lambda cls, inventory, relative, **kwargs: SimpleNamespace(preflight=terminal_preflight)))
+    owner = SimpleNamespace(lock=RLock(), dataset_calls=0, dataset_jobs=[], adapter=SimpleNamespace(check=lambda: None))
+    wrapped = runtime.ModuleDatasetVerifier(original, owner)
+    jobs = object()
+    manifest = f.package.destination / 'collectigen-training-manifest.json'
+    before = manifest.read_bytes()
+    args = dict(source=Path(f.inspection.source), environment=Path(f.request['environment']),
+        python_base=Path(f.request['python_base']), jobs=jobs, should_cancel=lambda: cancelled)
+    if cancelled:
+        with pytest.raises(InterruptedError): wrapped.prepare(f.package, **args)
+        assert not ScopedPreparationHistory(expected_root).snapshot()[0]
+        assert not (expected_root / 'sdxl-preflight-runs.json').exists()
+    else:
+        result = wrapped.prepare(f.package, **args)
+        # A separately provisioned owner reads through the same root used by
+        # WorkflowMethods.open_training_history(preparations=True).
+        reopened = ScopedPreparationHistory(owners.second.history_root if stable_history else expected_root)
+        records, revision = reopened.snapshot()
+        assert len(records) == 1
+        assert reopened.review_preparation(records[0], revision) == result[3]
+        assert Path(records[0].destination).is_relative_to(original.work_root)
+        if stable_history: assert not (original.work_root / 'sdxl-preflight-runs.json').exists()
+        receipt = Path(records[0].review_path)
+        receipt.write_bytes(receipt.read_bytes()+b' ')
+        with pytest.raises(binding.TrainingProcessError): reopened.review_preparation(records[0], revision)
+    assert len(calls) == 1 and owner.dataset_calls == 0 and owner.dataset_jobs == [jobs]
+    assert manifest.read_bytes() == before
+
+
+@pytest.mark.parametrize('wrong', ['relative', 'sibling', 'ancestor', 'noncanonical'])
+def test_preparation_history_root_refuses_unowned_scope(admitted_preparation_owners, wrong):
+    from core.training_dataset_binding import ReviewedDatasetVerifier
+    original = admitted_preparation_owners.first
+    root = original.work_root
+    selected = {'relative':Path('relative'), 'sibling':root.parent / 'other',
+        'ancestor':root.parent.parent, 'noncanonical':root / '..'}[wrong]
+    with pytest.raises(ValueError, match='history parent'):
+        ReviewedDatasetVerifier(original.inventory, original.python_relative, root, history_root=selected)

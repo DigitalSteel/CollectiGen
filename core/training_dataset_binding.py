@@ -285,19 +285,26 @@ class TrainingPreparationRetentionError(TrainingProcessError):
 
 
 class ReviewedDatasetVerifier:
-    """Bind Manager review to an explicitly reviewed worker and owned work directory."""
+    """Bind reviewed worker work and an explicit, bounded saved-history scope."""
 
-    def __init__(self, inventory, python_relative, work_root):
+    def __init__(self, inventory, python_relative, work_root, *, history_root=None):
         from .training_process import ProcessInventory
 
         if type(inventory) is not ProcessInventory or not Path(work_root).is_absolute():
             raise ValueError("An exact reviewed worker and absolute Training work root are required.")
+        work_root = Path(work_root)
+        history_root = work_root if history_root is None else Path(history_root)
+        if (not history_root.is_absolute() or ".." in history_root.parts
+                or history_root == history_root.parent
+                or history_root not in (work_root, work_root.parent)):
+            raise ValueError("Use the owned Training work root or its explicit immediate history parent.")
         self.inventory = inventory
         self.python_relative = python_relative
-        self.work_root = Path(work_root)
+        self.work_root = work_root
+        self.history_root = history_root
 
     @classmethod
-    def from_verified_file_rows(cls, runtime, rows, manifest, work_root, *, should_cancel=None):
+    def from_verified_file_rows(cls, runtime, rows, manifest, work_root, *, should_cancel=None, history_root=None):
         """Pin an installed copy using file rows already authenticated by its owner."""
         from .training_file_inventory import SoftwareInventoryService
         from .training_process import ProcessInventory
@@ -318,7 +325,7 @@ class ReviewedDatasetVerifier:
         service.save(inventory, manifest)
         pin = ProcessInventory(inventory.root, str(manifest), inventory.fingerprint,
                                len(inventory.files), inventory.byte_count)
-        return cls(pin, "python.exe", work_root)
+        return cls(pin, "python.exe", work_root, history_root=history_root)
 
     def _selected_package(self, package):
         from .training_adapter_preview import SdxlLoraRecipe
@@ -372,7 +379,7 @@ class ReviewedDatasetVerifier:
                 retain = None
                 try:
                     _, tip = TrainingRunJournal(directory).read()
-                    retain = partial(ScopedPreparationHistory(root).retain,
+                    retain = partial(ScopedPreparationHistory(self.history_root).retain,
                         directory, receipt_sha256=_sha(_bytes(receipt)), journal_tip=tip)
                     retain()
                 except (OSError, ValueError, RuntimeError) as exc:

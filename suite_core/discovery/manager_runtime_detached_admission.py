@@ -119,7 +119,9 @@ class DetachedAdmissionPlan(AdmissionPlan):
         try:
             return ReviewedDatasetVerifier.from_verified_file_rows(
                 runtime, rows, receipt_root / "worker-inventory.json", receipt_root,
-                should_cancel=should_cancel)
+                # Inventory pins remain private to this owner; saved preparation
+                # pointers use the existing stable Training history workspace.
+                should_cancel=should_cancel, history_root=work)
         except Exception:
             # Only remove an empty directory created by this attempt. Preserve
             # any receipt or diagnostic data already written by the verifier.
