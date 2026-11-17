@@ -276,3 +276,132 @@ def test_training_review_exposes_prepare_only_for_reviewed_original_or_exact_mod
         jobs.shutdown(wait=True)
         parent.close()
         app.processEvents()
+
+
+def _nested_verifier_fixture(tmp_path, monkeypatch, reply_mode='verified'):
+    """Real stock composition/framing, synthetic memory and borrowed member only."""
+    import core.training_preflight as preflight
+    import core.training_process as process
+    import core.training_verification as verifier
+    import time
+    worker = tmp_path / 'admitted-worker'
+    worker.mkdir()
+    python = worker / 'python.exe'
+    python.write_bytes(b'generated nonexecutable reviewed interpreter')
+    pin = process.ProcessInput.capture(python)
+    manifest = tmp_path / 'reviewed-worker-inventory.json'
+    manifest.write_bytes(b'generated inventory identity')
+    inventory = process.ProcessInventory(str(worker), str(manifest), sha256(manifest.read_bytes()).hexdigest(), 1, python.stat().st_size)
+    service = preflight.ContainedRuntimeQualificationService(worker_python=pin, worker_inventory=inventory)
+    destination = tmp_path / 'generated-owned-run'
+    destination.mkdir()
+    plan = SimpleNamespace(inputs=(pin,), inventories=(inventory,), fingerprint='a'*64,
+                           destination=destination, environment_profile=process.LEGACY_ENVIRONMENT)
+    state = SimpleNamespace(mapping=None, command=None, member_closed=False, resumed=False,
+                            member_requested=False, parent_closed=False, cancel=False)
+    class Mapping:
+        def __init__(self, size):
+            self.data, self.position = bytearray(size), 0
+        def __enter__(self): return self
+        def __exit__(self, *_args): return False
+        def write(self, data):
+            self.data[self.position:self.position + len(data)] = data
+            self.position += len(data)
+        def __getitem__(self, key): return self.data[key]
+        def __setitem__(self, key, value): self.data[key] = value
+    def memory(_fd, size, **_kwargs):
+        state.mapping = Mapping(size)
+        return state.mapping
+    class Member:
+        def spawn_suspended(self, command, _cwd, _environment):
+            state.command = command
+            if reply_mode == 'cancel-before-resume': state.cancel = True
+        def resume(self):
+            state.resumed = True
+            length = int(state.command[-2])
+            request = json.loads(bytes(state.mapping[:length]))
+            if reply_mode == 'zero': return
+            response = {key: request[key] for key in ('schema_version', 'nonce', 'phase', 'process_fingerprint')}
+            response.update(request_sha256=state.command[-1], status='verified')
+            if reply_mode == 'stale': response['nonce'] = '0'*32
+            data = process._bytes(response)
+            state.mapping[length:length+4] = len(data).to_bytes(4, 'little')
+            state.mapping[length+4:length+4+len(data)] = data
+        def poll(self): return 0
+        def close(self): state.member_closed = True
+    member = Member()
+    class Owner:
+        def member(self):
+            state.member_requested = True
+            return member
+        def active(self): return 0
+        def close(self): state.parent_closed = True
+    monkeypatch.setattr(verifier.mmap, 'mmap', memory)
+    return SimpleNamespace(service=service, plan=plan, owner=Owner(), state=state,
+                           pin=pin, inventory=inventory, process=process, verifier=verifier,
+                           deadline=time.monotonic()+20)
+
+
+@pytest.mark.parametrize('gui', ('Train.exe', 'Generate.exe'))
+@pytest.mark.parametrize('phase', ('before-create', 'before-resume', 'after-exit'))
+def test_frozen_nested_verifier_uses_original_reviewed_worker_python(tmp_path, monkeypatch, gui, phase):
+    f = _nested_verifier_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(f.verifier.sys, 'frozen', True, raising=False)
+    monkeypatch.setattr(f.verifier.sys, 'executable', str(tmp_path / gui))
+    f.service.process._verify_owned_inputs(f.plan, f.owner, phase, lambda: False, f.deadline)
+    command = f.state.command
+    assert command[:5] == (f.pin.path, '-I', '-S', '-B', str(f.verifier.WORKER))
+    assert command[0] != f.verifier.sys.executable
+    assert json.loads((f.plan.destination / ('verification-' + phase + '.json')).read_bytes())['phase'] == phase
+    assert f.state.resumed and f.state.member_closed and not f.state.parent_closed
+
+
+@pytest.mark.parametrize('fault', ('absent', 'inventory-absent', 'python-pin', 'inventory-pin', 'target-executable', 'inventory-root'))
+def test_frozen_nested_verifier_refuses_unreviewed_runtime_before_spawn(tmp_path, monkeypatch, fault):
+    f = _nested_verifier_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(f.verifier.sys, 'frozen', True, raising=False)
+    monkeypatch.setattr(f.verifier.sys, 'executable', str(tmp_path / 'Train.exe'))
+    if fault == 'absent':
+        f.service.process = f.process.TrainingProcessService()
+    elif fault == 'inventory-absent':
+        f.service.process._verifier_inventory = None
+    elif fault == 'python-pin':
+        f.plan.inputs = (replace(f.pin, sha256='b'*64),)
+    elif fault == 'inventory-pin':
+        f.plan.inventories = (replace(f.inventory, manifest_sha256='b'*64),)
+    elif fault == 'target-executable':
+        f.service.process._verifier_python = replace(f.pin, path=str(tmp_path / 'trainer.exe'))
+        f.plan.inputs = (f.service.process._verifier_python,)
+    else:
+        changed = replace(f.inventory, root=str(tmp_path / 'different-runtime'))
+        f.service.process._verifier_inventory = changed
+        f.plan.inventories = (changed,)
+    with pytest.raises(f.process.TrainingProcessError, match='input.verification|input-verification|input-verifier'):
+        f.service.process._verify_owned_inputs(f.plan, f.owner, 'before-create', lambda: False, f.deadline)
+    assert not f.state.member_requested and f.state.command is None and f.state.mapping is None
+
+
+@pytest.mark.parametrize('reply', ('zero', 'stale', 'cancel-before-resume'))
+def test_nested_verifier_failure_closes_only_borrowed_member(tmp_path, monkeypatch, reply):
+    f = _nested_verifier_fixture(tmp_path, monkeypatch, reply)
+    monkeypatch.setattr(f.verifier.sys, 'frozen', True, raising=False)
+    expected = InterruptedError if reply == 'cancel-before-resume' else f.process.TrainingProcessError
+    with pytest.raises(expected):
+        f.service.process._verify_owned_inputs(f.plan, f.owner, 'before-create', lambda: f.state.cancel, f.deadline)
+    assert f.state.member_closed and not f.state.parent_closed
+    assert not (f.plan.destination / 'verification-before-create.json').exists()
+    if reply == 'cancel-before-resume': assert not f.state.resumed
+
+
+def test_nested_verifier_source_default_and_expired_deadline_preserve_contract(tmp_path, monkeypatch):
+    f = _nested_verifier_fixture(tmp_path, monkeypatch)
+    monkeypatch.delattr(f.verifier.sys, 'frozen', raising=False)
+    source_python = str(tmp_path / 'source-python.exe')
+    monkeypatch.setattr(f.verifier.sys, 'executable', source_python)
+    f.service.process = f.process.TrainingProcessService()
+    f.service.process._verify_owned_inputs(f.plan, f.owner, 'before-create', lambda: False, f.deadline)
+    assert f.state.command[0] == source_python
+    f.state.member_requested = False
+    with pytest.raises(f.process.TrainingProcessError, match='deadline expired'):
+        f.service.process._verify_owned_inputs(f.plan, f.owner, 'after-exit', lambda: False, 0)
+    assert not f.state.member_requested

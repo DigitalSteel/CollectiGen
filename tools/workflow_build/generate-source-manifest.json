@@ -1918,8 +1918,8 @@
     },
     {
       "path": "core/training_preflight.py",
-      "bytes": 50774,
-      "sha256": "d4704e637c578c2022e144f0ae76c43f1b90a286235656d044a2314c5d74acd8"
+      "bytes": 50852,
+      "sha256": "24ec368a194dd00cd6addeab9ef62ff8a84bd6ae54720aaa3119a503595adb12"
     },
     {
       "path": "core/training_presets.py",
@@ -1928,8 +1928,8 @@
     },
     {
       "path": "core/training_process.py",
-      "bytes": 42642,
-      "sha256": "c5114dde65edd582d8995a83130e2e913920ae3c652fb7654d430a887654102d"
+      "bytes": 43221,
+      "sha256": "520bcda533d8a8b72790848fc2a1692c16a142d07fc17c3253cef913a774c21c"
     },
     {
       "path": "core/training_process_windows.py",
@@ -2068,8 +2068,8 @@
     },
     {
       "path": "core/training_verification.py",
-      "bytes": 6601,
-      "sha256": "9243c9a5c2663b6fa0da90e3c31a1cd0a8dca1bc582deb783857063896fc5029"
+      "bytes": 8490,
+      "sha256": "993d25183e8e5795a4319ede4d501d4c757b09df2fcd8c7d84153998052366fb"
     },
     {
       "path": "core/training_wfp.py",

@@ -140,7 +140,7 @@ class WorkflowWorkspaceOwner:
                 if actor is not None and actor.state == 'ready':
                     if self._launch_draft is not None and self.pending_generate_draft == self._launch_draft:
                         self.pending_generate_draft = self._launch_draft = None
-                    self.reason = 'Workflow is open. Close its window normally to return to shared management.'
+                    self.reason = 'The workflow has started. Its window may take a moment to appear. Keep Manager open; close the workflow normally when finished.'
                 return False
             self._stop.set()
             worker = self.worker

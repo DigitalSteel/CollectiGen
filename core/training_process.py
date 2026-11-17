@@ -327,8 +327,12 @@ class TrainingProcessService:
     reports_process_invocation = True
 
     """Caller owns the reviewed plan; coordinator admission lasts until tree death."""
-    def __init__(self, *, backend=WindowsTrainingJob):
+    def __init__(self, *, backend=WindowsTrainingJob, verifier_python=None, verifier_inventory=None):
         self.backend = backend
+        # Only the explicit owner-reviewed worker runtime may replace the source
+        # interpreter. Never infer a verifier from a target trainer command.
+        self._verifier_python = verifier_python
+        self._verifier_inventory = verifier_inventory
         self._held = {}
         self._held_lock = threading.RLock()
 
@@ -688,10 +692,13 @@ class TrainingProcessService:
             if owner is not None:
                 owner.close()
 
-    @staticmethod
-    def _verify_owned_inputs(plan, owner, phase, cancel, deadline):
-        verify_owned_inputs(plan, owner, phase,
-            TrainingProcessService._environment(plan.destination / "work", plan.environment_profile), cancel, deadline)
+    def _verify_owned_inputs(self, plan, owner, phase, cancel, deadline):
+        environment = self._environment(plan.destination / "work", plan.environment_profile)
+        if self._verifier_python is None and self._verifier_inventory is None:
+            verify_owned_inputs(plan, owner, phase, environment, cancel, deadline)
+        else:
+            verify_owned_inputs(plan, owner, phase, environment, cancel, deadline,
+                verifier_python=self._verifier_python, verifier_inventory=self._verifier_inventory)
 
     @staticmethod
     def _wait_stopped(owner, timeout=3):

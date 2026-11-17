@@ -84,3 +84,39 @@ def test_entry_lifetime_does_not_drop_completed_but_undrained_executor():
     assert owner.workflow_services[0][2] is executor
     executor.close_held = False
     assert owner._drain_workflows() is True
+
+
+@pytest.mark.parametrize('available', [True, False])
+def test_admitted_card_names_installed_version_and_preserves_restart_guidance(app, available):
+    """Presentation-only injection; no service/admission/process is exercised."""
+    from PySide6.QtWidgets import QLabel, QDialog
+    widget = WorkflowApplications()
+    widget.timer.stop()
+    name = 'collectigen.generate'
+    widget.owner = SimpleNamespace(close_held=False, pending_generate_draft=None, failure_reference=None,
+        session=SimpleNamespace(workflow_selections={name:SimpleNamespace(
+            selected=SimpleNamespace(version='0.1.0-alpha.1'))}))
+    widget.services[name] = (SimpleNamespace(launch_available=available), None)
+    widget.panels[name] = SimpleNamespace(close_held=False, closing=False,
+        status=QLabel('Find Generate' if available else
+            'App files are saved. Restart Manager to admit the saved app before opening it.'),
+        initial_status_text=lambda: 'Find Generate')
+    widget.dialogs[name] = QDialog(widget)
+    try:
+        widget.render()
+        status, opening, _manage, _group = widget.rows[name]
+        assert opening.isEnabled() is available
+        assert ('Generate 0.1.0-alpha.1 is installed. Ready to open.' if available else
+            'App files are saved. Restart Manager to admit the saved app before opening it.') == status.text()
+        if available:
+            widget.panels[name].status.setText('Setup needs attention. Review the available recovery action.')
+            widget.panels[name].close_held = True
+            widget.render()
+            assert 'Setup needs attention.' in status.text() and 'Ready to open.' not in status.text()
+            assert not opening.isEnabled()
+        widget.owner.close_held = True
+        widget.owner.reason = 'The workflow has started. Its window may take a moment to appear.'
+        widget.render()
+        assert status.text() == widget.owner.reason and not opening.isEnabled()
+    finally:
+        widget.deleteLater()

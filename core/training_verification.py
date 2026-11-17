@@ -47,7 +47,36 @@ def verified_receipt_hashes(plan):
     return hashes
 
 
-def verify_owned_inputs(plan, owner, phase, environment, cancel, deadline):
+def _verifier_program(plan, python, inventory):
+    """Select only the explicit reviewed runtime already bound into this plan.
+
+    These are immutable metadata comparisons, not selected-filesystem reads on
+    the controller thread. The existing contained helper verifies actual bytes.
+    """
+    from .training_process import ProcessInput, ProcessInventory, TrainingProcessError
+    frozen = bool(getattr(sys, "frozen", False))
+    if python is None:
+        if inventory is not None or frozen:
+            raise TrainingProcessError("Installed input verification needs an admitted worker Python interpreter and inventory.")
+        return sys.executable
+    if (type(python) is not ProcessInput or not Path(python.path).is_absolute()
+            or Path(python.path).name.casefold() != "python.exe"
+            or ".." in Path(python.path).parts or python not in plan.inputs):
+        raise TrainingProcessError("The reviewed input-verification interpreter is not bound to this prepared plan.")
+    if inventory is None:
+        if frozen:
+            raise TrainingProcessError("Installed input verification needs a reviewed Python software inventory.")
+    elif (type(inventory) is not ProcessInventory or inventory not in plan.inventories
+            or not Path(inventory.root).is_absolute() or not Path(inventory.manifest_path).is_absolute()
+            or ".." in Path(inventory.root).parts or ".." in Path(inventory.manifest_path).parts
+            or not Path(python.path).is_relative_to(Path(inventory.root))
+            or Path(inventory.manifest_path).is_relative_to(Path(inventory.root))):
+        raise TrainingProcessError("The reviewed input-verification inventory is not bound to this prepared plan.")
+    return python.path
+
+
+def verify_owned_inputs(plan, owner, phase, environment, cancel, deadline, *,
+                        verifier_python=None, verifier_inventory=None):
     from .training_process import TrainingProcessError, _bytes, _sha, _write_new
 
     if phase not in PHASES:
@@ -56,6 +85,7 @@ def verify_owned_inputs(plan, owner, phase, environment, cancel, deadline):
         raise InterruptedError("Process verification was cancelled.")
     if time.monotonic() >= deadline:
         raise TrainingProcessError("The shared input verification deadline expired.")
+    program = _verifier_program(plan, verifier_python, verifier_inventory)
     nonce = uuid4().hex
     request = {"schema_version": 1, "nonce": nonce, "phase": phase,
         "process_fingerprint": plan.fingerprint,
@@ -77,7 +107,7 @@ def verify_owned_inputs(plan, owner, phase, environment, cancel, deadline):
         baseline = owner.active()
         exited_at = None
         try:
-            member.spawn_suspended((sys.executable, "-I", "-S", "-B", str(WORKER),
+            member.spawn_suspended((program, "-I", "-S", "-B", str(WORKER),
                 mapping_name, str(len(raw)), expected["request_sha256"]),
                 str(plan.destination / "work"), environment)
             if cancel and cancel():

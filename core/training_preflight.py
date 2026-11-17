@@ -368,7 +368,8 @@ class ContainedRuntimeQualificationService:
         self._worker_inventory = worker_inventory
         # Retain this service so an unobserved helper can be recovered through
         # the same held coordinator slot; never hide it in a temporary owner.
-        self.process = TrainingProcessService()
+        self.process = TrainingProcessService(verifier_python=worker_python,
+            verifier_inventory=worker_inventory)
 
     @classmethod
     def from_reviewed_worker_inventory(cls, inventory: ProcessInventory, python_relative: str,

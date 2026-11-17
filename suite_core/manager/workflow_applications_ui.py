@@ -249,8 +249,18 @@ class WorkflowApplications(QWidget):
                 if available else 'Install the app, then restart Manager before opening it.')
             manage.setEnabled(not held and not panel.closing)
             self.dialogs[component_id].setEnabled(not held)
-            status.setText(self.owner.reason if held else 'Your saved Generate work is ready to resume.'
-                           if resume else panel.status.text())
+            if held:
+                text = self.owner.reason
+            elif resume:
+                text = 'Your saved Generate work is ready to resume.'
+            elif available:
+                selected = self.owner.session.workflow_selections[component_id].selected
+                text = WORKFLOW_NAMES[component_id] + ' ' + selected.version + ' is installed.'
+                detail = panel.status.text()
+                text += ' Ready to open.' if detail == panel.initial_status_text() else ' ' + detail
+            else:
+                text = panel.status.text()
+            status.setText(text)
 
     def poll(self):
         if self.owner is not None:
