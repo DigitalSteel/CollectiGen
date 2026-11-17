@@ -405,3 +405,78 @@ def test_nested_verifier_source_default_and_expired_deadline_preserve_contract(t
     with pytest.raises(f.process.TrainingProcessError, match='deadline expired'):
         f.service.process._verify_owned_inputs(f.plan, f.owner, 'after-exit', lambda: False, 0)
     assert not f.state.member_requested
+
+
+@pytest.mark.parametrize('cancelled', [False, True])
+def test_module_preparation_retains_canonical_profile_and_original_lifetime(tmp_path, monkeypatch, cancelled):
+    """Real module/reviewed composition; fake terminal preflight, no native process."""
+    from threading import RLock
+    from PIL import Image
+    from core import ImageRecord, LibraryImageIdentity, TagDatabase, TrainingCandidateSelectionService, TrainingGoal, TrainingPermissionDisposition
+    from core.training_package import TrainingPackageService
+    from core.training_process import ProcessInventory
+    from core import training_dataset_binding as binding
+    from core import training_dataset_preparation as selected
+    from core.training_preflight import ContainedRuntimeQualificationService
+    image = tmp_path / 'generated.png'
+    Image.new('RGB', (512, 768), (30, 60, 90)).save(image)
+    record = ImageRecord(image)
+    record.annotation.sdxl_tags = ['synthetic']
+    record.modified = True
+    record.save_sidecar(force=True)
+    knowledge = TagDatabase(tmp_path / 'tags.json')
+    selector = TrainingCandidateSelectionService(knowledge)
+    plan = selector.plan((image,), TrainingGoal('Synthetic', kind='character', base_model_id='sha256:'+'a'*64),
+        identities={image: LibraryImageIdentity('synthetic', image.name)})
+    plan = selector.apply_permission_disposition(plan, TrainingPermissionDisposition('proceed', 'Generated fixture only.', True))
+    packages = tmp_path / 'packages'
+    packages.mkdir()
+    service = TrainingPackageService(knowledge)
+    preview = service.preview(plan, packages / 'package')
+    assert preview.ready, preview.issues
+    assert service.apply(preview, preview.decision.execution()).status == 'created'
+    package = service.verify(packages / 'package')
+    assert package.valid and not selected.assess_manifest(package.manifest)['holds']
+    work = tmp_path / 'reviewed-work'
+    work.mkdir()
+    inventory = ProcessInventory(str(tmp_path / 'worker'), str(tmp_path / 'inventory.json'), 'a'*64, 0, 0)
+    Path(inventory.root).mkdir()
+    original = binding.ReviewedDatasetVerifier(inventory, 'python.exe', work)
+    owner = SimpleNamespace(lock=RLock(), dataset_calls=0, dataset_jobs=[], adapter=SimpleNamespace(check=lambda: None))
+    wrapped = runtime.ModuleDatasetVerifier(original, owner)
+    state = SimpleNamespace(calls=0, memory=None)
+    canonical_profile = binding.ContainedDatasetPreparationService.prepare_package.__kwdefaults__['profile']
+    assert canonical_profile != ContainedRuntimeQualificationService.preflight.__kwdefaults__['profile']
+    class Memory:
+        def __init__(self, selection):
+            selected.validate_selection(selection)
+            self.descriptor = {'mapping': 'Local\\CollectiGen.Dataset.'+'b'*32, 'length': 1, 'sha256': 'c'*64}
+            self.closed = False
+            state.memory = self
+        def close(self): self.closed = True
+    result = (None, None, None, {'nonce': 'd'*32})
+    jobs = object()
+    roots = [tmp_path / name for name in ('source', 'environment', 'base-python')]
+    def preflight(source, environment, root, actual_jobs, **kwargs):
+        state.calls += 1
+        assert (source, environment, actual_jobs) == (*roots[:2], jobs)
+        assert root.is_relative_to(work) and kwargs['python_base'] == roots[2]
+        assert kwargs['profile'] == canonical_profile and kwargs['prepare'] is True
+        assert kwargs['selected_dataset']['memory'] is state.memory.descriptor
+        assert owner.dataset_calls == 1 and owner.dataset_jobs == [jobs]
+        if kwargs['should_cancel'](): raise InterruptedError('Generated cancellation')
+        return result
+    def factory(actual_inventory, python_relative, **kwargs):
+        assert actual_inventory is inventory and python_relative == 'python.exe'
+        return SimpleNamespace(preflight=preflight)
+    monkeypatch.setattr(binding.selected, 'SelectionMemory', Memory)
+    monkeypatch.setattr(binding.ContainedRuntimeQualificationService, 'from_reviewed_worker_inventory', factory)
+    args = dict(source=roots[0], environment=roots[1], python_base=roots[2], jobs=jobs, should_cancel=lambda: cancelled)
+    before = (package.destination / 'collectigen-training-manifest.json').read_bytes()
+    if cancelled:
+        with pytest.raises(InterruptedError, match='Generated cancellation'): wrapped.prepare(package, **args)
+    else:
+        assert wrapped.prepare(package, **args) is result
+    assert state.calls == 1 and state.memory.closed and owner.dataset_calls == 0
+    assert owner.dataset_jobs == [jobs]  # Original owner retains the job for physical drain.
+    assert (package.destination / 'collectigen-training-manifest.json').read_bytes() == before

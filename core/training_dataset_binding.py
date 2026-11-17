@@ -356,7 +356,7 @@ class ReviewedDatasetVerifier:
         work = Path(mkdtemp(prefix="dataset-preparation-", dir=root))
         memory = selected.SelectionMemory(selection)
         try:
-            result = worker.preflight(paths[0], paths[1], work, jobs, prepare=True,
+            result = worker.preflight(paths[0], paths[1], work, jobs, profile='kohya-uv-45088f04', prepare=True,
                 python_base=paths[2], selected_dataset={"memory": memory.descriptor,
                     "binding": selected.binding(selection), "summary": summary},
                 should_cancel=should_cancel, progress=progress)
