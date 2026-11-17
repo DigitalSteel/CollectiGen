@@ -229,6 +229,100 @@ def render_organizer_qualification_configs(*, source_bytes, mapping_sha256, upda
             'suite_core/manager/compiled_update_config.py': child_update}
 
 
+
+def render_workflow_production_configs(*, component, source_bytes, admission=None,
+        profiles=None, update_profile=None, mapping_sha256=None):
+    """Render finite ordinary policies; qualification changes transport only."""
+    from dataclasses import fields
+    from core.component_acquisition import ExactComponentOffer, ExactOfferAsset
+    from suite_core.workflow_modules.compiled_admission import CompiledWorkflowAdmission
+    from suite_core.manager.workflow_acquisition_binding import CompiledWorkflowAcquisitionProfile
+    from suite_core.discovery.component_release_signature import _json, _trust
+    if (component not in {'manager','generate','train'} or type(source_bytes) is not dict
+            or any(type(k) is not str or type(v) is not bytes for k,v in source_bytes.items())):
+        raise ValueError('finite_workflow_production_sources_required')
+    def default(name, target, expression):
+        raw=source_bytes.get(name)
+        if type(raw) is not bytes:raise ValueError('workflow_production_default_source_required:'+name)
+        text=raw.decode('utf-8');tree=ast.parse(text)
+        nodes=[node for node in tree.body if isinstance(node,ast.Assign)
+            and len(node.targets)==1 and isinstance(node.targets[0],ast.Name) and node.targets[0].id==target]
+        expected=ast.dump(ast.parse(expression,mode='eval').body,include_attributes=False)
+        if len(nodes)!=1 or ast.dump(nodes[0].value,include_attributes=False)!=expected:
+            raise ValueError('unmixed_workflow_production_default_required:'+name+':'+target)
+        return text,nodes[0]
+    def replace(text,node,expression):
+        lines=text.splitlines(keepends=True)
+        return ''.join(lines[:node.lineno-1])+expression+'\n'+''.join(lines[node.end_lineno:])
+    def literal(value):
+        if type(value) in {str,bytes,int,bool,type(None)}:return repr(value)
+        if type(value) is tuple:return '('+', '.join(literal(item) for item in value)+(',' if value else '')+')'
+        raise ValueError('primitive_workflow_policy_value_required')
+    if component!='manager':
+        if (type(admission) is not CompiledWorkflowAdmission or profiles is not None
+                or update_profile is not None or mapping_sha256 is not None):
+            raise ValueError('unmixed_ordinary_module_policy_required')
+        admission.validate('collectigen.'+component)
+        default('suite_core/workflow_modules/compiled_candidate.py','PROFILE','None')
+        name='suite_core/workflow_modules/compiled_admission.py'
+        text,node=default(name,'PROFILE','None')
+        expression='CompiledWorkflowAdmission('+', '.join(f.name+'='+literal(getattr(admission,f.name)) for f in fields(admission))+')'
+        return {name:replace(text,node,'PROFILE = '+expression).encode()}
+    if (admission is not None or type(profiles) is not dict or not 0<len(profiles)<=2
+            or any(type(key) is not str for key in profiles)
+            or set(profiles)-{'collectigen.generate','collectigen.train'}):
+        raise ValueError('finite_ordinary_workflow_profiles_required')
+    if mapping_sha256 is not None and (type(mapping_sha256) is not str or re.fullmatch('[0-9a-f]{64}',mapping_sha256) is None):
+        raise ValueError('exact_workflow_qualification_mapping_required')
+    config='suite_core/manager/compiled_workflow_config.py'
+    text,node=default(config,'PROFILES','MappingProxyType({})')
+    default(config,'CANDIDATE_PROFILES','MappingProxyType({})')
+    default('suite_core/manager/compiled_update_config.py','PROFILE','None')
+    cohort=None;rendered=[]
+    def asset(value):
+        if type(value) is not ExactOfferAsset:raise ValueError('typed_ordinary_workflow_asset_required')
+        return 'ExactOfferAsset('+', '.join(f.name+'='+literal(getattr(value,f.name)) for f in fields(value))+')'
+    for component_id,profile in sorted(profiles.items()):
+        if type(profile) is not CompiledWorkflowAcquisitionProfile or profile.component_id!=component_id:
+            raise ValueError('matching_ordinary_workflow_profile_required')
+        current=(profile.trust_bytes,profile.trust_sha256,profile.channel)
+        if cohort is not None and cohort!=current:raise ValueError('single_workflow_publisher_cohort_required')
+        cohort=current
+        arguments=[]
+        for f in fields(profile.expected_offer):
+            value=getattr(profile.expected_offer,f.name)
+            expression=('ComponentId('+literal(value.value)+')' if f.name=='component_id' else
+                asset(value) if f.name in {'manifest','signature','artifact'} else literal(value))
+            arguments.append(f.name+'='+expression)
+        offer='ExactComponentOffer('+', '.join(arguments)+')'
+        arguments=[f.name+'='+(offer if f.name=='expected_offer' else literal(getattr(profile,f.name))) for f in fields(profile)]
+        expression='CompiledWorkflowAcquisitionProfile('+', '.join(arguments)+')'
+        if mapping_sha256 is not None:expression='CompiledWorkflowQualificationProfile('+expression+', '+repr(mapping_sha256)+')'
+        rendered.append(repr(component_id)+': '+expression)
+    value=update_profile
+    if (type(value) is not dict or value.get('schema')!=1 or value.get('initial_prior') is not None
+            or value.get('enable_training_baseline') is not True
+            or value.get('trust_hex')!=cohort[0].hex() or value.get('trust_sha256')!=cohort[1]
+            or value.get('channel')!=cohort[2] or value.get('channel')!='beta'
+            or value.get('transport_id')!=('sealed-local-qualification' if mapping_sha256 is not None else 'github-release-assets-https')):
+        raise ValueError('workflow_child_stock_profile_binding_required')
+    _trust(cohort[0]);report=_json(bytes.fromhex(value.get('stock_review_hex','')),'workflow stock review')
+    if (report.get('status')!='stock_cli_native_qualified' or report.get('stock_version')!='1.2.161'
+            or report.get('updater_sha256')!=value.get('updater_sha256')
+            or report.get('platform')!={'os':'windows','architecture':'x86_64'}
+            or report.get('hook_mode')!='All' or report.get('elevation_mode')!='none'
+            or report.get('exact_full_package_apply') is not True
+            or report.get('prerequisites_verified') is not True or not report.get('evidence_refs')):
+        raise ValueError('workflow_genuine_stock_review_required')
+    imports=('from core.component_acquisition import ExactComponentOffer, ExactOfferAsset\n'
+        'from suite_core.installation import ComponentId\n'
+        'from suite_core.manager.workflow_acquisition_binding import CompiledWorkflowAcquisitionProfile, CompiledWorkflowQualificationProfile\n')
+    result={config:(imports+replace(text,node,'PROFILES = MappingProxyType({'+', '.join(rendered)+'})')).encode()}
+    result['suite_core/manager/compiled_update_config.py']=(render_qualification_update_config(value,include_prior=False,mapping_sha256=mapping_sha256)
+        if mapping_sha256 is not None else render_compiled_update_config(value,include_prior=False)).encode()
+    return result
+
+
 def render_compiled_update_config(value, *, include_prior=False):
     """Render only reviewed public JSON data into the fixed trusted template."""
     required={'schema','trust_hex','trust_sha256','channel','transport_id','initial_prior',

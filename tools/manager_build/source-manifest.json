@@ -2513,8 +2513,8 @@
     },
     {
       "path": "qt_app/help_content.py",
-      "bytes": 610413,
-      "sha256": "52bf6c07c6156aff76a4b123f4f783f5835180720061750bf1f2e775a41dcfbe"
+      "bytes": 610515,
+      "sha256": "0a09482db05596ad7703975dec3f8c8b09b873a5f8be817294560a247fed6acd"
     },
     {
       "path": "qt_app/history_domain_panel.py",
@@ -3728,18 +3728,18 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 231650,
-      "sha256": "d94c91da68db24be2d2fcc7b9d66e82ca744c709b3efa9826019ba958df1df19"
+      "bytes": 231624,
+      "sha256": "30b00d502f80d94ba6f48a8a8d1f762257d98d54ecfc5f486da8a06090a5d258"
     },
     {
       "path": "suite_core/manager/workflow_acquisition_binding.py",
-      "bytes": 14264,
-      "sha256": "7903a6f20dbd2db32cb424768ebe8581cb18246eb3fa373e6761a567f67fcfcd"
+      "bytes": 16165,
+      "sha256": "a0ec1c3e3fd568cb954e4e4ed35894f70b16bf38bbcd0c0c1ce821daef4cf597"
     },
     {
       "path": "suite_core/manager/workflow_applications_ui.py",
-      "bytes": 15159,
-      "sha256": "0ee5c2afcd06a6be65a8dbba41c365667e87219960daed7733772cad815b06d7"
+      "bytes": 15582,
+      "sha256": "8022af345669283a171b7fada7c7cb3fef217086f6e6bd3ee2d04d90a345c351"
     },
     {
       "path": "suite_core/media_examples.py",

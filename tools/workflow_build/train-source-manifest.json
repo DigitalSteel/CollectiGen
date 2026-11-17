@@ -2448,8 +2448,8 @@
     },
     {
       "path": "qt_app/help_content.py",
-      "bytes": 610413,
-      "sha256": "52bf6c07c6156aff76a4b123f4f783f5835180720061750bf1f2e775a41dcfbe"
+      "bytes": 610515,
+      "sha256": "0a09482db05596ad7703975dec3f8c8b09b873a5f8be817294560a247fed6acd"
     },
     {
       "path": "qt_app/history_domain_panel.py",
@@ -3288,8 +3288,8 @@
     },
     {
       "path": "suite_core/manager/krea_training_review.py",
-      "bytes": 72543,
-      "sha256": "93c1e4716f6ab08f8111f61f5787f3dd9e7cd232326a7a0a79765be26ca21521"
+      "bytes": 74991,
+      "sha256": "5bdc32717bf467fb15bd67b8669faacdcc8a4cc5731c30ced9023370aaf898d2"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",
@@ -3443,8 +3443,8 @@
     },
     {
       "path": "suite_core/train/surface.py",
-      "bytes": 5245,
-      "sha256": "23488513b93d587367bcf059b97c18285bebc5bd449bc1c57b3608325e4eb879"
+      "bytes": 5365,
+      "sha256": "90b22c85b12d8919aeea67efe7ee0f8b225cf7293d05d02b13272bdd1edc2bed"
     },
     {
       "path": "suite_core/train/version.py",
@@ -3503,8 +3503,8 @@
     },
     {
       "path": "suite_core/workflow_modules/window.py",
-      "bytes": 19509,
-      "sha256": "0dd3f6e49aad1bd7fae62c33a8b18dee797df49a5a136aa7babb9394c0ea92aa"
+      "bytes": 19493,
+      "sha256": "f2e26e45b3996247b91537f05bb4d76d0d8bf39fc29c7d5482d401d5cf42f22b"
     },
     {
       "path": "suite_core/workflow_modules/worker_runtime.py",

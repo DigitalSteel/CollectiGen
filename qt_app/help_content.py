@@ -922,7 +922,7 @@ In Suite Manager's **Applications**, choose **Open Train**, then **Open Training
 
 ## 3. Review results
 
-Use **Continue Review** for a review already open. **Saved Runs…** reopens saved runs and results; **More… → Saved Preparations…** reopens a prepared run. **Training Experiments…** retains comparisons and planning choices. **Compare Samples…** compares saved samples or prepares a generation comparison. A completed run or a numerical measurement does not establish visual quality.
+Use **Continue Review** for a review already open. In the Train app, **Saved Preparations…** reopens prepared datasets; **More… → Saved Runs…** reopens runs and results. Other Training views retain their Saved Runs and More → Saved Preparations controls. **Training Experiments…** retains comparisons and planning choices. **Compare Samples…** compares saved samples or prepares a generation comparison. A completed run or a numerical measurement does not establish visual quality.
 
 ## Return and recover
 

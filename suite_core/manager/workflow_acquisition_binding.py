@@ -47,6 +47,29 @@ class CompiledWorkflowAcquisitionProfile:
 
 
 @dataclass(frozen=True)
+class CompiledWorkflowQualificationProfile:
+    """Build-only sealed transport over ordinary policy; no native/stage grant."""
+    production: CompiledWorkflowAcquisitionProfile
+    mapping_sha256: str
+
+    def __post_init__(self):
+        if (type(self.production) is not CompiledWorkflowAcquisitionProfile
+                or type(self.mapping_sha256) is not str
+                or re.fullmatch('[0-9a-f]{64}', self.mapping_sha256) is None):
+            raise ValueError('typed_sealed_workflow_profile_required')
+
+
+def _check_qualification_session(profile, session):
+    from core.manager_update_host import SealedLocalQualificationOpener
+    update = getattr(session, 'update_profile', None)
+    expected = SealedLocalQualificationOpener(profile.mapping_sha256).transport_id
+    if (type(update) is not dict or update.get('transport_id') != expected
+            or update.get('trust_sha256') != profile.production.trust_sha256
+            or update.get('channel') != profile.production.channel):
+        raise ValueError('original_sealed_workflow_profile_binding_required')
+
+
+@dataclass(frozen=True)
 class CompiledWorkflowCandidateAcquisitionProfile:
     """Exact isolated evaluation offer, carrying no completed qualification claim."""
     component_id: str
@@ -93,13 +116,13 @@ def _profile(component_id):
         raise ValueError('mixed_workflow_admission_refused')
     if component_id in PROFILES:
         profile = PROFILES[component_id]
-        expected = CompiledWorkflowAcquisitionProfile
+        expected = (CompiledWorkflowAcquisitionProfile, CompiledWorkflowQualificationProfile)
     elif component_id in CANDIDATE_PROFILES:
         profile = CANDIDATE_PROFILES[component_id]
-        expected = CompiledWorkflowCandidateAcquisitionProfile
+        expected = (CompiledWorkflowCandidateAcquisitionProfile,)
     else:
         return None
-    if type(profile) is not expected or profile.component_id != component_id:
+    if type(profile) not in expected or (profile.production if type(profile) is CompiledWorkflowQualificationProfile else profile).component_id != component_id:
         raise ValueError('typed_compiled_workflow_profile_required')
     return profile
 
@@ -150,15 +173,19 @@ class WorkflowStageOwner:
 
 
 def factory_for_session(session, component_id):
-    profile = _profile(component_id)
-    if profile is None:
+    configured = _profile(component_id)
+    if configured is None:
         return None
+    qualification = configured if type(configured) is CompiledWorkflowQualificationProfile else None
+    profile = qualification.production if qualification is not None else configured
     from .bootstrap_entry import NormalEntrySession
     if type(session) is not NormalEntrySession or session.state not in {'offered', 'ready'}:
         raise ValueError('original_native_normal_session_required')
     if getattr(session, 'workflow_contract_version', 0) != 1:
         return None  # Manager-only update cannot upgrade the original launcher.
     _check_candidate(profile, session.admitted.layout.code_root, session.admitted.layout.data_root)
+    if qualification is not None:
+        _check_qualification_session(qualification, session)
     def create(reader_owner, settings_path, *, workspace_owner):
         from uuid import uuid4
         from core.component_acquisition import ComponentAcquisition
@@ -179,6 +206,8 @@ def factory_for_session(session, component_id):
         _check_candidate(profile, session.admitted.layout.code_root, session.admitted.layout.data_root)
         def assert_workspace_idle():
             _check_candidate(profile, session.admitted.layout.code_root, session.admitted.layout.data_root)
+            if qualification is not None:
+                _check_qualification_session(qualification, session)
             workspace_owner.assert_idle()
         stage = WorkflowStageOwner(session, reader_owner, component_id,
                                    assert_workspace_idle=assert_workspace_idle)
@@ -186,9 +215,10 @@ def factory_for_session(session, component_id):
         guard(cache)
         cache.mkdir(parents=True, exist_ok=False)
         candidate = type(profile) is CompiledWorkflowCandidateAcquisitionProfile
-        if candidate:
+        if candidate or qualification is not None:
             from core.manager_update_host import SealedLocalQualificationOpener
-            opener = SealedLocalQualificationOpener(profile.mapping_sha256,
+            mapping_pin = profile.mapping_sha256 if candidate else qualification.mapping_sha256
+            opener = SealedLocalQualificationOpener(mapping_pin,
                 session.admitted.layout.code_root, (component_id,))
         else:
             opener = ComponentReleaseTransport(ReleaseTransportPolicy(profile.asset_redirect_origins))
@@ -201,6 +231,7 @@ def factory_for_session(session, component_id):
         service = WorkflowInstallation(component_id, acquisition, WorkflowConnectionStore(settings_path, component_id),
                     admission=ComponentStageAdmission(stage.hold), native_owner=workspace_owner)
         service.candidate_admission = profile.admission if candidate else None
+        service.qualification_only = qualification is not None
         return service, ResourceExecutorOwner()
     return create
 
@@ -215,6 +246,8 @@ def root_selection_for_owner(owner, admitted, component_id):
     profile = _profile(component_id)
     if profile is None:
         return None
+    if type(profile) is CompiledWorkflowQualificationProfile:
+        profile = profile.production
     if (type(owner) is not DeploymentOwner or owner.root != admitted.layout.code_root
             or owner.data_root != admitted.layout.data_root):
         raise ValueError('original_workflow_roots_required')

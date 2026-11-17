@@ -25,11 +25,15 @@ class WorkflowAcquisitionPanel(EncyclopediaAcquisitionPanel):
         self.recovery_confirm.setText('Restore the previous app state and connection. Keep saved drafts, runs and images.')
 
     def scope_text(self):
+        if getattr(self.service, 'qualification_only', False):
+            return 'Qualification build. Review this signed local ' + self.label + ' fixture. This is not a public update; saved workflow data stays separate.'
         if getattr(self.service, 'candidate_admission', None) is not None:
             return 'Evaluate this exact ' + self.label + ' candidate in its isolated suite. This is not a public update; saved workflow data stays separate.'
         return 'Install or update ' + self.label + ' from a verified GitHub release. Review and confirm changes; saved workflow data stays separate.'
 
     def initial_status_text(self):
+        if getattr(self.service, 'qualification_only', False):
+            return 'Qualification fixture. Find ' + self.label + ' checks sealed local release evidence. No GitHub download is enabled.'
         if getattr(self.service, 'candidate_admission', None) is not None:
             return 'Evaluation candidate. Find ' + self.label + ' checks the sealed local release evidence. No GitHub download is enabled.'
         return 'Choose Find ' + self.label + ' to review signed releases. Opening this window downloads nothing.'

@@ -313,6 +313,63 @@ def pe_x64(raw):
             and struct.unpack_from('<H', raw, offset + 24)[0] == 0x20b, 'windows_x64_pe_required')
 
 
+
+def canonical_workflow_production_renderer(raw, pins):
+    """Admit the finite ordinary workflow renderer and existing stock helpers."""
+    try:
+        functions=[node for node in ast.parse(raw).body if isinstance(node,ast.FunctionDef)
+                   and node.name=='render_workflow_production_configs']
+    except SyntaxError as error:
+        raise BuildHold('invalid_workflow_production_renderer') from error
+    require(len(functions)==1 and digest(ast.dump(functions[0],include_attributes=False).encode())
+            ==pins.get('workflow_production_renderer_ast_sha256'),
+            'canonical_workflow_production_renderer_changed')
+    namespace={'ast':ast,'re':re}
+    namespace.update(canonical_update_renderers(raw,pins))
+    exec(compile(ast.Module(body=functions,type_ignores=[]),'<canonical-workflow-production>','exec'),namespace)
+    return namespace['render_workflow_production_configs']
+
+
+def workflow_production_identity(document, output):
+    """Validate producer facts; neither this document nor a pin grants execution."""
+    from suite_core.discovery.component_release_signature import _trust, _version
+    from suite_core.workflow_modules.compiled_admission import CompiledWorkflowAdmission
+    require(type(document) is dict and type(document.get('schema')) is int and document['schema']==1,
+            'exact_workflow_production_document_required')
+    trust_hex=document.get('trust_hex')
+    require(type(trust_hex) is str and len(trust_hex)<=131072,
+            'bounded_workflow_production_trust_required')
+    try:trust=bytes.fromhex(trust_hex)
+    except ValueError as error:raise BuildHold('workflow_production_trust_invalid') from error
+    _trust(trust)
+    require(digest(trust)==document.get('trust_sha256'),'workflow_production_trust_changed')
+    if document.get('kind')=='workflow-module-production':
+        expected={'schema','kind','trust_hex','component_id','software_version','trust_sha256',
+            'minimum_manager_version','maximum_manager_version_exclusive',
+            'native_entry_qualification_sha256','workspace_contract_version'}
+        require(set(document)==expected,'exact_workflow_module_document_required')
+        values={k:v for k,v in document.items() if k not in {'schema','kind','trust_hex'}}
+        policy=CompiledWorkflowAdmission(trust_bytes=trust,**values)
+        policy.validate(document['component_id'])
+        return policy
+    require(set(document)=={'schema','kind','suite_root','manager_version','trust_hex',
+            'trust_sha256','mapping_sha256','profiles_sha256'}
+            and document['kind'] in {'workflow-qualification','workflow-production'},
+            'exact_workflow_manager_document_required')
+    require(Path(document['suite_root'])==output/'Suite' and Path(document['suite_root']).is_absolute(),
+            'exact_workflow_manager_identity_required')
+    _version(document['manager_version'])
+    require(type(document['profiles_sha256']) is str
+            and re.fullmatch('[0-9a-f]{64}',document['profiles_sha256']),
+            'workflow_generated_profile_pin_required')
+    mapping=document['mapping_sha256']
+    require((document['kind']=='workflow-production' and mapping is None)
+            or (document['kind']=='workflow-qualification' and type(mapping) is str
+                and re.fullmatch('[0-9a-f]{64}',mapping)),
+            'unmixed_workflow_transport_required')
+    return _ManagerBaselineIdentity(output/'Suite',document['manager_version'],trust,document['trust_sha256'])
+
+
 def verify_working(stage, config, metadata):
     for row in config.get('candidate_input_rows', ()):
         check_row(stage.parent / 'candidate-inputs' / row['path'], row)
@@ -468,13 +525,22 @@ def candidate_render_inputs(admission, *, component, sources, software_version, 
 
 
 def seal_candidate_inputs(output, stage, config, sources, generated, admission, *, mapping_sha256=None,
-                          renderer_raw=None, organizer_qualification=None):
+                          renderer_raw=None, organizer_qualification=None, workflow_production=None):
     """Keep original admitted bytes separately; seal generated working identities."""
-    if admission is None and organizer_qualification is None:
+    kinds=sum(value is not None for value in (admission,organizer_qualification,workflow_production))
+    if kinds==0:
         require(not generated, 'candidate_generated_sources_without_admission')
         return {}
-    require(admission is None or organizer_qualification is None, 'unmixed_qualification_kind_required')
-    if organizer_qualification is not None:
+    require(kinds==1, 'unmixed_qualification_kind_required')
+    if workflow_production is not None:
+        identity=workflow_production_identity(workflow_production,output)
+        require(mapping_sha256==workflow_production.get('mapping_sha256'),
+                'workflow_production_transport_changed')
+        if workflow_production['kind']!='workflow-module-production':
+            require(workflow_production['profiles_sha256']==digest(json_bytes({name:digest(raw) for name,raw in sorted(generated.items())})),
+                    'workflow_production_profiles_changed')
+        inputs={'workflow-production.json':json_bytes(workflow_production)}
+    elif organizer_qualification is not None:
         identity = organizer_qualification_identity(organizer_qualification, output)
         require(identity.suite_root == output / 'Suite' and mapping_sha256 == organizer_qualification['mapping_sha256'],
                 'organizer_qualification_scope_changed')
@@ -501,9 +567,10 @@ def seal_candidate_inputs(output, stage, config, sources, generated, admission, 
     for name, raw in sorted(inputs.items()):
         write_new(output / 'candidate-inputs' / name, raw)
         config['candidate_input_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
-    return {'document_sha256': (digest(inputs['organizer-qualification.json']) if organizer_qualification is not None
+    return {'document_sha256': (digest(inputs['workflow-production.json']) if workflow_production is not None else
+                               digest(inputs['organizer-qualification.json']) if organizer_qualification is not None
                               else admission.document_sha256),
-            'trust_sha256': identity.trust_sha256 if organizer_qualification is not None else admission.trust_sha256,
+            'trust_sha256': identity.trust_sha256 if organizer_qualification is not None or workflow_production is not None else admission.trust_sha256,
             'mapping_sha256': mapping_sha256, 'generated_sources': identities,
             'input_rows': config['candidate_input_rows'], 'status': 'pending'}
 
@@ -541,7 +608,11 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
                        training_worker_inventory_sha256=None, candidate_admission=None,
                        candidate_mapping_sha256=None, candidate_offers=None,
                        candidate_child_only=False, candidate_update_profile=None,
-                       organizer_qualification_mapping_sha256=None, organizer_qualification_update_profile=None):
+                       organizer_qualification_mapping_sha256=None, organizer_qualification_update_profile=None,
+                       workflow_profiles=None, workflow_update_profile=None,
+                       workflow_qualification_mapping_sha256=None):
+    workflow_only=any(value is not None for value in
+        (workflow_profiles,workflow_update_profile,workflow_qualification_mapping_sha256))
     organizer_only = (organizer_qualification_mapping_sha256 is not None
                       or organizer_qualification_update_profile is not None)
     if organizer_only:
@@ -553,9 +624,19 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
                 and type(organizer_qualification_update_profile) is dict
                 and training_worker_root is not None and training_worker_inventory_sha256 is not None,
                 'complete_organizer_qualification_build_required')
-    deferred_child = candidate_child_only or organizer_only
-    child_update_profile = organizer_qualification_update_profile if organizer_only else candidate_update_profile
-    mapping_pin = organizer_qualification_mapping_sha256 if organizer_only else candidate_mapping_sha256
+    if workflow_only:
+        require(not organizer_only and candidate_admission is None and candidate_mapping_sha256 is None
+                and candidate_offers is None and candidate_child_only is False and candidate_update_profile is None,
+                'unmixed_workflow_production_build_required')
+        require(type(workflow_profiles) is dict and 0<len(workflow_profiles)<=2
+                and type(workflow_update_profile) is dict and training_worker_root is not None
+                and training_worker_inventory_sha256 is not None,
+                'complete_workflow_production_build_required')
+    deferred_child = candidate_child_only or organizer_only or workflow_only
+    child_update_profile = (workflow_update_profile if workflow_only else
+        organizer_qualification_update_profile if organizer_only else candidate_update_profile)
+    mapping_pin = (workflow_qualification_mapping_sha256 if workflow_only else
+        organizer_qualification_mapping_sha256 if organizer_only else candidate_mapping_sha256)
     require(type(candidate_child_only) is bool, 'explicit_candidate_child_only_flag_required')
     require(candidate_admission is None or candidate_child_only,
             'workflow_candidate_requires_deferred_signed_baseline')
@@ -600,6 +681,19 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
             manager_version=receipt['software_version'],trust_hex=child_update_profile['trust_hex'],
             trust_sha256=child_update_profile['trust_sha256'],mapping_sha256=mapping_pin)
         organizer_qualification_identity(organizer_document, output)
+    workflow_document=None
+    if workflow_only:
+        require(child_update_profile.get('stock_review_sha256')==profile.get('candidate_stock_review_sha256'),
+                'pinned_genuine_workflow_stock_review_required')
+        generate=canonical_workflow_production_renderer(renderer_raw,profile)
+        candidate_sources=generate(component='manager',source_bytes=sources,profiles=workflow_profiles,
+            update_profile=child_update_profile,mapping_sha256=mapping_pin)
+        first=next(iter(workflow_profiles.values()))
+        workflow_document=dict(schema=1,kind='workflow-qualification' if mapping_pin is not None else 'workflow-production',
+            suite_root=str(output/'Suite'),manager_version=receipt['software_version'],trust_hex=first.trust_bytes.hex(),
+            trust_sha256=first.trust_sha256,mapping_sha256=mapping_pin,
+            profiles_sha256=digest(json_bytes({name:digest(raw) for name,raw in sorted(candidate_sources.items())})))
+        workflow_production_identity(workflow_document,output)
     render = canonical_renderer(renderer_raw, profile['root_entry_ast_sha256'],
                                 helper_pins=profile if child_update_profile is not None else None)
     unbound = render()
@@ -632,7 +726,7 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         write_new(stage / name, raw)
     candidate_seal = seal_candidate_inputs(output, stage, config, sources, candidate_sources,
         candidate_admission, mapping_sha256=mapping_pin, renderer_raw=renderer_raw,
-        organizer_qualification=organizer_document)
+        organizer_qualification=organizer_document, workflow_production=workflow_document)
     if child_update_profile is not None:
         raw = json_bytes(child_update_profile)
         write_new(output / 'candidate-inputs/child-update-profile.json', raw)
@@ -642,7 +736,8 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         'root_renderer_sha256': digest(renderer_raw), 'public_inventory_sha256': receipt['public_inventory_sha256'],
         'training_worker_inventory_sha256': training_worker_inventory_sha256,
         **({'workflow_candidate': candidate_seal} if candidate_admission is not None else {}),
-        **({'organizer_qualification': candidate_seal} if organizer_only else {})}))
+        **({'organizer_qualification': candidate_seal} if organizer_only else {}),
+        **({'workflow_production': candidate_seal} if workflow_only else {})}))
     set_root_entry(stage, config, unbound)
     try:
         verify_working(stage, config, metadata)
@@ -764,7 +859,7 @@ def load_candidate_child_checkpoint(output, checkpoint_sha256):
     return value, inputs, profile, metadata, child, package_raw
 
 
-def verify_candidate_signed_baseline(admission, update_profile, recovery_root, child, child_inventory):
+def verify_candidate_signed_baseline(admission, update_profile, recovery_root, child, child_inventory, *, qualification=True):
     """Use the stock signed detached verifier on the actual current child."""
     from core.workflow_candidate_admission import CandidateWorkflowAdmission
     from suite_core.discovery.manager_runtime_detached_admission import admit_checkpointed_baseline, manager_inventory_json, PACKAGE_STUB
@@ -772,9 +867,11 @@ def verify_candidate_signed_baseline(admission, update_profile, recovery_root, c
     import zipfile
     require(type(admission) in (CandidateWorkflowAdmission, _ManagerBaselineIdentity),
             'typed_manager_baseline_identity_required')
+    require(type(qualification) is bool,'explicit_baseline_transport_kind_required')
     require(type(update_profile) is dict and update_profile.get('trust_hex') == admission.trust_bytes.hex()
         and update_profile.get('trust_sha256') == admission.trust_sha256
-        and update_profile.get('channel') == 'beta' and update_profile.get('transport_id') == 'sealed-local-qualification'
+        and update_profile.get('channel') == 'beta'
+        and update_profile.get('transport_id') == ('sealed-local-qualification' if qualification else 'github-release-assets-https')
         and update_profile.get('enable_training_baseline') is True, 'candidate_baseline_profile_changed')
     prior = update_profile.get('initial_prior')
     require(type(prior) is dict and prior.get('version') == admission.manager_version
@@ -824,15 +921,30 @@ def finalize_candidate_distribution(output, *, child_checkpoint_sha256, candidat
     output = unredirected(output)
     checkpoint, inputs, profile, metadata, child, package_raw = load_candidate_child_checkpoint(output, child_checkpoint_sha256)
     sealed = decode(read(output / 'SEALED_INPUTS.json'))
-    require(('workflow_candidate' in sealed) != ('organizer_qualification' in sealed),
+    require(sum(name in sealed for name in ('workflow_candidate','organizer_qualification','workflow_production'))==1,
             'unmixed_checkpoint_qualification_required')
     admission = None
     baseline_identity = None
+    qualification=True
+    baseline_document_name='organizer-qualification.json'
     if 'workflow_candidate' in sealed:
         seal = sealed['workflow_candidate']
         admission = CandidateWorkflowAdmission(read(output / 'candidate-inputs/document.json'), seal['document_sha256'],
             read(output / 'candidate-inputs/trust.json'), seal['trust_sha256']).validate()
         identity = admission
+    elif 'workflow_production' in sealed:
+        seal=sealed['workflow_production']
+        baseline_document_name='workflow-production.json'
+        document=decode(pinned(output/'candidate-inputs'/baseline_document_name,seal['document_sha256']))
+        require(document.get('kind') in {'workflow-production','workflow-qualification'},
+                'workflow_manager_checkpoint_required')
+        baseline_identity=workflow_production_identity(document,output)
+        qualification=document['kind']=='workflow-qualification'
+        require(document['mapping_sha256']==checkpoint['mapping_sha256']==seal['mapping_sha256']
+                and baseline_identity.manager_version==checkpoint['receipt']['software_version']
+                and baseline_identity.trust_sha256==seal['trust_sha256'],
+                'workflow_checkpoint_identity_changed')
+        identity=baseline_identity
     else:
         seal = sealed['organizer_qualification']
         document = decode(pinned(output / 'candidate-inputs/organizer-qualification.json', seal['document_sha256']))
@@ -850,12 +962,12 @@ def finalize_candidate_distribution(output, *, child_checkpoint_sha256, candidat
                 == {k:v for k,v in child_profile.items() if k != 'initial_prior'},
             'candidate_root_child_profile_changed')
     retained, generated, baseline_evidence = verify_candidate_signed_baseline(identity, candidate_update_profile, recovery_root,
-                                                                            child, checkpoint['child_inventory'])
+        child, checkpoint['child_inventory'], **({} if qualification else {'qualification':False}))
     renderer_raw = inputs['renderer.py']
     render = canonical_renderer(renderer_raw, profile['root_entry_ast_sha256'], helper_pins=profile)
     # Validate the complete Root rendering before writing continuation inputs.
     render(digest(package_raw), candidate_admission=admission, compiled_update_profile=True,
-        compiled_profile_input=candidate_update_profile, qualification_test_build=True,
+        compiled_profile_input=candidate_update_profile, qualification_test_build=qualification,
         qualification_mapping_sha256=checkpoint['mapping_sha256'])
     child_config = decode(json_bytes(checkpoint['config']))
     config = checkpoint['config']; stage = output / 'stage'
@@ -879,7 +991,7 @@ def finalize_candidate_distribution(output, *, child_checkpoint_sha256, candidat
         candidate_admission=admission, training_worker_inventory_sha256=checkpoint['training_worker_inventory_sha256'],
         candidate_update_profile=candidate_update_profile, qualification_mapping_sha256=checkpoint['mapping_sha256'],
         retained_files={**retained, **generated}, baseline_evidence=baseline_evidence,
-        baseline_identity=baseline_identity)
+        baseline_identity=baseline_identity,baseline_document_name=baseline_document_name)
 
 
 def set_root_entry(stage, config, text):
@@ -894,10 +1006,13 @@ def set_root_entry(stage, config, text):
 
 def _finish_manager_distribution(*, output, stage, config, metadata, interpreter, environment, child, child_inventory, child_config, package, package_raw, package_pin, source_stage, stage_sha256, manifest_raw, inventory_raw, receipt, profile, renderer_raw, render, unbound, candidate_admission, training_worker_inventory_sha256,
         candidate_update_profile=None, qualification_mapping_sha256=None, retained_files=None, baseline_evidence=None,
-        baseline_identity=None):
+        baseline_identity=None,baseline_document_name='organizer-qualification.json'):
+    require(baseline_document_name in {'organizer-qualification.json','workflow-production.json'},
+            'finite_baseline_document_required')
     bound_root = (render(package_pin, candidate_admission=candidate_admission,
         compiled_update_profile=True, compiled_profile_input=candidate_update_profile,
-        qualification_test_build=True, qualification_mapping_sha256=qualification_mapping_sha256)
+        qualification_test_build=qualification_mapping_sha256 is not None,
+        qualification_mapping_sha256=qualification_mapping_sha256)
         if candidate_update_profile is not None else
         render(package_pin, candidate_admission=candidate_admission)
                   if candidate_admission is not None else render(package_pin))
@@ -911,7 +1026,7 @@ def _finish_manager_distribution(*, output, stage, config, metadata, interpreter
             config['candidate_input_rows'].append({'path': name, 'bytes': len(raw), 'sha256': digest(raw)})
         write_new(output / 'CANDIDATE_ROOT_INPUTS.json', json_bytes({
             'document_sha256': (candidate_admission.document_sha256 if candidate_admission is not None else
-                digest(read(output / 'candidate-inputs/organizer-qualification.json'))),
+                digest(read(output / 'candidate-inputs' / baseline_document_name))),
             'manager_package_sha256': package_pin, 'root_renderer_sha256': digest(renderer_raw),
             'original_root_sha256': digest(unbound.encode()),
             'generated_root_sha256': digest(bound_root.encode()), 'status': 'pending'}))
@@ -1017,7 +1132,7 @@ def retain_workflow_manager_admission(suite_root, *, archive, manifest_bytes, si
 
 def build_workflow_distribution(source_stage, output, *, component, stage_sha256,
         public_inventory, interpreter, sdk_root, notice_root, source_manifest,
-    tool_inputs=HERE / 'tool-inputs.json', candidate_admission=None):
+    tool_inputs=HERE / 'tool-inputs.json', candidate_admission=None, workflow_admission=None):
     """Independent frozen module using the existing sealed producer and recipe.
 
     No Manager binary is copied/relabelled, no Root is built, no program is run,
@@ -1032,10 +1147,24 @@ def build_workflow_distribution(source_stage, output, *, component, stage_sha256
     receipt, _manifest, sources = validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw,
                                                   component=component)
     profile = decode(profile_raw)
-    candidate_renderer_raw = read(Path(__file__).with_name('prepare_manager_production_stage.py')) if candidate_admission is not None else None
+    require(candidate_admission is None or workflow_admission is None,'unmixed_workflow_module_build_required')
+    candidate_renderer_raw = read(Path(__file__).with_name('prepare_manager_production_stage.py')) if candidate_admission is not None or workflow_admission is not None else None
     candidate_sources = candidate_render_inputs(candidate_admission, component=component, sources=sources,
         software_version=receipt['software_version'], output=output, renderer_raw=candidate_renderer_raw,
         renderer_ast_sha256=profile.get('workflow_candidate_renderer_ast_sha256'))
+    workflow_document=None
+    if workflow_admission is not None:
+        from dataclasses import fields
+        from suite_core.workflow_modules.compiled_admission import CompiledWorkflowAdmission
+        require(type(workflow_admission) is CompiledWorkflowAdmission
+                and workflow_admission.software_version==receipt['software_version'],
+                'same_ordinary_workflow_version_required')
+        workflow_admission.validate('collectigen.'+component)
+        generate=canonical_workflow_production_renderer(candidate_renderer_raw,profile)
+        candidate_sources=generate(component=component,source_bytes=sources,admission=workflow_admission)
+        workflow_document={f.name:getattr(workflow_admission,f.name) for f in fields(workflow_admission) if f.name!='trust_bytes'}
+        workflow_document.update(schema=1,kind='workflow-module-production',trust_hex=workflow_admission.trust_bytes.hex())
+        workflow_production_identity(workflow_document,output)
     require(profile.get('schema') == 1 and set(profile.get('templates', {})) == TEMPLATES,
             'public_tool_profile_required')
     require(profile.get('msvc') == {'architecture': 'x64', 'minimum_version': '14.44.35211.0',
@@ -1065,12 +1194,13 @@ def build_workflow_distribution(source_stage, output, *, component, stage_sha256
     for path, raw in metadata.items():
         write_new(stage / path, raw)
     candidate_seal = seal_candidate_inputs(output, stage, config, sources, candidate_sources, candidate_admission,
-        renderer_raw=candidate_renderer_raw)
+        renderer_raw=candidate_renderer_raw, workflow_production=workflow_document)
     write_new(stage / 'STAGE.json', json_bytes(config))
     write_new(output / 'SEALED_INPUTS.json', json_bytes(dict(component=component,
         stage_sha256=stage_sha256, source_manifest_sha256=digest(manifest_raw),
         tool_inputs_sha256=digest(profile_raw), public_inventory_sha256=digest(inventory_raw),
-        **({'workflow_candidate': candidate_seal} if candidate_admission is not None else {}))))
+        **({'workflow_candidate': candidate_seal} if candidate_admission is not None else {}),
+        **({'workflow_production': candidate_seal} if workflow_admission is not None else {}))))
     try:
         verify_working(stage, config, metadata)
         require(len(pinned(interpreter, profile['python']['sha256'])) == profile['python']['bytes'],

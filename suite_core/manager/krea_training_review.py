@@ -2,6 +2,7 @@
 from functools import partial
 from pathlib import Path
 from threading import Event
+from time import monotonic
 
 from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
@@ -73,6 +74,9 @@ class KreaTrainingReviewDialog(QDialog):
         self._handoff_folder = None
         self._checking_dataset = False
         self._preparing_dataset = False
+        self._preparation_started = None
+        self._preparation_status_second = None
+        self._preparation_readiness = None
         self._prepared_folder = None
         self._retry_history_save = None
         self._saving_preparation = False
@@ -465,8 +469,18 @@ class KreaTrainingReviewDialog(QDialog):
 
     def _settle(self):
         if not self._future.done() or self._executor.close_held:
+            if self._preparing_dataset and not self._cancel.is_set():
+                elapsed=max(0,int(monotonic()-self._preparation_started))
+                if elapsed!=self._preparation_status_second:
+                    self._preparation_status_second=elapsed
+                    self.status.setText(f"Preparing the selected SDXL dataset · Elapsed {elapsed}s. Cancel Check and Return stops safely.")
             return
         self._timer.stop()
+        if self._preparing_dataset and self._preparation_readiness is not None:
+            self.sections[0].setPlainText(self._preparation_readiness)
+            self._preparation_readiness=None
+            self._preparation_started=None
+            self._preparation_status_second=None
         if self._cancel.is_set():
             super().reject()
             return
@@ -552,7 +566,8 @@ class KreaTrainingReviewDialog(QDialog):
                     self.anima_setup_button.setEnabled(self._anima_review_allowed())
                     self.status.setText("Anima preparation saved to History. Review Saved Training Runs to reopen it.")
                 else:
-                    self.status.setText("SDXL preparation saved to History. Training has not started.")
+                    self.status.setText("SDXL preparation saved. Open Saved Preparations in Train to review it later. Training has not started.")
+                    self._preparation_next_step("Return to Training, then choose Saved Preparations to review this saved dataset.")
             return
         if self._preparing_dataset:
             self._preparing_dataset = False
@@ -575,6 +590,7 @@ class KreaTrainingReviewDialog(QDialog):
                     self._retry_history_save = exc.retry
                     self.retry_history_button.setEnabled(True)
                     self.retry_history_button.show()
+                    self._preparation_next_step("Choose Retry Saving to History. The prepared workspace is retained; training has not started.")
             except Exception:
                 if self._package_review_cancelled():
                     self.prepare_button.setEnabled(False)
@@ -587,7 +603,8 @@ class KreaTrainingReviewDialog(QDialog):
                     self.status.setText("The selected trainer software is not ready for dataset preparation. Choose Prepare SDXL Dataset to review the folders.")
                 else:
                     self._show_prepared_workspace(
-                        plan.root, "SDXL dataset prepared in Manager’s Training workspace. Training has not started.")
+                        plan.root, "SDXL dataset prepared. Open Saved Preparations in Train to review it later. Training has not started.")
+                    self._preparation_next_step("Return to Training, then choose Saved Preparations to review this saved dataset. Trainer settings and model/hardware readiness remain separate checks.")
             return
         if self._checking_dataset:
             self._checking_dataset = False
@@ -946,6 +963,16 @@ class KreaTrainingReviewDialog(QDialog):
             button.setEnabled(False)
         self.status.setText(message)
 
+    def _preparation_next_step(self, message):
+        """Replace presentation guidance, preserving all readiness/evidence text."""
+        text=self.sections[0].toPlainText()
+        before,marker,after=text.partition("\nNext step\n")
+        _,separator,evidence=after.partition("\n\n")
+        if marker and separator:
+            self.sections[0].setPlainText(before+marker+message+separator+evidence)
+        else:
+            self.sections[0].appendPlainText("\nNext step\n"+message)
+
     def _open_adapter_preview(self):
         if (not self.adapter_button.isEnabled() or not self.adapter_button.isVisible() or self._checking_dataset
                 or self._adapter_preview is not None or self._cancel.is_set()):
@@ -1142,10 +1169,17 @@ class KreaTrainingReviewDialog(QDialog):
         self._retry_history_save = None
         self.retry_history_button.hide()
         self._preparing_dataset = True
+        self._preparation_started=monotonic()
+        self._preparation_status_second=0
+        self._preparation_readiness=self.sections[0].toPlainText()
+        # Preserve the exact readiness/evidence text for settlement. While busy,
+        # do not point users toward controls disabled by the original owner.
+        facts=self._preparation_readiness.split("\nNext step\n",1)[0]
+        self.sections[0].setPlainText(facts+"\n\nPreparation is running. Choose Cancel Check and Return to stop safely; keep this review open to finish.")
         for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
             action.setEnabled(False)
         self.return_button.setText("Cancel Check and Return")
-        self.status.setText("Preparing the selected SDXL dataset in the reviewed worker…")
+        self.status.setText("Preparing the selected SDXL dataset · Elapsed 0s. Cancel Check and Return stops safely.")
         self._timer.start(50)
 
     def _verify_dataset(self):

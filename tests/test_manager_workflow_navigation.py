@@ -363,3 +363,51 @@ def test_application_task_tabs_keep_workflows_clear_and_catalog_state(manager_wi
     assert manager.application_categories.isVisible()
     assert manager.library_search.text() == 'synthetic catalog query'
     capture('catalog-after-connection-return')
+
+
+@pytest.mark.parametrize('theme', ('dark', 'light'))
+def test_saved_preparations_default_and_saved_runs_expert_route(train_window, monkeypatch, theme):
+    from pathlib import Path
+    from qt_app.theme import apply_theme
+    from suite_core.tests.workflow_ui_fixtures import trigger_more
+    app, window = train_window
+    apply_theme(app, theme)
+    window.resize(1920, 1080)
+    calls = []
+    monkeypatch.setattr(window, 'open_training_history', lambda **kw: calls.append(kw))
+    assert window.surface.history.text() == 'Saved Preparations…'
+    QTest.mouseClick(window.surface.history, Qt.LeftButton)
+    assert calls == [{'preparations': True}]
+    trigger_more(window, 'Saved Runs…')
+    assert calls == [{'preparations': True}, {}]
+    assert window.surface.open_package.property('primary')
+    app.processEvents()
+    out=Path('D:/CollectiGen-Dev/.tmp/workflow-portable-delivery-20261117/ui-captures')
+    out.mkdir(parents=True, exist_ok=True)
+    assert window.grab().save(str(out/(theme+'-train-entry.png')))
+    window.surface.set_status('Preparing selected dataset', busy=True)
+    assert not window.surface.history.isEnabled()
+    window.surface.set_status('Preparation saved', busy=False)
+    assert window.surface.history.isEnabled()
+
+
+def test_preparation_progress_and_guidance_preserve_evidence_and_cancel(monkeypatch):
+    from threading import Event
+    from PySide6.QtWidgets import QLabel, QPlainTextEdit
+    from suite_core.manager import krea_training_review as review
+    app=QApplication.instance() or QApplication([])
+    evidence='Readiness facts\nNext step\nDisabled old action\n\nExact evidence: synthetic-pinned'
+    section=QPlainTextEdit();section.setPlainText(evidence)
+    state=NS(sections=[section])
+    review.KreaTrainingReviewDialog._preparation_next_step(state, 'Open Saved Preparations')
+    assert section.toPlainText()=='Readiness facts\nNext step\nOpen Saved Preparations\n\nExact evidence: synthetic-pinned'
+    state=NS(_future=NS(done=lambda:False), _executor=NS(close_held=True),
+        _preparing_dataset=True, _cancel=Event(), _preparation_started=10.0,
+        _preparation_status_second=0, status=QLabel())
+    monkeypatch.setattr(review, 'monotonic', lambda:17.5)
+    review.KreaTrainingReviewDialog._settle(state)
+    assert 'Elapsed 7s' in state.status.text() and 'Cancel Check and Return' in state.status.text()
+    state._cancel.set();state.status.setText('Stopping safely')
+    monkeypatch.setattr(review, 'monotonic', lambda:25.0)
+    review.KreaTrainingReviewDialog._settle(state)
+    assert state.status.text()=='Stopping safely'

@@ -96,6 +96,7 @@ class WorkflowWindow(WorkflowMethods, QMainWindow):
             self.surface.package_requested.connect(self.open_krea_training_review)
             self.surface.draft_requested.connect(self.open_training_draft)
             self.surface.history_requested.connect(self.open_training_history)
+            self.surface.preparations_requested.connect(lambda: self.open_training_history(preparations=True))
             self.surface.comparison_requested.connect(self.open_training_comparison)
             self.surface.experiments_requested.connect(self.open_training_experiments)
             self.surface.interrupted_package_requested.connect(self.review_interrupted_training_package)
@@ -104,7 +105,6 @@ class WorkflowWindow(WorkflowMethods, QMainWindow):
             self.training_open_review_button = self.surface.continue_review
             self.surface.more.menu().addAction('Set Up Trainer…', self.open_existing_trainer_setup)
             self.surface.more.menu().addAction('Inspect or Merge LoRA…', self.open_training_merge)
-            self.surface.more.menu().addAction('Saved Preparations…', lambda: self.open_training_history(preparations=True))
             self.surface.more.menu().addAction('Export Training Draft…', lambda: self.export_training_experiment_draft())
             self.training_package_recovery_button = next(action for action in self.surface.more.menu().actions()
                 if action.text() == 'Review Interrupted Package…')
