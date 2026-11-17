@@ -255,14 +255,31 @@ class WorkflowControlActor:
                 self._dispatch(frame)
                 return True
             except BaseException as error:
-                if (str(error) in {'control_channel_eof', 'control_channel_eof_or_unavailable',
-                                   'original_workflow_child_peer_lost'}
+                channel = self.control.channel
+                fault = channel.read_fault
+                if (isinstance(error, LaunchHold)
+                        and str(error) in {'control_channel_eof', 'control_channel_eof_or_unavailable'}
+                        and self.phase == 'receive'
+                        and self.state == 'drain-reported' and self.local_drain_claimed
+                        and getattr(channel, '_read_progress', None) == 0
+                        and type(fault) is dict and type(fault.get('bytes_received')) is int
+                        and fault['bytes_received'] == 0 and self.wire.received_pending is None
+                        and channel.write_fault is None):
+                    try:
+                        self._original()
+                    except BaseException as scope_error:
+                        self._hold(scope_error)
+                        raise
+                    # The acknowledged child may close its pipe before exiting.
+                    # Retain the fault and await original process/Job/output and
+                    # accounting settlement; neither health nor lease is released.
+                    self.state = 'awaiting-native-drain'
+                    return False
+                if (str(error) == 'original_workflow_child_peer_lost'
                         and self.state == 'drain-reported' and self.local_drain_claimed
                         and self.control.channel.api.WaitForSingleObject(self.child._handle, 0) == 0
                         and self.child.poll() is not None):
-                    # Child may exit between the live check and pipe read after
-                    # its drain ACK. Retain the EOF evidence and require actual
-                    # native settlement; this is never EOF alone as success.
+                    # Keep actual child exit distinct from terminal pipe EOF.
                     self.state = 'awaiting-native-drain'
                     return False
                 self._hold(error)

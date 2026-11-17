@@ -225,16 +225,20 @@ def test_settings_return_records_exact_draft_without_releasing_writer(route):
     assert f.native.helper_accounting_held and f.slot['phase'] == 'registered'
 
 
-def test_acknowledged_drain_exit_during_read_retains_native_settlement(route, monkeypatch):
+@pytest.mark.parametrize('exited', [False, True])
+def test_acknowledged_drain_exit_during_read_retains_native_settlement(route, monkeypatch, exited):
     f = route
     ready(f)
     f.request('workflow-closing')
     f.actor.handle_next()
     f.request('workflow-drained-report', {'local_drained': True})
     f.actor.handle_next()
+    reads = []
     def exit_during_read(_channel, timeout=1, *, idle_timeout=None):
-        f.api.waits[102] = 0
-        f.job.poll = lambda: 0
+        reads.append(True)
+        if exited:
+            f.api.waits[102] = 0
+            f.job.poll = lambda: 0
         f.channel.read_fault = {'bytes_received': 0, 'reason': 'LaunchHold'}
         raise LaunchHold('control_channel_eof_or_unavailable')
     monkeypatch.setattr(WindowsControlChannel, 'read_frame', exit_during_read)
@@ -242,6 +246,96 @@ def test_acknowledged_drain_exit_during_read_retains_native_settlement(route, mo
     assert f.actor.waiting_for_native_drain and f.actor.error is None
     assert not f.actor.is_drained and f.native.helper_accounting_held
     assert f.channel.read_fault is not None
+    assert f.actor.handle_next() is False and len(reads) == 1
+    assert not f.actor.grant_release_authorized
+    with pytest.raises(RuntimeError, match='original_workflow_native_settlement_required'):
+        f.actor.close_after_native()
+
+
+@pytest.mark.parametrize('fault', [
+    'before-drain', 'partial-header', 'partial-body', 'retained-bytes',
+    'pending-frame', 'write-fault', 'non-eof', 'root-lost', 'registration-changed',
+])
+def test_post_drain_eof_does_not_hide_incomplete_io_or_changed_ownership(route, monkeypatch, fault):
+    f = route
+    ready(f)
+    if fault != 'before-drain':
+        f.request('workflow-closing'); f.actor.handle_next()
+        f.request('workflow-drained-report', {'local_drained': True}); f.actor.handle_next()
+    def failed_read(_channel, timeout=1, *, idle_timeout=None):
+        progress = {'partial-header': 2, 'partial-body': 8}.get(fault, 0)
+        f.channel._read_progress = progress
+        f.channel.read_fault = {'bytes_received': 4 if fault == 'retained-bytes' else progress,
+                                'reason': 'LaunchHold'}
+        if fault == 'pending-frame': f.actor.wire.received_pending = object()
+        if fault == 'write-fault': f.channel.write_fault = {'bytes_written': 0, 'reason': 'LaunchHold'}
+        if fault == 'root-lost': f.api.waits[101] = 0
+        if fault == 'registration-changed': f.slot['attempt'] = object()
+        raise LaunchHold('control_channel_timeout' if fault == 'non-eof' else 'control_channel_eof_or_unavailable')
+    monkeypatch.setattr(WindowsControlChannel, 'read_frame', failed_read)
+    with pytest.raises((RuntimeError, ValueError)):
+        f.actor.handle_next()
+    assert f.actor.state == 'held' and f.actor.error is not None
+    assert f.actor.first_failure is not None
+    assert not f.actor.is_drained and not f.actor.grant_release_authorized
+    assert f.native.helper_accounting_held and f.native.helper_reservation
+
+
+def test_failed_drain_ack_is_not_a_terminal_receive(route, monkeypatch):
+    f = route
+    ready(f)
+    f.request('workflow-closing'); f.actor.handle_next()
+    f.request('workflow-drained-report', {'local_drained': True})
+    def failed_write(channel, raw, timeout=1):
+        channel.write_fault = {'bytes_written': 0, 'reason': 'LaunchHold'}
+        raise LaunchHold('control_channel_eof_or_unavailable')
+    monkeypatch.setattr(WindowsControlChannel, 'write_frame', failed_write)
+    with pytest.raises(LaunchHold): f.actor.handle_next()
+    assert f.actor.state == 'held' and f.actor.first_failure['phase'] == 'dispatch'
+    assert f.native.helper_accounting_held and not f.actor.grant_release_authorized
+
+
+@pytest.mark.parametrize('blocked', ['process', 'job', 'output'])
+@pytest.mark.parametrize('exit_code', [0, 2])
+def test_terminal_eof_handoff_waits_for_native_cleanup_and_zero_exit_health(route, monkeypatch, blocked, exit_code):
+    """Real owner/actor decisions over inert native API; no actual handle/lease."""
+    from threading import Event, RLock
+    from core.workflow_native_owner import WorkflowWorkspaceOwner
+    f = route
+    ready(f)
+    f.request('workflow-closing'); f.actor.handle_next()
+    f.request('workflow-drained-report', {'local_drained': True}); f.actor.handle_next()
+    def terminal_read(channel, timeout=1, *, idle_timeout=None):
+        channel.read_fault = {'bytes_received': 0, 'reason': 'LaunchHold'}
+        raise LaunchHold('control_channel_eof_or_unavailable')
+    monkeypatch.setattr(WindowsControlChannel, 'read_frame', terminal_read)
+    assert f.actor.handle_next() is False
+    owner = WorkflowWorkspaceOwner.__new__(WorkflowWorkspaceOwner)
+    owner._lock, owner._stop = RLock(), Event()
+    owner.native, owner.child, owner.actor = f.native, f.child, f.actor
+    owner.selection, owner.identity = f.actor.selection, object()
+    owner.worker, owner.root_image_scope, owner.error = None, None, None
+    owner.last_health, owner._visible_seen = None, True
+    cleaned = []
+    monkeypatch.setattr(f.native, 'check_identity', lambda *args: None)
+    def original_cleanup(child):
+        cleaned.append(child)
+        f.control.closed = True; f.native.logs.clear(); f.child._handle = None
+        f.job.handle = f.job.process = None
+        f.native.helper_reservation = None; f.native.helper_accounting_held = False
+        f.slot['phase'] = 'drained'
+    monkeypatch.setattr(f.native, 'close', original_cleanup)
+    f.job.poll = lambda: None if blocked == 'process' else exit_code
+    f.job.active = lambda: 1 if blocked == 'job' else 0
+    f.native.drained.is_set = lambda: blocked != 'output'
+    assert owner.poll() is False and owner.last_health is None and not cleaned
+    assert f.native.helper_accounting_held and not f.actor.is_drained
+    f.job.poll = lambda: exit_code; f.job.active = lambda: 0
+    f.native.drained.is_set = lambda: True
+    selected = owner.selection
+    assert owner.poll() is True and cleaned == [f.child]
+    assert f.actor.is_drained and not f.actor.grant_release_authorized
+    assert (owner.last_health is selected) == (exit_code == 0)
 
 
 def test_root_peer_loss_and_changed_registration_refuse_new_work(route):

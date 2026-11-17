@@ -3823,8 +3823,8 @@
     },
     {
       "path": "suite_core/workflow_modules/owner_route.py",
-      "bytes": 16579,
-      "sha256": "2c3dd50f3bb0cf1382dd2bc9ef79ecbbc895b21fef6e6e13887930e4298031e6"
+      "bytes": 17562,
+      "sha256": "7aa9f1478f46c6ab9afd6d8c481fab76534397aff75129aa710f844a89f336bf"
     },
     {
       "path": "suite_core/workflow_modules/session.py",
