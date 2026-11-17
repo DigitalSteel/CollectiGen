@@ -1146,6 +1146,17 @@ def build_workflow_distribution(source_stage, output, *, component, stage_sha256
     manifest_raw, inventory_raw, profile_raw = read(source_manifest), read(public_inventory), read(tool_inputs)
     receipt, _manifest, sources = validate_sources(source_stage, stage_sha256, manifest_raw, inventory_raw,
                                                   component=component)
+    readme = sources.get('suite_core/' + component + '/README.md')
+    require(type(readme) is bytes, 'workflow_readme_required')
+    require(0 < len(readme) <= 64 * 1024
+            and readme.partition(b'\n')[0].rstrip(b'\r') ==
+                ('# CollectiGen ' + name + ' ' + receipt['software_version']).encode('utf-8'),
+            'workflow_readme_identity_required')
+    release_notes = sources.get('suite_core/' + component + '/WHATS_NEW.md')
+    require(type(release_notes) is bytes and 0 < len(release_notes) <= 64 * 1024
+            and release_notes.partition(b'\n')[0].rstrip(b'\r') ==
+                ('# CollectiGen ' + name + ' ' + receipt['software_version']).encode('utf-8'),
+            'workflow_release_notes_identity_required')
     profile = decode(profile_raw)
     require(candidate_admission is None or workflow_admission is None,'unmixed_workflow_module_build_required')
     candidate_renderer_raw = read(Path(__file__).with_name('prepare_manager_production_stage.py')) if candidate_admission is not None or workflow_admission is not None else None
@@ -1214,6 +1225,8 @@ def build_workflow_distribution(source_stage, output, *, component, stage_sha256
         require(tree_inventory(payload) == tree_inventory(exe.parent), 'workflow_distribution_copy_changed')
         module = sources['suite_core/' + component + '/MODULE_MANIFEST.json']
         write_new(payload / 'MODULE_MANIFEST.json', module)
+        write_new(payload / 'README.md', readme)
+        write_new(payload / 'WHATS_NEW.md', release_notes)
         runtime = dict(schema_version=1, component=component, feature_version=receipt['software_version'],
             os='windows', architecture='x86_64', inventory_excludes_itself='RUNTIME_MANIFEST.json',
             GUI_qualified=False, native_qualified=False, source_stage_sha256=stage_sha256, files=[])

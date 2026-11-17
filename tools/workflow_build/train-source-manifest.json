@@ -3427,9 +3427,14 @@
       "sha256": "9d9dd1d734c58d8d0388429cb325488f2af405414d317213c44267b64e818f78"
     },
     {
+      "path": "suite_core/train/README.md",
+      "bytes": 2668,
+      "sha256": "0f591a3ef8ee65172897525ff68485a167594b4c1568808ad9156bef5750efc5"
+    },
+    {
       "path": "suite_core/train/WHATS_NEW.md",
-      "bytes": 372,
-      "sha256": "70d9d22664f4b73b0970991e60ecf5618bcf2ed48baa42ae9bdbefdff187c56f"
+      "bytes": 955,
+      "sha256": "9edaa756075bce8fa5119a25dee199157db8dddea56d8651d717b9eaa9c506be"
     },
     {
       "path": "suite_core/train/__init__.py",

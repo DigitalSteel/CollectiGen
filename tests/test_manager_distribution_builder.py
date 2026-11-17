@@ -77,12 +77,12 @@ def inputs(tmp_path, monkeypatch):
 
 
 def fake_freeze(monkeypatch, calls, *, failure=False, drift=False, missing=False):
-    def freeze(output, interpreter, environment, name):
+    def freeze(output, interpreter, environment, name, *, recipe=None):
         calls.append(name)
         if failure:
             raise build.BuildHold('child_freeze_failed')
         config = build.decode((output / 'stage/STAGE.json').read_bytes())
-        contents = '_internal' if name == 'CollectiGenManager' else '_bootstrap'
+        contents = '_bootstrap' if name == 'CollectiGen' else '_internal'
         folder = output / 'dist' / name
         folder.mkdir(parents=True)
         raw = bytearray(256)
