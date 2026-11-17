@@ -70,6 +70,8 @@ class WorkflowWindow(WorkflowMethods, QMainWindow):
         if component_id == 'collectigen.generate':
             self.generation_page = self.surface.page
             self.generation_page.active_changed.connect(self.generation_workspace_changed)
+            # Continue ordinary Close only after the original dirty draft saves.
+            self.generation_page.draft_save_finished.connect(lambda: QTimer.singleShot(0, self.close))
             self.surface.new_requested.connect(self.new_request)
             self.surface.resume_requested.connect(self.resume_request)
             self.surface.create_setup_requested.connect(self.create_generation_setup)

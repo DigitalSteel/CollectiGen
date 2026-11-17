@@ -3503,8 +3503,8 @@
     },
     {
       "path": "suite_core/workflow_modules/window.py",
-      "bytes": 19493,
-      "sha256": "f2e26e45b3996247b91537f05bb4d76d0d8bf39fc29c7d5482d401d5cf42f22b"
+      "bytes": 19677,
+      "sha256": "c31ab54c0a59b8e6ee8e9bed56a227d15bbe4b8e4804e0e297617444fa66c4ef"
     },
     {
       "path": "suite_core/workflow_modules/worker_runtime.py",

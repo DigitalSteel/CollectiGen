@@ -87,3 +87,75 @@ def test_trainer_software_management_returns_to_manager():
     owner = SimpleNamespace(request_manager_return=lambda value: calls.append(value))
     WorkflowWindow.open_existing_trainer_setup(owner)
     assert calls == ['trainer-settings']
+
+
+@pytest.mark.parametrize('outcome', ['saved', 'save-failed', 'cancel-invalid'])
+def test_ordinary_close_waits_for_draft_save_and_preserves_refusal(tmp_path, monkeypatch, outcome):
+    """Real original UI/save/drain; one Close must resume only on saved success."""
+    from threading import Event
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication, QMessageBox
+    from core.generation_planning import load_plan
+    from suite_core.tests.workflow_ui_fixtures import workflow_window
+    from test_manager_generator_setup_ui import wait_until
+
+    app, session, window = workflow_window(tmp_path, 'generate')
+    QTest.mouseClick(window.surface.new, Qt.LeftButton)
+    wait_until(app, lambda: getattr(window, '_generation_dialog', None) is not None)
+    owner = window._generation_dialog
+    wait_until(app, lambda: not owner.has_active_background_work())
+    owner._draft_timer.stop()  # Close, rather than periodic autosave, owns this save.
+    owner.positive.setPlainText('Synthetic single Close retains the exact blue paper boat request.')
+    original_save = owner._save_path
+    expected = owner.plan.to_dict()
+    entered, release = Event(), Event()
+    def controlled_save(*args):
+        entered.set()
+        assert release.wait(10), 'Test must settle its original save worker'
+        if outcome == 'save-failed':
+            raise OSError('Synthetic guarded save failure')
+        return original_save(*args)
+    monkeypatch.setattr(owner, '_save_path', controlled_save)
+    try:
+        if outcome == 'cancel-invalid':
+            owner.advanced_json.setPlainText('{')
+            choices = []
+            def cancel_original_warning():
+                boxes = [x for x in QApplication.topLevelWidgets()
+                         if isinstance(x, QMessageBox) and x.windowTitle() == 'Unsaved Image Draft']
+                if boxes:
+                    choices.append(True)
+                    QTest.mouseClick(boxes[0].button(QMessageBox.Cancel), Qt.LeftButton)
+            timer = QTimer(); timer.timeout.connect(cancel_original_warning); timer.start(10)
+            try: window.close()
+            finally: timer.stop()
+            assert choices and not entered.is_set()
+            assert owner.advanced_json.toPlainText() == '{'
+        else:
+            window.close()  # Exactly one ordinary Close; no helper retry.
+            wait_until(app, entered.is_set)
+            assert window.isVisible() and session.state == 'ready'
+            release.set()
+            wait_until(app, lambda: not owner.has_active_background_work())
+            if outcome == 'saved':
+                wait_until(app, lambda: not window.isVisible())
+                assert load_plan(owner._draft_path).to_dict() == expected
+                assert [kind for kind, _ in session.wire.sent].count('workflow-closing') == 1
+                assert [kind for kind, _ in session.wire.sent].count('workflow-drained-report') == 1
+                return
+            assert owner._draft_save_error
+        # Failed save and explicit Cancel must never acquire shutdown authority.
+        assert window.isVisible() and session.state == 'ready'
+        assert not any(kind == 'workflow-closing' for kind, _ in session.wire.sent)
+    finally:
+        release.set()
+        monkeypatch.setattr(owner, '_save_path', original_save)
+        if window.isVisible():
+            wait_until(app, lambda: not owner.has_active_background_work())
+            if outcome == 'cancel-invalid':
+                import json
+                owner.advanced_json.setPlainText(json.dumps(owner.plan.to_dict()))
+            owner._draft_save_error = False
+            window.close()
+            wait_until(app, lambda: not window.isVisible())
