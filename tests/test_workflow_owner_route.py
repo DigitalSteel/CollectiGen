@@ -281,6 +281,41 @@ def test_post_drain_eof_does_not_hide_incomplete_io_or_changed_ownership(route, 
     assert f.native.helper_accounting_held and f.native.helper_reservation
 
 
+@pytest.mark.parametrize('fault', [None, 'alive', 'before-drain', 'root-lost',
+    'registration-changed', 'read-fault', 'write-fault', 'partial', 'pending', 'other'])
+def test_post_ack_image_query_exit_race_preserves_original_settlement(route, monkeypatch, fault):
+    f = route
+    ready(f)
+    if fault != 'before-drain':
+        f.request('workflow-closing'); f.actor.handle_next()
+        f.request('workflow-drained-report', {'local_drained': True}); f.actor.handle_next()
+    def racing_witness(channel):
+        if channel is not f.channel:
+            return channel._synthetic_peer.copy()
+        if fault != 'alive':
+            f.api.waits[102] = 0
+            f.job.poll = lambda: 0
+        if fault == 'root-lost': f.api.waits[101] = 0
+        if fault == 'registration-changed': f.slot['attempt'] = object()
+        if fault == 'read-fault': channel.read_fault = {'bytes_received': 0}
+        if fault == 'write-fault': channel.write_fault = {'bytes_written': 0}
+        if fault == 'partial': channel._read_progress = 2
+        if fault == 'pending': f.actor.wire.received_pending = object()
+        raise LaunchHold('native_image_query_failed' if fault != 'other' else 'original_control_image_file_changed')
+    monkeypatch.setattr(WindowsControlChannel, 'peer_witness', racing_witness)
+    if fault is None:
+        assert f.actor.handle_next() is False
+        assert f.actor.waiting_for_native_drain and f.actor.error is None
+        with pytest.raises(RuntimeError, match='original_workflow_native_settlement_required'):
+            f.actor.close_after_native()
+    else:
+        with pytest.raises((RuntimeError, ValueError)):
+            f.actor.handle_next()
+        assert f.actor.state == 'held' and f.actor.error is not None
+    assert f.native.helper_accounting_held and f.native.helper_reservation
+    assert not f.actor.is_drained and not f.actor.grant_release_authorized
+
+
 def test_failed_drain_ack_is_not_a_terminal_receive(route, monkeypatch):
     f = route
     ready(f)

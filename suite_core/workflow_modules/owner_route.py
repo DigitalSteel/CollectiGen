@@ -282,6 +282,24 @@ class WorkflowControlActor:
                     # Keep actual child exit distinct from terminal pipe EOF.
                     self.state = 'awaiting-native-drain'
                     return False
+                if (isinstance(error, LaunchHold) and str(error) == 'native_image_query_failed'
+                        and self.phase == 'peer'
+                        and self.state == 'drain-reported' and self.local_drain_claimed
+                        and channel.read_fault is None and channel.write_fault is None
+                        and getattr(channel, '_read_progress', None) == 0
+                        and self.wire.received_pending is None
+                        and channel.api.WaitForSingleObject(self.child._handle, 0) == 0
+                        and self.child.poll() is not None):
+                    try:
+                        self._original()
+                    except BaseException as scope_error:
+                        self._hold(scope_error)
+                        raise
+                    # The original process exited during its image witness query
+                    # after its local-drain ACK. Revalidate Root/registration,
+                    # then retain the original physical cleanup and exit gate.
+                    self.state = 'awaiting-native-drain'
+                    return False
                 self._hold(error)
                 raise
 
