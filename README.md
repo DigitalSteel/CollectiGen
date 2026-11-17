@@ -1,6 +1,6 @@
 # CollectiGen
 
-CollectiGen is a developing suite for collecting, identifying and organizing media, preserving metadata and provenance, and preparing training data. Suite Manager includes connected Generate and Training workspaces for configured local tools, with ordinary work primarily performed locally.
+CollectiGen is a developing suite for collecting, identifying and organizing media, preserving metadata and provenance, and preparing training data. Suite Manager handles installation, updates, shared settings and connections. Generate and Train run in separate application windows launched from Applications, with ordinary work primarily performed locally.
 
 ## Downloads
 
@@ -11,7 +11,9 @@ source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.7.11](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.11-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.11-alpha.1/SuiteManager-a.0.7.11-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.7.11-alpha.1/SuiteManager-a.0.7.11-windows-x64.zip.sha256). Install and manage the CollectiGen suite of apps on Windows. |
+| **Suite Manager** | [a.0.8.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.8.0-alpha.1) | [Complete Windows Suite ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.0-alpha.1/CollectiGen-Suite-a.0.8.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.0-alpha.1/CollectiGen-Suite-a.0.8.0-windows-x64.zip.sha256). Install, update and launch independently versioned workflow apps. Includes launcher 0.1.1. |
+| **Generate** | [a.0.1.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.generate/v0.1.0-alpha.1) | [Module ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.generate/v0.1.0-alpha.1/CollectiGen-Generate-a.0.1.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.generate/v0.1.0-alpha.1/CollectiGen-Generate-a.0.1.0-windows-x64.zip.sha256). Image/video request drafts and configured generation workflows. Install and open through Manager 0.8.0 / launcher 0.1.1. |
+| **Train** | [a.0.1.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.train/v0.1.0-alpha.1) | [Module ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.train/v0.1.0-alpha.1/CollectiGen-Train-a.0.1.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.train/v0.1.0-alpha.1/CollectiGen-Train-a.0.1.0-windows-x64.zip.sha256). Training-package review, SDXL dataset preparation and saved preparation history. Install and open through Manager 0.8.0 / launcher 0.1.1. |
 | **Media Organizer** | [a.0.7.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.7.0-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.7.0-alpha.1/MediaOrganizer-a.0.7.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.7.0-alpha.1/MediaOrganizer-a.0.7.0-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars, plus Training dataset planning and offline image/video drafts. |
 | **Tag Encyclopedia** | [a.0.3.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.tag-encyclopedia/v0.3.1-alpha.1) | [Reader component ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.tag-encyclopedia/v0.3.1-alpha.1/TagEncyclopediaReader-0.3.1-alpha.1-windows-x64.zip.sha256). View and edit tags. |
 | **Tag Database** | [a.0.2.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/TagDatabase/v0.2.1-alpha.1) | [Data-package ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/TagDatabase/v0.2.1-alpha.1/TagDatabase-0.2.1-alpha.1.zip.sha256). Catalog tag data for use with the Tag Encyclopedia. |
@@ -28,43 +30,49 @@ Retain your previous package and separate profile/image/catalog backups.
 
 ### Install apps with Suite Manager
 
-Use Suite Manager to install and update Media Organizer and Tag Encyclopedia Reader. Generate and Training are built into Manager; models and optional runtimes are configured separately.
+Use the **complete Suite a.0.8.0 ZIP** for Manager 0.8.0-alpha.1 and launcher
+0.1.1. A Manager-only update cannot replace an older launcher. Keep your earlier
+installation and separate Data/image/catalog backups. Extract the new ZIP into
+its own short writable folder; do not overwrite a running installation or an
+interrupted recovery folder. Moving older profiles into this Suite is not
+qualified by this release.
 
-1. Extract the complete Manager ZIP into a new, short writable folder, such as **C:\CollectiGen**, and start **CollectiGen.exe**.
-2. In **Applications**, choose **Get or update Media Organizer**, or **Tag Encyclopedia > Find reader**.
-3. Review the offered version, choose **Install**, and confirm.
-4. Restart Manager when requested, then open the installed app from its workspace.
+1. Start **CollectiGen.exe** from the extracted Suite folder.
+2. In **Applications > Generate and Train**, choose the app's **Manage install and updates…**.
+3. Choose **Find Generate** or **Find Train**, review the offered version, then confirm **Install**.
+4. Restart Manager when requested, then choose **Open Generate** or **Open Train**.
 
-Use **Generate** for image/video drafts, saved work and configured local generation tools. Saved setups and Remix can open a separate image draft while retaining drafts already open. Use **Training** for dataset preparation, trainer setup, saved runs and reviews. Open the **Help** group or press **F1** in either workspace for its guide.
+Use **App catalog** for other applications; Media Organizer keeps its **Get or
+update Media Organizer** review. Reader and Organizer retain their signed
+installation routes. Installations, updates and restarts remain explicit choices.
 
-In **Generate > Use Organizer Prompt Catalog**, import Organizer’s export to start an image draft with searchable Tags and Character/Outfit prompt choices. Saving and reopening the draft retains that catalog. **Create Generation Setup** offers manual text or a selected image; local description settings return to the unfinished setup. For optional image suggestions, **Review Local Description Setup** can save the model choices and open **Set Up Components**. Check readiness, review any required caption-component or model download, then return and choose Suggest. Opening or returning starts no download or analysis; manual authoring stays available.
+**Generate** creates image/video requests and saves drafts for reopening.
+**More** keeps setup, remix and prompt-catalog tools accessible. Compatible
+generation backends and models are required separately.
 
-Manager saves your theme, color-blind colors and tooltip choices in **Settings**, and restores them at the next launch. **Current build** identifies the bundled Python/Qt runtime and package version.
+**Train** opens training packages, prepares SDXL datasets and reopens **Saved
+Preparations…**. Saved training runs remain accessible under **More**.
+Dataset preparation does not start training. Review compatible trainer software
+and resources before proceeding.
 
-**Training > Set Up Trainer** can install the reviewed trainer software or verify an existing installation. **Other Setup Options** includes offline packs, repair, activation and rollback. Saved operations appear when work is available to review, resume or cancel. Installing software, activating it and starting training require separate reviews.
+Manager keeps shared settings, resources and connections together. Close an open
+workflow normally before changing shared resources or updating its installation.
+During preparation, Cancel requests a safe stop; wait for completion before
+leaving. Installation recovery preserves saved work separately from app files.
+Keep the prepared workspace with its receipt.
 
-Find interrupted Training packages from **Training > Review Interrupted Training Package**. Use **Choose Package Location** to list packages by name, or **Browse Exact Receipt** for advanced selection. Search shows elapsed activity and **Cancel Safely**;review leaves package files unchanged.
+This release's generated-profile checks cover signed module installation,
+restart, Generate Close → Train Open, fresh native health, exact draft reopening,
+synthetic preparation/history/cancellation, and supported Train rollback.
+The non-elevated checks used a filtered same-user medium-integrity token.
+Separate clean Windows profiles, public-origin Mark of the Web and Smart App
+Control behavior are not claimed. Real generation, video output, training,
+model quality and hardware suitability remain unqualified.
 
-Manager a.0.7.11 checks GitHub for newer compatible signed Reader and Organizer releases. Ordinary module updates no longer require a new Manager build. Review and confirm each installation in Applications. Generate and Training remain in Manager.
-
-Training Package Review shows the target, image counts and next preparation
-action. It distinguishes package verification from unchecked trainer readiness
-and returns to **Training**. History management remains included.
-
-Training history and saved SDXL preparations offer **Forget From This List**
-and **Recover Saved List**. Forget keeps reviews, checkpoints and outputs intact;
-Recover finishes an interrupted saved-list update.
-
-Use a short installation path: long paths can prevent the bundled Qt Windows
-plugin from loading. Keep the folder together. Existing component records are
-bound to their installation location; moving installations and migration from
-older portable Manager releases are not qualified by this release. Release
-metadata is signed; the Windows executable is not Authenticode-signed.
-
-For Manager a.0.7.11, an existing a.0.7.9 or later installation can use the reviewed component update. Component-only updates retain the existing launcher. Use the complete ZIP for a fresh installation or to replace an older launcher; a launcher already updated to a.0.7.10 needs no replacement for a.0.7.11. Close Manager first, back up Suite and preserve Data. If an update is stopped in recovery, keep that folder intact and extract the new ZIP separately. The exact a.0.7.11 ZIP passed startup, the Training page and normal Close. Signed prior a.0.7.10 was authenticated; unchanged failed-start recovery evidence is retained. Model/trainer execution and a new forced rollback were not run. Keep the previous folder and separate data backups. See the [Manager release notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.7.11-alpha.1) for version-specific changes.
-
-The Reader component ZIP is supplied for Manager's reviewed installation path.
-Read the release's included guide before using component ZIPs directly.
+Release metadata is RSA-signed; Windows executables are **not
+Authenticode-signed** and may show publisher warnings. Do not disable Windows
+security policy. See the [Manager release notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.8.0-alpha.1)
+and each module's validation asset for exact scope.
 
 ### Media Organizer
 
@@ -93,7 +101,7 @@ Actual authenticated LM Studio installations, inference, metadata writing
 and optional-tool readiness remain unqualified.
 If a generated image or sidecar changes after copy preview, Ingest explains the
 refusal and directs you to review the current Manager result again.
-Review transferred Training drafts in **Suite Manager > Training > Review a Dataset Draft**. The original Organizer plan remains separate.
+Launch **Train** from Manager's **Applications** to review transferred Training drafts. The original Organizer plan remains separate.
 
 ### Optional catalog data
 
@@ -114,8 +122,8 @@ Install Media Organizer through Manager or use its standalone download. Each
 release's notes and validation receipt describe its executed startup, update and
 recovery checks. Use the supplied checksums to verify downloaded files.
 
-Generate and Training have dedicated Manager workspaces; the release notes
-identify the supported runtime routes and qualification limits. No models or
+Generate and Train are independently versioned modules launched by Manager;
+the release notes identify their supported runtime routes and qualification limits. No models or
 supported Linux builds are supplied. Your existing review, update-channel,
 installation and restart choices are not changed by downloading an update.
 
@@ -134,3 +142,4 @@ Original application code and scripts use [AGPL-3.0-or-later](LICENSE).
 Original documentation and the original copyrightable selection, organization and additions in compiled System Knowledge use [CC-BY-SA-4.0](licenses/CC-BY-SA-4.0.txt).
 
 These licenses do not relicense user data, facts, models or incorporated third-party material. See the complete [license scope](LICENSES.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
+
