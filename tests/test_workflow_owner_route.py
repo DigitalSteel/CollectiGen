@@ -226,28 +226,43 @@ def test_settings_return_records_exact_draft_without_releasing_writer(route):
 
 
 @pytest.mark.parametrize('exited', [False, True])
-def test_acknowledged_drain_exit_during_read_retains_native_settlement(route, monkeypatch, exited):
+def test_terminal_ack_stops_child_queries_and_reads_before_physical_settlement(route, monkeypatch, exited):
     f = route
     ready(f)
-    f.request('workflow-closing')
-    f.actor.handle_next()
+    f.request('workflow-closing'); f.actor.handle_next()
+    acknowledged = []
+    child_queries, reads = [], []
+    write = WindowsControlChannel.write_frame
+    witness = WindowsControlChannel.peer_witness
+    read = WindowsControlChannel.read_frame
+    def terminal_write(channel, raw, timeout=1):
+        write(channel, raw, timeout=timeout)
+        if f.sent[-1]['kind'] == 'workflow-drained-ack':
+            acknowledged.append(True)
+            if exited:
+                f.api.waits[102] = 0; f.job.poll = lambda: 0
+    def teardown_witness(channel):
+        if channel is f.channel and acknowledged:
+            child_queries.append(True)
+            raise LaunchHold('native_image_query_failed')
+        return witness(channel)
+    def terminal_read(channel, timeout=1, *, idle_timeout=None):
+        if channel is f.channel and acknowledged:
+            reads.append(True)
+            raise LaunchHold('control_channel_eof_or_unavailable')
+        return read(channel, timeout=timeout, idle_timeout=idle_timeout)
+    monkeypatch.setattr(WindowsControlChannel, 'write_frame', terminal_write)
+    monkeypatch.setattr(WindowsControlChannel, 'peer_witness', teardown_witness)
+    monkeypatch.setattr(WindowsControlChannel, 'read_frame', terminal_read)
     f.request('workflow-drained-report', {'local_drained': True})
-    f.actor.handle_next()
-    reads = []
-    def exit_during_read(_channel, timeout=1, *, idle_timeout=None):
-        reads.append(True)
-        if exited:
-            f.api.waits[102] = 0
-            f.job.poll = lambda: 0
-        f.channel.read_fault = {'bytes_received': 0, 'reason': 'LaunchHold'}
-        raise LaunchHold('control_channel_eof_or_unavailable')
-    monkeypatch.setattr(WindowsControlChannel, 'read_frame', exit_during_read)
-    assert f.actor.handle_next() is False
-    assert f.actor.waiting_for_native_drain and f.actor.error is None
+    assert f.actor.handle_next()
+    assert acknowledged == [True] and f.actor.waiting_for_native_drain
+    assert f.actor.error is None and f.actor.first_failure is None
+    assert f.actor.handle_next() is False and f.actor.handle_next() is False
+    assert child_queries == [] and reads == []
+    assert f.channel.read_fault is None and f.channel.write_fault is None
     assert not f.actor.is_drained and f.native.helper_accounting_held
-    assert f.channel.read_fault is not None
-    assert f.actor.handle_next() is False and len(reads) == 1
-    assert not f.actor.grant_release_authorized
+    assert f.slot['phase'] == 'registered' and not f.actor.grant_release_authorized
     with pytest.raises(RuntimeError, match='original_workflow_native_settlement_required'):
         f.actor.close_after_native()
 
@@ -256,12 +271,11 @@ def test_acknowledged_drain_exit_during_read_retains_native_settlement(route, mo
     'before-drain', 'partial-header', 'partial-body', 'retained-bytes',
     'pending-frame', 'write-fault', 'non-eof', 'root-lost', 'registration-changed',
 ])
-def test_post_drain_eof_does_not_hide_incomplete_io_or_changed_ownership(route, monkeypatch, fault):
+def test_pre_terminal_io_failure_never_uses_acknowledged_drain_handoff(route, monkeypatch, fault):
     f = route
     ready(f)
     if fault != 'before-drain':
         f.request('workflow-closing'); f.actor.handle_next()
-        f.request('workflow-drained-report', {'local_drained': True}); f.actor.handle_next()
     def failed_read(_channel, timeout=1, *, idle_timeout=None):
         progress = {'partial-header': 2, 'partial-body': 8}.get(fault, 0)
         f.channel._read_progress = progress
@@ -273,28 +287,24 @@ def test_post_drain_eof_does_not_hide_incomplete_io_or_changed_ownership(route, 
         if fault == 'registration-changed': f.slot['attempt'] = object()
         raise LaunchHold('control_channel_timeout' if fault == 'non-eof' else 'control_channel_eof_or_unavailable')
     monkeypatch.setattr(WindowsControlChannel, 'read_frame', failed_read)
-    with pytest.raises((RuntimeError, ValueError)):
-        f.actor.handle_next()
+    with pytest.raises((RuntimeError, ValueError)): f.actor.handle_next()
     assert f.actor.state == 'held' and f.actor.error is not None
-    assert f.actor.first_failure is not None
+    assert not f.actor.local_drain_claimed and f.actor.first_failure is not None
     assert not f.actor.is_drained and not f.actor.grant_release_authorized
     assert f.native.helper_accounting_held and f.native.helper_reservation
 
 
 @pytest.mark.parametrize('fault', [None, 'alive', 'before-drain', 'root-lost',
     'registration-changed', 'read-fault', 'write-fault', 'partial', 'pending', 'other'])
-def test_post_ack_image_query_exit_race_preserves_original_settlement(route, monkeypatch, fault):
+def test_pre_terminal_image_query_failure_is_never_declared_benign(route, monkeypatch, fault):
     f = route
     ready(f)
     if fault != 'before-drain':
         f.request('workflow-closing'); f.actor.handle_next()
-        f.request('workflow-drained-report', {'local_drained': True}); f.actor.handle_next()
     def racing_witness(channel):
-        if channel is not f.channel:
-            return channel._synthetic_peer.copy()
+        if channel is not f.channel: return channel._synthetic_peer.copy()
         if fault != 'alive':
-            f.api.waits[102] = 0
-            f.job.poll = lambda: 0
+            f.api.waits[102] = 0; f.job.poll = lambda: 0
         if fault == 'root-lost': f.api.waits[101] = 0
         if fault == 'registration-changed': f.slot['attempt'] = object()
         if fault == 'read-fault': channel.read_fault = {'bytes_received': 0}
@@ -303,15 +313,32 @@ def test_post_ack_image_query_exit_race_preserves_original_settlement(route, mon
         if fault == 'pending': f.actor.wire.received_pending = object()
         raise LaunchHold('native_image_query_failed' if fault != 'other' else 'original_control_image_file_changed')
     monkeypatch.setattr(WindowsControlChannel, 'peer_witness', racing_witness)
-    if fault is None:
-        assert f.actor.handle_next() is False
-        assert f.actor.waiting_for_native_drain and f.actor.error is None
-        with pytest.raises(RuntimeError, match='original_workflow_native_settlement_required'):
-            f.actor.close_after_native()
-    else:
-        with pytest.raises((RuntimeError, ValueError)):
-            f.actor.handle_next()
-        assert f.actor.state == 'held' and f.actor.error is not None
+    with pytest.raises((RuntimeError, ValueError)): f.actor.handle_next()
+    assert f.actor.state == 'held' and f.actor.error is not None
+    assert not f.actor.local_drain_claimed
+    assert f.native.helper_accounting_held and f.native.helper_reservation
+    assert not f.actor.is_drained and not f.actor.grant_release_authorized
+
+
+@pytest.mark.parametrize('fault', ['root-exit', 'registration', 'root-image'])
+def test_terminal_ack_rechecks_original_root_and_registration_before_handoff(route, monkeypatch, fault):
+    f = route
+    ready(f)
+    f.request('workflow-closing'); f.actor.handle_next()
+    write = WindowsControlChannel.write_frame
+    def changing_ack(channel, raw, timeout=1):
+        write(channel, raw, timeout=timeout)
+        if f.sent[-1]['kind'] == 'workflow-drained-ack':
+            if fault == 'root-exit': f.api.waits[101] = 0
+            elif fault == 'registration': f.slot['attempt'] = object()
+            else:
+                f.session.wire.channel._synthetic_peer = {
+                    **f.session.wire.channel._synthetic_peer, 'executable_sha256': '9' * 64}
+    monkeypatch.setattr(WindowsControlChannel, 'write_frame', changing_ack)
+    f.request('workflow-drained-report', {'local_drained': True})
+    with pytest.raises((RuntimeError, ValueError)): f.actor.handle_next()
+    assert f.sent[-1]['kind'] == 'workflow-drained-ack'
+    assert f.actor.state == 'held' and f.actor.first_failure['phase'] == 'dispatch'
     assert f.native.helper_accounting_held and f.native.helper_reservation
     assert not f.actor.is_drained and not f.actor.grant_release_authorized
 

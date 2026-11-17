@@ -207,6 +207,11 @@ class WorkflowControlActor:
             self.accepting_work, self.local_drain_claimed = False, True
             self.state = 'drain-reported'
             self.wire.send('workflow-drained-ack', {**scope, 'state': 'recorded'})
+            # The acknowledged claim is terminal. Recheck retained Root and
+            # registration, then await original physical cleanup without another
+            # child image query or receive racing its normal process teardown.
+            self._original()
+            self.state = 'awaiting-native-drain'
         elif kind == 'workflow-return':
             require(self.state == 'ready' and self.accepting_work and self.session.state == 'ready'
                     and type(payload['target']) is str and payload['target'] in RETURN_TARGETS,
