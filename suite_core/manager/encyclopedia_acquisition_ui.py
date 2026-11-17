@@ -363,7 +363,7 @@ class EncyclopediaAcquisitionPanel(QWidget):
                 self.observation_stale = self.installed is not None
             if operation == "Checking app status":
                 self.status.setText("App status check cancelled. Your saved installation is retained." if isinstance(error,InterruptedError) else
-                    "App status is unavailable. Close the reader if it is running, then Check app status.")
+                    f"App status is unavailable. Close {self.application_name()} if it is running, then Check app status.")
             elif isinstance(error, ExactOfferHold) and operation in (
                     "Refreshing releases", "Reviewing installation", "Installing reviewed package"):
                 self.offer = None

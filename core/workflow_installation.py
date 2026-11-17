@@ -102,7 +102,7 @@ class WorkflowInstallation(EncyclopediaInstallation):
         if saved is not None and selected is not None and (
                 saved.directory, saved.inventory_sha256, saved.version) == (
                 selected.directory, selected.inventory_sha256, selected.version):
-            require(self.signed_selection(selected) == saved,
+            require(self._signed_selection_at(selected, root, base, owner) == saved,
                     'saved_workflow_signed_identity_changed')
         return installed
 
@@ -114,6 +114,18 @@ class WorkflowInstallation(EncyclopediaInstallation):
         require(binding is not None, 'original_component_scope_required')
         root, base, owner, check = binding
         check()
+        result = self._signed_selection_at(selected, root, base, owner)
+        check()
+        return result
+
+    def _signed_selection_at(self, selected, root, base, owner):
+        """Reconstruct under the caller's original authenticated observation.
+
+        Stock health preflight owns its transaction directly, rather than our
+        thread-local wrapper. Its original check still guards mutation.
+        """
+        require(type(selected) is ManagedWorkflowSelection
+                and selected.component_id == self.component.value, 'same_managed_workflow_required')
         journal = read_json(base / 'transaction.json')
         seen = set()
         while True:
@@ -135,7 +147,6 @@ class WorkflowInstallation(EncyclopediaInstallation):
                     signature_bytes=base64.b64decode(journal['signature'], validate=True),
                     trust_bytes=self.acquisition.trust, expected_version=selected.version,
                     binding_revision=revision, channel=json.loads(message)['channel'])
-                check()
                 return result
             raw = prior_journal_bytes(base, journal, self.component, owner, self.acquisition.trust)
             require(raw is not None, 'signed_workflow_origin_unavailable')

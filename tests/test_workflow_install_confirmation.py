@@ -126,6 +126,28 @@ def test_module_confirmation_stays_actionable_while_other_shared_edits_are_locke
         app.processEvents()
 
 
+@pytest.mark.parametrize('component', ['generate', 'train', 'reader'])
+def test_status_failure_names_the_affected_app_without_replaying(component):
+    from suite_core.manager.encyclopedia_acquisition_ui import EncyclopediaAcquisitionPanel
+    app=QApplication.instance() or QApplication([])
+    service=NS(install_available=True,candidate_admission=object())
+    executor=NS(close_held=False)
+    panel=(EncyclopediaAcquisitionPanel(service,executor) if component=='reader' else
+           WorkflowAcquisitionPanel('collectigen.'+component,service,executor))
+    panel.timer.stop()
+    def failure():raise ValueError('original_component_scope_required')
+    panel.operation='Checking app status'
+    panel.future=NS(done=lambda:True,result=failure)
+    try:
+        panel.show();app.processEvents();panel.poll();app.processEvents()
+        name='reader' if component=='reader' else component.title()
+        assert panel.status.text()=='App status is unavailable. Close '+name+' if it is running, then Check app status.'
+        assert 'original_component_scope_required' in panel.details.toPlainText()
+        assert panel.future is None
+    finally:
+        panel.deleteLater();app.processEvents()
+
+
 def test_dashboard_exposes_module_entry_and_navigation_does_not_keep_other_section_hint():
     app = QApplication.instance() or QApplication([])
     manager = create_window(unconfigured(datetime.now(timezone.utc)))

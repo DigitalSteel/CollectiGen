@@ -233,6 +233,40 @@ def test_exact_rolled_back_workflow_reactivation_keeps_software_and_original_hea
     assert case.snapshot()==case.before
 
 
+@pytest.mark.parametrize('outcome', ['healthy', 'held', 'changed-saved'])
+def test_health_confirmation_uses_original_kernel_preflight_and_signed_identity(retained_workflow_case, outcome):
+    from core.workflow_native_owner import WorkflowWorkspaceOwner
+    case = retained_workflow_case
+    case.service._stage_installation(case.artifact, **case.kwargs)
+    case.service.retry_connection()
+    calls = []
+    native = WorkflowWorkspaceOwner.__new__(WorkflowWorkspaceOwner)
+    def health(selected):
+        calls.append(selected)
+        assert case.held == [True]  # Signed native selection retains its original read scope.
+        if outcome == 'changed-saved':
+            raw=json.loads(case.settings_path.read_bytes())
+            raw[KEYS[selected.component_id]]['manifest_sha256']='c'*64
+            case.settings_path.write_text(json.dumps(raw))
+        return outcome != 'held'
+    native.native_health=health
+    case.service.native_owner=native
+    case.service.native_health=case.service._native_health
+    before=(case.base/'transaction.json').read_bytes()
+    if outcome == 'healthy':
+        installed=case.service.confirm_health()
+        assert installed.phase == 'healthy'
+        assert case.service.reconcile_launch().installed.phase == 'healthy'
+    else:
+        with pytest.raises(ValueError, match='native_reader_health_held|signed_identity_changed'):
+            case.service.confirm_health()
+        assert (case.base/'transaction.json').read_bytes() == before
+    assert len(calls) == 1 and case.snapshot() == case.before and not case.held
+    assert json.loads(case.settings_path.read_bytes())['foreign'] == [1,2]
+    with pytest.raises(ValueError, match='original_component_scope_required'):
+        case.service.signed_selection(case.service.connection_type(case.destination, calls[0].inventory_sha256, calls[0].version))
+
+
 def test_default_stage_still_refuses_retained_workflow_directory(retained_workflow_case):
     case=retained_workflow_case
     with pytest.raises(ValueError,match='immutable_version_already_exists'):

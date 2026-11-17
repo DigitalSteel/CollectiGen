@@ -2263,8 +2263,8 @@
     },
     {
       "path": "core/workflow_installation.py",
-      "bytes": 9277,
-      "sha256": "c809a4bf65f7c8c43bde62dec0329630ac1acb5ebb7fbdc2ae04d9a203cab323"
+      "bytes": 9853,
+      "sha256": "c4e4a63dce386457edc8fb85789aff96d97864696b4f8a608090a5fb1e108546"
     },
     {
       "path": "core/workflow_native_channel.py",
@@ -3513,8 +3513,8 @@
     },
     {
       "path": "suite_core/manager/encyclopedia_acquisition_ui.py",
-      "bytes": 32009,
-      "sha256": "0d50f4725c9d6a95171a5c98f652c080f53f4091dc44698ab9df10772dba16c4"
+      "bytes": 32025,
+      "sha256": "4f23f9ff771c7e92d513b0b34dad8cbe66232ee75cb39cfe6d2f93d8cf37d654"
     },
     {
       "path": "suite_core/manager/encyclopedia_connection_ui.py",
