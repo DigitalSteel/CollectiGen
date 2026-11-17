@@ -193,17 +193,19 @@ def _check_catalog_snapshot(inspection, inventory):
 
 
 def verify_selected_tokenizer_source_inventory(inspection, plan, request, *, should_cancel=None):
-    """Bind the owned source tree to the exact inspected catalog."""
-    if request.get('schema_version') not in {5,15}:
+    """Bind inventoried tokenizer/dataset source to the exact inspected catalog."""
+    dataset_source = request.get('schema_version') in {11,12,13}
+    if request.get('schema_version') not in {5,11,12,13,15}:
         return
-    if len(plan.inventories)!=3:
+    source_index=3 if dataset_source else 2
+    if len(plan.inventories)!=source_index+1:
         raise TrainingProcessError('selected_tokenizer_source_inventory_required')
     nonce=request.get('nonce')
     if not isinstance(nonce,str) or not re.fullmatch(r'[0-9a-f]{32}',nonce):
         raise TrainingProcessError('selected_tokenizer_source_inventory_authority')
     inputs=Path(plan.root)/('parser-inputs-'+nonce)
     source=inputs/'source';manifest=inputs/'source-inventory.json'
-    binding=plan.inventories[2]
+    binding=plan.inventories[source_index]
     if binding.root!=str(source) or binding.manifest_path!=str(manifest):
         raise TrainingProcessError('selected_tokenizer_source_inventory_authority')
     captured=next((item for item in plan.inputs if item.path==str(manifest)),None)
@@ -563,16 +565,6 @@ class TrainingRuntimeQualificationService:
                 destination = inputs_root / (role + "-inventory.json")
                 SoftwareInventoryService.save(inventory, destination)
                 inventories.append((inventory.root, destination))
-        if selection:
-            # The catalog is exact source authority, separate from the two
-            # installed software roots. One manifest leaves bounded input room
-            # for tokenizer files and the complete canonical verifier closure.
-            source_inventory=SoftwareInventoryService().capture(snapshot,should_cancel=should_cancel)
-            _check_catalog_snapshot(inspection,source_inventory)
-            destination=inputs_root/'source-inventory.json'
-            SoftwareInventoryService.save(source_inventory,destination)
-            inventories.append((source_inventory.root,destination))
-            staged=[path for path in staged if not path.is_relative_to(snapshot)]
         if synthetic_tokenizers:
             request.update(schema_version=4, tokenizer_contract=str(inputs_root / TOKENIZER_CONTRACT.name))
         if selection:
@@ -597,6 +589,17 @@ class TrainingRuntimeQualificationService:
             request.update(schema_version=11, dataset_preparation={
                 'package': str(inputs_root / 'dataset-package'), 'binding': selected_dataset['binding'],
                 'summary': selected_dataset['summary'], 'code_bundle': str(inputs_root / DATASET_PREPARATION_BUNDLE)})
+        if selection or dataset_selection:
+            # The catalog is exact source authority, separate from the two
+            # installed software roots. One manifest leaves bounded input room
+            # for selected files and the complete canonical verifier closure.
+            # Append after dataset inventory so its established index2 stays stable.
+            source_inventory=SoftwareInventoryService().capture(snapshot,should_cancel=should_cancel)
+            _check_catalog_snapshot(inspection,source_inventory)
+            destination=inputs_root/'source-inventory.json'
+            SoftwareInventoryService.save(source_inventory,destination)
+            inventories.append((source_inventory.root,destination))
+            staged=[path for path in staged if not path.is_relative_to(snapshot)]
         if model_pairing is not None:
             raw_catalog = _read(MODEL_LOADING_CATALOG, limit=model_layout.MAX_CATALOG)
             model_loading.checked_catalog(_json(raw_catalog))

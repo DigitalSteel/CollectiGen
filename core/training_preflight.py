@@ -114,7 +114,7 @@ def decode_result(value, request, helper_plan):
         if prepared is not None or value['request'] is not None:
             raise ValueError('preflight_unexpected_plan')
         return inspection, None, None
-    if type(prepared) is not dict or set(prepared) != set(TrainingProcessPlan.__dataclass_fields__) or type(prepared['inventories']) is not list or len(prepared['inventories']) not in ({3} if request.get('selected_dataset') or request.get('selected_tokenizers') else {0, 2}):
+    if type(prepared) is not dict or set(prepared) != set(TrainingProcessPlan.__dataclass_fields__) or type(prepared['inventories']) is not list or len(prepared['inventories']) not in ({4} if request.get('selected_dataset') else {3} if request.get('selected_tokenizers') else {0, 2}):
         raise ValueError('preflight_plan_fields')
     if type(prepared['command']) is not list or type(prepared['root_identity']) is not list or len(prepared['root_identity']) != 2 or any(type(n) is not int or n < 0 for n in prepared['root_identity']):
         raise ValueError('preflight_plan_identity')
