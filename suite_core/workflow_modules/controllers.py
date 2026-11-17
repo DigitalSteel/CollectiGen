@@ -749,10 +749,9 @@ class WorkflowMethods:
                     return
                 super().done(result)
 
-        dialog = ManagerTrainingHistoryDialog(history, state.jobs, self)
+        dialog = ManagerTrainingHistoryDialog(history, state.jobs, self, preparations=preparations)
         if preparations:
-            dialog.setWindowTitle("Saved SDXL Preparations")
-        dialog.open_button.setText("Review Selected Preparation")
+            dialog.open_button.setText("Review Selected Preparation")
         for button in (dialog.refresh_button, dialog.forget_button, dialog.recover_button,
                        dialog.open_button, *dialog.buttons.buttons()):
             compact_action(button)

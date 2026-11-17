@@ -145,6 +145,10 @@ class EncyclopediaInstallation:
         require(self._observe(root, base, owner) == reviewed.installed, "stale_installation_review")
         require(self.store.observe().digest == reviewed.settings.digest, "Settings changed. Review installation again.")
 
+    def _stage_installation(self, artifact, **kwargs):
+        """Keep existing component staging unchanged unless its owner opts in."""
+        return stage_and_activate_admitted(self.admission, artifact, **kwargs)
+
     def install(self, reviewed, *, confirmed=False, progress=None, should_cancel=None, phase_progress=None):
         require(phase_progress is None or callable(phase_progress), 'phase_progress_callback_required')
         def phase(value):
@@ -187,7 +191,7 @@ class EncyclopediaInstallation:
             from core.encyclopedia_update_binding import require_standalone_install_compatibility
             require_standalone_install_compatibility(reviewed.installed.selected, acquired)
             self._cancel(should_cancel)
-        stage_and_activate_admitted(self.admission, acquired.artifact, component=self.component,
+        self._stage_installation(acquired.artifact, component=self.component,
             version=offer.release.software_version, os_name="windows", architecture="x86_64",
             manifest_bytes=offer.manifest_bytes, signature_bytes=offer.signature_bytes,
             trust_bytes=self.acquisition.trust, expected_active_token=reviewed.installed.active_sha256,

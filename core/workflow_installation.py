@@ -14,7 +14,7 @@ from core.workflow_connection import workflow_component, review_existing_package
 from core.workflow_connection_settings import WorkflowConnectionStore
 from suite_core.discovery.component_payload_policy import WORKFLOW_FROZEN_PAYLOAD_POLICY
 from suite_core.discovery.component_staging import (
-    read_json, validate_journal, prior_journal_bytes, require, verify_directory)
+    read_json, validate_journal, prior_journal_bytes, require, verify_directory, stage_and_activate_admitted)
 from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
 
 
@@ -67,6 +67,11 @@ class WorkflowInstallation(EncyclopediaInstallation):
         self._scope_local = local()
         super().__init__(acquisition, _WorkflowPublication(self, store), admission=admission,
                          native_health=self._native_health if native_owner is not None else None)
+
+    def _stage_installation(self, artifact, **kwargs):
+        """Explicit workflow retry may reuse exact signed rolled-back software."""
+        return stage_and_activate_admitted(self.admission, artifact,
+            reuse_rolled_back=True, **kwargs)
 
     @contextmanager
     def _scope(self):

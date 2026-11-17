@@ -38,10 +38,11 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
     retryRetainedRequested = Signal()
     feedback_workflow = "Local training history"
 
-    def __init__(self, index, jobs, parent=None, *, read_only=False):
+    def __init__(self, index, jobs, parent=None, *, read_only=False, preparations=False):
         super().__init__(parent)
         self.index, self.jobs = index, jobs
         self._read_only = read_only
+        self._preparations = preparations
         self._task = None
         self._closing = False
         self._cancel_requested = False
@@ -70,19 +71,28 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         self._retained_retry_available = False
 
         self.setModal(False)
-        self.setWindowTitle("Local Training History")
+        self.setWindowTitle("Saved SDXL Preparations" if preparations else "Local Training History")
         self.resize(940, 700)
         layout = QVBoxLayout(self)
         from .components import ContextHelpButton
         from .help_content import section_help
         heading = QHBoxLayout()
-        heading.addWidget(self._label("Find a saved Training review", "sectionTitle"), 1)
-        self.help_button = ContextHelpButton('Saved Training history', section_help('training-saved-history'),
+        heading.addWidget(self._label("Reopen a prepared SDXL dataset" if preparations else
+            "Find a saved Training review", "sectionTitle"), 1)
+        help_text = section_help('training-saved-history')
+        if preparations:
+            help_text = ("## Saved SDXL preparations\n\nChoose Refresh, select a preparation, then Review Selected Preparation. "
+                "This checks its saved receipt; it does not recheck live inputs or start training. "
+                "User-chosen names are preserved; the default preparation number is stable, and its full identifier stays in Details. "
+                "Forget removes only the list entry. Keep the original prepared workspace. "
+                "The general saved-history rules below also apply.\n\n") + help_text
+        self.help_button = ContextHelpButton('Saved SDXL preparations' if preparations else 'Saved Training history', help_text,
             self, learning_context='training-saved-history', focus_scope=self)
         heading.addWidget(self.help_button)
         layout.addLayout(heading)
         layout.addWidget(self._label(
-            "Find and open saved training reviews. Opening a review does not start training."
+            "Select a prepared dataset, then review its saved receipt. Preparation does not start training."
+            if preparations else "Find and open saved training reviews. Opening a review does not start training."
             if self._read_only else
             "Find previous local training runs and setup checks. Open a run to review "
             "its result, check recovery, or choose an earlier checkpoint."))
@@ -101,7 +111,7 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         layout.addWidget(self.page_error)
 
         self.runs = QTreeWidget()
-        self.runs.setHeaderLabels(["Run", "Kind", "Phase", "Destination"])
+        self.runs.setHeaderLabels(["Preparation" if preparations else "Run", "Kind", "Phase", "Destination"])
         self.runs.setRootIsDecorated(False)
         self.runs.setSelectionMode(QAbstractItemView.SingleSelection)
         self.runs.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -129,7 +139,7 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         pages.addStretch(1)
         layout.addLayout(pages)
 
-        self.detail = self._label("Select a saved run to see its details.")
+        self.detail = self._label("Select a saved preparation to see its details." if preparations else "Select a saved run to see its details.")
         self.detail.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(self.detail)
         self.forget_explanation = self._label(
@@ -492,7 +502,9 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         self._history_reload_needed = False
         self.runs.clear()
         for record in page.records:
-            name = record.annotation.name or Path(record.destination).name or record.run_id[:8]
+            name = record.annotation.name or (
+                f"SDXL preparation {record.sequence}" if self._preparations else
+                Path(record.destination).name or record.run_id[:8])
             kind = {"execution": "Training run", "readiness": "Readiness check",
                 "anima": "Anima run", "validation": "Held-out validation",
                 "preflight": "SDXL dataset preparation"}[record.kind]
@@ -504,14 +516,19 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
             self.runs.addTopLevelItem(item)
         first = min(page.offset + 1, page.total)
         last = min(page.offset + len(page.records), page.total)
+        summary = "Saved preparations" if self._preparations else "Saved reviews"
         self.page_summary.setText(
-            f"Saved reviews: {page.total:,} · Showing {first:,}–{last:,}" if page.records else
-            f"Saved reviews: {page.total:,}")
+            f"{summary}: {page.total:,} · Showing {first:,}–{last:,}" if page.records else
+            f"{summary}: {page.total:,}")
         if not page.records:
-            title = "No Runs on This Page" if page.total else "No Training History"
+            title = (("No Preparations on This Page" if page.total else "No Saved Preparations")
+                if self._preparations else "No Runs on This Page" if page.total else "No Training History")
             self.empty_state.title_label.setText(title)
             self.empty_state.setAccessibleName(title)
-            if page.total:
+            if self._preparations:
+                guidance = ("The saved list changed. Choose Previous or Refresh to load available preparations." if page.total else
+                    "Open a training package in Train and choose Prepare SDXL Dataset. Its saved preparation will appear here; training does not start.")
+            elif page.total:
                 guidance = "The saved list changed. Choose Previous or Refresh to load available runs."
             elif self._read_only:
                 guidance = ("No saved runs are available in this workspace. Return to Applications "
@@ -523,7 +540,7 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         self.empty_state.setVisible(not page.records)
         self.runs.setVisible(bool(page.records))
         self.status.setText(
-            "Select a saved review to open." if page.records else "")
+            ("Select a saved preparation to review." if self._preparations else "Select a saved review to open.") if page.records else "")
         self._selection_changed()
 
     @staticmethod
@@ -567,7 +584,7 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
     def _selection_changed(self):
         record = self._selected()
         if record is None:
-            self.detail.setText("Select a saved run to see its details.")
+            self.detail.setText("Select a saved preparation to see its details." if self._preparations else "Select a saved run to see its details.")
         else:
             kind = {"execution": "Local training run", "readiness": "Local readiness check",
                 "anima": "Retained Anima run", "validation": "Held-out validation",
@@ -575,8 +592,9 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
             self.detail.setText(
                 f"{kind} · {record.phase.replace('_', ' ')}\n"
                 + (f"Name: {record.annotation.name}\n" if record.annotation.name else "") +
-                f"Run ID: {record.run_id}\nDestination: {record.destination}\n"
-                + ("The saved review will be checked before opening."
+                f"{'Preparation ID' if self._preparations else 'Run ID'}: {record.run_id}\nDestination: {record.destination}\n"
+                + ("Review Selected Preparation checks the saved receipt. Live inputs are not rechecked." if self._preparations else
+                   "The saved review will be checked before opening."
                    if self._read_only else
                    "The saved review will be checked before recovery or result verification."))
         self._update_actions()

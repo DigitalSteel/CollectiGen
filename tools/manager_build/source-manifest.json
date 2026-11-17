@@ -453,8 +453,8 @@
     },
     {
       "path": "core/encyclopedia_installation.py",
-      "bytes": 21848,
-      "sha256": "513686e9a5a4204e4c3dda7f9be0026adaeb98ec3ff55e488b8b9b776864083a"
+      "bytes": 22050,
+      "sha256": "59abb2f1850d76adda56c434203150ade2177af81d8bae0277498f5d9b4df068"
     },
     {
       "path": "core/encyclopedia_read_admission.py",
@@ -2263,8 +2263,8 @@
     },
     {
       "path": "core/workflow_installation.py",
-      "bytes": 8994,
-      "sha256": "a776e895e5a45ee3b6a1bcad16921a9c24a454f61af477948cdea71dca77ba3a"
+      "bytes": 9277,
+      "sha256": "c809a4bf65f7c8c43bde62dec0329630ac1acb5ebb7fbdc2ae04d9a203cab323"
     },
     {
       "path": "core/workflow_native_channel.py",
@@ -2958,8 +2958,8 @@
     },
     {
       "path": "qt_app/training_history_dialog.py",
-      "bytes": 40478,
-      "sha256": "29da2276b878244d72b6398b7162e8ee49b2c3139033174c9c825b1d44c1d08c"
+      "bytes": 42497,
+      "sha256": "172f14985ac304e95e35577f60f3193450b2699516a2cb0d0e6f8076b4a2d76e"
     },
     {
       "path": "qt_app/training_metrics_widget.py",
@@ -3158,8 +3158,8 @@
     },
     {
       "path": "suite_core/discovery/component_staging.py",
-      "bytes": 33031,
-      "sha256": "3e7bf7baa0c03b69485fb36a4f54211cc639910aabe0e02e3dd589fc6aca4bb5"
+      "bytes": 34953,
+      "sha256": "5d66cd036b148f21446e76a118d849b0c3289f211822f9f34b45fc30427e6034"
     },
     {
       "path": "suite_core/discovery/github_component_releases.py",

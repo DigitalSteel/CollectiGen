@@ -136,16 +136,20 @@ def test_scoped_recovery_refuses_foreign_retained_after_state(tmp_path, monkeypa
     assert (index.path.read_bytes(), index.pending.read_bytes()) == before
 
 
+@pytest.mark.parametrize('theme', ['dark', 'light'])
 @pytest.mark.parametrize('action', ['forget', 'recover'])
 @pytest.mark.parametrize('preparations', [False, True])
-def test_visible_manager_history_list_management(tmp_path, monkeypatch, action, preparations):
+def test_visible_manager_history_list_management(tmp_path, monkeypatch, action, preparations, theme):
     app = application()
+    from qt_app.theme import apply_theme
+    from PySide6.QtWidgets import QLabel
+    apply_theme(app, theme)
     root = tmp_path / ('Suite/Data/Manager/TrainingReview' if preparations else 'Suite/Data/Manager/training')
     index, row, revision, review, output, registry = indexed(root, preparations=preparations)
     before = (review.read_bytes(), output.read_bytes())
     if action == 'recover': interrupted_forget(index, row, revision, monkeypatch)
     app, session, window = workflow_window(tmp_path, 'train')
-    errors = []; state = {'done':False, 'clicked':False}
+    errors = []; state = {'done':False, 'clicked':False, 'presentation':False}
     deadline = monotonic() + 20
     def drive():
         if state['done']: return
@@ -153,20 +157,31 @@ def test_visible_manager_history_list_management(tmp_path, monkeypatch, action, 
         try:
             assert monotonic() < deadline, 'History list-management fixture timed out'
             if dialog is not None:
+                if not state['presentation']:
+                    dialog.resize(1920,1080)
+                    texts=[label.text() for label in dialog.findChildren(QLabel)]
+                    assert dialog.runs.headerItem().text(0)==('Preparation' if preparations else 'Run')
+                    assert ('Reopen a prepared SDXL dataset' if preparations else 'Find a saved Training review') in texts
+                    assert dialog.open_button.text()==('Review Selected Preparation' if preparations else 'Open Selected')
+                    if preparations:
+                        assert 'Select a prepared dataset, then review its saved receipt. Preparation does not start training.' in texts
+                    state['presentation']=True
                 if not state['clicked']:
                     if action == 'forget':
                         if dialog.runs.topLevelItemCount():
                             selected = dialog.runs.topLevelItem(0)
+                            assert selected.text(0)==('SDXL preparation 1' if preparations else 'run')
+                            assert selected.toolTip(0)==row.run_id
                             if not selected.isSelected():
                                 QTest.mouseClick(dialog.runs.viewport(), Qt.LeftButton, pos=dialog.runs.visualItemRect(selected).center())
                         button = dialog.forget_button
                     else: button = dialog.recover_button
                     if button.isVisible() and button.isEnabled():
-                        capture(dialog, 'manager-history-' + ('preparations-' if preparations else '') + action + '-before')
+                        capture(dialog, 'manager-history-' + ('preparations-' if preparations else '') + action + '-' + theme + '-before')
                         QTest.mouseClick(button, Qt.LeftButton); state['clicked'] = True
                 elif (dialog._task is None and not index.pending.exists() and index.snapshot()[0] == ()
-                      and dialog.page_summary.text() == 'Saved reviews: 0' and not dialog._needs_recovery):
-                    capture(dialog, 'manager-history-' + ('preparations-' if preparations else '') + action + '-complete')
+                      and dialog.page_summary.text() == ('Saved preparations: 0' if preparations else 'Saved reviews: 0') and not dialog._needs_recovery):
+                    capture(dialog, 'manager-history-' + ('preparations-' if preparations else '') + action + '-' + theme + '-complete')
                     state['done'] = True; dialog.reject(); return
             QTimer.singleShot(20, drive)
         except BaseException as exc:
@@ -175,10 +190,10 @@ def test_visible_manager_history_list_management(tmp_path, monkeypatch, action, 
     try:
         QTimer.singleShot(20, drive)
         if preparations:
-            trigger_more(window, 'Saved Preparations…')
-        else:
             assert window.surface.history.isVisible() and window.surface.history.isEnabled()
             QTest.mouseClick(window.surface.history, Qt.LeftButton)
+        else:
+            trigger_more(window, 'Saved Runs…')
         assert not errors, errors
         assert state['clicked'] and state['done']
         assert index.snapshot()[0] == ()

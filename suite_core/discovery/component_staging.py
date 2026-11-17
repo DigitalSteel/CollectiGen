@@ -303,8 +303,15 @@ def stage_and_activate(root, archive_path, *, component, version, os_name, archi
 
 def stage_and_activate_admitted(admission, archive_path, *, component, version, os_name,
         architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token,
-        failpoint=lambda phase: None, preflight=lambda root, base, owner: None, payload_policy=None, copy_checkpoint=None):
+        failpoint=lambda phase: None, preflight=lambda root, base, owner: None, payload_policy=None, copy_checkpoint=None,
+        reuse_rolled_back=False):
     require(type(admission) is ComponentStageAdmission, "original_root_admission_required")
+    require(type(reuse_rolled_back) is bool, "explicit_retained_workflow_policy_required")
+    if reuse_rolled_back:
+        require(type(component) is ComponentId
+                and component.value in {"collectigen.generate", "collectigen.train"}
+                and payload_policy is WORKFLOW_FROZEN_PAYLOAD_POLICY,
+                "finite_retained_workflow_policy_required")
     with admission.transaction(component, enroll=True) as (root, base, owner, check):
         preflight(root, base, owner)
         check()
@@ -314,7 +321,8 @@ def stage_and_activate_admitted(admission, archive_path, *, component, version, 
         return _stage_and_activate(root, base, owner, archive_path, component=component,
             version=version, os_name=os_name, architecture=architecture,
             manifest_bytes=manifest_bytes, signature_bytes=signature_bytes, trust_bytes=trust_bytes,
-            expected_active_token=expected_active_token, failpoint=handoff, payload_policy=payload_policy, copy_checkpoint=copy_checkpoint)
+            expected_active_token=expected_active_token, failpoint=handoff, payload_policy=payload_policy,
+            copy_checkpoint=copy_checkpoint, reuse_rolled_back=reuse_rolled_back)
 
 
 def extract_component_archive(archive_path, destination, *, member_extracted=lambda: None,
@@ -374,7 +382,8 @@ def extract_component_archive(archive_path, destination, *, member_extracted=lam
 
 
 def _stage_and_activate(root, base, owner, archive_path, *, component, version, os_name,
-        architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token, failpoint, payload_policy=None, copy_checkpoint=None):
+        architecture, manifest_bytes, signature_bytes, trust_bytes, expected_active_token, failpoint, payload_policy=None, copy_checkpoint=None,
+        reuse_rolled_back=False):
     policy = require_payload_policy(payload_policy, component, {"os": os_name, "architecture": architecture})
     with lock(base):
         journal_path = base / "transaction.json"
@@ -404,33 +413,52 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         guard(archive_path)
         require(archive_path.stat().st_size <= policy.max_archive_bytes, "archive_size")
         verify_artifact(archive_path, verified.artifact)
+        if copy_checkpoint is not None:
+            copy_checkpoint()  # Stop before creating a pending transaction.
         target = {"component_id": component.value, "version": version,
                   "directory": f"Apps/{component.value}/{version}", "inventory_sha256": verified.artifact.portable_manifest_sha256}
         destination = root / target["directory"]
         guard(destination)
-        require(not destination.exists(), "immutable_version_already_exists")
+        retained = destination.exists()
+        retained_profile = None
+        if retained:
+            # Reactivate only the exact original transaction's rolled-back bytes.
+            # This never adopts an unrecorded/abandoned directory or replaces it.
+            require(reuse_rolled_back and previous_bytes is not None
+                    and _json(previous_bytes, "retained workflow journal") == previous
+                    and previous["phase"] == "rolled_back" and previous["target"] == target
+                    and base64.b64decode(previous["manifest"], validate=True) == manifest_bytes
+                    and base64.b64decode(previous["signature"], validate=True) == signature_bytes,
+                    "immutable_version_already_exists")
+            failpoint("verifying_staged_files")
+            retained_profile = verify_directory(destination, target["inventory_sha256"], component, version,
+                payload_policy=policy, checkpoint=copy_checkpoint)
+            require(retained_profile["platform"] == platform, "inventory_platform")
         stage_name = "staging-" + uuid4().hex
         staging = base / stage_name
         guard(staging)
+        require(not staging.exists(), "fresh_stage_required")
         journal = {"schema": 2, "owner": owner, "component_id": component.value, "phase": "staging",
             "stage": stage_name, "before": before, "target": target, "os": os_name, "architecture": architecture,
             "manifest": base64.b64encode(manifest_bytes).decode(), "signature": base64.b64encode(signature_bytes).decode(),
             "prior_journal": None}
         require(len(canonical(journal)) <= MAX_METADATA_BYTES, "journal_size")
         atomic(pending_path, journal)
-        staging.mkdir()
-        failpoint("staging_created")
-        extract_component_archive(archive_path, staging,
-            member_extracted=lambda: failpoint("member_extracted"), payload_policy=policy, copy_checkpoint=copy_checkpoint)
-        failpoint("verifying_staged_files")
-        profile = verify_directory(staging, target["inventory_sha256"], component, version,
+        if not retained:
+            staging.mkdir()
+            failpoint("staging_created")
+            extract_component_archive(archive_path, staging,
+                member_extracted=lambda: failpoint("member_extracted"), payload_policy=policy, copy_checkpoint=copy_checkpoint)
+            failpoint("verifying_staged_files")
+        checked_source = destination if retained else staging
+        profile = retained_profile if retained else verify_directory(checked_source, target["inventory_sha256"], component, version,
                                    payload_policy=policy, checkpoint=copy_checkpoint)
         require(profile["platform"] == {"os": os_name, "architecture": architecture}, "inventory_platform")
         verify_artifact(archive_path, verified.artifact)
         journal["phase"] = "activation_pending"
         atomic(pending_path, journal)
         failpoint("before_version_publish")
-        verify_directory(staging, target["inventory_sha256"], component, version,
+        verify_directory(checked_source, target["inventory_sha256"], component, version,
                          payload_policy=policy, checkpoint=copy_checkpoint)
         if copy_checkpoint is not None:
             copy_checkpoint()
@@ -449,7 +477,9 @@ def _stage_and_activate(root, base, owner, archive_path, *, component, version, 
         failpoint("new_journal_established")
         pending_path.unlink()
         destination.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(staging, destination)  # same filesystem; absent immutable destination
+        if not retained:
+            os.replace(staging, destination)  # same filesystem; absent immutable destination
+        # Retained software is already published; only its activation changes.
         failpoint("version_published")
         require(active(root, base, component, platform, payload_policy=policy) == before, "active_changed_before_commit")
         payload(root, target, component, platform, payload_policy=policy)
