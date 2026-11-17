@@ -2873,8 +2873,8 @@
     },
     {
       "path": "qt_app/training_history_dialog.py",
-      "bytes": 42497,
-      "sha256": "172f14985ac304e95e35577f60f3193450b2699516a2cb0d0e6f8076b4a2d76e"
+      "bytes": 44578,
+      "sha256": "c62e89f4837ba685c60536e088d0da48e76df49ab19c08b705a1a6df941a2d77"
     },
     {
       "path": "qt_app/training_merge_dialog.py",
@@ -3288,8 +3288,8 @@
     },
     {
       "path": "suite_core/manager/krea_training_review.py",
-      "bytes": 74991,
-      "sha256": "5bdc32717bf467fb15bd67b8669faacdcc8a4cc5731c30ced9023370aaf898d2"
+      "bytes": 89284,
+      "sha256": "45422dc37203849fd97263c1de2659d780e7065a280395515b52d6b26558d64d"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",
@@ -3424,17 +3424,17 @@
     {
       "path": "suite_core/train/MODULE_MANIFEST.json",
       "bytes": 37326,
-      "sha256": "9d9dd1d734c58d8d0388429cb325488f2af405414d317213c44267b64e818f78"
+      "sha256": "794df3c267405c61cb22188576c3a67688666c0fd9e22a25b9d446eadba7dda4"
     },
     {
       "path": "suite_core/train/README.md",
-      "bytes": 3067,
-      "sha256": "093c23fa2f7df24203dfdb37a91b58c8e4908f7b88bf8e351667d17f812db96e"
+      "bytes": 4310,
+      "sha256": "dad34fa3ef82fa8a9f5f3c6e6c6ea9a489a4d808f6ea41e9bac6b3b786aad60a"
     },
     {
       "path": "suite_core/train/WHATS_NEW.md",
-      "bytes": 955,
-      "sha256": "9edaa756075bce8fa5119a25dee199157db8dddea56d8651d717b9eaa9c506be"
+      "bytes": 1299,
+      "sha256": "403995dd03f152af431ca2e1efaec6c4c8d890d113abff7676933866d8eec19f"
     },
     {
       "path": "suite_core/train/__init__.py",
@@ -3448,13 +3448,13 @@
     },
     {
       "path": "suite_core/train/surface.py",
-      "bytes": 5365,
-      "sha256": "90b22c85b12d8919aeea67efe7ee0f8b225cf7293d05d02b13272bdd1edc2bed"
+      "bytes": 5439,
+      "sha256": "b0d859bc6df7dbf69407a649fca1f9041fe201f2ea45a617afb4ada7743d7e7c"
     },
     {
       "path": "suite_core/train/version.py",
       "bytes": 255,
-      "sha256": "72b39a83e27bf0ef62ae8e739b0d414f1b31fb972eccbc8f6bf6aa73ec1ad64a"
+      "sha256": "bf49086992176ab073d69ee03dc30dd3432eef11a918e7283585600a3d9ea9fe"
     },
     {
       "path": "suite_core/train/window.py",

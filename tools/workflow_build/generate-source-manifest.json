@@ -2878,8 +2878,8 @@
     },
     {
       "path": "qt_app/training_history_dialog.py",
-      "bytes": 42497,
-      "sha256": "172f14985ac304e95e35577f60f3193450b2699516a2cb0d0e6f8076b4a2d76e"
+      "bytes": 44578,
+      "sha256": "c62e89f4837ba685c60536e088d0da48e76df49ab19c08b705a1a6df941a2d77"
     },
     {
       "path": "qt_app/training_merge_dialog.py",
@@ -3333,8 +3333,8 @@
     },
     {
       "path": "suite_core/manager/krea_training_review.py",
-      "bytes": 74991,
-      "sha256": "5bdc32717bf467fb15bd67b8669faacdcc8a4cc5731c30ced9023370aaf898d2"
+      "bytes": 89284,
+      "sha256": "45422dc37203849fd97263c1de2659d780e7065a280395515b52d6b26558d64d"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",

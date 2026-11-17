@@ -2958,8 +2958,8 @@
     },
     {
       "path": "qt_app/training_history_dialog.py",
-      "bytes": 42497,
-      "sha256": "172f14985ac304e95e35577f60f3193450b2699516a2cb0d0e6f8076b4a2d76e"
+      "bytes": 44578,
+      "sha256": "c62e89f4837ba685c60536e088d0da48e76df49ab19c08b705a1a6df941a2d77"
     },
     {
       "path": "qt_app/training_metrics_widget.py",

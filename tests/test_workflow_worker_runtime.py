@@ -219,6 +219,7 @@ def test_training_review_exposes_prepare_only_for_reviewed_original_or_exact_mod
     from time import monotonic, sleep
     from PIL import Image
     from PySide6.QtWidgets import QApplication, QWidget
+    from PySide6.QtCore import Qt
     from PySide6.QtTest import QTest
     from core import ImageRecord, LibraryImageIdentity, TagDatabase, TrainingCandidateSelectionService, TrainingGoal, TrainingPermissionDisposition
     from core.training_package import TrainingPackageService
@@ -267,6 +268,7 @@ def test_training_review_exposes_prepare_only_for_reviewed_original_or_exact_mod
             QTest.qWait(10)
             sleep(.002)  # Let the retained Python worker physically retire before Qt settlement.
         assert dialog.tabs.isEnabled() and not dialog._executor.close_held, (dialog.status.text(), dialog._future.done(), dialog._executor.close_held, dialog._timer.isActive(), dialog._timer.remainingTime())
+        QTest.mouseClick(dialog.details_button, Qt.LeftButton)
         assert dialog.dataset_button.isVisible()
         assert dialog.prepare_button.isVisible() == (kind in {'original', 'module'})
         assert dialog._dataset_verifier is verifier  # Never unwrap away authenticated lifetime/cancel hooks.

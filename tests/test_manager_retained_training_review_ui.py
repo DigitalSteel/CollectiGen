@@ -133,7 +133,7 @@ def test_manager_history_retained_handoff_uses_current_selection(tmp_path, monke
 
     try:
         QTimer.singleShot(20, drive)
-        QTest.mouseClick(window.surface.history, Qt.LeftButton)
+        trigger_more(window, 'Saved Runs…')
         state['done'] = True
         assert not errors, errors
         if mode in {'open', 'transient'}:

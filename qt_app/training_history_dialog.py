@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView, QDialog, QDialogButtonBox, QHeaderView, QHBoxLayout, QLabel,
-    QProgressBar, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
+    QProgressBar, QPushButton, QToolButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
 )
 
 from core.training_run_index import (
@@ -71,7 +71,7 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         self._retained_retry_available = False
 
         self.setModal(False)
-        self.setWindowTitle("Saved SDXL Preparations" if preparations else "Local Training History")
+        self.setWindowTitle("Saved Preparations" if preparations else "Local Training History")
         self.resize(940, 700)
         layout = QVBoxLayout(self)
         from .components import ContextHelpButton
@@ -111,7 +111,7 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         layout.addWidget(self.page_error)
 
         self.runs = QTreeWidget()
-        self.runs.setHeaderLabels(["Preparation" if preparations else "Run", "Kind", "Phase", "Destination"])
+        self.runs.setHeaderLabels(["Preparation" if preparations else "Run", "Kind", "Status" if preparations else "Phase", "Destination"])
         self.runs.setRootIsDecorated(False)
         self.runs.setSelectionMode(QAbstractItemView.SingleSelection)
         self.runs.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -121,6 +121,12 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.Stretch)
+        if preparations:
+            # The scoped index currently contains SDXL dataset preparations.
+            # Identity and exact location remain in Details, not repeated columns.
+            self.runs.setColumnHidden(1, True)
+            self.runs.setColumnHidden(3, True)
+            header.setSectionResizeMode(0, QHeaderView.Stretch)
         self.runs.itemSelectionChanged.connect(self._selection_changed)
         layout.addWidget(self.runs, 1)
         self.empty_state = EmptyStatePanel(
@@ -139,6 +145,17 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         pages.addStretch(1)
         layout.addLayout(pages)
 
+        self.selected_summary = self._label("")
+        self.selected_summary.setVisible(preparations)
+        layout.addWidget(self.selected_summary)
+        self.details_button = QToolButton()
+        self.details_button.setText("Preparation details")
+        self.details_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.details_button.setArrowType(Qt.RightArrow)
+        self.details_button.setCheckable(True)
+        self.details_button.setVisible(preparations)
+        self.details_button.toggled.connect(self._update_actions)
+        layout.addWidget(self.details_button, 0, Qt.AlignLeft)
         self.detail = self._label("Select a saved preparation to see its details." if preparations else "Select a saved run to see its details.")
         self.detail.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(self.detail)
@@ -172,7 +189,7 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         actions.addStretch(1)
         actions.addWidget(buttons)
         actions.addWidget(self.review_return_button)
-        self.open_button = QPushButton("Open Selected")
+        self.open_button = QPushButton("Review Selected Preparation" if preparations else "Open Selected")
         self.open_button.setProperty("primary", True)
         self.open_button.clicked.connect(self._open_selected)
         self.forget_button = QPushButton("Forget From This List")
@@ -509,6 +526,8 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
                 "anima": "Anima run", "validation": "Held-out validation",
                 "preflight": "SDXL dataset preparation"}[record.kind]
             phase = record.phase.replace("_", " ").title()
+            if self._preparations and record.phase == "prepared":
+                phase = "Prepared · training not started"
             item = QTreeWidgetItem([name, kind, phase, record.destination])
             item.setData(0, Qt.UserRole, (record.run_id, record.sequence))
             item.setToolTip(0, record.run_id)
@@ -584,11 +603,16 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
     def _selection_changed(self):
         record = self._selected()
         if record is None:
+            self.selected_summary.setText("")
             self.detail.setText("Select a saved preparation to see its details." if self._preparations else "Select a saved run to see its details.")
         else:
             kind = {"execution": "Local training run", "readiness": "Local readiness check",
                 "anima": "Retained Anima run", "validation": "Held-out validation",
                 "preflight": "SDXL dataset preparation"}[record.kind]
+            if self._preparations:
+                name = record.annotation.name or f"SDXL preparation {record.sequence}"
+                self.selected_summary.setText(
+                    f"{name}\nReview Selected Preparation opens its saved receipt. It does not recheck live inputs or start training.")
             self.detail.setText(
                 f"{kind} · {record.phase.replace('_', ' ')}\n"
                 + (f"Name: {record.annotation.name}\n" if record.annotation.name else "") +
@@ -679,8 +703,15 @@ class TrainingHistoryDialog(FeedbackEnabledDialog):
         self.forget_button.setEnabled(
             not self._read_only and idle and not self._needs_recovery
             and selected is not None and bool(self._revision))
-        self.detail.setVisible(selected is not None)
-        self.forget_explanation.setVisible(not self._read_only and selected is not None)
+        show_details = selected is not None and (not self._preparations or self.details_button.isChecked())
+        self.details_button.setVisible(self._preparations and selected is not None)
+        self.details_button.setEnabled(idle)
+        self.details_button.setArrowType(Qt.DownArrow if self.details_button.isChecked() else Qt.RightArrow)
+        self.selected_summary.setVisible(self._preparations and selected is not None)
+        self.detail.setVisible(show_details)
+        self.forget_explanation.setVisible(not self._read_only and show_details)
+        if self._preparations:
+            self.forget_button.setVisible(not self._read_only and show_details)
         self.previous_button.setVisible(self._offset > 0 or self._next_offset is not None)
         self.next_button.setVisible(self._offset > 0 or self._next_offset is not None)
         can_recover = self._needs_recovery and not self._read_only

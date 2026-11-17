@@ -28,10 +28,10 @@ class TrainSurface(QWidget):
         self.setAccessibleName("Train workflow")
         self._busy = False
         layout = QVBoxLayout(self)
-        layout.addWidget(PageHeader("Train", "Open a prepared package, review it, then choose when to train."))
+        layout.addWidget(PageHeader("Train", "Review a training package and prepare its next step."))
         self.guidance = QLabel(
             "Prepare and select images in Organizer. Open its training package here to review exact data, "
-            "model, trainer and resource requirements before starting."
+            "model, training method, trainer and resource requirements. Available preparation and training methods depend on the exact target and adapter."
         )
         self.guidance.setWordWrap(True)
         layout.addWidget(self.guidance)

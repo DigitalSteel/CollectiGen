@@ -174,6 +174,8 @@ def test_visible_manager_history_list_management(tmp_path, monkeypatch, action, 
                             assert selected.toolTip(0)==row.run_id
                             if not selected.isSelected():
                                 QTest.mouseClick(dialog.runs.viewport(), Qt.LeftButton, pos=dialog.runs.visualItemRect(selected).center())
+                            if preparations and not dialog.details_button.isChecked():
+                                QTest.mouseClick(dialog.details_button, Qt.LeftButton)
                         button = dialog.forget_button
                     else: button = dialog.recover_button
                     if button.isVisible() and button.isEnabled():

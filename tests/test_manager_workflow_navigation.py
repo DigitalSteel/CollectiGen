@@ -408,16 +408,17 @@ def test_preparation_progress_and_guidance_preserve_evidence_and_cancel(monkeypa
     app=QApplication.instance() or QApplication([])
     evidence='Readiness facts\nNext step\nDisabled old action\n\nExact evidence: synthetic-pinned'
     section=QPlainTextEdit();section.setPlainText(evidence)
-    state=NS(sections=[section])
+    state=NS(sections=[section], next_step=QLabel())
     review.KreaTrainingReviewDialog._preparation_next_step(state, 'Open Saved Preparations')
-    assert section.toPlainText()=='Readiness facts\nNext step\nOpen Saved Preparations\n\nExact evidence: synthetic-pinned'
+    assert section.toPlainText()==evidence
+    assert state.next_step.text()=='Open Saved Preparations'
     state=NS(_future=NS(done=lambda:False), _executor=NS(close_held=True),
         _preparing_dataset=True, _cancel=Event(), _preparation_started=10.0,
         _preparation_status_second=0, status=QLabel())
     monkeypatch.setattr(review, 'monotonic', lambda:17.5)
-    review.KreaTrainingReviewDialog._settle(state)
+    review.KreaTrainingReviewDialog._settle_operation(state)
     assert 'Elapsed 7s' in state.status.text() and 'Cancel Check and Return' in state.status.text()
     state._cancel.set();state.status.setText('Stopping safely')
     monkeypatch.setattr(review, 'monotonic', lambda:25.0)
-    review.KreaTrainingReviewDialog._settle(state)
+    review.KreaTrainingReviewDialog._settle_operation(state)
     assert state.status.text()=='Stopping safely'

@@ -8,7 +8,8 @@ from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel,
-    QLineEdit, QPlainTextEdit, QPushButton, QTabWidget, QVBoxLayout, QWidget,
+    QLayout, QLineEdit, QPlainTextEdit, QProgressBar, QPushButton, QStyle, QTabWidget, QToolButton,
+    QVBoxLayout, QWidget,
 )
 
 from .resource_executor import ResourceExecutorOwner
@@ -63,7 +64,7 @@ class KreaTrainingReviewDialog(QDialog):
                  expected_package_fingerprint=None, open_trainer_setup=None, open_sdxl_preparation=None):
         super().__init__(parent)
         self.setWindowTitle("Training Package Review")
-        self.resize(850, 630)
+        self.resize(960, 760)
         self._executor = ResourceExecutorOwner()
         self._cancel = Event()
         self._dataset_verifier = dataset_verifier
@@ -95,26 +96,63 @@ class KreaTrainingReviewDialog(QDialog):
         self._checking_anima_setup = False
         self._adapter_preview = None
         self._preparation_setup = None
+        self._presentation_future = None
+        self._operation_started = monotonic()
+        self._preparation_complete = False
+        self._preparation_saved = False
+        self._package_valid = False
+        self._preparation_hold = False
+        self._sdxl_preparation_available = False
 
         layout = QVBoxLayout(self)
         heading = QLabel("Review a training package")
         heading.setObjectName("sectionTitle")
         layout.addWidget(heading)
-        guidance = ["Review a verified SDXL LoRA, Krea 2 LoRA, Anima LoRA, or collection-bound package for manual handoff."]
-        if registry_path is not None:
-            guidance.append("Krea 2 LoRA packages also get a registered-base check.")
-        else:
-            guidance.append("A Krea 2 registered-base check needs an admitted model registry.")
-        if dataset_verifier is not None:
-            guidance.append("When available, Verify SDXL Dataset inspects the package in an isolated worker.")
-        guidance.append("Training cannot start here.")
-        note = QLabel(" ".join(guidance))
+        note = QLabel("Review the selected data and training method, then prepare a supported dataset or use the package in an external trainer. Training cannot start here.")
         note.setWordWrap(True)
         layout.addWidget(note)
+        self.package_goal = QLabel("Checking the package goal…")
+        self.package_scope = QLabel("Model, method and image scope have not been verified yet.")
+        self.readiness_notes = QLabel("Package validity, dataset preparation and readiness to train are separate checks.")
+        self.next_step = QLabel("Keep this review open while the selected package is checked, or cancel and return.")
+        for widget, name in ((self.package_goal, "Training package goal"),
+                (self.package_scope, "Training package scope"),
+                (self.readiness_notes, "Training preparation requirements"),
+                (self.next_step, "Training preparation next action")):
+            widget.setTextFormat(Qt.PlainText)
+            widget.setWordWrap(True)
+            widget.setAccessibleName(name)
+            layout.addWidget(widget)
+        self.saved_location = QLabel()
+        self.saved_location.setTextFormat(Qt.PlainText)
+        self.saved_location.setWordWrap(True)
+        self.saved_location.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.saved_location.setAccessibleName("Saved training preparation location")
+        self.saved_location.hide()
+        layout.addWidget(self.saved_location)
         self.status = QLabel("Checking the selected package…")
         self.status.setTextFormat(Qt.PlainText)
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
+        actions = QHBoxLayout()
+        layout.addLayout(actions)
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 0)
+        self.progress.setAccessibleName("Training package operation in progress")
+        self.elapsed = QLabel()
+        self.elapsed.setAccessibleName("Training package operation elapsed time")
+        layout.addWidget(self.progress)
+        layout.addWidget(self.elapsed)
+        self.details_button = QPushButton()
+        self.details_button.setText("Package details and checks")
+        self.details_button.setCheckable(True)
+        self.details_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowRight))
+        layout.addWidget(self.details_button, 0, Qt.AlignLeft)
+        self.details_panel = QWidget()
+        details_layout = QVBoxLayout(self.details_panel)
+        details_layout.setContentsMargins(0, 0, 0, 0)
+        self.details_panel.hide()
+        self.details_button.toggled.connect(self._toggle_details)
         self.tabs = QTabWidget()
         self.sections = []
         for title in ("Readiness", "Settings", "Captions"):
@@ -127,53 +165,149 @@ class KreaTrainingReviewDialog(QDialog):
         self.dataset_button = QPushButton("Verify SDXL Dataset…")
         self.dataset_button.hide()
         self.dataset_button.clicked.connect(self._verify_dataset)
-        layout.addWidget(self.dataset_button, 0, Qt.AlignLeft)
+        checks = QHBoxLayout()
+        checks.addWidget(self.dataset_button)
         self.prepare_button = QPushButton("Prepare SDXL Dataset…")
         self.prepare_button.hide()
         self.prepare_button.clicked.connect(self._prepare_dataset)
-        layout.addWidget(self.prepare_button, 0, Qt.AlignLeft)
         self.adapter_button = QPushButton("Review SDXL Trainer Settings…")
         self.adapter_button.hide()
         self.adapter_button.clicked.connect(self._open_adapter_preview)
-        layout.addWidget(self.adapter_button, 0, Qt.AlignLeft)
+        checks.addWidget(self.adapter_button)
         self.anima_button = QPushButton("Verify Anima Model Files…")
         self.anima_button.hide()
         self.anima_button.clicked.connect(self._open_anima_verification)
-        layout.addWidget(self.anima_button, 0, Qt.AlignLeft)
+        checks.addWidget(self.anima_button)
+        checks.addStretch(1)
+        details_layout.addLayout(checks)
         self.anima_setup_button = QPushButton("Check Anima Readiness")
         self.anima_setup_button.hide()
         self.anima_setup_button.clicked.connect(self._check_anima_setup)
-        layout.addWidget(self.anima_setup_button, 0, Qt.AlignLeft)
         self.anima_prepare_button = QPushButton("Prepare Anima Run")
         self.anima_prepare_button.hide()
         self.anima_prepare_button.clicked.connect(self._prepare_anima)
-        layout.addWidget(self.anima_prepare_button, 0, Qt.AlignLeft)
-        layout.addWidget(self.tabs, 1)
-        actions = QHBoxLayout()
+        details_layout.addWidget(self.tabs, 1)
+        layout.addWidget(self.details_panel, 1)
+        layout.addStretch(1)
         self.folder_button = QPushButton("Open Package Folder")
         self.folder_button.setToolTip("Find the verified package for use in your external trainer.")
         self.folder_button.hide()
         self.folder_button.clicked.connect(self._open_package_folder)
-        actions.addWidget(self.folder_button)
+        details_layout.addWidget(self.folder_button, 0, Qt.AlignLeft)
         self.prepared_folder_button = QPushButton("Open Prepared Workspace")
         self.prepared_folder_button.hide()
         self.prepared_folder_button.clicked.connect(self._open_prepared_folder)
-        actions.addWidget(self.prepared_folder_button)
+        details_layout.addWidget(self.prepared_folder_button, 0, Qt.AlignLeft)
         self.retry_history_button = QPushButton("Retry Saving to History")
         self.retry_history_button.hide()
         self.retry_history_button.clicked.connect(self._retry_preparation_history)
         actions.addWidget(self.retry_history_button)
+        actions.addWidget(self.prepare_button)
+        actions.addWidget(self.anima_setup_button)
+        actions.addWidget(self.anima_prepare_button)
         actions.addStretch()
         self.return_button = QPushButton("Cancel Check and Return")
         self.return_button.setMinimumWidth(self.return_button.fontMetrics().horizontalAdvance('Return to Training') + 32)
         self.return_button.clicked.connect(self.reject)
         actions.addWidget(self.return_button)
-        layout.addLayout(actions)
 
         self._future = self._executor.submit(self._review, package_path, registry_path)
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._settle)
         self._timer.start(50)
+        self._refresh_presentation()
+
+    def _toggle_details(self, expanded):
+        self.details_panel.setVisible(expanded)
+        self.details_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowDown if expanded else QStyle.SP_ArrowRight))
+        self._refresh_presentation()
+
+    def _refresh_presentation(self):
+        """Project original action/worker state; never authorize an operation."""
+        if self._presentation_future is not self._future:
+            self._presentation_future = self._future
+            self._operation_started = monotonic()
+        busy = self._timer.isActive()
+        if self._sdxl_preparation_available:
+            self.prepare_button.setVisible(not self._preparation_complete or self.details_button.isChecked())
+        self.progress.setVisible(busy)
+        self.elapsed.setVisible(busy and not self._preparing_dataset)
+        if busy:
+            self.elapsed.setText(f"Elapsed {max(0, int(monotonic() - self._operation_started))}s · Waiting for the current check to finish.")
+        available = lambda button: not button.isHidden() and button.isEnabled()
+        if busy:
+            primary = self.return_button if self.return_button.isEnabled() else None
+            instruction = "Keep this review open to finish. Cancel and Return stops the current check safely."
+            if self._saving_preparation:
+                instruction = "Wait for the saved-list operation to settle. The prepared workspace is retained."
+            elif self._cancel.is_set():
+                instruction = "Stopping safely. Wait for the original worker to finish before reopening the package."
+        elif available(self.retry_history_button):
+            primary = self.retry_history_button
+            instruction = "Retry Saving to History makes the retained preparation available from the saved list. Training has not started."
+        elif not self._package_valid:
+            primary = self.return_button
+            instruction = "Return to Training and choose a current package. The original saved package is unchanged."
+            if self._handoff_fingerprint is None:
+                self.package_goal.setText("The package could not be verified.")
+                self.package_scope.setText("Model, method and image scope have not been verified.")
+        elif self._preparation_complete:
+            primary = self.return_button
+            instruction = ("The prepared workspace is retained at the location shown, but saving it to the list is unconfirmed. Keep that location; do not assume it appears in Saved Preparations. Training has not started."
+                if not self._preparation_saved else
+                "Return to Training, then choose More → Saved Runs to review this Anima preparation. Training has not started."
+                if self._anima_base_id is not None else
+                "Return to Training, then open Saved Preparations to review this dataset. Training has not started.")
+        elif self._preparation_hold:
+            primary = self.return_button
+            instruction = "Resolve the requirements shown before preparing. Package details and checks retains the exact evidence and available rechecks; return to Training to choose a revised package."
+        elif available(self.anima_prepare_button):
+            primary = self.anima_prepare_button
+            instruction = "Prepare Anima Run saves a review you can reopen from Saved Runs. It does not start training."
+        elif available(self.prepare_button):
+            primary = self.prepare_button
+            instruction = "Choose Prepare SDXL Dataset to review the trainer folders and create a separate prepared copy."
+        elif available(self.anima_setup_button):
+            primary = self.anima_setup_button
+            instruction = "Check Anima Readiness reviews this exact model, method and saved trainer setup."
+        elif self._handoff_folder is not None:
+            primary = self.folder_button if self.details_button.isChecked() and available(self.folder_button) else self.details_button
+            instruction = ("Open Package details and checks to inspect this Krea 2 package. The Krea 2 trainer cannot use this folder directly."
+                if self._krea_package else
+                "No dataset preparation is available here for this target and method. Open Package details and checks to inspect the package and its external-trainer handoff.")
+        else:
+            primary = self.return_button
+            instruction = "Return to Training and choose a current package. The original saved package is unchanged."
+        self.next_step.setText(instruction)
+        for button in (self.return_button, self.retry_history_button, self.prepare_button,
+                       self.anima_setup_button, self.anima_prepare_button, self.details_button, self.folder_button):
+            desired = button is primary
+            if bool(button.property("primary")) != desired:
+                button.setProperty("primary", desired)
+                button.style().unpolish(button)
+                button.style().polish(button)
+
+    def _present_verified_scope(self, verification, configuration, report):
+        """Use the same reviewed configuration for every model/method surface."""
+        manifest = verification.manifest
+        candidate = manifest.get("candidate_plan", {})
+        goal = candidate.get("goal", {}) if isinstance(candidate, dict) else {}
+        goal = goal.get("text", "") if isinstance(goal, dict) else ""
+        goal = " ".join(str(goal).split()) or "Prepare the selected training data."
+        self.package_goal.setText("Goal: " + (goal if len(goal) <= 240 else goal[:237] + "…"))
+        self.package_goal.setToolTip(goal)
+        methods = {"lora": "LoRA", "full_fine_tune": "Full fine-tune", "embedding": "Embedding"}
+        method = methods.get(configuration.output_kind, configuration.output_kind)
+        counts = manifest["counts"]
+        self.package_scope.setText(
+            f"{configuration.target_model_family} {configuration.target_model_version or ''} · {method}\n"
+            f"{counts['included_images']:,} included images · {counts['training']:,} training · "
+            f"{counts['validation']:,} validation · {counts['holdout']:,} holdout · {counts['excluded_images']:,} excluded")
+        requirements = ("\n\n".join(
+            f"{item.summary}\n{item.reason}\n{item.next_action}" for item in report.requirements)
+            if report is not None and not isinstance(report, str) else "")
+        self.readiness_notes.setText(requirements or (report if isinstance(report, str) else "") or
+            "Package files are verified. Trainer, model and machine readiness remain separate checks. Training has not started.")
 
     def _package_review_cancelled(self):
         return self._cancel.is_set() or (self._anima_review_allowed is not None
@@ -468,6 +602,12 @@ class KreaTrainingReviewDialog(QDialog):
         dialog.show()
 
     def _settle(self):
+        try:
+            self._settle_operation()
+        finally:
+            self._refresh_presentation()
+
+    def _settle_operation(self):
         if not self._future.done() or self._executor.close_held:
             if self._preparing_dataset and not self._cancel.is_set():
                 elapsed=max(0,int(monotonic()-self._preparation_started))
@@ -520,7 +660,11 @@ class KreaTrainingReviewDialog(QDialog):
                 self.status.setText("Saved trainer setup could not be verified. Review your trainer setup or use the package in an external trainer.")
             else:
                 if prepared is not None:
+                    self._preparation_complete = True
                     path, retry = prepared
+                    self._preparation_saved = retry is None
+                    self.saved_location.setText(f"Saved review: {path}")
+                    self.saved_location.show()
                     self.sections[0].appendPlainText(f"\nRetained review: {path}")
                     if retry is not None:
                         self._retry_history_save = retry
@@ -531,17 +675,23 @@ class KreaTrainingReviewDialog(QDialog):
                                         if retry is None else "Anima preparation was retained. Choose Retry Saving to History "
                                         "to make it available in Saved Training Runs. Training did not start.")
                 elif preview.ready:
+                    self._preparation_hold = False
+                    self.readiness_notes.setText("Anima readiness checks passed for this exact preparation. Preparing a run saves a review; training has not started.")
                     self._anima_preflight = preflight
                     self.anima_prepare_button.setVisible(self._anima_history_root is not None)
+                    self.anima_prepare_button.setEnabled(True)
                     self.status.setText("Anima preflight passed. Prepare the run to save a review in Manager Training History."
                                         if self._anima_history_root is not None else
                                         "Anima preflight passed. This review cannot prepare or start training.")
                 else:
+                    self._preparation_hold = True
+                    self.anima_prepare_button.setEnabled(False)
                     from qt_app.training_anima_dialog import ISSUE_MESSAGES
 
                     reasons = "\n".join(ISSUE_MESSAGES.get(issue, issue.replace("_", " "))
                                         for issue in preview.issues)
                     self.status.setText("Anima preflight is held. See Readiness for details.")
+                    self.readiness_notes.setText(reasons)
                     self.sections[0].appendPlainText("\nReadiness checks to resolve\n" + reasons)
                     self.tabs.setCurrentIndex(0)
             return
@@ -562,6 +712,7 @@ class KreaTrainingReviewDialog(QDialog):
             else:
                 self._retry_history_save = None
                 self.retry_history_button.hide()
+                self._preparation_saved = True
                 if self._anima_base_id is not None:
                     self.anima_setup_button.setEnabled(self._anima_review_allowed())
                     self.status.setText("Anima preparation saved to History. Review Saved Training Runs to reopen it.")
@@ -581,11 +732,15 @@ class KreaTrainingReviewDialog(QDialog):
             except TrainingPreflightWorkspacePathError as exc:
                 self.status.setText(str(exc))
             except TrainingDatasetAdmissionHold as exc:
+                self._preparation_hold = True
+                self.prepare_button.setEnabled(False)
                 self.status.setText("This package is outside the reviewed SDXL preparation profile. Manual handoff is still available.")
-                self.sections[0].appendPlainText("\n" + self._dataset_hold_details(exc.holds))
+                detail = self._dataset_hold_details(exc.holds)
+                self.readiness_notes.setText(detail)
+                self.sections[0].appendPlainText("\n" + detail)
                 self.tabs.setCurrentIndex(0)
             except TrainingPreparationRetentionError as exc:
-                self._show_prepared_workspace(exc.workspace, str(exc))
+                self._show_prepared_workspace(exc.workspace, str(exc), history_saved=False)
                 if exc.retry is not None:
                     self._retry_history_save = exc.retry
                     self.retry_history_button.setEnabled(True)
@@ -628,6 +783,8 @@ class KreaTrainingReviewDialog(QDialog):
             return
         self._handoff_folder = verification.destination
         self._handoff_fingerprint = verification.package_fingerprint
+        self._package_valid = True
+        self._present_verified_scope(verification, configuration, report)
         self._krea_package = (configuration.target_model_family.casefold() in {"krea 2", "krea2"}
                               and configuration.output_kind == "lora")
         if self._krea_package:
@@ -646,9 +803,9 @@ class KreaTrainingReviewDialog(QDialog):
             if anima:
                 status = "Anima package verified for manual handoff. Use the verified package in an external trainer."
             if self._krea_package:
-                status = "Package verified for manual handoff. Krea 2 compatibility review needs an admitted model registry."
+                status = "Package files verified for inspection. Krea 2 compatibility review needs an admitted model registry."
                 if self._registry_path is not None:
-                    status = "Package verified for manual handoff. The model registry needs attention before Krea 2 compatibility review."
+                    status = "Package files verified for inspection. The model registry needs attention before Krea 2 compatibility review."
             self.status.setText(status)
             self.tabs.setTabText(2, "Dataset")
             self.sections[2].setAccessibleName("Training dataset")
@@ -696,6 +853,7 @@ class KreaTrainingReviewDialog(QDialog):
                     except ValueError:
                         pass
                     else:
+                        self._sdxl_preparation_available = True
                         self.prepare_button.show()
             self.sections[1].setPlainText(
                 f"Model family: {configuration.target_model_family}\n"
@@ -735,11 +893,6 @@ class KreaTrainingReviewDialog(QDialog):
                     explanation = f"Anima adapter preview unavailable. {exc}"
                 self.sections[1].appendPlainText("\nAnima adapter preview\n" + explanation)
             self._append_companions(verification.manifest)
-            next_actions = []
-            for button in (self.dataset_button, self.adapter_button, self.prepare_button,
-                           self.anima_button, self.anima_setup_button):
-                if not button.isHidden():
-                    next_actions.append(button.text().rstrip(".\u2026"))
             counts = verification.manifest["counts"]
             overview = [
                 "Package files verified",
@@ -749,12 +902,6 @@ class KreaTrainingReviewDialog(QDialog):
                 f"Training: {counts['training']:,} | Validation: {counts['validation']:,} | Holdout: {counts['holdout']:,}",
                 "",
                 "Trainer and model readiness have not been checked. Training has not started.",
-                "",
-                "Next step",
-                ("Choose " + " or ".join(next_actions) + " to review the next preparation step."
-                 if next_actions else
-                 "Review Settings, Dataset and Captions, then use the package in your external trainer."),
-                "Open Package Folder lets you inspect the verified export. Return to Training keeps the package unchanged.",
                 "",
             ]
             self.sections[0].setPlainText("\n".join(overview) + self.sections[0].toPlainText())
@@ -814,8 +961,18 @@ class KreaTrainingReviewDialog(QDialog):
                 "\nRecorded model companions (verify in your Trainer)\n" + "\n".join(rows)
             )
 
-    def _show_prepared_workspace(self, path, status):
+    def _show_prepared_workspace(self, path, status, *, history_saved=True):
+        self._preparation_complete = True
+        self._preparation_saved = history_saved
+        self.saved_location.setText(f"Saved in: {path}")
+        self.saved_location.show()
         self.sections[0].appendPlainText(f"\nPrepared workspace: {path}")
+        self.package_goal.setText("Dataset prepared · Training has not started")
+        self.package_goal.setToolTip("")
+        self.readiness_notes.setText(
+            "The prepared copy and its receipt are retained. Trainer settings and model/machine readiness remain separate checks."
+            if history_saved else
+            "The prepared copy is retained, but its saved-list entry could not be confirmed. Keep the location below. Saving to the list is separate from preparing the data. Training has not started.")
         self.tabs.setCurrentIndex(0)
         try:
             folder = Path(path)
@@ -953,25 +1110,24 @@ class KreaTrainingReviewDialog(QDialog):
                                 f"{self.folder_button.text()} to recheck it and try again.")
 
     def _invalidate_package_review(self, message):
+        self._package_valid = False
+        self.readiness_notes.setText("Earlier checks no longer establish current readiness. Return to Training and select a current package; saved files are unchanged.")
         self._handoff_folder = None
         self._verification = None
         if self._dataset_overview is not None:
             self.sections[0].setPlainText(self._dataset_overview)
             self._dataset_overview = None
+        self._preparation_next_step("Return to Training and select a current package. Earlier preparation instructions no longer apply.")
+        self.sections[0].setPlainText("Earlier review evidence — not current\n\n" + self.sections[0].toPlainText())
         self.tabs.setEnabled(False)
-        for button in (self.folder_button, self.adapter_button, self.dataset_button):
+        for button in (self.folder_button, self.adapter_button, self.dataset_button,
+                       self.prepare_button, self.anima_button, self.anima_setup_button, self.anima_prepare_button):
             button.setEnabled(False)
         self.status.setText(message)
 
     def _preparation_next_step(self, message):
-        """Replace presentation guidance, preserving all readiness/evidence text."""
-        text=self.sections[0].toPlainText()
-        before,marker,after=text.partition("\nNext step\n")
-        _,separator,evidence=after.partition("\n\n")
-        if marker and separator:
-            self.sections[0].setPlainText(before+marker+message+separator+evidence)
-        else:
-            self.sections[0].appendPlainText("\nNext step\n"+message)
+        """Keep current action guidance separate from immutable review evidence."""
+        self.next_step.setText(message)
 
     def _open_adapter_preview(self):
         if (not self.adapter_button.isEnabled() or not self.adapter_button.isVisible() or self._checking_dataset
@@ -1032,8 +1188,14 @@ class KreaTrainingReviewDialog(QDialog):
 
         dialog = PreparationDialog(self)
         dialog.setWindowTitle("Prepare SDXL Dataset")
+        dialog.setMinimumWidth(720)
+        dialog.resize(760, 300)
         layout = QVBoxLayout(dialog)
-        note = QLabel("Select your existing SDXL trainer source, its Python environment, and the base Python directory. This prepares a separate dataset copy.")
+        layout.setSizeConstraint(QLayout.SetMinimumSize)
+        note = QLabel("Load your saved trainer, or choose its folders below. Prepare Dataset creates a separate copy of the selected data; it does not start training.")
+        # SetMinimumSize derives the dialog minimum from its contents. Keep a
+        # readable width even when the folder disclosure is collapsed.
+        note.setMinimumWidth(720)
         note.setWordWrap(True)
         layout.addWidget(note)
         load = QPushButton("Load Saved Trainer")
@@ -1045,19 +1207,57 @@ class KreaTrainingReviewDialog(QDialog):
         load_status = QLabel()
         load_status.setTextFormat(Qt.PlainText)
         load_status.setWordWrap(True)
+        load_status.setMinimumHeight(load_status.fontMetrics().lineSpacing() * 2)
         layout.addWidget(load_status)
-        form = QFormLayout()
-        layout.addLayout(form)
+        loaded_scope = QLabel()
+        loaded_scope.setTextFormat(Qt.PlainText)
+        loaded_scope.setWordWrap(True)
+        loaded_scope.setAccessibleName("Selected saved trainer")
+        loaded_scope.hide()
+        layout.addWidget(loaded_scope)
+        load_progress = QProgressBar()
+        load_progress.setRange(0, 0)
+        load_progress.setAccessibleName("Saved trainer check in progress")
+        load_progress.hide()
+        layout.addWidget(load_progress)
+        load_elapsed = QLabel()
+        load_elapsed.setAccessibleName("Saved trainer check elapsed time")
+        load_elapsed.hide()
+        layout.addWidget(load_elapsed)
+        folder_details = QToolButton()
+        folder_details.setText("Trainer folders")
+        folder_details.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        folder_details.setCheckable(True)
+        folder_details.setChecked(self._anima_settings_path is None)
+        folder_details.setArrowType(Qt.DownArrow if folder_details.isChecked() else Qt.RightArrow)
+        layout.addWidget(folder_details, 0, Qt.AlignLeft)
+        folder_panel = QWidget()
+        form = QFormLayout(folder_panel)
+        folder_panel.setVisible(folder_details.isChecked())
+        layout.addWidget(folder_panel)
+        def show_folders(expanded):
+            folder_panel.setVisible(expanded)
+            folder_details.setArrowType(Qt.DownArrow if expanded else Qt.RightArrow)
+            layout.activate()
+            dialog.adjustSize()
+        folder_details.toggled.connect(show_folders)
         fields = []
         edit_revision = 0
 
         def update_prepare():
             prepare.setEnabled(load_future is None and len(fields) == 3
                                 and all(Path(field.text().strip()).is_absolute() for field in fields))
+            for button, primary in ((prepare, prepare.isEnabled()),
+                    (load, not prepare.isEnabled() and load_future is None and not load.isHidden())):
+                if bool(button.property("primary")) != primary:
+                    button.setProperty("primary", primary)
+                    button.style().unpolish(button)
+                    button.style().polish(button)
 
         def edited():
             nonlocal edit_revision
             edit_revision += 1
+            loaded_scope.hide()
             update_prepare()
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -1084,6 +1284,7 @@ class KreaTrainingReviewDialog(QDialog):
             field.textChanged.connect(edited)
             row_layout.addWidget(field)
             row_layout.addWidget(browse)
+            row.setMinimumHeight(browse.sizeHint().height())
             form.addRow(label, row)
         load_timer = QTimer(dialog)
 
@@ -1092,9 +1293,12 @@ class KreaTrainingReviewDialog(QDialog):
 
         def finish_load():
             nonlocal load_future
+            load_elapsed.setText(f"Elapsed {max(0, int(monotonic() - load_started))}s · Checking the selected trainer folders.")
             if not load_future.done() or self._executor.close_held:
                 return
             load_timer.stop()
+            load_progress.hide()
+            load_elapsed.hide()
             future, load_future = load_future, None
             load.setEnabled(True)
             update_prepare()
@@ -1111,20 +1315,31 @@ class KreaTrainingReviewDialog(QDialog):
             except (OSError, RuntimeError, ValueError) as exc:
                 setup.setVisible(callable(self._open_trainer_setup))
                 load_status.setText(f"Saved trainer unavailable. Use Browse or review Trainer Setup. {exc}")
+                folder_details.setChecked(True)
                 return
             for field, location in zip(fields, locations, strict=True):
                 field.setText(location)
-            load_status.setText("Saved trainer loaded. Review these folders, then choose Prepare Dataset.")
+            loaded_scope.setText(
+                f"Trainer: {Path(locations[0]).name} · Environment: {Path(locations[1]).name} · Python: {Path(locations[2]).name}")
+            loaded_scope.show()
+            load_status.setText("Saved trainer loaded. Trainer folders lets you inspect or change the locations. Choose Prepare Dataset when ready.")
+            layout.activate()
+            dialog.adjustSize()
 
         loaded_at_revision = 0
+        load_started = 0.0
 
         def load_saved():
-            nonlocal load_future, loaded_at_revision
+            nonlocal load_future, loaded_at_revision, load_started
             if load_future is not None or cancelled():
                 return
             loaded_at_revision = edit_revision
             setup.hide()
             load_future = self._executor.submit(self._resolve_saved_sdxl_setup, cancelled)
+            load_started = monotonic()
+            load_progress.show()
+            load_elapsed.setText("Elapsed 0s · Checking the selected trainer folders.")
+            load_elapsed.show()
             load.setEnabled(False)
             update_prepare()
             load_status.setText("Checking the saved trainer setup…")
@@ -1139,6 +1354,7 @@ class KreaTrainingReviewDialog(QDialog):
         setup.clicked.connect(review_setup)
         load.clicked.connect(load_saved)
         load_timer.timeout.connect(finish_load)
+        update_prepare()
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
@@ -1165,6 +1381,9 @@ class KreaTrainingReviewDialog(QDialog):
             self.status.setText("Preparation could not start. Choose Prepare SDXL Dataset to retry.")
             return
         self._prepared_folder = None
+        self._preparation_complete = False
+        self._preparation_saved = False
+        self.saved_location.hide()
         self.prepared_folder_button.hide()
         self._retry_history_save = None
         self.retry_history_button.hide()
@@ -1172,9 +1391,9 @@ class KreaTrainingReviewDialog(QDialog):
         self._preparation_started=monotonic()
         self._preparation_status_second=0
         self._preparation_readiness=self.sections[0].toPlainText()
-        # Preserve the exact readiness/evidence text for settlement. While busy,
-        # do not point users toward controls disabled by the original owner.
-        facts=self._preparation_readiness.split("\nNext step\n",1)[0]
+        # Current actions have their own label; retain every review fact rather
+        # than parsing presentation headings out of the evidence.
+        facts=self._preparation_readiness
         self.sections[0].setPlainText(facts+"\n\nPreparation is running. Choose Cancel Check and Return to stop safely; keep this review open to finish.")
         for action in (self.prepare_button, self.dataset_button, self.adapter_button, self.folder_button):
             action.setEnabled(False)
@@ -1267,6 +1486,11 @@ class KreaTrainingReviewDialog(QDialog):
             self.sections[0].appendPlainText("\n" + "\n".join(counts))
         self.status.setText("Dataset inspection passed. Trainer readiness is unverified." if status == "admitted"
                             else "Dataset inspection is held. Trainer readiness is unverified.")
+        self._preparation_hold = status == "held"
+        if self._sdxl_preparation_available:
+            self.prepare_button.setEnabled(status == "admitted" and self._package_valid and not self._package_review_cancelled())
+        if status == "admitted":
+            self.readiness_notes.setText("Dataset inspection passed for this package. Trainer, model and machine readiness remain separate checks. Training has not started.")
         if status == "held":
             reason = result.get("reason")
             holds = summary.get("holds") if isinstance(summary, dict) else None
@@ -1279,9 +1503,11 @@ class KreaTrainingReviewDialog(QDialog):
                 detail = self._dataset_hold_details(holds)
             else:
                 detail = "Return to Training and select a verified SDXL LoRA package."
+            self.readiness_notes.setText(detail)
             self.sections[0].appendPlainText(f"\n{detail}")
         self.sections[0].appendPlainText(f"\nDataset inspection receipt: {digest}")
         self.tabs.setCurrentIndex(0)
+        self.dataset_button.setEnabled(self._package_valid and not self._package_review_cancelled())
 
     @staticmethod
     def _dataset_hold_details(holds):

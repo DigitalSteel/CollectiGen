@@ -1057,6 +1057,7 @@
     "tests/test_tag_database_pack_producer.py",
     "tests/test_tag_default_package.py",
     "tests/test_tag_details_host.py",
+    "tests/test_train_preparation_clarity.py",
     "tests/test_training_draft_transfer.py",
     "tests/test_training_package_context_compatibility.py",
     "tests/test_workflow_candidate_admission.py",
