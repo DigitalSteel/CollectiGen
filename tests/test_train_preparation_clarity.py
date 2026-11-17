@@ -13,6 +13,7 @@ from types import SimpleNamespace as NS
 
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, Qt, QTimer
+from PySide6.QtGui import QAccessible
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QDialogButtonBox, QLabel, QLineEdit, QProgressBar, QPushButton, QToolButton
 
@@ -93,6 +94,10 @@ def test_model_and_method_scope_keep_exact_expert_details(tmp_path, monkeypatch,
         assert family in dialog.package_scope.text() and method_label in dialog.package_scope.text()
         assert '2 included images' in dialog.package_scope.text()
         assert 'Teach a small still-life concept' in dialog.package_goal.text()
+        for label in (dialog.package_goal, dialog.package_scope, dialog.readiness_notes, dialog.next_step):
+            accessible = QAccessible.queryAccessibleInterface(label)
+            assert accessible.text(QAccessible.Text.Name) == label.text()
+            assert accessible.text(QAccessible.Text.Description) == label.accessibleDescription()
         assert not dialog.details_panel.isVisible()
         assert 'Training has not started' in dialog.readiness_notes.text() or family == 'Anima'
         if family == 'SDXL' and method == 'lora':
@@ -281,8 +286,9 @@ def test_saved_trainer_loading_keeps_progress_and_manual_choices(tmp_path, monke
                 state['clicked'] = True
                 QTest.mouseClick(load, Qt.LeftButton)
             elapsed, = [w for w in popup.findChildren(QLabel)
-                        if w.accessibleName() == 'Saved trainer check elapsed time']
+                        if w.accessibleDescription() == 'Saved trainer check elapsed time']
             if entered.is_set() and elapsed.isVisible() and 'Elapsed 1s' in elapsed.text() and not state['captured']:
+                assert QAccessible.queryAccessibleInterface(elapsed).text(QAccessible.Text.Name) == elapsed.text()
                 state['captured'] = True
                 progress, = popup.findChildren(QProgressBar)
                 assert progress.isVisible() and progress.minimum() == progress.maximum() == 0
@@ -299,7 +305,7 @@ def test_saved_trainer_loading_keeps_progress_and_manual_choices(tmp_path, monke
                     assert all(f.text() for f in fields)
                     assert buttons.button(QDialogButtonBox.Ok).isEnabled()
                     assert 'Trainer: source' in next(w.text() for w in popup.findChildren(QLabel)
-                        if w.accessibleName() == 'Selected saved trainer')
+                        if w.accessibleDescription() == 'Selected saved trainer')
                 else:
                     assert all(f.isVisible() and not f.text() for f in fields)
                 app.processEvents()
