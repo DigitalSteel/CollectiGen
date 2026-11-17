@@ -3428,8 +3428,8 @@
     },
     {
       "path": "suite_core/train/README.md",
-      "bytes": 2668,
-      "sha256": "0f591a3ef8ee65172897525ff68485a167594b4c1568808ad9156bef5750efc5"
+      "bytes": 3067,
+      "sha256": "093c23fa2f7df24203dfdb37a91b58c8e4908f7b88bf8e351667d17f812db96e"
     },
     {
       "path": "suite_core/train/WHATS_NEW.md",

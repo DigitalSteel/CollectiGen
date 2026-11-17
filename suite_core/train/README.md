@@ -10,6 +10,13 @@ images and disposable settings. Opening a package or preparing a dataset does
 not start training. Real training, trained-model quality and hardware suitability
 remain separate checks; install and review compatible trainer software first.
 
+This is a portable Windows 11 x64 alpha. Release metadata is signed, but the
+Windows executables are not Authenticode-signed. Windows may show an unknown
+publisher warning or block unsigned apps. Follow the
+[Suite download verification guidance](https://github.com/DigitalSteel/CollectiGen#readme)
+before first startup. Manager verifies module signatures and file hashes before
+installing updates.
+
 ## Install and open
 
 1. Use the complete Suite distribution with Manager **0.8.0-alpha.1** and
