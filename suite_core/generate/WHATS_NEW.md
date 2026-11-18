@@ -1,4 +1,14 @@
-# CollectiGen Generate 0.1.0-alpha.1
+# CollectiGen Generate 0.1.1-alpha.1
+
+November 18, 2026 · Alpha
+
+- Preserve exact whole seeds written as decimal or exponent text, including
+  large seeds and variation seeds. New reads keep those values exact in the
+  display and saved record. Previously saved records stay as they are.
+- Use Manager 0.8.0-alpha.1 with launcher 0.1.1 to review and confirm the
+  update from Generate 0.1.0-alpha.1.
+
+## Previous alpha
 
 November 17, 2026 · Alpha
 

@@ -8,19 +8,24 @@ from core.generation_metadata import format_generation_record, parse_generation_
 
 
 @pytest.mark.parametrize("seed", [2**53 + 1, 6237327949615356897, 2**64 - 1])
-@pytest.mark.parametrize("representation", ["swarm_integer", "swarm_string", "infotext", "comfy"])
+@pytest.mark.parametrize("representation", [
+    "swarm_integer", "swarm_string", "swarm_decimal_string", "infotext",
+    "infotext_decimal", "comfy", "comfy_exponent_string",
+])
 def test_large_seed_preserves_generator_identity_through_saved_roundtrip(seed, representation):
     if representation.startswith("swarm"):
         raw = json.dumps({"sui_image_params": {
             "prompt": "A blue mug and a red apple", "seed":
-            str(seed) if representation == "swarm_string" else seed,
+            {"swarm_string": str(seed), "swarm_decimal_string": f"{seed}.0"}.get(representation, seed),
             "steps": 12, "cfgscale": 5.0, "width": 512, "height": 512,
         }, "unrecognized_evidence": {"keep": "exactly"}})
-    elif representation == "infotext":
-        raw = f"A blue mug and a red apple\nSteps: 12, CFG scale: 5, Seed: {seed}, Size: 512x512"
+    elif representation.startswith("infotext"):
+        seed_text = f"{seed}.0" if representation == "infotext_decimal" else str(seed)
+        raw = f"A blue mug and a red apple\nSteps: 12, CFG scale: 5, Seed: {seed_text}, Size: 512x512"
     else:
         raw = json.dumps({"prompt": {"7": {"class_type": "KSampler", "inputs": {
-            "seed": seed, "steps": 12, "cfg": 5.0,
+            "seed": f"{seed}0e-1" if representation == "comfy_exponent_string" else seed,
+            "steps": 12, "cfg": 5.0,
             "sampler_name": "euler", "scheduler": "normal",
         }}}})
 
@@ -37,6 +42,18 @@ def test_large_seed_preserves_generator_identity_through_saved_roundtrip(seed, r
     assert reopened.seed == seed
     assert reopened.stages[0].seeds == [seed]
     assert reopened.raw == raw
+
+
+def test_infotext_keeps_exact_variation_seed_and_bounds_exponent_expansion():
+    variation = 2**64 - 1
+    raw = f"Synthetic still life\nSteps: 12, Seed: 42, Variation seed: {variation}.0"
+    record = parse_generation_payload(raw)
+    assert record.stages[0].seeds == [42, variation]
+    assert record.raw == raw
+    oversized = parse_generation_payload(
+        {"sui_image_params": {"prompt": "Synthetic still life", "seed": "1e1000000"}}
+    )
+    assert oversized.seed == "1e1000000"
 
 
 def test_exact_seed_fix_preserves_fractional_sampling_and_unknown_numeric_evidence():

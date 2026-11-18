@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal, InvalidOperation
 import json
 import math
 import re
@@ -100,6 +101,25 @@ def _number(value: Any) -> int | float | str:
 def _optional_int(value: Any) -> int | None:
     parsed = _number(value)
     return parsed if isinstance(parsed, int) else None
+
+
+def _seed_number(value: Any) -> int | float | str:
+    if isinstance(value, str):
+        text = value.strip()
+        try:
+            exact = Decimal(text)
+        except InvalidOperation:
+            return _number(value)
+        if exact.is_finite() and exact == exact.to_integral_value():
+            # Bound expansion of compact exponent strings. Larger plain
+            # integers still use the same input-sized conversion as before.
+            if exact.adjusted() >= 309:
+                try:
+                    return int(text)
+                except ValueError:
+                    return text
+            return int(exact)
+    return _number(value)
 
 
 def _optional_float(value: Any) -> float | None:
@@ -288,7 +308,7 @@ def _apply_settings(
         "cfg scale": ("cfg_scale", lambda value: _optional_float(value)),
         "cfg": ("cfg_scale", lambda value: _optional_float(value)),
         "cfgscale": ("cfg_scale", lambda value: _optional_float(value)),
-        "seed": ("seed", _number),
+        "seed": ("seed", _seed_number),
         "width": ("width", _optional_int),
         "height": ("height", _optional_int),
         "model": ("model", lambda value: str(value)),
@@ -461,7 +481,7 @@ def _parse_infotext(record: GenerationRecord, text: str) -> None:
             first.resource_ids.append(resource.id)
 
     extra_seeds = [
-        _number(settings[name])
+        _seed_number(settings[name])
         for name in ("Variation seed", "Subseed")
         if settings.get(name) not in (None, "", "-1")
     ]
@@ -1048,7 +1068,7 @@ def _parse_comfy(record: GenerationRecord, parsed: dict[str, Any]) -> None:
             label="First pass" if index == 0 else "Refiner",
             positive_prompt=positive,
             negative_prompt=negative,
-            seeds=[_number(inputs.get("seed"))] if inputs.get("seed") not in (None, "") else [],
+            seeds=[_seed_number(inputs["seed"])] if inputs.get("seed") not in (None, "") else [],
             batch_size=batch_size,
             width=width,
             height=height,

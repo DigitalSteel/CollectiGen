@@ -568,8 +568,8 @@
     },
     {
       "path": "core/generation_metadata.py",
-      "bytes": 57797,
-      "sha256": "136c6461c3b12de6c98bc754a825d2e3a21b5dc6b81958daf233b5250e294a2c"
+      "bytes": 58519,
+      "sha256": "cb31eb54f8c48ba190ae3e26082860054771d539f0d0bca83a85ace261fe322b"
     },
     {
       "path": "core/generation_model_guidance.py",
@@ -3164,17 +3164,17 @@
     {
       "path": "suite_core/generate/MODULE_MANIFEST.json",
       "bytes": 37392,
-      "sha256": "ee66911a62ff71f9b836fa50e732dd6d4fac76fdd8b2eacc84b328474672cece"
+      "sha256": "61e8e70792d56a2cad33ac965e816b83d1b347027ac40fdca0a13f11e44b71ab"
     },
     {
       "path": "suite_core/generate/README.md",
-      "bytes": 2716,
-      "sha256": "19c5e2b579c344b4a909d9c242f0119c5b9ea87a20113bc0457c4e0e49520d1a"
+      "bytes": 2860,
+      "sha256": "91ced61e2a3898755f10cd92c96eaf6311984a1550f1fbd2a1140b6d97a7dbdf"
     },
     {
       "path": "suite_core/generate/WHATS_NEW.md",
-      "bytes": 919,
-      "sha256": "38987e612781fb1266fdc0c0acde52f699d21b9451cefee63d2c77352060d5c7"
+      "bytes": 1302,
+      "sha256": "9a8aaf7cdb93c2e721cdf1c6a8227365128fad923acb5583eeb01c0ae19462fb"
     },
     {
       "path": "suite_core/generate/__init__.py",
@@ -3194,7 +3194,7 @@
     {
       "path": "suite_core/generate/version.py",
       "bytes": 258,
-      "sha256": "a6eeb1f55d161009b6c248d9108e2b6b54e3b750f48448b6f1683fcf1d7c1924"
+      "sha256": "20c973c0d06cdc0fc707a292c914a0982792930e49c3c0ab3ab21a8e75e97738"
     },
     {
       "path": "suite_core/generate/window.py",
