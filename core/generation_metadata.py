@@ -103,22 +103,29 @@ def _optional_int(value: Any) -> int | None:
     return parsed if isinstance(parsed, int) else None
 
 
+def _exact_seed_text(text: str) -> int | str | None:
+    text = text.strip()
+    try:
+        exact = Decimal(text)
+    except InvalidOperation:
+        return None
+    if not exact.is_finite() or exact != exact.to_integral_value():
+        return None
+    # Bound expansion of compact exponent strings. Larger plain integers
+    # still use the same input-sized conversion as before.
+    if exact.adjusted() >= 309:
+        try:
+            return int(text)
+        except ValueError:
+            return text
+    return int(exact)
+
+
 def _seed_number(value: Any) -> int | float | str:
     if isinstance(value, str):
-        text = value.strip()
-        try:
-            exact = Decimal(text)
-        except InvalidOperation:
-            return _number(value)
-        if exact.is_finite() and exact == exact.to_integral_value():
-            # Bound expansion of compact exponent strings. Larger plain
-            # integers still use the same input-sized conversion as before.
-            if exact.adjusted() >= 309:
-                try:
-                    return int(text)
-                except ValueError:
-                    return text
-            return int(exact)
+        exact = _exact_seed_text(value)
+        if exact is not None:
+            return exact
     return _number(value)
 
 
@@ -1170,6 +1177,27 @@ def _parse_generic_json(record: GenerationRecord, parsed: dict[str, Any]) -> Non
     _sync_first_stage(record)
 
 
+class _JsonFloatToken(str):
+    """Keep the spelling of a JSON decimal until its field is known."""
+
+
+def _decode_json_numbers(value: Any) -> Any:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(item, _JsonFloatToken) and _normalized_key(key) == "seed":
+                exact = _exact_seed_text(item)
+                if isinstance(exact, int):
+                    value[key] = exact
+                    continue
+            value[key] = _decode_json_numbers(item)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            value[index] = _decode_json_numbers(item)
+    elif isinstance(value, _JsonFloatToken):
+        return float(value)
+    return value
+
+
 def parse_generation_payload(
     value: Any, *, source: str = "Image metadata", source_field: str = ""
 ) -> GenerationRecord:
@@ -1180,7 +1208,9 @@ def parse_generation_payload(
         text = value.strip()
         if text.startswith(("{", "[")):
             try:
-                parsed = json.loads(text)
+                parsed = json.loads(text, parse_float=_JsonFloatToken)
+                if isinstance(parsed, dict):
+                    _decode_json_numbers(parsed)
             except json.JSONDecodeError:
                 parsed = value
 

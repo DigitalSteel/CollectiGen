@@ -67,3 +67,26 @@ def test_exact_seed_fix_preserves_fractional_sampling_and_unknown_numeric_eviden
     assert record.cfg_scale == 5.5
     assert record.raw == raw
     assert any(value == "retain me" for value in record.extras.values())
+
+
+@pytest.mark.parametrize("seed", [2**53 + 1, 6237327949615356897, 2**64 - 1])
+@pytest.mark.parametrize("representation", ["swarm_decimal", "comfy_exponent", "generic_decimal"])
+def test_unquoted_json_seed_stays_exact(seed, representation):
+    if representation == "swarm_decimal":
+        raw = f'{{"sui_image_params":{{"seed":{seed}.0,"cfgscale":5.5}}}}'
+    elif representation == "comfy_exponent":
+        raw = f'{{"prompt":{{"7":{{"class_type":"KSampler","inputs":{{"seed":{seed}0e-1,"cfg":5.5}}}}}}}}'
+    else:
+        raw = f'{{"prompt":"Blue cup","Seed":{seed}.0,"cfg":5.5,"unknown":[1.25,4.5]}}'
+
+    record = parse_generation_payload(raw)
+    assert record.seed == seed and type(record.seed) is int
+    assert record.stages[0].seeds == [seed]
+    assert record.cfg_scale == 5.5 and record.raw == raw
+    if representation == "generic_decimal":
+        unknown = record.extras["unknown"]
+        assert unknown == [1.25, 4.5] and all(type(number) is float for number in unknown)
+    annotation = ImageAnnotation("synthetic.png", generation_records=[record])
+    restored = ImageAnnotation.from_dict(json.loads(json.dumps(annotation.to_dict())), "synthetic.png")
+    assert restored.generation_records[0].seed == seed
+    assert restored.generation_records[0].raw == raw

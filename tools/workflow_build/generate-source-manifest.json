@@ -568,8 +568,8 @@
     },
     {
       "path": "core/generation_metadata.py",
-      "bytes": 58519,
-      "sha256": "cb31eb54f8c48ba190ae3e26082860054771d539f0d0bca83a85ace261fe322b"
+      "bytes": 59455,
+      "sha256": "fa2776fe016d10eb1ce76c11d1b810c4f4c28b395f79579c0350347a13c1161c"
     },
     {
       "path": "core/generation_model_guidance.py",
@@ -3173,8 +3173,8 @@
     },
     {
       "path": "suite_core/generate/WHATS_NEW.md",
-      "bytes": 1302,
-      "sha256": "9a8aaf7cdb93c2e721cdf1c6a8227365128fad923acb5583eeb01c0ae19462fb"
+      "bytes": 1287,
+      "sha256": "8e571f18532e437e9145950b01679ff7921928702ad2d6d624e273a21cedffff"
     },
     {
       "path": "suite_core/generate/__init__.py",
