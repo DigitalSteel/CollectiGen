@@ -8,21 +8,33 @@ from core.generation_metadata import format_generation_record, parse_generation_
 
 
 @pytest.mark.parametrize("seed", [2**53 + 1, 6237327949615356897, 2**64 - 1])
-@pytest.mark.parametrize("representation", ["swarm_integer", "swarm_string", "infotext", "comfy"])
+@pytest.mark.parametrize("representation", [
+    "swarm_integer", "swarm_string", "swarm_decimal_string", "swarm_decimal_number",
+    "swarm_exponent_number", "infotext", "infotext_exponent", "comfy", "comfy_exponent_number",
+])
 def test_large_seed_preserves_generator_identity_through_saved_roundtrip(seed, representation):
+    exact_token = f"{seed * 10}e-1" if "exponent" in representation else f"{seed}.0"
     if representation.startswith("swarm"):
         raw = json.dumps({"sui_image_params": {
             "prompt": "A blue mug and a red apple", "seed":
-            str(seed) if representation == "swarm_string" else seed,
+            seed,
             "steps": 12, "cfgscale": 5.0, "width": 512, "height": 512,
         }, "unrecognized_evidence": {"keep": "exactly"}})
-    elif representation == "infotext":
-        raw = f"A blue mug and a red apple\nSteps: 12, CFG scale: 5, Seed: {seed}, Size: 512x512"
+        if representation == "swarm_string":
+            raw = raw.replace(f'"seed": {seed}', f'"seed": "{seed}"', 1)
+        elif representation == "swarm_decimal_string":
+            raw = raw.replace(f'"seed": {seed}', f'"seed": "{exact_token}"', 1)
+    elif representation.startswith("infotext"):
+        seed_text = exact_token if representation == "infotext_exponent" else seed
+        raw = f"A blue mug and a red apple\nSteps: 12, CFG scale: 5, Seed: {seed_text}, Size: 512x512"
     else:
         raw = json.dumps({"prompt": {"7": {"class_type": "KSampler", "inputs": {
             "seed": seed, "steps": 12, "cfg": 5.0,
             "sampler_name": "euler", "scheduler": "normal",
         }}}})
+
+    if representation.endswith("_number"):
+        raw = raw.replace(f'"seed": {seed}', f'"seed": {exact_token}', 1)
 
     record = parse_generation_payload(raw)
     assert record.seed == seed

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal, InvalidOperation
 import json
 import re
 from typing import Any, Iterable
@@ -99,6 +100,34 @@ def _number(value: Any) -> int | float | str:
 def _optional_int(value: Any) -> int | None:
     parsed = _number(value)
     return parsed if isinstance(parsed, int) else None
+
+
+def _exact_seed_text(text: str) -> int | str | None:
+    text = text.strip()
+    try:
+        exact = Decimal(text)
+    except InvalidOperation:
+        return None
+    if not exact.is_finite() or exact != exact.to_integral_value():
+        return None
+    # Bound expansion of compact exponent strings. Larger plain integers
+    # still use the same input-sized conversion as before.
+    if exact.adjusted() >= 309:
+        try:
+            return int(text)
+        except ValueError:
+            return text
+    return int(exact)
+
+
+def _seed_number(value: Any) -> int | float | str:
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        exact = _exact_seed_text(value)
+        if exact is not None:
+            return exact
+    return _number(value)
 
 
 def _optional_float(value: Any) -> float | None:
@@ -287,7 +316,7 @@ def _apply_settings(
         "cfg scale": ("cfg_scale", lambda value: _optional_float(value)),
         "cfg": ("cfg_scale", lambda value: _optional_float(value)),
         "cfgscale": ("cfg_scale", lambda value: _optional_float(value)),
-        "seed": ("seed", _number),
+        "seed": ("seed", _seed_number),
         "width": ("width", _optional_int),
         "height": ("height", _optional_int),
         "model": ("model", lambda value: str(value)),
@@ -460,7 +489,7 @@ def _parse_infotext(record: GenerationRecord, text: str) -> None:
             first.resource_ids.append(resource.id)
 
     extra_seeds = [
-        _number(settings[name])
+        _seed_number(settings[name])
         for name in ("Variation seed", "Subseed")
         if settings.get(name) not in (None, "", "-1")
     ]
@@ -1029,7 +1058,7 @@ def _parse_comfy(record: GenerationRecord, parsed: dict[str, Any]) -> None:
             label="First pass" if index == 0 else "Refiner",
             positive_prompt=positive,
             negative_prompt=negative,
-            seeds=[_number(inputs.get("seed"))] if inputs.get("seed") not in (None, "") else [],
+            seeds=[_seed_number(inputs["seed"])] if inputs.get("seed") not in (None, "") else [],
             batch_size=batch_size,
             width=width,
             height=height,
@@ -1131,6 +1160,27 @@ def _parse_generic_json(record: GenerationRecord, parsed: dict[str, Any]) -> Non
     _sync_first_stage(record)
 
 
+class _JsonFloatToken(str):
+    """Keep the spelling of a JSON decimal until its field is known."""
+
+
+def _decode_json_numbers(value: Any) -> Any:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(item, _JsonFloatToken) and _normalized_key(key) == "seed":
+                exact = _exact_seed_text(item)
+                if isinstance(exact, int):
+                    value[key] = exact
+                    continue
+            value[key] = _decode_json_numbers(item)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            value[index] = _decode_json_numbers(item)
+    elif isinstance(value, _JsonFloatToken):
+        return float(value)
+    return value
+
+
 def parse_generation_payload(
     value: Any, *, source: str = "Image metadata", source_field: str = ""
 ) -> GenerationRecord:
@@ -1141,7 +1191,9 @@ def parse_generation_payload(
         text = value.strip()
         if text.startswith(("{", "[")):
             try:
-                parsed = json.loads(text)
+                parsed = json.loads(text, parse_float=_JsonFloatToken)
+                if isinstance(parsed, dict):
+                    _decode_json_numbers(parsed)
             except json.JSONDecodeError:
                 parsed = value
 
