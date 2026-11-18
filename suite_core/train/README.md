@@ -1,4 +1,4 @@
-# CollectiGen Train 0.2.0-alpha.1
+# CollectiGen Train 0.2.1-alpha.1 candidate
 
 Train is the Suite's separate application for reviewing training packages and
 preparing datasets. This alpha opens packages, prepares SDXL datasets, shows
@@ -65,6 +65,6 @@ saved preparations, runs, drafts and images stay separate.
 ## Help
 
 - [Suite overview and usage](https://github.com/DigitalSteel/CollectiGen#readme)
-- [Release notes](WHATS_NEW.md) · [GitHub release](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.train/v0.2.0-alpha.1)
+- [Release notes](WHATS_NEW.md) · [Last qualified GitHub release](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.train/v0.2.0-alpha.1)
 - [Support](https://github.com/DigitalSteel/CollectiGen/blob/manager-a032-source-candidate-20261011/SUPPORT.md)
 - [Privacy](https://github.com/DigitalSteel/CollectiGen/blob/manager-a032-source-candidate-20261011/PRIVACY.md)

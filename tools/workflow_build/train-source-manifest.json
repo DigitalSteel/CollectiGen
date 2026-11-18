@@ -2448,8 +2448,8 @@
     },
     {
       "path": "qt_app/help_content.py",
-      "bytes": 610515,
-      "sha256": "0a09482db05596ad7703975dec3f8c8b09b873a5f8be817294560a247fed6acd"
+      "bytes": 610508,
+      "sha256": "a552376482f982bf47cd4d0c22226ecac68990ef6cc093730250584dea12e7b0"
     },
     {
       "path": "qt_app/history_domain_panel.py",
@@ -3424,17 +3424,17 @@
     {
       "path": "suite_core/train/MODULE_MANIFEST.json",
       "bytes": 37326,
-      "sha256": "794df3c267405c61cb22188576c3a67688666c0fd9e22a25b9d446eadba7dda4"
+      "sha256": "069587a357b3738d3a693979185a51bc1c01c73eefc04cca1ec9136886831077"
     },
     {
       "path": "suite_core/train/README.md",
-      "bytes": 4310,
-      "sha256": "dad34fa3ef82fa8a9f5f3c6e6c6ea9a489a4d808f6ea41e9bac6b3b786aad60a"
+      "bytes": 4335,
+      "sha256": "5e06819d506b4b9da7346bc168012c860ea8d600e3cbac937d4b494d217bb948"
     },
     {
       "path": "suite_core/train/WHATS_NEW.md",
-      "bytes": 1299,
-      "sha256": "403995dd03f152af431ca2e1efaec6c4c8d890d113abff7676933866d8eec19f"
+      "bytes": 303,
+      "sha256": "82692c83846a6d1dbaa6a81769d70347695c41493ce7f30ac3ce3c0cdbb21007"
     },
     {
       "path": "suite_core/train/__init__.py",
@@ -3454,7 +3454,7 @@
     {
       "path": "suite_core/train/version.py",
       "bytes": 255,
-      "sha256": "bf49086992176ab073d69ee03dc30dd3432eef11a918e7283585600a3d9ea9fe"
+      "sha256": "23fc465da35ebad324f0a58751d9904d87b929830ca1e76e47cda2a161d5a357"
     },
     {
       "path": "suite_core/train/window.py",
