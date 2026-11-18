@@ -200,6 +200,8 @@ def test_saved_dataset_picker_offers_only_selected_export(tmp_path, empty):
     try:
         picker.show();application.processEvents()
         assert picker.export_button.isVisible() and picker.export_button.isEnabled() is (not empty)
+        assert picker.export_button.text() == "Export Draft for Train…"
+        assert "Open Saved Training Draft" in picker.export_button.toolTip()
         if not empty:
             QTest.mouseClick(picker.export_button,Qt.LeftButton)
             assert exported==[draft] and picker.isVisible() and picker.result()==0
@@ -224,7 +226,7 @@ def test_manager_target_export_cancel_retry_and_readback(tmp_path, monkeypatch):
     dialog=TrainingDraftTransferDialog(jobs,store.path,selected=draft,destination_host="manager")
     try:
         dialog.show();wait(lambda:dialog._task is None and dialog.transfer_button.isEnabled())
-        assert "Suite Manager" in dialog.windowTitle() and "Suite Manager" in dialog.transfer_button.text()
+        assert "Train" in dialog.windowTitle() and dialog.transfer_button.text() == "Export for Train…"
         capture(dialog,"dataset-export-for-manager.png",tmp_path)
         QTest.mouseClick(dialog.transfer_button,Qt.LeftButton)
         assert dialog._task is None and not destination.exists() and dialog.isVisible()
@@ -234,7 +236,7 @@ def test_manager_target_export_cancel_retry_and_readback(tmp_path, monkeypatch):
         QTest.mouseClick(dialog.transfer_button,Qt.LeftButton);wait(lambda:dialog._task is None and destination.exists())
         readback=TrainingPlanDraft.read_transfer(destination)
         assert readback.fingerprint==draft.fingerprint and readback.plan_manifest==draft.plan_manifest
-        assert "Review a Dataset Draft" in dialog.status.text()
+        assert "Applications → Open Train → More… → Open Saved Training Draft." in dialog.status.text()
         capture(dialog,"dataset-exported-for-manager.png",tmp_path)
         assert store.path.read_bytes()==before and image.read_bytes()==pixels
     finally:

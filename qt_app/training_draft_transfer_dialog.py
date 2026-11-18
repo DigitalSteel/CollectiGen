@@ -24,13 +24,13 @@ class TrainingDraftTransferDialog(FeedbackEnabledDialog):
         self._selected = selected
         self.setWindowTitle("Import Training Draft" if importing else "Edit a Cloned Training Draft")
         if not importing and destination_host == "manager":
-            self.setWindowTitle("Export Dataset Draft for Suite Manager")
+            self.setWindowTitle("Export Dataset Draft for Train")
         self.resize(620, 260)
         layout = QVBoxLayout(self)
         intro = QLabel("Import a draft exported by Suite Manager, then review and edit it with your current Dataset libraries. A fresh saved copy preserves the original."
             if importing else "Export this saved draft, then open Organizer → Dataset → Dataset Plans → Import Training Draft. Review its images and edit its settings there; the original experiment is preserved.")
         if not importing and destination_host == "manager":
-            intro.setText("Export a copy of this saved Dataset draft, then open Suite Manager → Applications → Review a Dataset Draft. Manager can review its settings and check sources and captions. This does not create a training package or start training; your saved draft and source images stay unchanged.")
+            intro.setText("Export a copy of this saved Dataset draft, then in Suite Manager choose Applications → Open Train → More… → Open Saved Training Draft. Train can review its settings and check sources and captions. This does not create a training package or start training; your saved draft and source images stay unchanged.")
         intro.setWordWrap(True); layout.addWidget(intro)
         self.choice = QComboBox(); self.choice.setAccessibleName("Saved Training draft")
         self.choice.setVisible(not importing); layout.addWidget(self.choice)
@@ -40,7 +40,7 @@ class TrainingDraftTransferDialog(FeedbackEnabledDialog):
         buttons.rejected.connect(self.reject)
         self.transfer_button = QPushButton("Import Draft…" if importing else "Export for Organizer…")
         if not importing and destination_host == "manager":
-            self.transfer_button.setText("Export for Suite Manager…")
+            self.transfer_button.setText("Export for Train…")
         self.transfer_button.clicked.connect(self._transfer)
         self.transfer_button.setEnabled(importing)
         buttons.addButton(self.transfer_button, QDialogButtonBox.ActionRole)
@@ -131,7 +131,7 @@ class TrainingDraftTransferDialog(FeedbackEnabledDialog):
         elif action == "import":
             self.accept(); return
         else:
-            next_step = (" Open Suite Manager → Applications → Review a Dataset Draft."
+            next_step = (" In Suite Manager, choose Applications → Open Train → More… → Open Saved Training Draft."
                          if self.destination_host == "manager" else " Import it in Organizer to edit its settings.")
             self.status.setText("Draft exported to " + str(value) + "." + next_step)
         self._refresh_availability()
