@@ -926,7 +926,7 @@ Use **Continue Review** for a review already open. In the Train app, **Saved Pre
 
 ## Return and recover
 
-Review changed images or captions back in Organizer and rebuild the package there. **Review Interrupted Training Package…** opens the existing package recovery route. A resumed run uses a new destination rather than overwriting the old run. Keep the original package and saved results; models, optional runtimes and actual training are separate deliberate choices.""",
+Review changed images or captions back in Organizer and rebuild the package there. Open **More… → Review Interrupted Package…** to review recovery options. A resumed run uses a new destination rather than overwriting the old run. Keep the original package and saved results; models, optional runtimes and actual training are separate deliberate choices.""",
 }
 
 
