@@ -1,4 +1,4 @@
-# CollectiGen Train 0.2.1-alpha.1 candidate
+# CollectiGen Train 0.2.1-alpha.1
 
 Train is the Suite's separate application for reviewing training packages and
 preparing datasets. This alpha opens packages, prepares SDXL datasets, shows
