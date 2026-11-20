@@ -7,11 +7,38 @@ native permission receipt and cannot bypass existing qualification gates.
 """
 from dataclasses import asdict
 import json
+from time import monotonic, sleep
 
 from core.manager_launch_owner import LaunchHold, WindowsNormalTransport
 from core.manager_native_member import WindowsMaintenanceMember
 from core.manager_stock_hook_pipe import StockHookPipe, _api
 from core.manager_stock_hook_admission import StockHookContext, StockHookOwnerSession
+
+
+class StockExitPending(LaunchHold):
+    """The original updater or callback is still running after its last reply."""
+
+
+def wait_for_stock_exit(member, sessions, *, timeout=30):
+    """Bound one observation window without restarting any owned process."""
+    processes = [('updater', member.process)]
+    processes.extend((stage, session.process) for stage, session in sessions.items())
+    deadline = monotonic() + timeout
+    while True:
+        pending = []
+        for stage, process in processes:
+            code = process.poll()
+            if code is None:
+                pending.append((stage, process))
+            elif code != 0:
+                raise LaunchHold(f'stock_process_failed: {stage} (exit {code})')
+        if not pending:
+            return
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            raise StockExitPending('Still waiting for ' + ', '.join(stage for stage, _ in pending))
+        processes = pending
+        sleep(min(.1, remaining))
 
 
 class WindowsStockHookProvider:
@@ -402,9 +429,8 @@ class WindowsStockHookProvider:
                 request=request,recovery=self.recovery,admitted=self.admitted,job_source_handle=self.repair_member.job_source_handle)
             self.repair_sessions[stage]=session
             session.register();session.observe_callback()
-        if process.wait(timeout=5) != 0:raise LaunchHold('successful_original_repair_updater_exit_required')
+        wait_for_stock_exit(self.repair_member, self.repair_sessions)
         for session in self.repair_sessions.values():
-            session.process.wait(timeout=5)
             binding,code=self.owner._bound_native_exit(session.role)
             if code != 0:raise LaunchHold('successful_original_repair_hook_exit_required')
         self._verify_repair_endpoint_closure()

@@ -1,3 +1,12 @@
+# Suite Manager a.0.8.2 — 2026-11-20
+
+- Fixed a startup crash in the updated Manager that could leave the launcher waiting behind an error window.
+- Dashboard links directly to available Manager updates. Settings has a dedicated Updates page. Confirm once to download, verify, install and reopen Manager.
+- The launcher shows activity and elapsed time after Manager closes. If the installer takes longer to exit, the launcher keeps checking the same installation. Update failures show update-specific diagnostics.
+- Restored the CollectiGen icon for the Windows launcher and Manager.
+
+For this version, extract the complete Windows ZIP into a new writable folder and open **CollectiGen.exe**. The ZIP includes launcher 0.1.2.
+
 # Suite Manager a.0.8.1 — 2026-11-20
 
 - Dashboard shows current module activity and links verified update notices to the matching review.

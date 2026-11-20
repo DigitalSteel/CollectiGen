@@ -15,7 +15,7 @@ from core.component_acquisition import ComponentAcquisition
 from core.manager_update_service import ManagerUpdateService, ManagerUpdateHostBinding
 from core.manager_self_update_recovery import ManagerRecovery, observe, digest, encoded, atomic
 from core.manager_launch_owner import LaunchHold, _native_witness
-from core.manager_stock_hook_provider import WindowsStockHookProvider
+from core.manager_stock_hook_provider import WindowsStockHookProvider, wait_for_stock_exit
 from core.manager_stock_apply import readback
 from suite_core.discovery.component_staging import guard, require, MAX_METADATA_BYTES
 from suite_core.discovery.manager_runtime_detached_admission import manager_inventory_json, read_manager_inventory_proof, MANAGER_MAX_ARCHIVE
@@ -455,10 +455,9 @@ class CompiledManagerUpdateProfile:
         provider=WindowsStockHookProvider(transport,request,recovery,admitted,environment=dict(os.environ))
         provider.prepare();provider.bind_scope()
         launcher.queue_update(native_review=self.native_review,create_process=provider.create_process)
+        launcher.update_handoff_status = 'Installing the verified Manager update…'
         provider.resume_registered();provider.service_hooks()
-        provider.member.process.wait(timeout=5)
-        for session in provider.sessions.values():session.process.wait(timeout=5)
-        provider.observe_closed()
+
         def payload(original,request):
             from core.manager_successor_admission import admit_successor_selection
             selection=admit_successor_selection(owner,recovery,request,release_side='target',
@@ -467,16 +466,26 @@ class CompiledManagerUpdateProfile:
             return dict(status='code_data_verified',transaction_id=transaction,binding_sha256=request.binding_sha256,
                 target_version=selection.version,data_unchanged=True,current_executable_sha256=selection.executable_sha256,
                 current_manifest_sha256=selection.manifest_sha256)
-        try:
-            launcher.finish_update(verify_payload=payload)
-        except Exception:
-            if launcher.state == 'update_repair_available':return launcher
-            raise
-        try:
-            provider.start_successor(launcher,(str(current/'CollectiGenManager.exe'),*admitted.restart_arguments))
-        except OSError:
-            if (launcher.state == 'update_target_start_record_held'
-                    and provider.state == 'successor_start_record_held'):
-                return launcher  # Original Root presents an explicit same-actor retry.
-            raise
-        return provider.supervise_successor(launcher)
+        def finish_original_update():
+            wait_for_stock_exit(provider.member, provider.sessions)
+            launcher.pending_stock_continuation = None
+            provider.observe_closed()
+            launcher.update_handoff_status = 'Verifying the installed update…'
+            try:
+                launcher.finish_update(verify_payload=payload)
+            except Exception:
+                if launcher.state == 'update_repair_available':return launcher
+                raise
+            launcher.update_handoff_status = 'Starting the updated Manager…'
+            try:
+                provider.start_successor(launcher,(str(current/'CollectiGenManager.exe'),*admitted.restart_arguments))
+            except OSError:
+                if (launcher.state == 'update_target_start_record_held'
+                        and provider.state == 'successor_start_record_held'):
+                    return launcher  # Original Root presents an explicit same-actor retry.
+                raise
+            launcher.update_handoff_status = None
+            return provider.supervise_successor(launcher)
+
+        launcher.pending_stock_continuation = finish_original_update
+        return finish_original_update()

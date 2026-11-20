@@ -130,6 +130,8 @@ class PublicLaunch:
         self.update_owner = self.update_recovery_gate = None
         self.update_terminal_receipt = None
         self.update_host_factory = update_host_factory
+        self.update_handoff_status = None
+        self.pending_stock_continuation = None
 
     def record(self, kind, **details):
         directory = self.root / 'Data/Manager/PublicLaunchReports'
@@ -249,7 +251,11 @@ class PublicLaunch:
                 # Trusted original host only. No CLI switch/default apply and no
                 # new owner or lost-lease continuation. Return retains supervision.
                 if self not in _HELD_PUBLIC_LAUNCHES: _HELD_PUBLIC_LAUNCHES.append(self)
-                self.update_after_close(self)
+                if (getattr(self, 'compiled_update_host', None) is not None
+                        and getattr(self, 'reviewed_update_for_close', None) is not None):
+                    self._run_update_handoff()
+                else:
+                    self.update_after_close(self)
                 if self.can_close():
                     if self in _HELD_PUBLIC_LAUNCHES:_HELD_PUBLIC_LAUNCHES.remove(self)
                     return code
@@ -269,15 +275,110 @@ class PublicLaunch:
                     reason=type(error).__name__+': '+str(error)[:256])
                 except BaseException:pass
                 return self
-            self.error, self.state = error, 'held'
+            self.error = error
+            update_failure = self.state.startswith('update_') or (
+                self.state == 'maintenance_ready' and getattr(self, 'reviewed_update_for_close', None) is not None)
+            if update_failure:
+                failed_phase = self.state
+                if self.state not in {'update_repair_available', 'update_target_start_record_held'}:
+                    self.state = 'update_held'
+            else:
+                self.state = 'held'
             if self not in _HELD_PUBLIC_LAUNCHES: _HELD_PUBLIC_LAUNCHES.append(self)
-            try: self.record('held', reason=type(error).__name__ + ': ' + str(error)[:256])
+            try:
+                reason = type(error).__name__ + ': ' + str(error)[:256]
+                if update_failure:
+                    self.record('update-held', failed_phase=failed_phase, reason=reason)
+                else:
+                    self.record('held', reason=reason)
             except BaseException: pass  # Diagnostic failure never discards original authority.
-            if self.route is None or (getattr(self.route,'owned_helper_selection',None) is None
+            if not update_failure and (self.route is None or (getattr(self.route,'owned_helper_selection',None) is None
                     and getattr(self.route,'direct_helper_selection',None) is None
-                    and getattr(self.route,'reader_helper_selection',None) is None):
+                    and getattr(self.route,'reader_helper_selection',None) is None)):
                 self._wait_only_abort(timeout=1)
             return self
+
+    def _run_update_handoff(self):
+        """Show launcher progress while the original owner installs and restarts."""
+        from PySide6.QtCore import QElapsedTimer, QEventLoop, QTimer
+        from PySide6.QtGui import QIcon
+        from PySide6.QtWidgets import QApplication, QDialog, QLabel, QProgressBar, QVBoxLayout
+        from core.manager_stock_hook_provider import StockExitPending
+        from qt_app.theme import apply_theme
+        from .resource_executor import ResourceExecutorOwner
+
+        class UpdateProgress(QDialog):
+            def closeEvent(self, event):
+                event.ignore()
+
+            def reject(self):
+                pass
+
+        self.app = QApplication.instance() or QApplication(sys.argv[:1])
+        self.app.setWindowIcon(QIcon(str(Path(__file__).with_name('assets') / 'collectigen.ico')))
+        apply_theme(self.app, self.theme, False)
+        dialog = UpdateProgress()
+        dialog.setWindowTitle('Updating CollectiGen Suite Manager')
+        dialog.setMinimumWidth(460)
+        layout = QVBoxLayout(dialog)
+        message = 'Preparing the verified update. Manager will reopen automatically.'
+        status = QLabel(message)
+        status.setWordWrap(True)
+        layout.addWidget(status)
+        progress = QProgressBar()
+        progress.setRange(0, 0)
+        layout.addWidget(progress)
+        elapsed = QLabel()
+        layout.addWidget(elapsed)
+        clock = QElapsedTimer()
+        clock.start()
+        self.update_handoff_status = message
+        self.update_worker = ResourceExecutorOwner()
+        future = self.update_worker.submit(self.update_after_close, self)
+        loop = QEventLoop()
+        error = None
+        reported_wait = False
+
+        def refresh():
+            nonlocal future, error, reported_wait
+            message = self.update_handoff_status
+            status.setText(message or '')
+            elapsed.setText(f'Elapsed time: {clock.elapsed() // 1000} seconds')
+            dialog.setVisible(message is not None)
+            if not future.done() or self.update_worker.close_held:
+                return
+            try:
+                future.result()
+            except StockExitPending as pending:
+                continuation = self.pending_stock_continuation
+                if continuation is not None:
+                    self.update_handoff_status = (
+                        'The installer is taking longer than expected to finish. '
+                        'Manager will reopen when the original installer has closed.')
+                    if not reported_wait:
+                        try:
+                            self.record('update-exit-pending', reason=str(pending))
+                        except (OSError, ValueError):
+                            pass
+                        reported_wait = True
+                    future = self.update_worker.submit(continuation)
+                    return
+                error = pending
+            except BaseException as failure:
+                error = failure
+            self.update_worker.begin_close()
+            loop.quit()
+
+        timer = QTimer(dialog)
+        timer.timeout.connect(refresh)
+        timer.start(100)
+        dialog.show()
+        loop.exec()
+        timer.stop()
+        dialog.hide()
+        self.pending_stock_continuation = None
+        if error is not None:
+            raise error
 
     def _update_owned(self, *, allow_pending=False):
         from core.manager_launch_owner import DeploymentOwner
@@ -652,6 +753,7 @@ class PublicLaunch:
 
     def recheck(self):
         if self.can_close():return True  # Never re-query retired native handles.
+        if self.state.startswith('update_'):return False
         # Only an already accepted local report permits the existing final drain.
         if self.route is not None and self.route.state == 'local_accepted' and self.abort_ticket is None:
             try:
@@ -675,7 +777,9 @@ class PublicLaunch:
                 if held.can_close(): event.accept()
                 else: event.ignore()
             def reject(self): self.close()
-        dialog = GuardedDialog(); dialog.setWindowTitle('CollectiGen startup needs review')
+        update_failure = self.state.startswith('update_')
+        dialog = GuardedDialog()
+        dialog.setWindowTitle('CollectiGen update needs attention' if update_failure else 'CollectiGen startup needs review')
         dialog.resize(660, 300)
         layout = QVBoxLayout(dialog)
         label = QLabel('Manager could not complete startup. Its original startup state is retained. '
@@ -722,6 +826,12 @@ class PublicLaunch:
                 location.setText('Startup details: ' + str(held.report_paths[-1]))
         check.clicked.connect(refresh); close.clicked.connect(dialog.close)
         close.setEnabled(self.can_close()); layout.addWidget(check); layout.addWidget(close)
+        if update_failure:
+            label.setText('Suite Manager could not finish the update. Keep this window open while the launcher holds the installation for recovery.')
+            status.setText('Open Details for the update error and diagnostic report.')
+            if location is not None:
+                location.setText('Update details: ' + str(self.report_paths[-1]))
+            check.hide()
         if self.state in {'update_repair_available', 'update_target_start_record_held'}:
             from core.manager_stock_hook_provider import WindowsStockHookProvider
             from .resource_executor import ResourceExecutorOwner

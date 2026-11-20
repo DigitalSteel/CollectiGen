@@ -1,11 +1,17 @@
 # CollectiGen Suite Manager
 
-The **0.8.1-alpha.1 update candidate** makes Manager the home for Applications,
+The **0.8.2-alpha.1 release candidate** makes Manager the home for Applications,
 installation, updates, connections and shared settings. Generate and Train are
 separate versioned applications. Installer confirmations retain their own
 controls while unrelated shared edits stay locked; save/recovery and rejected
 download messages name the available next action. This candidate is not yet a
 qualified public download. The links below identify the historical release.
+
+Install this version from the complete Windows ZIP. Extract it into a new
+writable folder, then run **CollectiGen.exe**. The ZIP includes launcher 0.1.2.
+Use the Dashboard update notice or **Settings > Updates** for subsequent updates.
+Review the version and confirm once. Manager downloads and verifies the update,
+shows installation progress, and reopens when the installation is ready.
 
 Start in Dashboard for computer and connection status. Go to Applications to
 set up or open an app. Work inside the app you open. Manager handles shared

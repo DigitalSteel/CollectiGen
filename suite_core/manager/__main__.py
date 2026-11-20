@@ -597,7 +597,6 @@ def main(argv=None, *, disposable_module_binding=None, settings_path=None, diagn
         window.show()
         if normal_entry_session is not None:
             normal_entry_session.ready()
-            window.refresh_generator_card()
         if entry_probe is not None: entry_probe(window, app)
         result = app.exec()
         if not entry_owner.poll_cleanup(budget=1):

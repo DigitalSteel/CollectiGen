@@ -1008,8 +1008,8 @@
     },
     {
       "path": "core/manager_stock_hook_provider.py",
-      "bytes": 43476,
-      "sha256": "b9c66363401dc45fa18f726ca8684341e3604461a52e11ac95e2dc00bc438caf"
+      "bytes": 44427,
+      "sha256": "368986712c2217b4097134790377ac780ad2fc01336b27a20d73e866f76e65fd"
     },
     {
       "path": "core/manager_successor_admission.py",
@@ -1023,8 +1023,8 @@
     },
     {
       "path": "core/manager_update_host.py",
-      "bytes": 30884,
-      "sha256": "4d893963069d01cf6689379cd742bccda3bc8d04feb3336d7f372035297e8422"
+      "bytes": 31398,
+      "sha256": "f061e63fe0169f86fd511c51819a819f17e43aff49ee11a43fcaf9f82f91955b"
     },
     {
       "path": "core/manager_update_service.py",
@@ -3169,7 +3169,7 @@
     {
       "path": "suite_core/discovery/manager_bootstrap.py",
       "bytes": 16743,
-      "sha256": "251e0069d006b14664e869f56aec27086a721342f44bdb83bd6994b2af45d55b"
+      "sha256": "183f13010e8b8d622af7f1aad77fd9a50e7cc457d5fb49b523e44c1fe7a03491"
     },
     {
       "path": "suite_core/discovery/manager_runtime_admission_support.py",
@@ -3374,7 +3374,7 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 42451,
-      "sha256": "933934e9eb0ea22f6f508305cd2ad30b9f11d988ffca20fd751d3efe99af1121"
+      "sha256": "fd5bbdfa3b53315f41e5dbdd3f3d08024068f1b7a044eda09e8e8560b7fe8f40"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -3388,8 +3388,8 @@
     },
     {
       "path": "suite_core/manager/__main__.py",
-      "bytes": 35695,
-      "sha256": "d1d04a6fecefab6739fc3630f273edfc0f302610fd7aaccc92ed830e78f868dd"
+      "bytes": 35650,
+      "sha256": "ebac388a31f6034c53a13a907532827a6b34972b83ac2854662fa4ff3cdc3fda"
     },
     {
       "path": "suite_core/manager/appearance_ui.py",
@@ -3538,8 +3538,8 @@
     },
     {
       "path": "suite_core/manager/launcher_main.py",
-      "bytes": 55264,
-      "sha256": "9e053e3d23c8df4b97ebad317bce8238473060140ead0622897a5eab627c6a4c"
+      "bytes": 60323,
+      "sha256": "57d2cf2282a10b9f22b983a01b1f5bc380e73e7ccb47836c03ca7586fdbe5b7a"
     },
     {
       "path": "suite_core/manager/lifecycle_controller.py",
@@ -3724,7 +3724,7 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "7d6780da20509fac3ac7414c939b79327787753815e5a7a6e20ab4449d73b4be"
+      "sha256": "f1b41912d8c2f31ae612608ad49de659540ce8e80695c551c6927f9dd7b13262"
     },
     {
       "path": "suite_core/manager/window.py",
