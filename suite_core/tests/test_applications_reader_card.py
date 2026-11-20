@@ -25,7 +25,7 @@ def test_reader_search_status_and_saved_connection_dispatch(tmp_path):
         assert card() is None
         window.library_search.setText('encyclopedia')
         assert card() is not None
-        for status in ('Installed', 'Available', 'Updates', 'In development'):
+        for status in ('Installed', 'Available', 'Updates'):
             window.library_filter.setCurrentText(status)
             assert card() is None
         window.library_filter.setCurrentText('All entries')
@@ -37,30 +37,11 @@ def test_reader_search_status_and_saved_connection_dispatch(tmp_path):
         panel.directory.setText(str(selected.directory))
         panel.review.click(); panel.save.click()
         window.render_library()
-        assert card().findChild(QPushButton, 'readerPrimaryAction').text() == 'Launch'
+        assert card().findChild(QPushButton, 'readerPrimaryAction').text() == 'Open Tag Encyclopedia'
         window.library_filter.setCurrentText('Installed')
         assert card() is None  # Saved external connection is not managed installation.
     finally:
         window.reader_panel.timer.stop(); window.close(); app.processEvents()
-
-
-def test_dashboard_reader_route_and_catalog_do_not_duplicate_or_infer_installation():
-    from suite_core.manager.resource_dashboard import create_dashboard
-    app = QApplication.instance() or QApplication([])
-    report = unconfigured(datetime.now(timezone.utc)).report
-    absent = create_dashboard(report)
-    present = create_dashboard(report, reader_available=True)
-    supplied = SimpleNamespace(title='Tag Encyclopedia Reader',
-        component_id=SimpleNamespace(value='collectigen.tag-encyclopedia'))
-    catalog = create_dashboard(report, reader_available=True, supported_apps=(supplied,))
-    try:
-        assert 'Reader' not in absent.applications_summary.text()
-        assert present.applications_summary.text() == 'Tag Encyclopedia Reader · Browse in Applications'
-        assert catalog.applications_summary.text() == 'Tag Encyclopedia Reader · Catalog entry'
-    finally:
-        for widget in (absent, present, catalog):
-            widget.close(); widget.deleteLater()
-        app.processEvents()
 
 
 def test_acquisition_state_does_not_infer_update_or_install_after_clear(tmp_path, monkeypatch):
@@ -73,10 +54,10 @@ def test_acquisition_state_does_not_infer_update_or_install_after_clear(tmp_path
         reader_settings_path=fixture.settings, encyclopedia_acquisition=fixture.service,
         encyclopedia_executor=executor)
     try:
-        assert window.reader_card_state()[4] == 'Find reader'
+        assert window.reader_card_state()[4] == 'Get Tag Encyclopedia' + chr(0x2026)
         panel = window.acquisition_panel
         panel.offer = SimpleNamespace(release=SimpleNamespace(software_version='0.1.0-alpha.99'))
-        assert window.reader_card_state()[4] == 'Install'
+        assert window.reader_card_state()[4] == 'Install Tag Encyclopedia' + chr(0x2026)
         panel.offer = None
         calls = []
         monkeypatch.setattr(panel, 'refresh_releases', lambda: calls.append('find'))
@@ -93,7 +74,7 @@ def test_acquisition_state_does_not_infer_update_or_install_after_clear(tmp_path
         panel.offer = SimpleNamespace(release=SimpleNamespace(software_version=selected.version))
         assert not window.reader_card_state()[2]
         panel.offer.release.software_version = '0.1.0-alpha.99'
-        assert window.reader_card_state()[4] == 'Update'
+        assert window.reader_card_state()[4] == 'Update Tag Encyclopedia' + chr(0x2026)
         panel.closing = True
         assert window.reader_card_state()[4] == 'View progress'
     finally:
@@ -121,17 +102,14 @@ def test_reader_card_source_capture(tmp_path, monkeypatch, theme):
     try:
         window.resize(1920, 1080); window.show()
         app.processEvents()
-        assert window.dashboard.applications_summary.text().count('Tag Encyclopedia Reader') == 1
-        assert 'Installed' not in window.dashboard.applications_summary.text()
         captures = os.environ.get('READER_CARD_CAPTURE')
         if captures:
             output = Path(captures); output.mkdir(parents=True, exist_ok=True)
             assert window.grab().save(str(output / (theme + '-dashboard.png')))
         window.navigation.setCurrentRow(window.page_rows['Applications'])
         window.library_search.setText('encyclopedia'); app.processEvents()
-        assert 'installation tools supplied' in window.statusBar().currentMessage()
         card = next(c for c in window.library_body.cards if c.property('componentKey') == 'encyclopedia-connection')
-        assert card.findChild(QPushButton, 'readerPrimaryAction').text() == 'Find reader'
+        assert card.findChild(QPushButton, 'readerPrimaryAction').text() == 'Get Tag Encyclopedia' + chr(0x2026)
         assert 'Choose Find reader' in window.reader_card_state()[6]
         if captures:
             assert window.grab().save(str(output / (theme + '-find-reader.png')))
@@ -143,7 +121,7 @@ def test_reader_card_source_capture(tmp_path, monkeypatch, theme):
         window.acquisition_dialog.hide(); window.render_library(); app.processEvents()
         card = next(c for c in window.library_body.cards
             if c.property('componentKey') == 'encyclopedia-connection')
-        assert card.findChild(QPushButton, 'readerPrimaryAction').text() == 'Install'
+        assert card.findChild(QPushButton, 'readerPrimaryAction').text() == 'Install Tag Encyclopedia' + chr(0x2026)
         if captures:
             assert window.grab().save(str(output / (theme + '-install-offered.png')))
         card.findChild(QToolButton).click(); app.processEvents()
@@ -218,27 +196,3 @@ def test_backend_dependency_chat_busy_then_idle_and_rejected_retry(tmp_path):
     finally:
         window.chat_host = original_chat; window.backend_setup_controller = original_flow
         window.reader_panel.timer.stop(); window.close(); app.processEvents()
-
-
-def test_dashboard_organizer_acquisition_replaces_development_without_install_claim():
-    from suite_core.manager.resource_dashboard import create_dashboard
-    from suite_core.manager.window import DEVELOPMENT_APPLICATIONS
-    app = QApplication.instance() or QApplication([])
-    report = unconfigured(datetime.now(timezone.utc)).report
-    present = create_dashboard(report, development_apps=DEVELOPMENT_APPLICATIONS,
-                               organizer_available=True)
-    supplied = SimpleNamespace(title='Media Organizer',
-        component_id=SimpleNamespace(value='collectigen.media-organizer'))
-    catalog = create_dashboard(report, development_apps=DEVELOPMENT_APPLICATIONS,
-        organizer_available=True, supported_apps=(supplied,))
-    try:
-        assert present.applications_summary.text().count('Media Organizer') == 1
-        assert 'Media Organizer · Get or update in Applications' in present.applications_summary.text()
-        assert 'Media Organizer · In development' not in present.applications_summary.text()
-        assert 'Everday · In development' in present.applications_summary.text()
-        assert 'Installed' not in present.applications_summary.text()
-        assert catalog.applications_summary.text().count('Media Organizer') == 1
-    finally:
-        for widget in (present, catalog):
-            widget.close(); widget.deleteLater()
-        app.processEvents()

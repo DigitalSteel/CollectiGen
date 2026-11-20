@@ -3374,7 +3374,7 @@
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
       "bytes": 42451,
-      "sha256": "5fbb06627a1d5ecda2fbcef770776aa0d6913296c9f154edd0dc9b6b84153355"
+      "sha256": "933934e9eb0ea22f6f508305cd2ad30b9f11d988ffca20fd751d3efe99af1121"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -3643,8 +3643,8 @@
     },
     {
       "path": "suite_core/manager/resource_dashboard.py",
-      "bytes": 6544,
-      "sha256": "aeb80affa07a93a319f31ec19010c9e6a442df5abb6169e0c1fb7b5291fff47b"
+      "bytes": 5338,
+      "sha256": "cddea5d22e0a88558acaa77c2683d2fc7d19a8c9c4cd5a7e34584a49d06f3fa8"
     },
     {
       "path": "suite_core/manager/resource_executor.py",
@@ -3724,12 +3724,12 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "aca0a9782e5b68b4db84bc260969001760a1b6e7f4e381635d47e63e408bd558"
+      "sha256": "7d6780da20509fac3ac7414c939b79327787753815e5a7a6e20ab4449d73b4be"
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 231624,
-      "sha256": "30b00d502f80d94ba6f48a8a8d1f762257d98d54ecfc5f486da8a06090a5d258"
+      "bytes": 229691,
+      "sha256": "878c1a37496ee83aa3e0597edb8e79a0fe735c1c46bd8dc93459b0d4c58b8a02"
     },
     {
       "path": "suite_core/manager/workflow_acquisition_binding.py",
@@ -3738,8 +3738,8 @@
     },
     {
       "path": "suite_core/manager/workflow_applications_ui.py",
-      "bytes": 16348,
-      "sha256": "f2fce44eafa3cda493af06604ebf85785ebe1f28bb8523e76d3113be6e4384ae"
+      "bytes": 17601,
+      "sha256": "28997d5777f066d080b72a8c61e36775e8c056b61558767229fc2de3ba5de75d"
     },
     {
       "path": "suite_core/media_examples.py",

@@ -1,12 +1,13 @@
 """Applications-only workflow launch and stock signed installation decisions."""
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QDialog, QVBoxLayout, QHBoxLayout, QGroupBox
+from PySide6.QtWidgets import QWidget, QLabel, QPushButton, QDialog, QVBoxLayout, QHBoxLayout, QFrame, QGroupBox
 
 from core.workflow_connection import workflow_component
 from core.workflow_installation import WorkflowInstallation
 from core.workflow_native_owner import WorkflowWorkspaceOwner
-from suite_core.manager.encyclopedia_acquisition_ui import EncyclopediaAcquisitionPanel
+from suite_core.manager.encyclopedia_acquisition_ui import EncyclopediaAcquisitionPanel, _primary_action
 from suite_core.manager.resource_executor import ResourceExecutorOwner
+from .ui_cards import card_style, compact_action
 
 
 WORKFLOW_NAMES = {'collectigen.generate': 'Generate', 'collectigen.train': 'Train'}
@@ -149,9 +150,16 @@ class WorkflowApplications(QWidget):
             self.services[component_id] = service, executor
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
         for component_id, name in WORKFLOW_NAMES.items():
-            group = QGroupBox(name)
+            group = QFrame()
+            group.setObjectName("visualCard")
+            card_style(group, compact=True)
             body = QVBoxLayout(group)
+            body.setContentsMargins(14, 14, 14, 14)
+            heading = QLabel(name)
+            heading.setObjectName("cardTitle")
+            body.addWidget(heading)
             description = QLabel('Create images and videos with saved local setups.' if name == 'Generate' else
                                  'Review training packages, prepare a trainer and resume saved runs.')
             description.setWordWrap(True)
@@ -161,15 +169,13 @@ class WorkflowApplications(QWidget):
             body.addWidget(status)
             actions = QHBoxLayout()
             open_button = QPushButton('Open ' + name)
-            open_button.setProperty('primary', True)
-            manage = QPushButton('Manage install and updates…')
-            actions.addWidget(open_button)
+            manage = compact_action(QPushButton('Manage install and updates…'))
+            actions.addWidget(compact_action(open_button))
             actions.addWidget(manage)
             actions.addStretch(1)
             body.addLayout(actions)
             open_button.clicked.connect(lambda _checked=False, selected=component_id: self.open_application(selected))
             manage.clicked.connect(lambda _checked=False, selected=component_id: self.manage(selected))
-            layout.addWidget(group)
             self.rows[component_id] = status, open_button, manage, group
             if component_id in self.services:
                 service, executor = self.services[component_id]
@@ -180,6 +186,7 @@ class WorkflowApplications(QWidget):
                     return_to_applications=dialog.hide)
                 QVBoxLayout(dialog).addWidget(panel)
                 self.panels[component_id], self.dialogs[component_id] = panel, dialog
+            layout.addWidget(group)
         self.timer = QTimer(self)
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.poll)
@@ -221,7 +228,9 @@ class WorkflowApplications(QWidget):
             own_category = 'AI Generation' if component_id == 'collectigen.generate' else 'AI Training'
             available = component_id in self.services
             panel = self.panels.get(component_id)
-            installed = panel is not None and panel.installed is not None and panel.installed.selected is not None
+            opening = self.rows[component_id][1]
+            installed = not opening.isHidden() or (panel is not None and panel.installed is not None
+                                                   and panel.installed.selected is not None)
             update = panel is not None and panel.offer is not None and panel.offer.current_version is not None
             show_status = (status == 'All entries' or status == 'Installed' and installed
                 or status == 'Available' and available and not installed
@@ -233,6 +242,7 @@ class WorkflowApplications(QWidget):
     def render(self):
         held = self.owner is not None and self.owner.close_held
         for component_id, (status, opening, manage, _group) in self.rows.items():
+            name = WORKFLOW_NAMES[component_id]
             reference = getattr(self.owner, 'failure_reference', None)
             status.setToolTip('Workflow diagnostic reference: ' + reference if reference else '')
             resume = (component_id == 'collectigen.generate' and self.owner is not None
@@ -244,7 +254,9 @@ class WorkflowApplications(QWidget):
                     and getattr(getattr(self.owner, 'session', None), 'workflow_contract_version', 0) != 1)
                 status.setText('This app needs the matching Suite launcher. Use a complete Suite update when available.'
                                if old_launcher else 'No installable release is available in this Manager build.')
+                opening.hide()
                 opening.setEnabled(False)
+                manage.hide()
                 manage.setEnabled(False)
                 continue
             service, _executor = pair
@@ -253,6 +265,25 @@ class WorkflowApplications(QWidget):
                 available = service.launch_available
             except (ValueError, RuntimeError, OSError):
                 available = False
+            initial = panel.status.text() == panel.initial_status_text()
+            ordinary = (not getattr(service, 'qualification_only', False)
+                        and getattr(service, 'candidate_admission', None) is None)
+            setup_needed = not available and initial and ordinary and service.install_available
+            offer = getattr(panel, 'offer', None)
+            if offer is not None:
+                verb = 'Install' if offer.current_version is None else 'Update'
+                manage_label = f'{verb} {name}…'
+            elif setup_needed:
+                manage_label = f'Get {name}…'
+            else:
+                manage_label = 'Manage install and updates…'
+            if manage.text() != manage_label:
+                manage.setText(manage_label)
+                compact_action(manage)
+            opening.setVisible(available)
+            manage.show()
+            _primary_action(opening, available)
+            _primary_action(manage, not available)
             opening.setEnabled(available and not held and not panel.close_held and not panel.closing
                               and self.launch_allowed())
             opening.setToolTip('Finish or close other management reviews before opening this app.'
@@ -270,13 +301,8 @@ class WorkflowApplications(QWidget):
                 detail = panel.status.text()
                 text += ' Ready to open.' if detail == panel.initial_status_text() else ' ' + detail
             else:
-                detail = panel.status.text()
-                initial = detail == panel.initial_status_text()
-                ordinary = (not getattr(service, 'qualification_only', False)
-                            and getattr(service, 'candidate_admission', None) is None)
-                text = ('Choose Manage install and updates… to find and review '
-                        + WORKFLOW_NAMES[component_id] + ' releases.'
-                        if initial and ordinary else detail)
+                text = (f'{name} is not ready to open. Review a verified GitHub release to install it.'
+                        if setup_needed else panel.status.text())
             status.setText(text)
 
     def poll(self):

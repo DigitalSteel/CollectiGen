@@ -38,57 +38,71 @@ def server_views(report, jobs=()):
     return tuple(result)
 
 
-def create_dashboard(report, jobs=(), *, synthetic=False, open_servers=None,
-                     supported_apps=(), development_apps=(), reader_available=False, organizer_available=False, workflow_apps=()):
-    """Concise supplied observations; no collectors, zero telemetry or launch claims."""
-    from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea, QFrame
+def active_module_jobs(jobs, names, now):
+    """Report only current, attributable work from existing job observations."""
+    from datetime import datetime, timedelta
+
+    states = {"queued": "Waiting", "starting": "Starting", "running": "In progress",
+              "cancel_requested": "Stopping"}
+    activity = []
+    for job in jobs:
+        row = job.as_ui()
+        name = names.get(row["requesting_app"])
+        state = states.get(row["current_status"])
+        if not name or not state or not row["progress_is_current"]:
+            continue
+        observed = datetime.fromisoformat(row["observed_at"])
+        if not timedelta(0) <= now - observed <= timedelta(seconds=row["valid_for_seconds"]):
+            continue
+        done, total = row["completed_units"], row["total_units"]
+        count = f" ({done}/{total})" if done is not None and total else ""
+        activity.append(f"{name}: {state}{count}")
+    return tuple(activity)
+
+
+def create_dashboard(*, synthetic=False, open_applications, review_update):
+    """Show Suite status and link to the separate Applications workspace."""
+    from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea, QFrame, QPushButton
     from PySide6.QtCore import Qt
-    from .ui_cards import card_style, workspace_layout, workspace_heading, ResponsiveCardGrid, details_panel
-    hosts = server_views(report, jobs)
-    from core.manager_server_inventory import project_unmatched_jobs
-    unmatched = project_unmatched_jobs(report, jobs)
-    scroll = QScrollArea(); scroll.setWidgetResizable(True)
-    body = QWidget(); layout = workspace_layout(body); scroll.setWidget(body)
+    from .ui_cards import card_style, workspace_layout, workspace_heading, compact_action
+
+    scroll = QScrollArea()
+    scroll.setWidgetResizable(True)
+    scroll.setFrameShape(QFrame.NoFrame)
+    body = QWidget()
+    layout = workspace_layout(body)
+    scroll.setWidget(body)
     layout.addWidget(workspace_heading("Dashboard"))
-    intro = QLabel("Choose an application, or check your computer and connections in Servers.")
-    intro.setWordWrap(True); layout.addWidget(intro)
     if synthetic:
-        layout.addWidget(QLabel("Synthetic preview — fabricated observations"))
-    grid = ResponsiveCardGrid(minimum_card_width=300, maximum_columns=2)
-    cards = []
-    def card(title, value, detail):
-        frame = QFrame(); frame.setObjectName("visualCard"); card_style(frame, compact=True)
-        pane = QVBoxLayout(frame); pane.setContentsMargins(14, 14, 14, 14); pane.setSpacing(8)
-        heading = QLabel(title); heading.setObjectName("cardTitle"); pane.addWidget(heading)
-        summary = QLabel(value); summary.setWordWrap(True); summary.setTextFormat(Qt.PlainText)
-        pane.addWidget(summary); pane.addStretch()
-        pane.addWidget(details_panel("Details", detail)); cards.append(frame)
-        return summary
-    app_lines = [name + " · Manage or open in Applications" for name in workflow_apps]
-    app_lines += [item.title + " · Catalog entry" for item in supported_apps]
-    supplied_keys = {item.component_id.value for item in supported_apps}
-    if reader_available and "collectigen.tag-encyclopedia" not in supplied_keys:
-        app_lines.append("Tag Encyclopedia Reader · Browse in Applications")
-    if organizer_available and "collectigen.media-organizer" not in supplied_keys:
-        app_lines.append("Media Organizer · Get or update in Applications")
-    if organizer_available or "collectigen.media-organizer" in supplied_keys:
-        supplied_keys.add("media-organizer")
-    app_lines += [item.title + " · In development" for item in development_apps if item.key not in supplied_keys]
-    scroll.applications_summary = card("Applications", "\n".join(app_lines) or "No application catalog supplied",
-         "Catalog entries describe applications. They do not prove installation, running state or readiness. "
-         "Use Applications to filter the supplied catalog and inspect an individual entry.")
-    connections = {(row["backend_id"], row["connection_ref"]) for host in hosts for row in host["connections"]}
-    scroll.fleet_summary = card("Connections", f"{len(connections)} recorded connections" if connections else "No connection observations",
-         f"{len(hosts)} supplied host records. Readiness and activity remain unknown without current scoped evidence. "
-         "Connection configuration and metadata refresh are separate actions in Servers.")
-    scroll.backend_summary = QLabel("Local Ollama: connection unknown")
-    scroll.backend_summary.setWordWrap(True)
-    scroll.fleet_summary.parentWidget().layout().insertWidget(2, scroll.backend_summary)
-    scroll.local_summary = card("This computer", "Not measured",
-         "Refresh this computer in Servers to request measurements. Nothing is sampled on navigation. "
-         "Expired or unavailable readings remain unknown; memory observations do not guarantee model fit.")
-    card("Jobs", f"{len(jobs)} supplied job observations" if jobs else "No job observations",
-         f"{len(unmatched)} held or unmatched observations retained in Servers. "
-         "Supplied job records are not assumed to be current work or assigned to an unverified host.")
-    grid.set_cards(cards); layout.addWidget(grid); layout.addStretch()
+        layout.addWidget(QLabel("Demo: example status only"))
+
+    def status_card(title):
+        card = QFrame()
+        card.setObjectName("visualCard")
+        card_style(card, compact=True)
+        panel = QVBoxLayout(card)
+        panel.setContentsMargins(14, 14, 14, 14)
+        heading = QLabel(title)
+        heading.setObjectName("cardTitle")
+        panel.addWidget(heading)
+        status = QLabel()
+        status.setWordWrap(True)
+        status.setTextFormat(Qt.PlainText)
+        panel.addWidget(status)
+        layout.addWidget(card)
+        return status
+
+    scroll.module_activity = status_card("Active work")
+    scroll.notifications = status_card("Notifications")
+    scroll.notifications.setTextFormat(Qt.RichText)
+    scroll.notifications.setTextInteractionFlags(Qt.LinksAccessibleByMouse | Qt.LinksAccessibleByKeyboard)
+    scroll.notifications.linkActivated.connect(review_update)
+    intro = QLabel("Choose an app in Applications to review an install or open it. Computer and connection status is in Servers.")
+    intro.setWordWrap(True)
+    layout.addWidget(intro)
+    scroll.open_applications = compact_action(QPushButton("Go to Applications"))
+    scroll.open_applications.setProperty("primary", True)
+    scroll.open_applications.clicked.connect(open_applications)
+    layout.addWidget(scroll.open_applications, 0, Qt.AlignLeft)
+    layout.addStretch(1)
     return scroll

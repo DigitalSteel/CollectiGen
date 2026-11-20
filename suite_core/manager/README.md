@@ -1,15 +1,19 @@
 # CollectiGen Suite Manager
 
-The **0.8.0-alpha.1 source candidate** makes Manager the home for Applications,
+The **0.8.1-alpha.1 update candidate** makes Manager the home for Applications,
 installation, updates, connections and shared settings. Generate and Train are
 separate versioned applications. Installer confirmations retain their own
 controls while unrelated shared edits stay locked; save/recovery and rejected
 download messages name the available next action. This candidate is not yet a
 qualified public download. The links below identify the historical release.
 
-Applications separates Generate and Train, App catalog, and Connections into
-named tabs. Catalog searches stay in the catalog; workflow windows remain
-independent. The workflow owner separates quiet polling from one bounded
+Start in Dashboard for computer and connection status. Go to Applications to
+set up or open an app. Work inside the app you open. Manager handles shared
+settings, connections, setup and updates.
+
+Applications shows one list for finding, installing, updating and opening apps.
+Search and filters work across the list. Shared software and connections are
+under Settings. Workflow windows remain independent. The workflow owner separates quiet polling from one bounded
 frame-assembly wait; partial frames still require recovery. These source
 changes still require matching packaged workflow and recovery qualification.
 

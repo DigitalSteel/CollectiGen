@@ -1,3 +1,11 @@
+# Suite Manager a.0.8.1 — 2026-11-20
+
+- Dashboard shows current module activity and links verified update notices to the matching review.
+- Applications lists Generate, Train, Media Organizer and Tag Encyclopedia in one place. Get, Install, Open and Update reflect each app's state.
+- Shared software and Ollama are in Settings. Work stays inside each app.
+
+This Manager update starts from Suite 0.8.0-alpha.1 with launcher 0.1.1. Review the update in Settings. Keep the original installation and Data backup until the updated Manager opens.
+
 # Suite Manager a.0.8.0 — 2026-11-17
 
 - Applications manages and opens independently versioned Generate and Train modules. Manager focuses on installation, updates, connections, shared settings and resources.

@@ -10,7 +10,7 @@ TITLE = "CollectiGen Suite Manager"
 ICON_PATH = Path(__file__).resolve().parent / "assets" / "collectigen.ico"
 from core.application_categories import (APP_CATEGORIES, CATEGORY_DESCRIPTIONS, APPLICATION_GROUPS,
     ApplicationFilterState, select_category, matches_category, matching_catalog, application_roles, related_application_entries)
-NOTES = '# Suite Manager a.0.8.0 — 2026-11-17\n\n- Applications manages installation, updates and opening independently versioned Generate and Train modules. Manager owns shared settings, connections and resources.\n- Existing drafts, model identities, saved preparation and run records stay in their canonical workspace. Shared edits wait while a workflow and its original work are open.\n- Installations and updates require an explicit review and confirmation. Availability is determined by signed compatible releases; no unattended installation or restart is enabled.\n- Use the complete Suite ZIP for bootstrap0.1.1. Older launchers cannot gain the module entry contract from a Manager-only update.\n- Software and workflow checks do not establish real model, hardware, output-quality or training qualification.\n\n' + "# What's New - a.0.7.8 (embedded 0.7.8-alpha.1) - 2026-11-14\n\n- Training restores the original trainer software lifecycle: reviewed managed installation, existing software verification, offline import/export, repair, activation and rollback. Setup uses Manager-local stock queue, generations, health and recovery services; training still needs its own review.\n- Saved Setup Operations reconnects retained work or prepares an explicit retry review. Opening Setup starts no downloads or recovery work; Cancel targets only the selected original operation.\n- Closing a setup review can leave confirmed work in the same Manager queue. Manager Close cancels and waits for that queue and retained native owners. Local resource choices are saved only after verified existing software or explicit activation.\n\nCandidate implementation; final checks and signed package delivery remain pending. No model, trainer, Reader/C3A or real-library trial was run during implementation.\n\n# What's New - a.0.7.7 (embedded 0.7.7-alpha.1) - 2026-11-14\n\n- Local Description Settings can save your choices and open Manager caption component setup. Check readiness, then explicitly review component installation or the selected model download. Opening the review starts no download or image analysis.\n- Image-derived Setup suggestions use the original JoyCaption/Florence service in Manager's admitted Python worker. The caption store is separate from Video and Organizer; saved model choices, purpose prompts, source checks and reviewable uncertain proposals remain with the original workflow.\n- Caption setup and analysis retain their contained process and download descendants through Cancel/Close. The package includes the already pinned pip wheel required by worker setup; no new updater or module is introduced.\n\nCandidate implementation: final source/package validation and delivery are recorded separately. No model/trainer, Reader/C3A or real-library execution is authorized by opening these tools.\n\n# What's New - a.0.7.6 (embedded 0.7.6-alpha.1) - 2026-11-13\n\n- Use Organizer Prompt Catalog in Generate to import reusable Tag names, aliases and Character/Outfit prompt choices exported by Organizer a.0.5.6. Search Tags on Request or browse associated, other and generic Outfits in Advanced; saving a draft retains those choices.\n- Create Generation Setup offers manual authoring or one selected image. Review saved text and recorded settings before choosing what to keep; choosing an image starts no analysis.\n- Local description settings return to the same unfinished image setup with its name and edits retained. A compatible local caption runtime and model are still required for optional image suggestions; saved text and manual authoring remain available.\n- The selected-image reference uses the shared unknown-rating blur and temporary Reveal/Hide controls.\n\nSigned component discovery, explicit installation confirmation and existing recovery remain unchanged. No model or trainer runs automatically.\n\n# What's New - a.0.7.5 (embedded 0.7.5-alpha.1) - 2026-11-13\n\n- Settings can save your theme, color-blind status colors and tooltips, apply them now and remember them at the next launch. Other modules keep their own preferences.\n- The original launcher can retry an interrupted startup-record write for the same paused updated Manager. Existing prior-version repair remains available after a failed startup.\n- Current build identifies the bundled Python/Qt runtime and package version. Windows executable signing remains separate from verified release metadata.\n\n# What's New - a.0.7.4 (embedded 0.7.4-alpha.1) - 2026-11-13\n\n- Applications discovers newer signed Reader and Media Organizer releases from GitHub without requiring a new Manager build for each module update. Review the selected version and confirm installation.\n- Publisher signatures, compatible upgrade paths, exact review revalidation and existing installation/recovery ownership remain in effect.\n\n# What's New - a.0.7.3 (embedded 0.7.3-alpha.1) - 2026-11-13\n\n- Closing Manager can cancel Organizer app-status verification while retaining its original worker. If health publication has started, the existing transaction and readback finish before closing.\n- Applications offers signed Media Organizer a.0.5.4, including native Copy and recovery to reused paths. Review and confirm the offered update.\n- Generate and Training remain available. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.2 (embedded 0.7.2-alpha.1) - 2026-11-13\n\n- Applications now offers signed Media Organizer a.0.5.3, which retains Copy Undo after the first automatic saved-data initialization of a Manager result. Review and confirm the update before installing it.\n- The installed-Organizer startup fix and existing Generate and Training workspaces remain included. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.1 (embedded 0.7.1-alpha.1) - 2026-11-13\n\n- Opening an installed Media Organizer now allows its signed-package review to finish before the startup reply expires. The same startup request and recovery controls remain in use.\n- Existing Generate and Training workspaces and confirmed Reader/Organizer installation remain available. Full all-in-one parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.0 (embedded 0.7.0-alpha.1) - 2026-11-13\n\n- Training can find interrupted packages by their intended save location and package name. Choose Review Interrupted Training Package, then Choose Package Location. Browse Exact Receipt remains available for advanced selection.\n- Searches show activity and elapsed time with Cancel Safely. Close or an ended session cannot reopen a late review. The existing receipt review changes no package files; recovery writes stay with the original package workspace.\n- Applications continues to offer signed Reader a.0.3.1 and Organizer a.0.5.2. Automatic Manager updates support a.0.6.7 and newer;older launchers need the full ZIP in a fresh folder. Full all-in-one parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.6.10 (embedded 0.6.10-alpha.1) - 2026-11-13\n\n- Applications offers signed Media Organizer a.0.5.2 through the existing confirmed installer. It includes copy-only Manager result previews, explicit Retry after busy file work, and clearer copied-family Undo through Recycle.\n- Existing Reader installation, Generate/Training workspaces and the Manager update route from a.0.6.7 remain available. Older launchers need the full ZIP in a fresh folder. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.6.9 (embedded 0.6.9-alpha.1) - 2026-11-13\n\n- Training Package Review now shows the target model, included and excluded image counts, training/validation/holdout split, and the available next preparation action.\n- The review distinguishes verified package files from unchecked trainer and model readiness. Return and recovery guidance now name the Training workspace.\n- Uses the existing Manager update route from a.0.6.7 and newer. Full suite parity and actual failed-update rollback remain unqualified.\n\n# What's New - a.0.6.8 (embedded 0.6.8-alpha.1) - 2026-11-13\n\n- Saved Training and SDXL-preparation history controls use Manager's existing compact button sizing so Refresh, Forget and recovery captions fit the host fonts.\n- Saved-list transactions and retained review/output files stay with their existing owners. The published a.0.6.7 list actions already passed isolated recovery, Forget and saved-state reopening.\n- Older launchers a.0.6.6 and earlier still need the fresh full ZIP. In-place update and rollback qualification from the fixed a.0.6.7 baseline remains open until its actual checks finish.\n\n# What's New - a.0.6.7 (embedded 0.6.7-alpha.1) - 2026-11-13\n\n- Manager update admission checks SDK files at the locations used by the stock installer, while retaining every signed application-file check.\n- If the installed update is rejected before Manager starts, the original launcher can offer Repair to prior Manager after confirming its processes closed.\n- Older Suite Manager launchers need the fresh full ZIP to receive these launcher fixes. Full all-in-one parity and actual installed-update/rollback qualification remain open until their checks finish.\n\n# What's New - a.0.6.6 (embedded 0.6.6-alpha.1) - 2026-11-13\n\n- Manage Manager-owned Training history with Forget From This List and Recover Saved List. Forget preserves run files; list recovery retains the original guarded transaction.\n\n# What's New - a.0.6.5 (embedded 0.6.5-alpha.1) - 2026-11-12\n\n- Plan a Remix and Plan Remix from Verified Result open separate image drafts while retaining existing image/video work. Source-change checks and cancellation still apply.\n\n# What's New - a.0.6.4 (embedded 0.6.4-alpha.1) - 2026-11-12\n\n- The default Organizer installer offer targets signed a.0.5.1, including changed-result recovery guidance.\n\n- Generate and Manager update actions wrap to fit the available window width.\n- Tab leaves the read-only update notes for the next action.\n- Original draft, confirmation, update and recovery handlers are retained.\n\n# What's New - a.0.6.3 (embedded 0.6.3-alpha.1) - 2026-11-12\n\n- Restored contextual Generate and Training Help through the Help ribbon and F1.\n- Explain data preparation in Organizer and execution/review in Manager while retaining open work.\n\n# What's New - a.0.6.2 (embedded 0.6.2-alpha.1) - 2026-11-12\n\n- Fixed Apply giving up before the launcher finished checking a signed update.\n  Manager waits for the original reply without submitting the update twice.\n- Apply shows that the staged update is being checked before Manager closes.\n  Nothing is replaced until the original launcher accepts the operation.\n\n# What's New - a.0.6.1 (embedded 0.6.1-alpha.1) - 2026-11-12\n\n- Use Saved Setup opens a separate image draft while retaining your current\n  image and video drafts. You no longer need to close another image first.\n- Choosing a setup still requires explicit review and Apply. Cancelling the\n  picker or review preserves existing work; changed setups require a fresh review.\n\nUnpublished package candidate. The correction passed focused offscreen source\nchecks; signed package delivery and successor update/recovery remain pending.\nThis does not qualify model execution, older portable migration or full suite parity.\n\n# What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11\n\n- Opening Organizer keeps Manager's bundled DLL paths out of the child\n  environment so Organizer can initialize its own packaged Qt runtime.\n- Dashboard refreshes the generator card when startup finishes and points to\n  Organizer installation instead of calling the published app in development.\n- Manager startup accepts normal Windows casing for CollectiGen.exe and its\n  folder, keeping the canonical entry binding; renamed entries remain refused.\n- Training preparation can receive the signed packaged worker through the\n  original Manager session; trainer launch remains a separate user action.\n- Dataset status stays owned by its page during first startup, so background\n  status feedback cannot leave a separate window alive after Close.\n- Applications offers signed Media Organizer a.0.5.0 through the existing\n  download, review and confirmed-install workflow.\n- Training packages retain the saved caption-assessment context. Current plans\n  and legacy plans remain readable without dropping their source identity.\n- Training lists open run, setup and comparison reviews. Return to the selected\n  original review without creating another review or restarting its work.\n- Generate keeps multiple image and video drafts in the original workspace\n  switcher. New plans and model-guided requests preserve open drafts; Close\n  consults every retained request before releasing its original jobs.\n- Generate and Training now have dedicated sidebar workspaces. Their existing\n  dialogs, saved work and controllers are retained; comparisons return to Training.\n- Training plans retain reviewed relationship constraints when the optional legacy conflicts file is absent; rebuild older saved plans to refresh their caption context.\n\n- Caption checks accept Organizer defaults without optional rule files, retain typed relationship constraints and detect rule-file changes during review.\n\n- Saved Training drafts retain the context reference needed for caption comparison in Manager; older drafts remain readable.\n\n- Generate planning from a registered LoRA keeps its exact LoRA role in the new\n  draft; it no longer treats that selection as a checkpoint. Checkpoint choice\n  and generator readiness remain separate.\n- Applications opens the original local Models workspace for registration, notes,\n  storage and model-guided planning. Reviewed guidance opens a new Generate draft;\n  a busy or changed review can return to Models.\n- Training History can import an unlisted saved Validation review, recheck its\n  retained measurement and add it to History without starting a new evaluation.\n- Verified Results keeps image/receipt actions above the preview and explains\n  the result review. Updated Organizer accepts its receipt through normal Ingest\n  copy review, preserving the source and generation lineage.\n- Dashboard shows saved local-generator status and routes to Setup, image\n  drafts or generation work without contacting or starting SwarmUI.\n- Generator Setup now includes the original connect/install, run/status,\n  models/import and maintenance sections. Setup uses Manager's model registry,\n  preferences and presets, and Return keeps the same generation draft.\n  Generate accepts both checked existing and managed local installations.\n- Training comparisons can open their saved batch in Generate's normal queue.\n  Review the candidates and explicitly Start through the checked local generator.\n  Open drafts are preserved and every queued image rechecks the connection.\n  Reviewing a single image also keeps Return to Training Comparison available;\n  closing Generate restores the saved comparison.\n  Registered Training results and evaluation checkpoints keep their exact run\n  and LoRA when opening a comparison, with return to Manager Applications.\n- Held-out Validation can verify an anchored Training result after application\n  code updates, using its saved result receipt and current output files.\n- Saved held-out Validation opens its chart and per-image measurements from\n  Training History. New Validation reviews use the current Training workspace.\n- Training Experiments keeps run names, notes and favorites, compares retained\n  runs, and clones a run into a new draft. Export the draft for editing through\n  Organizer's Dataset Plans workflow; the updated Organizer package is required.\n- Find and review the published Reader and Organizer packages from Manager,\n  then confirm installation in the component workspace.\n- Use the Tag Database workspace to review available content, preview changes\n  and apply them while preserving local corrections.\n- Prepare SDXL Training, run the reviewed local trainer and register the finished\n  LoRA. Reopen saved Training runs from History to review results and recovery.\n- Save and reopen Generate work, reconnect generation backends, and review\n  retained queue results and interrupted-work recovery.\n\nThis is an unpublished alpha package candidate. It is not full all-in-one parity.\nThe first managed baseline uses a new writable installation; migration from the\nolder portable Manager and installed self-update remain separately qualified.\n\n# What's New - a.0.5.1 (embedded 0.5.1-alpha.1) - 2026-10-18\n\n- Dashboard now lists Tag Encyclopedia Reader, with a pointer to Applications.\n- The Reader card says Find reader before checking for a release, then Install when a release is available. Downloading app files still requires installation confirmation.\n\nThis Windows x64 portable Alpha supports fresh installations with Reader a.0.3.1 only. Legacy Reader upgrade and rollback through Manager are excluded. Organizer downloads and Manager self-update remain unavailable. Keep backups; extract into a new writable folder. The executable is not Authenticode-signed.\n\n# What's New - a.0.5.0 (embedded 0.5.0-alpha.1) - 2026-10-14\n\n- Review an explicitly configured Reader or Organizer release before installing or updating it. The version, verified notes and confirmation stay together.\n- Pending setup, opening, update, restoration and Close show their phase, activity and elapsed time. Use Cancel where it is available; Close waits for work to settle safely. Optional Details retain the original connection and recovery reasons.\n- Open Reader and Organizer deliberately, then close their windows normally to finish setup. Recovery retains the selected catalog and protected settings.\n- Connect a Tag Database and preview changes before applying supported content updates. Local corrections remain protected; unsupported or stale inputs stop for review.\n- Help and release history use the same current version labels as the application.\n\nAlpha evaluation software for Windows 11 x64 portable use. Component downloads\nrequire an explicitly configured verified release feed. Manager self-update is\nunavailable. Keep backups and use test copies when evaluating catalog changes.\nThe Windows executable is not Authenticode-signed and has no installer.\n\n# What's New - a.0.4.1 (embedded 0.4.1-alpha.1) - 2026-10-12\n\n- Fixed a startup error in the previous alpha candidate that could prevent Manager from opening.\n\nThis unsigned correction has not established the full reader workflow or clean-machine compatibility. The default package continues to connect existing approved reader packages. Automatic Encyclopedia acquisition and native updates remain unavailable. Preserve earlier copies and recovery records.\n\n# What's New - a.0.4.0 (embedded 0.4.0-alpha.1) - 2026-10-12\n\n- Applications search and status filters now include Tag Encyclopedia. Its card shows the next supported action, with connection and release tools under Options.\n- Dependencies shows supplied status and blockers, with links to the existing setup or recovery workspace. Returning from that workspace lets you review its status again.\n- Fixed first-party release discovery rejecting valid GitHub download links.\n\nThe default launch connects existing approved reader packages. Automatic acquisition requires a separately admitted original-root profile and remains unavailable by default. Saved reader changes may require a Manager restart before Launch. Native installation, ordinary launch/close, updates and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.3.2 (embedded 0.3.2-alpha.1) - 2026-10-11\n\n- Fixed a reader setup settings mismatch that could prevent saving an Encyclopedia connection in portable Manager. Saved connections use the companion settings file while preserving the original startup configuration.\n\nConnect an already installed Encyclopedia from Applications, save it, then restart Manager before Launch. Automatic reader download/install and native application updates remain unavailable. This unsigned local candidate has not established clean-machine compatibility.\n\n# What's New - a.0.3.1 (embedded 0.3.1-alpha.1) - 2026-10-11\n\n- After saving a new Encyclopedia selection, Manager clearly asks you to restart before launching it. Launch stays unavailable until that exact reader is admitted at startup.\n- Switching to another reader, including a changed package in the same folder, keeps the restart guidance visible. Reopening the saved connection after restart restores Launch for the admitted reader.\n\nThis unsigned local candidate connects already installed readers. Automatic Encyclopedia download/install remains unavailable; native application updates, public release and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.3.0 (embedded 0.3.0-alpha.1) - 2026-10-11\n\n- Applications > Encyclopedia lets you connect an already installed standalone reader. Review its folder, save the connection, then restart Manager to launch that selected reader.\n- Open saved connection restores your selection. Manager keeps reader work supervised while closing; Cancel Close returns to the same window.\n- Databases continues to offer separate connection review, content preview, Apply, recovery and Reload for an enrolled Tag catalog.\n\nThis unsigned local candidate does not download or install Encyclopedia automatically. Native application updates, public release and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.2.16 (embedded 0.2.1-alpha.16) - 2026-10-11\n\n- Databases lets you select an approved local Tag source and create a new catalog or open an enrolled catalog. Review and confirm the connection, then preview and apply the content separately.\n- Reopen the saved catalog, recover an interrupted import, or reload saved changes after a snapshot refresh fails. Closing retains admitted work until it finishes.\n- Capability summaries describe the selected catalog and keep unavailable behavior and its reasons visible. Connection settings remain accessible beside the selected catalog.\n\nThis is an unreleased source checkpoint. Portable startup and clean-machine behavior remain separately qualified. Native application updates and public release remain unavailable.\n\n# What's New - a.0.2.15 (embedded 0.2.1-alpha.15) - 2026-10-10\n\n- Direct GGUF chat now allows replies up to 512 tokens. The shorter 32-token limit belongs to explicit proof runs.\n- This unsigned manual candidate uses ordinary entries and starts with empty conversations. Review the fixed installed files, Load model, then Open Chat to send your own message.\n\nThe admitted Qwen/runtime profile remains CPU only: 2 threads, 4096 context and one slot. Reply limits are not adjustable here. Synthetic streaming checks passed at 512 tokens; real-model 512-token behavior, ordinary manual startup/navigation/Close, GPU operation and clean-machine compatibility remain unverified. The earlier exact-profile native lifecycle proof used 32 tokens. Native updates and public release remain unavailable.\n\n# What's New - a.0.2.14 (embedded 0.2.1-alpha.14) - 2026-10-10\n\n- Standalone Manager entry offers an existing GGUF file directly, with a separately selected installed llama-server. No model copy, Ollama import or download.\n- Review checks the selected files and server version. Load uses a bounded CPU-only plan; Chat and Stop keep the original process owned through completion.\n\nThe selected Qwen GGUF completed a bounded CPU-only frozen Manager load, reply, reload and owned shutdown through the normal root with the retained llama-server runtime. An admitted direct-runtime profile fixes the reviewed files. The alpha14 manual artifact uses 2 CPU threads, 4096 context, one slot and a fixed maximum of 32 reply tokens; these limits are not adjustable there. Ordinary manual startup, navigation and Close were not accepted; exact development actors were cleaned up separately and its failed ledger was preserved. GPU operation and other models/runtimes are not qualified. Existing-backend chat source integration remains separate; native updates and public release remain unavailable.\n\n# What's New - a.0.2.13 (embedded 0.2.1-alpha.13) - 2026-10-10\n\n- Open Chat from Applications > Ollama after refreshing a configured backend and choosing an already loaded model.\n- Replies appear as they arrive. Stop cancels this request; New Chat clears the conversation. Messages stay in memory.\n- Closing Manager waits for chat work to finish safely. After an interrupted request, refresh the backend before sending again.\n\nSource integration is under verification. Direct GGUF loading, packaged inference, native updates and public distribution remain separately qualified.\n\n# What's New - a.0.2.12 (embedded 0.2.1-alpha.12) - 2026-10-10\n\n- If Manager encounters a problem while approved Tag work is pending, the same window keeps its status, cancellation and recovery controls available.\n- Close waits for the original Tag operation to settle; Cancel Close keeps its saved outcome and original failure available for review.\n\nAvailable only with an explicitly supplied approved Tag host. The default entry has no catalog connected. Native updates and public distribution remain separately qualified.\n\n# What's New - a.0.2.11 (embedded 0.2.1-alpha.11) - 2026-10-10\n\n- With an explicitly connected approved Tag catalog, Databases offers preview, reviewed Apply, cancellation, recovery and saved-result reload.\n- Closing waits for Tag work to finish. Cancel Close keeps its progress and recovery controls available.\n- Media Organizer details show its current source version and date.\n\nThe default entry has no approved Tag catalog connected. Combining this Tag host with owned failed-entry recovery requires separate qualification. Automatic updates and public distribution remain separate.\n\n# What's New - a.0.2.10 (embedded 0.2.1-alpha.10) - 2026-10-10\n\n- When a local runner exits during startup, Manager keeps recovery available so Stop can finish its cleanup.\n- Runner status distinguishes an exited runner awaiting cleanup from a running or fully stopped runner.\n- Startup diagnostics retain the original failure to help explain an unsuccessful start.\n- Repeated reviewed starts use the same retained deployment owner and separate attempt identities.\n- Failed-entry recovery keeps one visible Manager surface, original controls and cleanup evidence; codes are available in Details.\n\nUnreleased fixes for explicitly qualified local runner packages. The exact private existing-profile lifecycle acceptance passed.\nNew installations, model/Hermes actions, automatic updates and distribution remain separately qualified.\n\n# What's New - a.0.2.9 (embedded 0.2.1-alpha.9) - 2026-10-09\n\n- Starting a reviewed local Ollama runner no longer fails while Manager is finishing its startup checks.\n- A running runner is shown correctly. Stop remains available, and a stopped runner can be started again.\n- Closing Manager explains when the runner still needs to be stopped. Once Stop finishes, Manager closes normally without leaving its runner behind.\n\nAvailable only with an explicitly configured, qualified local runner package.\nNew installations, model installation and Hermes actions remain unavailable until\nseparately qualified. Automatic updates and public distribution remain separate.\n\n# What's New - a.0.2.8 (embedded 0.2.1-alpha.8) - 2026-10-09\n\n- Owned Ollama starts can reuse an explicitly reviewed, verified local model cache. Unknown, incomplete or changed cache contents remain blocked.\n- Cancelled or expired starts stop before launching a process.\n- Stop closes the runner Manager started together with its inference processes, preserving recovery ownership and cached model files.\n\nThis is an unreleased source checkpoint. These runtime changes do not enable cached-model controls in a packaged application. Model installation and Hermes actions remain unavailable; automatic updates and distribution remain separately qualified.\n\n# What's New - a.0.2.7 (embedded 0.2.1-alpha.7) - 2026-10-09\n\n- With an explicitly supplied qualified Ollama package and installation permission, Applications > Model runners offers installation review, progress, Cancel and recovery.\n- Review local key creation before starting the owned runner. Stop targets only the runner Manager started; external connections remain independent.\n- Failed status delivery retains the runner for explicit Stop and reconciliation instead of leaving controls permanently busy. Closing waits for retained work and process ownership.\n\nThis is an unreleased source checkpoint. The default entry has no qualified package and keeps installation unavailable. Production host/package selection, packaged and real GUI qualification remain pending. Model installation and Hermes agent actions remain unavailable until separately qualified.\n\n# What's New - a.0.2.6 (embedded 0.2.1-alpha.6) - 2026-10-09\n\n- Find Ollama connection tools and model observations in Applications > Model runners. Servers opens the same workspace.\n- The connection editor uses clear Save and Cancel actions. Saving a connection keeps metadata access separate; saved choices can be reloaded and reconciled explicitly.\n- Model summaries and inventory remain readable in narrower or shorter windows, with scrolling to reach the full workspace.\n\nThis is an unreleased source checkpoint. Install new remains unavailable; packaged and real-provider qualification remain pending.\n\n# What's New - a.0.2.5 (embedded 0.2.1-alpha.5) - 2026-10-08\n\n- Dashboard separates applications, connections, this computer and jobs into concise summaries, with further information under Details.\n- Light and dark themes keep application symbols, status badges and controls readable. Cards use more consistent spacing and action placement.\n- Application descriptions wrap in narrower windows. Expanded Details stay inside their cards and scroll to the end; collapsing restores the compact layout.\n- Everday is described as a dating and simulation game with AI characters in Games.\n- Normal navigation keeps demo and debug controls out of the way.\n- Servers opens correctly. Unavailable measurements and connections remain clearly marked.\n\n# What's New - a.0.2.4 (embedded 0.2.1-alpha.4) - 2026-10-08\n\n- Applications groups the existing catalog by task with a category list, while retaining search and installation-status filters.\n- Application cards show declared roles. Agent and model-runner groups stay empty unless the supplied catalog identifies matching applications.\n- Details links to declared related components when matching catalog information is available; compatibility and installation remain unknown.\n\n# What's New - a.0.2.3 (embedded 0.2.1-alpha.3) - 2026-10-08\n\n- Servers brings local computer measurements and existing backend connections into a separate section with compact cards and expandable Details.\n- Dashboard summarizes observations and links to Servers. Expired or unavailable measurements remain unknown; held jobs stay visible without an invented server assignment.\n- The sidebar selects sections. The command bar offers supported actions for the current section, with View, Help and command search still available.\n- Connect existing Ollama opens the metadata connection editor. Saving a connection and refreshing metadata remain separate actions; this does not install Ollama.\n\n# What's New - a.0.2.2 (embedded 0.2.1-alpha.2) - 2026-10-08\n\n- Applications offers compact cards with readable requirements and expandable Details.\n- Catalog review fits narrower windows, and Settings groups connection, model, appearance and build information.\n- Local backend setup keeps deliberate Save separate from Refresh; appearance remains session-only.\n\nThis is an unreleased source candidate. Normal component installation and managed execution remain unavailable by default. Native saved-workflow, recovery and portable qualification remain pending.\n\n# What's New - a.0.2.1 (embedded 0.2.1-alpha.1) - 2026-10-08\n\n- Application cards are smaller and easier to scan, with category icons and Details for requirements and availability.\n- Catalog review controls fit narrower windows; disconnected catalogs keep review details out of the default view.\n- Settings groups backend connections, model observations, appearance and build details consistently.\n- Dependencies separates build information from supplied component requirements without implying that setup actions are available.\n\n# What's New - a.0.2.0 (embedded 0.2.0-alpha.1) - 2026-10-07\n\n- Local Ollama setup saves connection settings explicitly and refreshes metadata only when requested. A delayed or refused refresh keeps previous dated results visible and offers retry.\n\nNo new user-visible component lifecycle capability is enabled by this source proposal. Normal component installation and managed sessions remain unavailable; their saved-workflow and safe-close recovery still need native acceptance.\n\n# What's New - a.0.1.22 (embedded 0.1.0-alpha.22) - 2026-10-08\n\n- No new user-visible capability in this development checkpoint. Media Organizer remains In development; application launches remain unavailable through the default Manager entry.\n\n# What's New - a.0.1.21 (embedded 0.1.0-alpha.21) - 2026-10-07\n\n- Expand or collapse the sidebar with one click; the View menu uses the same control.\n- Applications shows Media Organizer and Everday as In development. Databases shows the default Tag Catalog. These cards stay separate from installed and downloadable components; Install explains why it is unavailable.\n- Page headings and spacing are consistent, empty pages use clearer wording, and the color-blind palette shows On or Off.\n- Portable build details display the packaged runtime information when valid build metadata is included.\n\n# What's New - a.0.1.20 (embedded 0.1.0-alpha.20) - 2026-10-06\n\n\n- Help offers Review diagnostics before saving an explicitly selected ZIP. No information is uploaded.\n- Preview existing safe Manager diagnostics and runtime versions, choose what to include, cancel an unwanted preview, and save to a new filename. Unavailable records and save failures stay visible.\n- No diagnostics are read until Preview is chosen. Startup capture stays disabled; raw application logs are excluded.\n\n# What's New - a.0.1.19 (embedded 0.1.0-alpha.19) - 2026-10-06\n\n\n- Dashboard offers Refresh local resources to read this computer's CPU, RAM and NVIDIA GPU usage. Nothing is sampled until you click Refresh.\n- Measurements show their source and time; expired or unavailable values stay unknown. Cancel discards the result, and close waits for the measurement worker to finish.\n- Demo remains synthetic. Existing Databases preview controls remain available.\n\n# What's New - a.0.1.18 (embedded 0.1.0-alpha.18) - 2026-10-06\n\n\n- Databases uses the same prominent heading and content spacing as Dashboard.\n- With a configured preview provider, request a catalog preview, review content versions and protected edits, or discard the preview. Apply remains unavailable.\n\n# What's New \u2014 a.0.1.17 (embedded 0.1.0-alpha.17) \u2014 2026-10-06\n\n- Databases uses the same prominent heading and content spacing as Dashboard.\n- Request and discard background catalog previews when an approved host route is supplied. Review content versions and protected edits; Apply remains unavailable.\n- Canceled Ollama refreshes no longer reappear as retained models after a later failed refresh.\n- A timed-out inventory refresh can be retried explicitly. When refresh is unavailable, Settings explains how to recover.\n- Settings shows installed and loaded Ollama models separately, with metadata health, observation dates and freshness.\n- Current build details remain separate from release history.\n"
+NOTES = "# Suite Manager a.0.8.1 — 2026-11-20\n\n- Dashboard shows current module activity and links verified update notices to the matching review.\n- Applications lists Generate, Train, Media Organizer and Tag Encyclopedia in one place. Get, Install, Open and Update reflect each app's state.\n- Shared software and Ollama are in Settings. Work stays inside each app.\n\nThis Manager update starts from Suite 0.8.0-alpha.1 with launcher 0.1.1. Review the update in Settings. Keep the original installation and Data backup until the updated Manager opens.\n\n" + '# Suite Manager a.0.8.0 — 2026-11-17\n\n- Applications manages installation, updates and opening independently versioned Generate and Train modules. Manager owns shared settings, connections and resources.\n- Existing drafts, model identities, saved preparation and run records stay in their canonical workspace. Shared edits wait while a workflow and its original work are open.\n- Installations and updates require an explicit review and confirmation. Availability is determined by signed compatible releases; no unattended installation or restart is enabled.\n- Use the complete Suite ZIP for bootstrap0.1.1. Older launchers cannot gain the module entry contract from a Manager-only update.\n- Software and workflow checks do not establish real model, hardware, output-quality or training qualification.\n\n' + "# What's New - a.0.7.8 (embedded 0.7.8-alpha.1) - 2026-11-14\n\n- Training restores the original trainer software lifecycle: reviewed managed installation, existing software verification, offline import/export, repair, activation and rollback. Setup uses Manager-local stock queue, generations, health and recovery services; training still needs its own review.\n- Saved Setup Operations reconnects retained work or prepares an explicit retry review. Opening Setup starts no downloads or recovery work; Cancel targets only the selected original operation.\n- Closing a setup review can leave confirmed work in the same Manager queue. Manager Close cancels and waits for that queue and retained native owners. Local resource choices are saved only after verified existing software or explicit activation.\n\nCandidate implementation; final checks and signed package delivery remain pending. No model, trainer, Reader/C3A or real-library trial was run during implementation.\n\n# What's New - a.0.7.7 (embedded 0.7.7-alpha.1) - 2026-11-14\n\n- Local Description Settings can save your choices and open Manager caption component setup. Check readiness, then explicitly review component installation or the selected model download. Opening the review starts no download or image analysis.\n- Image-derived Setup suggestions use the original JoyCaption/Florence service in Manager's admitted Python worker. The caption store is separate from Video and Organizer; saved model choices, purpose prompts, source checks and reviewable uncertain proposals remain with the original workflow.\n- Caption setup and analysis retain their contained process and download descendants through Cancel/Close. The package includes the already pinned pip wheel required by worker setup; no new updater or module is introduced.\n\nCandidate implementation: final source/package validation and delivery are recorded separately. No model/trainer, Reader/C3A or real-library execution is authorized by opening these tools.\n\n# What's New - a.0.7.6 (embedded 0.7.6-alpha.1) - 2026-11-13\n\n- Use Organizer Prompt Catalog in Generate to import reusable Tag names, aliases and Character/Outfit prompt choices exported by Organizer a.0.5.6. Search Tags on Request or browse associated, other and generic Outfits in Advanced; saving a draft retains those choices.\n- Create Generation Setup offers manual authoring or one selected image. Review saved text and recorded settings before choosing what to keep; choosing an image starts no analysis.\n- Local description settings return to the same unfinished image setup with its name and edits retained. A compatible local caption runtime and model are still required for optional image suggestions; saved text and manual authoring remain available.\n- The selected-image reference uses the shared unknown-rating blur and temporary Reveal/Hide controls.\n\nSigned component discovery, explicit installation confirmation and existing recovery remain unchanged. No model or trainer runs automatically.\n\n# What's New - a.0.7.5 (embedded 0.7.5-alpha.1) - 2026-11-13\n\n- Settings can save your theme, color-blind status colors and tooltips, apply them now and remember them at the next launch. Other modules keep their own preferences.\n- The original launcher can retry an interrupted startup-record write for the same paused updated Manager. Existing prior-version repair remains available after a failed startup.\n- Current build identifies the bundled Python/Qt runtime and package version. Windows executable signing remains separate from verified release metadata.\n\n# What's New - a.0.7.4 (embedded 0.7.4-alpha.1) - 2026-11-13\n\n- Applications discovers newer signed Reader and Media Organizer releases from GitHub without requiring a new Manager build for each module update. Review the selected version and confirm installation.\n- Publisher signatures, compatible upgrade paths, exact review revalidation and existing installation/recovery ownership remain in effect.\n\n# What's New - a.0.7.3 (embedded 0.7.3-alpha.1) - 2026-11-13\n\n- Closing Manager can cancel Organizer app-status verification while retaining its original worker. If health publication has started, the existing transaction and readback finish before closing.\n- Applications offers signed Media Organizer a.0.5.4, including native Copy and recovery to reused paths. Review and confirm the offered update.\n- Generate and Training remain available. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.2 (embedded 0.7.2-alpha.1) - 2026-11-13\n\n- Applications now offers signed Media Organizer a.0.5.3, which retains Copy Undo after the first automatic saved-data initialization of a Manager result. Review and confirm the update before installing it.\n- The installed-Organizer startup fix and existing Generate and Training workspaces remain included. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.1 (embedded 0.7.1-alpha.1) - 2026-11-13\n\n- Opening an installed Media Organizer now allows its signed-package review to finish before the startup reply expires. The same startup request and recovery controls remain in use.\n- Existing Generate and Training workspaces and confirmed Reader/Organizer installation remain available. Full all-in-one parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.7.0 (embedded 0.7.0-alpha.1) - 2026-11-13\n\n- Training can find interrupted packages by their intended save location and package name. Choose Review Interrupted Training Package, then Choose Package Location. Browse Exact Receipt remains available for advanced selection.\n- Searches show activity and elapsed time with Cancel Safely. Close or an ended session cannot reopen a late review. The existing receipt review changes no package files; recovery writes stay with the original package workspace.\n- Applications continues to offer signed Reader a.0.3.1 and Organizer a.0.5.2. Automatic Manager updates support a.0.6.7 and newer;older launchers need the full ZIP in a fresh folder. Full all-in-one parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.6.10 (embedded 0.6.10-alpha.1) - 2026-11-13\n\n- Applications offers signed Media Organizer a.0.5.2 through the existing confirmed installer. It includes copy-only Manager result previews, explicit Retry after busy file work, and clearer copied-family Undo through Recycle.\n- Existing Reader installation, Generate/Training workspaces and the Manager update route from a.0.6.7 remain available. Older launchers need the full ZIP in a fresh folder. Full suite parity and actual failed-update rollback remain incomplete.\n\n# What's New - a.0.6.9 (embedded 0.6.9-alpha.1) - 2026-11-13\n\n- Training Package Review now shows the target model, included and excluded image counts, training/validation/holdout split, and the available next preparation action.\n- The review distinguishes verified package files from unchecked trainer and model readiness. Return and recovery guidance now name the Training workspace.\n- Uses the existing Manager update route from a.0.6.7 and newer. Full suite parity and actual failed-update rollback remain unqualified.\n\n# What's New - a.0.6.8 (embedded 0.6.8-alpha.1) - 2026-11-13\n\n- Saved Training and SDXL-preparation history controls use Manager's existing compact button sizing so Refresh, Forget and recovery captions fit the host fonts.\n- Saved-list transactions and retained review/output files stay with their existing owners. The published a.0.6.7 list actions already passed isolated recovery, Forget and saved-state reopening.\n- Older launchers a.0.6.6 and earlier still need the fresh full ZIP. In-place update and rollback qualification from the fixed a.0.6.7 baseline remains open until its actual checks finish.\n\n# What's New - a.0.6.7 (embedded 0.6.7-alpha.1) - 2026-11-13\n\n- Manager update admission checks SDK files at the locations used by the stock installer, while retaining every signed application-file check.\n- If the installed update is rejected before Manager starts, the original launcher can offer Repair to prior Manager after confirming its processes closed.\n- Older Suite Manager launchers need the fresh full ZIP to receive these launcher fixes. Full all-in-one parity and actual installed-update/rollback qualification remain open until their checks finish.\n\n# What's New - a.0.6.6 (embedded 0.6.6-alpha.1) - 2026-11-13\n\n- Manage Manager-owned Training history with Forget From This List and Recover Saved List. Forget preserves run files; list recovery retains the original guarded transaction.\n\n# What's New - a.0.6.5 (embedded 0.6.5-alpha.1) - 2026-11-12\n\n- Plan a Remix and Plan Remix from Verified Result open separate image drafts while retaining existing image/video work. Source-change checks and cancellation still apply.\n\n# What's New - a.0.6.4 (embedded 0.6.4-alpha.1) - 2026-11-12\n\n- The default Organizer installer offer targets signed a.0.5.1, including changed-result recovery guidance.\n\n- Generate and Manager update actions wrap to fit the available window width.\n- Tab leaves the read-only update notes for the next action.\n- Original draft, confirmation, update and recovery handlers are retained.\n\n# What's New - a.0.6.3 (embedded 0.6.3-alpha.1) - 2026-11-12\n\n- Restored contextual Generate and Training Help through the Help ribbon and F1.\n- Explain data preparation in Organizer and execution/review in Manager while retaining open work.\n\n# What's New - a.0.6.2 (embedded 0.6.2-alpha.1) - 2026-11-12\n\n- Fixed Apply giving up before the launcher finished checking a signed update.\n  Manager waits for the original reply without submitting the update twice.\n- Apply shows that the staged update is being checked before Manager closes.\n  Nothing is replaced until the original launcher accepts the operation.\n\n# What's New - a.0.6.1 (embedded 0.6.1-alpha.1) - 2026-11-12\n\n- Use Saved Setup opens a separate image draft while retaining your current\n  image and video drafts. You no longer need to close another image first.\n- Choosing a setup still requires explicit review and Apply. Cancelling the\n  picker or review preserves existing work; changed setups require a fresh review.\n\nUnpublished package candidate. The correction passed focused offscreen source\nchecks; signed package delivery and successor update/recovery remain pending.\nThis does not qualify model execution, older portable migration or full suite parity.\n\n# What's New - a.0.6.0 (embedded 0.6.0-alpha.1) - 2026-11-11\n\n- Opening Organizer keeps Manager's bundled DLL paths out of the child\n  environment so Organizer can initialize its own packaged Qt runtime.\n- Dashboard refreshes the generator card when startup finishes and points to\n  Organizer installation instead of calling the published app in development.\n- Manager startup accepts normal Windows casing for CollectiGen.exe and its\n  folder, keeping the canonical entry binding; renamed entries remain refused.\n- Training preparation can receive the signed packaged worker through the\n  original Manager session; trainer launch remains a separate user action.\n- Dataset status stays owned by its page during first startup, so background\n  status feedback cannot leave a separate window alive after Close.\n- Applications offers signed Media Organizer a.0.5.0 through the existing\n  download, review and confirmed-install workflow.\n- Training packages retain the saved caption-assessment context. Current plans\n  and legacy plans remain readable without dropping their source identity.\n- Training lists open run, setup and comparison reviews. Return to the selected\n  original review without creating another review or restarting its work.\n- Generate keeps multiple image and video drafts in the original workspace\n  switcher. New plans and model-guided requests preserve open drafts; Close\n  consults every retained request before releasing its original jobs.\n- Generate and Training now have dedicated sidebar workspaces. Their existing\n  dialogs, saved work and controllers are retained; comparisons return to Training.\n- Training plans retain reviewed relationship constraints when the optional legacy conflicts file is absent; rebuild older saved plans to refresh their caption context.\n\n- Caption checks accept Organizer defaults without optional rule files, retain typed relationship constraints and detect rule-file changes during review.\n\n- Saved Training drafts retain the context reference needed for caption comparison in Manager; older drafts remain readable.\n\n- Generate planning from a registered LoRA keeps its exact LoRA role in the new\n  draft; it no longer treats that selection as a checkpoint. Checkpoint choice\n  and generator readiness remain separate.\n- Applications opens the original local Models workspace for registration, notes,\n  storage and model-guided planning. Reviewed guidance opens a new Generate draft;\n  a busy or changed review can return to Models.\n- Training History can import an unlisted saved Validation review, recheck its\n  retained measurement and add it to History without starting a new evaluation.\n- Verified Results keeps image/receipt actions above the preview and explains\n  the result review. Updated Organizer accepts its receipt through normal Ingest\n  copy review, preserving the source and generation lineage.\n- Dashboard shows saved local-generator status and routes to Setup, image\n  drafts or generation work without contacting or starting SwarmUI.\n- Generator Setup now includes the original connect/install, run/status,\n  models/import and maintenance sections. Setup uses Manager's model registry,\n  preferences and presets, and Return keeps the same generation draft.\n  Generate accepts both checked existing and managed local installations.\n- Training comparisons can open their saved batch in Generate's normal queue.\n  Review the candidates and explicitly Start through the checked local generator.\n  Open drafts are preserved and every queued image rechecks the connection.\n  Reviewing a single image also keeps Return to Training Comparison available;\n  closing Generate restores the saved comparison.\n  Registered Training results and evaluation checkpoints keep their exact run\n  and LoRA when opening a comparison, with return to Manager Applications.\n- Held-out Validation can verify an anchored Training result after application\n  code updates, using its saved result receipt and current output files.\n- Saved held-out Validation opens its chart and per-image measurements from\n  Training History. New Validation reviews use the current Training workspace.\n- Training Experiments keeps run names, notes and favorites, compares retained\n  runs, and clones a run into a new draft. Export the draft for editing through\n  Organizer's Dataset Plans workflow; the updated Organizer package is required.\n- Find and review the published Reader and Organizer packages from Manager,\n  then confirm installation in the component workspace.\n- Use the Tag Database workspace to review available content, preview changes\n  and apply them while preserving local corrections.\n- Prepare SDXL Training, run the reviewed local trainer and register the finished\n  LoRA. Reopen saved Training runs from History to review results and recovery.\n- Save and reopen Generate work, reconnect generation backends, and review\n  retained queue results and interrupted-work recovery.\n\nThis is an unpublished alpha package candidate. It is not full all-in-one parity.\nThe first managed baseline uses a new writable installation; migration from the\nolder portable Manager and installed self-update remain separately qualified.\n\n# What's New - a.0.5.1 (embedded 0.5.1-alpha.1) - 2026-10-18\n\n- Dashboard now lists Tag Encyclopedia Reader, with a pointer to Applications.\n- The Reader card says Find reader before checking for a release, then Install when a release is available. Downloading app files still requires installation confirmation.\n\nThis Windows x64 portable Alpha supports fresh installations with Reader a.0.3.1 only. Legacy Reader upgrade and rollback through Manager are excluded. Organizer downloads and Manager self-update remain unavailable. Keep backups; extract into a new writable folder. The executable is not Authenticode-signed.\n\n# What's New - a.0.5.0 (embedded 0.5.0-alpha.1) - 2026-10-14\n\n- Review an explicitly configured Reader or Organizer release before installing or updating it. The version, verified notes and confirmation stay together.\n- Pending setup, opening, update, restoration and Close show their phase, activity and elapsed time. Use Cancel where it is available; Close waits for work to settle safely. Optional Details retain the original connection and recovery reasons.\n- Open Reader and Organizer deliberately, then close their windows normally to finish setup. Recovery retains the selected catalog and protected settings.\n- Connect a Tag Database and preview changes before applying supported content updates. Local corrections remain protected; unsupported or stale inputs stop for review.\n- Help and release history use the same current version labels as the application.\n\nAlpha evaluation software for Windows 11 x64 portable use. Component downloads\nrequire an explicitly configured verified release feed. Manager self-update is\nunavailable. Keep backups and use test copies when evaluating catalog changes.\nThe Windows executable is not Authenticode-signed and has no installer.\n\n# What's New - a.0.4.1 (embedded 0.4.1-alpha.1) - 2026-10-12\n\n- Fixed a startup error in the previous alpha candidate that could prevent Manager from opening.\n\nThis unsigned correction has not established the full reader workflow or clean-machine compatibility. The default package continues to connect existing approved reader packages. Automatic Encyclopedia acquisition and native updates remain unavailable. Preserve earlier copies and recovery records.\n\n# What's New - a.0.4.0 (embedded 0.4.0-alpha.1) - 2026-10-12\n\n- Applications search and status filters now include Tag Encyclopedia. Its card shows the next supported action, with connection and release tools under Options.\n- Dependencies shows supplied status and blockers, with links to the existing setup or recovery workspace. Returning from that workspace lets you review its status again.\n- Fixed first-party release discovery rejecting valid GitHub download links.\n\nThe default launch connects existing approved reader packages. Automatic acquisition requires a separately admitted original-root profile and remains unavailable by default. Saved reader changes may require a Manager restart before Launch. Native installation, ordinary launch/close, updates and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.3.2 (embedded 0.3.2-alpha.1) - 2026-10-11\n\n- Fixed a reader setup settings mismatch that could prevent saving an Encyclopedia connection in portable Manager. Saved connections use the companion settings file while preserving the original startup configuration.\n\nConnect an already installed Encyclopedia from Applications, save it, then restart Manager before Launch. Automatic reader download/install and native application updates remain unavailable. This unsigned local candidate has not established clean-machine compatibility.\n\n# What's New - a.0.3.1 (embedded 0.3.1-alpha.1) - 2026-10-11\n\n- After saving a new Encyclopedia selection, Manager clearly asks you to restart before launching it. Launch stays unavailable until that exact reader is admitted at startup.\n- Switching to another reader, including a changed package in the same folder, keeps the restart guidance visible. Reopening the saved connection after restart restores Launch for the admitted reader.\n\nThis unsigned local candidate connects already installed readers. Automatic Encyclopedia download/install remains unavailable; native application updates, public release and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.3.0 (embedded 0.3.0-alpha.1) - 2026-10-11\n\n- Applications > Encyclopedia lets you connect an already installed standalone reader. Review its folder, save the connection, then restart Manager to launch that selected reader.\n- Open saved connection restores your selection. Manager keeps reader work supervised while closing; Cancel Close returns to the same window.\n- Databases continues to offer separate connection review, content preview, Apply, recovery and Reload for an enrolled Tag catalog.\n\nThis unsigned local candidate does not download or install Encyclopedia automatically. Native application updates, public release and clean-machine compatibility remain separately qualified.\n\n# What's New - a.0.2.16 (embedded 0.2.1-alpha.16) - 2026-10-11\n\n- Databases lets you select an approved local Tag source and create a new catalog or open an enrolled catalog. Review and confirm the connection, then preview and apply the content separately.\n- Reopen the saved catalog, recover an interrupted import, or reload saved changes after a snapshot refresh fails. Closing retains admitted work until it finishes.\n- Capability summaries describe the selected catalog and keep unavailable behavior and its reasons visible. Connection settings remain accessible beside the selected catalog.\n\nThis is an unreleased source checkpoint. Portable startup and clean-machine behavior remain separately qualified. Native application updates and public release remain unavailable.\n\n# What's New - a.0.2.15 (embedded 0.2.1-alpha.15) - 2026-10-10\n\n- Direct GGUF chat now allows replies up to 512 tokens. The shorter 32-token limit belongs to explicit proof runs.\n- This unsigned manual candidate uses ordinary entries and starts with empty conversations. Review the fixed installed files, Load model, then Open Chat to send your own message.\n\nThe admitted Qwen/runtime profile remains CPU only: 2 threads, 4096 context and one slot. Reply limits are not adjustable here. Synthetic streaming checks passed at 512 tokens; real-model 512-token behavior, ordinary manual startup/navigation/Close, GPU operation and clean-machine compatibility remain unverified. The earlier exact-profile native lifecycle proof used 32 tokens. Native updates and public release remain unavailable.\n\n# What's New - a.0.2.14 (embedded 0.2.1-alpha.14) - 2026-10-10\n\n- Standalone Manager entry offers an existing GGUF file directly, with a separately selected installed llama-server. No model copy, Ollama import or download.\n- Review checks the selected files and server version. Load uses a bounded CPU-only plan; Chat and Stop keep the original process owned through completion.\n\nThe selected Qwen GGUF completed a bounded CPU-only frozen Manager load, reply, reload and owned shutdown through the normal root with the retained llama-server runtime. An admitted direct-runtime profile fixes the reviewed files. The alpha14 manual artifact uses 2 CPU threads, 4096 context, one slot and a fixed maximum of 32 reply tokens; these limits are not adjustable there. Ordinary manual startup, navigation and Close were not accepted; exact development actors were cleaned up separately and its failed ledger was preserved. GPU operation and other models/runtimes are not qualified. Existing-backend chat source integration remains separate; native updates and public release remain unavailable.\n\n# What's New - a.0.2.13 (embedded 0.2.1-alpha.13) - 2026-10-10\n\n- Open Chat from Applications > Ollama after refreshing a configured backend and choosing an already loaded model.\n- Replies appear as they arrive. Stop cancels this request; New Chat clears the conversation. Messages stay in memory.\n- Closing Manager waits for chat work to finish safely. After an interrupted request, refresh the backend before sending again.\n\nSource integration is under verification. Direct GGUF loading, packaged inference, native updates and public distribution remain separately qualified.\n\n# What's New - a.0.2.12 (embedded 0.2.1-alpha.12) - 2026-10-10\n\n- If Manager encounters a problem while approved Tag work is pending, the same window keeps its status, cancellation and recovery controls available.\n- Close waits for the original Tag operation to settle; Cancel Close keeps its saved outcome and original failure available for review.\n\nAvailable only with an explicitly supplied approved Tag host. The default entry has no catalog connected. Native updates and public distribution remain separately qualified.\n\n# What's New - a.0.2.11 (embedded 0.2.1-alpha.11) - 2026-10-10\n\n- With an explicitly connected approved Tag catalog, Databases offers preview, reviewed Apply, cancellation, recovery and saved-result reload.\n- Closing waits for Tag work to finish. Cancel Close keeps its progress and recovery controls available.\n- Media Organizer details show its current source version and date.\n\nThe default entry has no approved Tag catalog connected. Combining this Tag host with owned failed-entry recovery requires separate qualification. Automatic updates and public distribution remain separate.\n\n# What's New - a.0.2.10 (embedded 0.2.1-alpha.10) - 2026-10-10\n\n- When a local runner exits during startup, Manager keeps recovery available so Stop can finish its cleanup.\n- Runner status distinguishes an exited runner awaiting cleanup from a running or fully stopped runner.\n- Startup diagnostics retain the original failure to help explain an unsuccessful start.\n- Repeated reviewed starts use the same retained deployment owner and separate attempt identities.\n- Failed-entry recovery keeps one visible Manager surface, original controls and cleanup evidence; codes are available in Details.\n\nUnreleased fixes for explicitly qualified local runner packages. The exact private existing-profile lifecycle acceptance passed.\nNew installations, model/Hermes actions, automatic updates and distribution remain separately qualified.\n\n# What's New - a.0.2.9 (embedded 0.2.1-alpha.9) - 2026-10-09\n\n- Starting a reviewed local Ollama runner no longer fails while Manager is finishing its startup checks.\n- A running runner is shown correctly. Stop remains available, and a stopped runner can be started again.\n- Closing Manager explains when the runner still needs to be stopped. Once Stop finishes, Manager closes normally without leaving its runner behind.\n\nAvailable only with an explicitly configured, qualified local runner package.\nNew installations, model installation and Hermes actions remain unavailable until\nseparately qualified. Automatic updates and public distribution remain separate.\n\n# What's New - a.0.2.8 (embedded 0.2.1-alpha.8) - 2026-10-09\n\n- Owned Ollama starts can reuse an explicitly reviewed, verified local model cache. Unknown, incomplete or changed cache contents remain blocked.\n- Cancelled or expired starts stop before launching a process.\n- Stop closes the runner Manager started together with its inference processes, preserving recovery ownership and cached model files.\n\nThis is an unreleased source checkpoint. These runtime changes do not enable cached-model controls in a packaged application. Model installation and Hermes actions remain unavailable; automatic updates and distribution remain separately qualified.\n\n# What's New - a.0.2.7 (embedded 0.2.1-alpha.7) - 2026-10-09\n\n- With an explicitly supplied qualified Ollama package and installation permission, Applications > Model runners offers installation review, progress, Cancel and recovery.\n- Review local key creation before starting the owned runner. Stop targets only the runner Manager started; external connections remain independent.\n- Failed status delivery retains the runner for explicit Stop and reconciliation instead of leaving controls permanently busy. Closing waits for retained work and process ownership.\n\nThis is an unreleased source checkpoint. The default entry has no qualified package and keeps installation unavailable. Production host/package selection, packaged and real GUI qualification remain pending. Model installation and Hermes agent actions remain unavailable until separately qualified.\n\n# What's New - a.0.2.6 (embedded 0.2.1-alpha.6) - 2026-10-09\n\n- Find Ollama connection tools and model observations in Applications > Model runners. Servers opens the same workspace.\n- The connection editor uses clear Save and Cancel actions. Saving a connection keeps metadata access separate; saved choices can be reloaded and reconciled explicitly.\n- Model summaries and inventory remain readable in narrower or shorter windows, with scrolling to reach the full workspace.\n\nThis is an unreleased source checkpoint. Install new remains unavailable; packaged and real-provider qualification remain pending.\n\n# What's New - a.0.2.5 (embedded 0.2.1-alpha.5) - 2026-10-08\n\n- Dashboard separates applications, connections, this computer and jobs into concise summaries, with further information under Details.\n- Light and dark themes keep application symbols, status badges and controls readable. Cards use more consistent spacing and action placement.\n- Application descriptions wrap in narrower windows. Expanded Details stay inside their cards and scroll to the end; collapsing restores the compact layout.\n- Everday is described as a dating and simulation game with AI characters in Games.\n- Normal navigation keeps demo and debug controls out of the way.\n- Servers opens correctly. Unavailable measurements and connections remain clearly marked.\n\n# What's New - a.0.2.4 (embedded 0.2.1-alpha.4) - 2026-10-08\n\n- Applications groups the existing catalog by task with a category list, while retaining search and installation-status filters.\n- Application cards show declared roles. Agent and model-runner groups stay empty unless the supplied catalog identifies matching applications.\n- Details links to declared related components when matching catalog information is available; compatibility and installation remain unknown.\n\n# What's New - a.0.2.3 (embedded 0.2.1-alpha.3) - 2026-10-08\n\n- Servers brings local computer measurements and existing backend connections into a separate section with compact cards and expandable Details.\n- Dashboard summarizes observations and links to Servers. Expired or unavailable measurements remain unknown; held jobs stay visible without an invented server assignment.\n- The sidebar selects sections. The command bar offers supported actions for the current section, with View, Help and command search still available.\n- Connect existing Ollama opens the metadata connection editor. Saving a connection and refreshing metadata remain separate actions; this does not install Ollama.\n\n# What's New - a.0.2.2 (embedded 0.2.1-alpha.2) - 2026-10-08\n\n- Applications offers compact cards with readable requirements and expandable Details.\n- Catalog review fits narrower windows, and Settings groups connection, model, appearance and build information.\n- Local backend setup keeps deliberate Save separate from Refresh; appearance remains session-only.\n\nThis is an unreleased source candidate. Normal component installation and managed execution remain unavailable by default. Native saved-workflow, recovery and portable qualification remain pending.\n\n# What's New - a.0.2.1 (embedded 0.2.1-alpha.1) - 2026-10-08\n\n- Application cards are smaller and easier to scan, with category icons and Details for requirements and availability.\n- Catalog review controls fit narrower windows; disconnected catalogs keep review details out of the default view.\n- Settings groups backend connections, model observations, appearance and build details consistently.\n- Dependencies separates build information from supplied component requirements without implying that setup actions are available.\n\n# What's New - a.0.2.0 (embedded 0.2.0-alpha.1) - 2026-10-07\n\n- Local Ollama setup saves connection settings explicitly and refreshes metadata only when requested. A delayed or refused refresh keeps previous dated results visible and offers retry.\n\nNo new user-visible component lifecycle capability is enabled by this source proposal. Normal component installation and managed sessions remain unavailable; their saved-workflow and safe-close recovery still need native acceptance.\n\n# What's New - a.0.1.22 (embedded 0.1.0-alpha.22) - 2026-10-08\n\n- No new user-visible capability in this development checkpoint. Media Organizer remains In development; application launches remain unavailable through the default Manager entry.\n\n# What's New - a.0.1.21 (embedded 0.1.0-alpha.21) - 2026-10-07\n\n- Expand or collapse the sidebar with one click; the View menu uses the same control.\n- Applications shows Media Organizer and Everday as In development. Databases shows the default Tag Catalog. These cards stay separate from installed and downloadable components; Install explains why it is unavailable.\n- Page headings and spacing are consistent, empty pages use clearer wording, and the color-blind palette shows On or Off.\n- Portable build details display the packaged runtime information when valid build metadata is included.\n\n# What's New - a.0.1.20 (embedded 0.1.0-alpha.20) - 2026-10-06\n\n\n- Help offers Review diagnostics before saving an explicitly selected ZIP. No information is uploaded.\n- Preview existing safe Manager diagnostics and runtime versions, choose what to include, cancel an unwanted preview, and save to a new filename. Unavailable records and save failures stay visible.\n- No diagnostics are read until Preview is chosen. Startup capture stays disabled; raw application logs are excluded.\n\n# What's New - a.0.1.19 (embedded 0.1.0-alpha.19) - 2026-10-06\n\n\n- Dashboard offers Refresh local resources to read this computer's CPU, RAM and NVIDIA GPU usage. Nothing is sampled until you click Refresh.\n- Measurements show their source and time; expired or unavailable values stay unknown. Cancel discards the result, and close waits for the measurement worker to finish.\n- Demo remains synthetic. Existing Databases preview controls remain available.\n\n# What's New - a.0.1.18 (embedded 0.1.0-alpha.18) - 2026-10-06\n\n\n- Databases uses the same prominent heading and content spacing as Dashboard.\n- With a configured preview provider, request a catalog preview, review content versions and protected edits, or discard the preview. Apply remains unavailable.\n\n# What's New \u2014 a.0.1.17 (embedded 0.1.0-alpha.17) \u2014 2026-10-06\n\n- Databases uses the same prominent heading and content spacing as Dashboard.\n- Request and discard background catalog previews when an approved host route is supplied. Review content versions and protected edits; Apply remains unavailable.\n- Canceled Ollama refreshes no longer reappear as retained models after a later failed refresh.\n- A timed-out inventory refresh can be retried explicitly. When refresh is unavailable, Settings explains how to recover.\n- Settings shows installed and loaded Ollama models separately, with metadata health, observation dates and freshness.\n- Current build details remain separate from release history.\n"
 @dataclass(frozen=True)
 class DetachedView:
     report: object
@@ -47,21 +47,7 @@ class DevelopmentComponent:
     release_date: str = ""
 
 
-from suite_core.media_organizer.version import SOFTWARE_VERSION as ORGANIZER_SOURCE_VERSION, RELEASE_DATE as ORGANIZER_SOURCE_DATE
-
-DEVELOPMENT_APPLICATIONS = (
-    DevelopmentComponent("media-organizer", "Media Organizer", "Organize images, search your collection and prepare training data.", ("Productivity",), "Requires a compatible application package and image collection setup.", ORGANIZER_SOURCE_VERSION, ORGANIZER_SOURCE_DATE),
-    DevelopmentComponent("everday", "Everday", "A dating and simulation game with AI characters.", ("Games",), "Requires a compatible application package, a configured backend and a supported model."),
-)
 DEFAULT_TAG_CATALOG = DevelopmentComponent("default-tag-catalog", "Default Tag Catalog", "Shared Tags and categories for organizing and describing images.", (), "Requires a compatible content package and a reviewed catalog installation route.")
-
-
-def matching_development(status, category, query):
-    if status not in ("All entries", "In development"): return ()
-    query = query.strip().casefold()
-    return tuple(item for item in DEVELOPMENT_APPLICATIONS
-        if (category == "All categories" or category in item.categories)
-        and (not query or query in " ".join((item.title, item.description)).casefold()))
 
 
 def unconfigured(now):
@@ -220,6 +206,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     organizer_executor,parent=self.organizer_acquisition_dialog,
                     return_to_applications=self.organizer_acquisition_dialog.hide)
                 QVBoxLayout(self.organizer_acquisition_dialog).addWidget(self.organizer_acquisition_panel)
+                self.organizer_acquisition_panel.timer.timeout.connect(self.render_library)
             self.acquisition_panel = self.acquisition_dialog = None
             if encyclopedia_acquisition is not None:
                 from core.encyclopedia_installation import EncyclopediaInstallation
@@ -338,25 +325,17 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.applications.setModel(self.application_model)
             applications_page = QWidget(); applications_layout = workspace_layout(applications_page)
             applications_layout.addWidget(workspace_heading("Applications")); applications_layout.addWidget(self.summary)
-            self.summary.setMaximumHeight(48)
-            self.application_sections = QTabWidget()
-            self.application_sections.setAccessibleName("Application tasks")
-            workflow_page = QWidget()
-            workflow_layout = workspace_layout(workflow_page)
-            workflow_intro = QLabel("Open Generate or Train below. Browse other applications in App catalog; manage shared tools in Connections.")
-            workflow_intro.setWordWrap(True)
-            workflow_layout.addWidget(workflow_intro)
-            catalog_page = QWidget()
-            application_catalog_layout = workspace_layout(catalog_page)
+            self.summary.hide()
+            applications_intro = QLabel(
+                "Choose an app to review and install a verified GitHub release, or open an app already installed."
+            )
+            applications_intro.setWordWrap(True)
+            applications_layout.addWidget(applications_intro)
             connections_page = QWidget()
             application_connections_layout = workspace_layout(connections_page)
-            connection_intro = QLabel("Manage shared software and connections. Generate and Train open in their own applications.")
+            connection_intro = QLabel("Configure software, models and connections shared by Suite apps.")
             connection_intro.setWordWrap(True)
             application_connections_layout.addWidget(connection_intro)
-            self.application_sections.addTab(workflow_page, "Generate and Train")
-            self.application_sections.addTab(catalog_page, "App catalog")
-            self.application_sections.addTab(connections_page, "Connections")
-            applications_layout.addWidget(self.application_sections, 1)
             self.disposable_panel = QFrame()
             self.disposable_panel.setObjectName('disposableModuleLifecycle')
             module_layout = QVBoxLayout(self.disposable_panel)
@@ -379,11 +358,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 module_actions.addWidget(control)
             module_layout.addLayout(module_actions)
             self.disposable_panel.setVisible(self.lifecycle_bridge is not None and self.lifecycle_bridge.module_enabled)
-            application_catalog_layout.addWidget(self.disposable_panel)
+            applications_layout.addWidget(self.disposable_panel)
             self.disposable_operation = 'install'
             self.render_disposable_module()
-            library_controls = QHBoxLayout()
-            self.library_filter = QComboBox(); self.library_filter.addItems(("All entries", "Installed", "Available", "Updates", "In development"))
+            self.catalog_filters = QWidget()
+            library_controls = QHBoxLayout(self.catalog_filters)
+            library_controls.setContentsMargins(0, 0, 0, 0)
+            self.library_filter = QComboBox(); self.library_filter.addItems(("All entries", "Installed", "Available", "Updates"))
             self.library_filter.setAccessibleName("Application status filter")
             self.application_filter_state = ApplicationFilterState()
             self.application_categories = SettingsNavigator(accessible_name="Application categories")
@@ -396,56 +377,77 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             catalog_layout = QVBoxLayout(application_catalog_body)
             catalog_layout.setContentsMargins(0, 0, 0, 0)
             catalog_layout.setSpacing(12)
-            self.application_categories.set_content(application_catalog_body)
             for key, label, description in APPLICATION_GROUPS:
                 self.application_categories.add_section(key, label,
                     lambda selected=key: self.select_application_category(selected), keywords=(description,))
             self.application_categories.sync_section("All categories")
             self.categories_toggle = QToolButton(); self.categories_toggle.setText("Categories")
-            self.categories_toggle.setCheckable(True); self.categories_toggle.setChecked(True)
+            self.categories_toggle.setCheckable(True)
             self.categories_toggle.setAccessibleName("Show application categories")
             self.categories_toggle.toggled.connect(category_side.setVisible)
-            application_catalog_layout.addWidget(self.categories_toggle, 0, Qt.AlignLeft)
-            application_catalog_layout.addWidget(self.application_categories, 1)
+            category_side.hide()
+            applications_layout.addWidget(self.application_categories, 1)
             self.library_search = QLineEdit(); self.library_search.setPlaceholderText("Search name, description or capability")
             self.library_search.setAccessibleName("Search supported applications"); self.library_search.setClearButtonEnabled(True)
             clear = QPushButton("Clear filters"); clear.clicked.connect(self.clear_library_filters)
-            for control in (self.library_filter, self.library_search, clear): library_controls.addWidget(control)
-            catalog_layout.addLayout(library_controls)
+            for control in (self.library_search, self.library_filter, clear, self.categories_toggle):
+                library_controls.addWidget(control)
+            applications_layout.insertWidget(
+                applications_layout.indexOf(self.application_categories), self.catalog_filters
+            )
             self.library_status = QLabel(); self.library_status.setWordWrap(True); catalog_layout.addWidget(self.library_status)
             self.category_description = QLabel(); self.category_description.setWordWrap(True)
             catalog_layout.addWidget(self.category_description)
-            self.organizer_workspace = QWidget()
+            self.organizer_workspace = QFrame()
+            self.organizer_workspace.setObjectName("visualCard")
+            card_style(self.organizer_workspace, compact=True)
             self.organizer_workspace_layout = QVBoxLayout(self.organizer_workspace)
-            self.organizer_workspace_layout.setContentsMargins(0,0,0,0)
+            self.organizer_workspace_layout.setContentsMargins(14, 14, 14, 14)
+            organizer_title = QLabel("Media Organizer")
+            organizer_title.setObjectName("cardTitle")
+            self.organizer_workspace_layout.addWidget(organizer_title)
+            organizer_intro = QLabel("Organize images, tags and descriptions in a separate app.")
+            organizer_intro.setWordWrap(True)
+            self.organizer_workspace_layout.addWidget(organizer_intro)
             if self.organizer_connection_host is not None:
-                self.organizer_connection_panel = self.organizer_connection_host.create_card(self.organizer_workspace)
-                self.organizer_workspace_layout.addWidget(self.organizer_connection_panel)
+                self.organizer_connection_container = QWidget()
+                self.organizer_connection_layout = QVBoxLayout(self.organizer_connection_container)
+                self.organizer_connection_layout.setContentsMargins(0, 0, 0, 0)
+                self.organizer_connection_panel = self.organizer_connection_host.create_card(self.organizer_connection_container)
+                self.organizer_connection_layout.addWidget(self.organizer_connection_panel)
+                self.organizer_workspace_layout.addWidget(
+                    disclosure_panel("Connect an existing copy", self.organizer_connection_container)
+                )
             if self.organizer_acquisition_panel is not None:
-                self.organizer_acquisition_action=compact_action(QPushButton('Get or update Media Organizer'))
+                self.organizer_app_status = QLabel()
+                self.organizer_app_status.setWordWrap(True)
+                self.organizer_workspace_layout.insertWidget(2, self.organizer_app_status)
+                organizer_actions = QHBoxLayout()
+                self.organizer_open = compact_action(QPushButton("Open Media Organizer"))
+                self.organizer_open.clicked.connect(self.open_installed_organizer)
+                self.organizer_acquisition_action = compact_action(QPushButton("Get Media Organizer…"))
                 self.organizer_acquisition_action.clicked.connect(self.open_organizer_acquisition)
-                self.organizer_workspace_layout.insertWidget(0,self.organizer_acquisition_action)
+                for action in (self.organizer_open, self.organizer_acquisition_action):
+                    organizer_actions.addWidget(action)
+                organizer_actions.addStretch()
+                self.organizer_workspace_layout.insertLayout(3, organizer_actions)
             self.organizer_workspace.setVisible(self.organizer_connection_panel is not None or self.organizer_acquisition_panel is not None)
             catalog_layout.addWidget(self.organizer_workspace)
-            library_scroll = QScrollArea(); library_scroll.setWidgetResizable(True)
-            self.library_body = ResponsiveCardGrid(); self.library_cards = self.library_body.grid
-            library_scroll.setWidget(self.library_body); catalog_layout.addWidget(library_scroll, 1)
+            self.library_body = ResponsiveCardGrid(maximum_columns=1); self.library_cards = self.library_body.grid
+            catalog_layout.addWidget(self.library_body)
+            catalog_layout.addStretch(1)
+            self.application_scroll = QScrollArea()
+            self.application_scroll.setWidgetResizable(True)
+            self.application_scroll.setFrameShape(QFrame.NoFrame)
+            self.application_scroll.setWidget(application_catalog_body)
+            self.application_categories.set_content(self.application_scroll)
             self.library_filter.currentIndexChanged.connect(self.render_library)
             self.library_search.textChanged.connect(self.render_library)
             self.applications.setMaximumHeight(130)
-            self.app_observation_heading = QLabel("Configured applications")
-            application_catalog_layout.addWidget(self.app_observation_heading)
-            application_catalog_layout.addWidget(self.applications)
+            self.app_observation_details = disclosure_panel("Configured application details", self.applications)
+            applications_layout.addWidget(self.app_observation_details)
             dashboard_page = QWidget(); dashboard_layout = QVBoxLayout(dashboard_page)
             dashboard_layout.setContentsMargins(0, 0, 0, 0)
-            from qt_app.module_card import ModuleCard, ModuleCardPresentation
-            self.generator_card = ModuleCard(ModuleCardPresentation(
-                "local-generator", "Local Image Generation", "Not checked",
-                "Open Generator Setup to connect or install SwarmUI.", "Generator Setup",
-                icon_name="Generate", action_enabled=False,
-                disabled_reason="Start Suite Manager normally to use generation."), dashboard_page)
-            self.generator_card.action_requested.connect(self.open_dashboard_generator)
-            dashboard_layout.addWidget(self.generator_card)
             self.dashboard_slot = QVBoxLayout(); dashboard_layout.addLayout(self.dashboard_slot, 1)
             self.components = QTableView(); self.components.setSelectionBehavior(QTableView.SelectRows)
             self.component_model = IncrementalResultModel(("Component", "Configured version", "Locator state", "Freshness"), parent=self)
@@ -556,7 +558,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             ollama_body = QWidget()
             ollama_layout = workspace_layout(ollama_body)
             self.ollama_workspace.setWidget(ollama_body)
-            back = compact_action(QPushButton("Back to applications"))
+            back = compact_action(QPushButton("Back to shared software"))
             back.clicked.connect(self.close_ollama_workspace)
             ollama_layout.addWidget(back, 0, Qt.AlignLeft)
             ollama_layout.addWidget(workspace_heading("Ollama"))
@@ -596,8 +598,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             from .workflow_applications_ui import WorkflowApplications
             self.workflow_applications = WorkflowApplications(workspace_owner=workflow_workspace_owner,
                 services=workflow_services, launch_allowed=self.workflow_launch_allowed, parent=self)
-            workflow_layout.addWidget(self.workflow_applications)
-            workflow_layout.addStretch(1)
+            catalog_layout.insertWidget(catalog_layout.indexOf(self.organizer_workspace), self.workflow_applications)
             management = QGroupBox('Workflow software and connections')
             management_layout = QHBoxLayout(management)
             for label, callback in (('Generator connection…', self.review_generator_connection),
@@ -616,6 +617,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.workflow_management = management
             application_connections_layout.addWidget(management)
             application_connections_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
+            self.direct_model_button.setVisible(normal_entry_session is None and self.direct_model_host is not None)
             application_connections_layout.addStretch(1)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
             external.setWordWrap(True)
@@ -626,7 +628,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.ollama_connection_status.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
             self.ollama_connection_status.setTextFormat(Qt.PlainText)
             connection_layout.addWidget(self.ollama_connection_status)
-            applications_layout.addWidget(self.ollama_workspace, 1); self.ollama_workspace.hide()
             self.backend_setup_controller = None
             self.backend_setup_dialog = None
             if metadata_setup is not None:
@@ -672,7 +673,16 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 settings_layout.addWidget(self.manager_update_panel)
             settings_layout.addStretch(1)
             settings_scroll = QScrollArea(); settings_scroll.setWidgetResizable(True); settings_scroll.setFrameShape(QFrame.NoFrame)
-            settings_scroll.setWidget(settings_body); settings_outer.addWidget(settings_scroll)
+            settings_scroll.setWidget(settings_body)
+            self.settings_tabs = QTabWidget()
+            self.settings_tabs.setAccessibleName("Manager settings")
+            shared_software_scroll = QScrollArea()
+            shared_software_scroll.setWidgetResizable(True)
+            shared_software_scroll.setWidget(connections_page)
+            self.settings_tabs.addTab(settings_scroll, "General")
+            self.settings_tabs.addTab(shared_software_scroll, "Shared software")
+            self.settings_tabs.addTab(self.ollama_workspace, "Ollama")
+            settings_outer.addWidget(self.settings_tabs)
             dependencies_page = QWidget(); dependencies_layout = workspace_layout(dependencies_page)
             from .dependency_status_ui import DependencyStatusPanel
             self._dependency_route_epoch = 0
@@ -700,13 +710,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self._workflow_management_pages = (settings_page, servers_page)
             self._workflow_disabled_controls = {}
             self.workflow_applications.timer.timeout.connect(self.poll_workflow_applications)
+            self.workflow_applications.timer.timeout.connect(self.render_dashboard_status)
             for index, (label, widget, icon) in enumerate(pages):
                 self.stack.addWidget(widget)
                 item = QListWidgetItem(navigation_icon(icon), label)
                 item.setData(PageNavigationList.PAGE_INDEX_ROLE, index); self.navigation.addItem(item)
             self.navigation.pageChanged.connect(self.stack.setCurrentIndex)
-            self.navigation.pageChanged.connect(
-                lambda row: self.refresh_generator_card() if row == self.page_rows["Dashboard"] else None)
             self.navigation_commands = [UiCommand("navigate-" + name.lower(), "Go to " + name, "Navigation",
                 callback=lambda _name=name: self.navigation.setCurrentRow(self.page_rows[_name]))
                 for name in self.page_rows]
@@ -743,7 +752,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     "Use Applications to connect an existing approved reader package." if self.reader_panel is not None else
                     "Qualified owned Ollama controls supplied; review each action." if self.owned_runtime_panel.ready else
                     "Preview only \u2022 Installation and application setup are not available yet")
-            self.statusBar().showMessage("Choose an application in Applications, or review your computer and connections in Servers.")
             self.render_ollama()
 
         def workflow_launch_allowed(self):
@@ -776,14 +784,23 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.statusBar().showMessage('Close Generate or Train and wait for its original work to finish before changing shared models, settings or connections.')
             return False
 
+        def show_applications_from_dashboard(self):
+            self.navigation.setCurrentRow(self.page_rows["Applications"])
+            self.library_search.setFocus()
+
         def open_workflow_application(self, component_id):
             from core.workflow_connection import workflow_component
             workflow_component(component_id)
-            self.application_sections.setCurrentIndex(0)
             self.navigation.setCurrentRow(self.page_rows['Applications'])
             self.workflow_applications.render()
             status, _opening, _manage, group = self.workflow_applications.rows[component_id]
-            group.setFocus()
+            if group.isHidden():
+                self.clear_library_filters()
+            self.application_scroll.ensureWidgetVisible(group)
+            for action in (_opening, _manage):
+                if action.isVisible() and action.isEnabled():
+                    action.setFocus()
+                    break
             self.statusBar().showMessage(status.text())
             return False
 
@@ -964,49 +981,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.databases.setPlainText(state.sections[index].text())
 
         def open_ollama_workspace(self):
-            if not self.workflow_management_allowed(): return
-            self.navigation.setCurrentRow(self.page_rows["Applications"])
-            if not self.ollama_workspace.isVisible():
-                self._ollama_return_visibility = {name: not getattr(self, name).isHidden() for name in
-                    ("application_categories", "categories_toggle", "app_observation_heading", "applications")}
-            self.application_categories.hide(); self.categories_toggle.hide()
-            self.app_observation_heading.hide(); self.applications.hide()
-            self.application_sections.hide()
-            self.ollama_workspace.show()
+            if not self.workflow_management_allowed():
+                return
+            self.navigation.setCurrentRow(self.page_rows["Settings"])
+            self.settings_tabs.setCurrentWidget(self.ollama_workspace)
             self.render_ollama()
 
         def close_ollama_workspace(self):
-            self.ollama_workspace.hide()
-            self.application_sections.show()
+            self.settings_tabs.setCurrentIndex(1)
             self.dependency_route_settled()
-            for name, visible in self._ollama_return_visibility.items():
-                getattr(self, name).setVisible(visible)
-            self.render_library()
-
-        def create_ollama_tile(self):
-            card = QFrame(); card.setObjectName("visualCard"); card_style(card, compact=True)
-            card.setProperty("componentKey", "ollama-connection")
-            body = QVBoxLayout(card); body.setContentsMargins(14, 14, 14, 14); body.setSpacing(8)
-            title = QLabel("Ollama"); title.setObjectName("cardTitle"); body.addWidget(title)
-            info = QLabel("Install a reviewed owned runner or connect an existing local instance. Model information stays unknown until explicitly refreshed." if self.owned_runtime_panel.ready else
-                "Connect an existing local model runner. Model information stays unknown until you explicitly refresh.")
-            info.setWordWrap(True); body.addWidget(info)
-            panel = self.owned_runtime_panel
-            state = QLabel("Manager-owned runner installed" if panel.installed else "Connection tools; owned installation status unknown")
-            state.setWordWrap(True); body.addWidget(state)
-            actions = QHBoxLayout()
-            install = compact_action(QPushButton("Install new"))
-            panel = self.owned_runtime_panel
-            install.setEnabled(panel.install.isEnabled())
-            install.setToolTip(panel.unavailable or "Review the supplied verified owned package; start remains separate.")
-            install.clicked.connect(self.open_owned_install)
-            connect = compact_action(QPushButton("Connect existing"))
-            connect.setEnabled(self.backend_setup_controller is not None and not self.view.synthetic)
-            connect.clicked.connect(self.open_backend_setup)
-            manage = compact_action(QPushButton("Manage / Models")); manage.clicked.connect(self.open_ollama_workspace)
-            for button in (install, connect, manage): actions.addWidget(button)
-            body.addStretch(); body.addLayout(actions)
-            return card
 
         def render_dependency_status(self):
             if not hasattr(self, "dependency_status_panel"): return
@@ -1071,14 +1054,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             launch = panel.launch.isEnabled()
             if busy:
                 action, target = "View progress", "connection" if panel.owner.close_held else "acquisition"
-            elif update and available:
-                action, target = "Update", "acquisition"
             elif launch:
-                action, target = "Launch", "launch"
+                action, target = "Open Tag Encyclopedia", "launch"
+            elif update and available:
+                action, target = "Update Tag Encyclopedia…", "acquisition"
             elif panel.selected is not None:
                 action, target = "Manage connection", "connection"
             elif available:
-                action, target = ("Install" if acquisition.offer is not None else "Find reader"), "acquisition"
+                verb = "Install" if acquisition.offer is not None else "Get"
+                action, target = f"{verb} Tag Encyclopedia…", "acquisition"
             else:
                 action, target = "Connect existing", "connection"
             status = panel.status.text() if panel.selected is not None or panel.owner.close_held else (
@@ -1093,14 +1077,25 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             card.setProperty("componentKey", "encyclopedia-connection")
             body = QVBoxLayout(card); body.setContentsMargins(14,14,14,14); body.setSpacing(8)
             title = QLabel("Tag Encyclopedia"); title.setObjectName("cardTitle"); body.addWidget(title)
-            scope = QLabel("Browse tag knowledge in a separate reader. Review a first-party release to install, or connect an existing approved package." if available else
-                "Browse tag knowledge in a separate reader. Connect an existing approved, extracted reader package.")
+            scope = QLabel("Browse tag knowledge in a separate reader.")
             scope.setWordWrap(True); body.addWidget(scope)
+            if (target == "acquisition" and self.acquisition_panel is not None
+                    and status == self.acquisition_panel.initial_status_text()):
+                status = "Review a verified GitHub release to install this app."
             label = QLabel(status); label.setWordWrap(True); body.addWidget(label)
             button = compact_action(QPushButton(action)); button.setObjectName("readerPrimaryAction")
             button.setEnabled(not self.close_policy.pending)
+            button.setProperty("primary", target in ("launch", "acquisition"))
             button.clicked.connect(self.reader_primary_action)
-            body.addStretch(); body.addWidget(button)
+            body.addStretch()
+            actions = QHBoxLayout()
+            actions.addWidget(button)
+            if target == "launch" and update and available:
+                update_button = compact_action(QPushButton("Update Tag Encyclopedia…"))
+                update_button.clicked.connect(self.open_reader_acquisition)
+                actions.addWidget(update_button)
+            actions.addStretch()
+            body.addLayout(actions)
             options = QWidget(); options_layout = QVBoxLayout(options); options_layout.setContentsMargins(0,0,0,0)
             connect = compact_action(QPushButton("Connection settings")); connect.setObjectName("connectExistingEncyclopedia")
             connect.setEnabled(not busy); connect.clicked.connect(self.open_reader_connection); options_layout.addWidget(connect)
@@ -1122,6 +1117,12 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
 
         def open_reader_connection(self):
             self.reader_dialog.show(); self.reader_dialog.raise_(); self.reader_dialog.activateWindow()
+
+        def open_installed_organizer(self):
+            panel = self.organizer_acquisition_panel
+            if not self.close_policy.pending and self.organizer_open.isEnabled():
+                self.organizer_acquisition_dialog.show()
+                panel.open_organizer()
 
         def open_organizer_acquisition(self):
             if self.close_policy.pending or self.organizer_acquisition_dialog is None:return
@@ -1236,7 +1237,9 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.open_chat = compact_action(QPushButton('Open Chat'))
             self.open_chat.setEnabled(self.chat_host is not None)
             self.open_chat.clicked.connect(self.open_model_chat)
-            controls.addWidget(self.open_chat); controls.addStretch(1); body.addLayout(controls)
+            controls.addWidget(self.open_chat)
+            self.open_chat.setVisible(normal_entry_session is None and self.chat_host is not None)
+            controls.addStretch(1); body.addLayout(controls)
             self.ollama_recovery = QLabel(); self.ollama_recovery.setWordWrap(True)
             self.ollama_recovery.setTextFormat(Qt.PlainText)
             self.ollama_recovery.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum); body.addWidget(self.ollama_recovery)
@@ -1399,71 +1402,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if self.chat_host is not None: self.chat_host.cancel_load()
             self.render_ollama_load()
 
-        def refresh_generator_card(self):
-            """Project saved runtime observations; never probe or start a generator."""
-            if not hasattr(self, "view"):
-                return
-            from qt_app.module_card import ModuleCardPresentation
-            from core.paths import SWARM_RUNTIME_PATH
-            from core.swarm_runtime import SwarmRuntimeManager
-            from core.training_source_io import _assert_unredirected
-
-            available = (not self.view.synthetic and normal_entry_session is not None
-                         and normal_entry_session.state == "ready" and not self.close_policy.pending
-                         and not self.workflow_applications.close_held)
-            self.generator_card.setVisible(not self.view.synthetic)
-            if not available:
-                self._dashboard_generator_action = ""
-                self.generator_card.set_presentation(ModuleCardPresentation(
-                    "local-generator", "Local Image Generation", "Session unavailable",
-                    "Reopen Suite Manager to review local generation.", "Generator Setup",
-                    icon_name="Generate", action_enabled=False,
-                    disabled_reason="Manager is closing or its session ended. Reopen Manager to continue."))
-                return
-            try:
-                path = Path(normal_entry_session.admitted.layout.data_root) / "Manager" / SWARM_RUNTIME_PATH.name
-                _assert_unredirected(path)
-                snapshot = SwarmRuntimeManager(path).snapshot()
-                if not snapshot.configured:
-                    action, label = "setup", "Set Up Generation"
-                elif snapshot.state == "busy":
-                    action, label = "work", "View Generation Work"
-                elif snapshot.state in {"ready", "update_available"}:
-                    action, label = "plan", "Plan or Resume Image"
-                else:
-                    action, label = "setup", "Open Generator Setup"
-                details = [snapshot.detail]
-                if snapshot.configured:
-                    if snapshot.runtime_version:
-                        details.append("SwarmUI " + snapshot.runtime_version)
-                    details.append("Last connection check: " + (snapshot.last_health_check or "not recorded"))
-                    details.append("Saved observation. Use Check Connection in Generator Setup to refresh.")
-                    if snapshot.active_jobs:
-                        details.append(f"{snapshot.active_jobs} active or waiting operations at the last check.")
-                    if snapshot.resource_summary:
-                        details.append(snapshot.resource_summary + " (saved measurement; request capacity not inferred).")
-                self._dashboard_generator_action = action
-                presentation = ModuleCardPresentation(
-                    "local-generator", "Local Image Generation", snapshot.headline + (" (saved)" if snapshot.configured else ""),
-                    "\n".join(details), label, icon_name="Generate", action_enabled=True)
-            except (OSError, ValueError, TypeError, RuntimeError):
-                self._dashboard_generator_action = "setup"
-                presentation = ModuleCardPresentation(
-                    "local-generator", "Local Image Generation", "Needs attention",
-                    "Saved generator information is unavailable. Review Generator Setup; existing drafts remain available in Generate.",
-                    "Open Generator Setup", icon_name="Generate", action_enabled=True)
-            self.generator_card.set_presentation(presentation)
-
-        def open_dashboard_generator(self, _key="local-generator"):
-            self.refresh_generator_card()
-            action = self._dashboard_generator_action
-            if action == "setup":
-                self.review_generator_connection()
-            elif action == "work":
-                self.review_generation_jobs()
-            elif action == "plan":
-                self.open_generate_plan()
-
         def review_generator_connection(self):
             if not self.workflow_management_allowed(): return
             state = self.generation_state()
@@ -1510,7 +1448,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if getattr(self, "_generation_dialog", None) is not None:
                 dialog.review.set_request_return_available(True)
                 dialog.review.return_requested.connect(dialog.reject)
-            dialog.review.status_changed.connect(lambda _snapshot: self.refresh_generator_card())
             buttons = QDialogButtonBox(QDialogButtonBox.Close)
             buttons.rejected.connect(dialog.reject)
             layout.addWidget(buttons)
@@ -1520,7 +1457,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             finally:
                 self._generation_setup_dialog = None
                 dialog.deleteLater()
-                self.refresh_generator_card()
 
         def checked_image_connection(self):
             from core.paths import SWARM_RUNTIME_PATH
@@ -1853,7 +1789,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
         def open_direct_model(self):
             if not self.workflow_management_allowed(): return
             host=self.direct_model_host
-            if host is None or self.close_policy.pending:return
+            if normal_entry_session is not None or host is None or self.close_policy.pending:return
             from .direct_model_ui import create_direct_model_panel
             if host.closing and not host.close_held:host.closing=False
             if host.panel is None:host.panel=create_direct_model_panel(host,self)
@@ -1870,7 +1806,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if self.close_policy.pending and not host.close_held:self.reconsider_close()
 
         def open_model_chat(self):
-            if self.chat_host is None: return
+            if normal_entry_session is not None or self.chat_host is None: return
             self.refresh_chat_admission()
             self.chat_host.open_panel(self)
             if not hasattr(self, 'chat_timer'):
@@ -1930,16 +1866,15 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 elif entry.candidate_package is not None:
                     raise ValueError("candidate_kind_required")
             from suite_core.manager.resource_dashboard import create_dashboard
-            dashboard = create_dashboard(detached.report, detached.jobs, synthetic=detached.synthetic,
-                supported_apps=detached.supported_apps, development_apps=DEVELOPMENT_APPLICATIONS,
-                reader_available=self.reader_panel is not None,
-                organizer_available=self.organizer_acquisition_panel is not None,
-                workflow_apps=('Generate', 'Train'))
+            dashboard = create_dashboard(
+                synthetic=detached.synthetic, open_applications=self.show_applications_from_dashboard,
+                review_update=self.review_dashboard_update,
+            )
             while self.dashboard_slot.count():
                 old = self.dashboard_slot.takeAt(0).widget()
                 if old is not None: old.hide(); old.deleteLater()
             self.dashboard = dashboard; self.dashboard_slot.addWidget(dashboard)
-            self.refresh_generator_card()
+            self.render_dashboard_status()
             from .servers_ui import create_servers_panel
             old_servers = self.servers_page.takeWidget()
             if old_servers is not None:
@@ -1987,7 +1922,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             modules = [row for row in data["components"] if row["kind"] == "Modules"]
             self.summary.setPlainText("Browse suite applications. Details shows requirements and availability.")
             self.summary.setVisible(bool(apps) or bool(detached.supported_apps))
-            self.applications.setVisible(bool(apps)); self.app_observation_heading.setVisible(bool(apps))
+            self.app_observation_details.setVisible(bool(apps))
             if any(entry.candidate_package for entry in detached.supported_apps):
                 self.summary.setPlainText("Developer candidate package inspected. Supported product catalog and installed-app inventory are not supplied.\n"
                     "Manage shows version, provenance, external requirements and the next launch gate.")
@@ -2019,32 +1954,64 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             selected = self.library_filter.currentText()
             query = self.library_search.text().strip().casefold()
             category = self.application_filter_state.category
-            # Catalog filters never hide the separate Generate/Train task home.
             self.application_filter_state = ApplicationFilterState(category, selected, query)
+            self.application_categories.section_list.parentWidget().setVisible(
+                self.categories_toggle.isChecked()
+            )
+            self.workflow_applications.set_filter(query, selected, category)
             self.category_description.setText(CATEGORY_DESCRIPTIONS.get(category, "No category description available."))
             self.category_description.setVisible(category != "All categories")
-            entries = matching_catalog(self.view.supported_apps, self.application_filter_state)
-            self.visible_catalog_entries = entries
-            development = matching_development(selected, category, query)
+            filters = ApplicationFilterState(category, selected, query)
+            managed_keys = set(self.workflow_applications.rows)
+            if self.reader_panel is not None:
+                managed_keys.add("collectigen.tag-encyclopedia")
             if self.organizer_connection_panel is not None or self.organizer_acquisition_panel is not None:
-                development=tuple(item for item in development if item.key!='media-organizer')
+                managed_keys.add("collectigen.media-organizer")
+            entries = tuple(entry for entry in matching_catalog(self.view.supported_apps, filters)
+                            if entry.component_id.value not in managed_keys)
+            self.visible_catalog_entries = entries
+            if self.organizer_connection_panel is not None or self.organizer_acquisition_panel is not None:
                 panel=self.organizer_connection_panel
                 acquisition=self.organizer_acquisition_panel
                 installed=(panel is not None and panel.observation is not None and not panel.stale)
-                available=panel is not None and panel.publisher_inputs is not None
+                available = acquisition is not None and acquisition.service.install_available
                 if acquisition is not None:
                     installed=installed or (acquisition.installed is not None and acquisition.installed.selected is not None and not acquisition.observation_stale)
-                    available=available or acquisition.service.install_available
-                matches_status=(selected=='All entries' or selected=='Installed' and installed or selected=='Available' and available)
+                    from .encyclopedia_acquisition_ui import _primary_action
+                    launch = acquisition.open_action.isEnabled() and not acquisition.open_action.isHidden()
+                    self.organizer_open.setVisible(launch)
+                    self.organizer_open.setEnabled(launch and not self.close_policy.pending)
+                    _primary_action(self.organizer_open, launch)
+                    manage = self.organizer_acquisition_action
+                    offer = acquisition.offer
+                    if offer is not None:
+                        label = "Update Media Organizer…" if offer.current_version is not None else "Install Media Organizer…"
+                    else:
+                        label = "Manage install and updates…" if installed else "Get Media Organizer…"
+                    if manage.text() != label:
+                        manage.setText(label)
+                        compact_action(manage)
+                    manage.setVisible(available or installed)
+                    manage.setEnabled(not self.close_policy.pending)
+                    _primary_action(manage, not launch)
+                    self.organizer_app_status.setText(
+                        "Installed. Open the app when ready." if launch else
+                        acquisition.status.text() if installed or acquisition.close_held or acquisition.check_attempted else
+                        "Review a verified GitHub release to install this app." if available else
+                        "Installation is unavailable in this Manager build."
+                    )
+                matches_status = (selected == "All entries" or selected == "Installed" and installed
+                    or selected == "Available" and available and not installed
+                    or selected == "Updates" and acquisition is not None
+                       and acquisition.offer is not None and acquisition.offer.current_version is not None)
                 self.organizer_workspace.setVisible(matches_status and category in ('All categories','Productivity')
                     and (not query or query in 'media organizer organize images tags descriptions'))
 
-            self.visible_development_entries = development
             projections = []
             for entry in entries:
                 binding = self.lifecycle_controller.binding_for(entry)
                 projections.append((binding, self.lifecycle_controller.projection(binding, self.now())))
-            signature = (selected, query, category, development, entries,
+            signature = (selected, query, category, entries,
                 tuple(tuple(sorted(state.items())) for _, state in projections),
                 self.close_policy.pending, self.close_policy.role,
                 self.owned_runtime_panel.installed, self.owned_runtime_panel.busy,
@@ -2052,32 +2019,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.owned_runtime_panel.install.isEnabled(), self.reader_card_state())
             if getattr(self, "_library_signature", None) == signature:
                 return  # Idle polling keeps the current focus and Details disclosure.
-            show_ollama = (selected == "All entries" or selected == "Installed" and self.owned_runtime_panel.installed
-                or selected == "Available" and self.owned_runtime_panel.install.isEnabled()) and category in ("All categories", "Model Runners") and (not query or query in "ollama local model runner")
             previous_details = getattr(self, "_library_details", {})
             for previous_card in self.library_body.cards:
                 toggle = previous_card.findChild(QToolButton)
                 if toggle is not None:
                     previous_details[previous_card.property("componentKey")] = toggle.isChecked()
             self._library_details = previous_details
-            self.library_status.setText("Catalog entries supplied; installation status unknown."
-                if entries else "No matching applications. " +
-                ("No application catalog connected." if not self.view.supported_apps else
-                 "No catalog entries match the combined filters." if selected == "All entries" else
-                 f"No verified {selected.lower()} applications. Unknown entries are excluded from this filter."))
-            if entries and any(entry.candidate_package for entry in entries):
-                self.library_status.setText("Candidate artifact verified against accepted pins \u00b7 Installation and running state unknown")
-            if development and not entries:
-                self.library_status.setText("Development apps: " + ", ".join(item.title for item in development)
-                    + ". Open their details for requirements.")
-            cards = [development_card(item) for item in development]
-            if self.organizer_connection_panel is not None and self.organizer_workspace.isVisible():
-                self.library_status.setText('Organizer package checked.' if self.organizer_connection_panel.observation is not None
-                    and not self.organizer_connection_panel.stale else 'Connect an existing Organizer package.')
-            for item, card in zip(development, cards):
-                role = QLabel(" · ".join(item.categories))
-                role.setWordWrap(True); role.setTextFormat(Qt.PlainText)
-                card.layout().insertWidget(2, role)
+            cards = []
             for entry, (binding, lifecycle) in zip(entries, projections):
                 card = QFrame(); card.setObjectName("visualCard"); card_style(card, compact=True)
                 card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -2145,14 +2093,10 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 or selected == "Updates" and reader_state[2])
             if show_reader:
                 cards.append(self.create_reader_tile())
-                if not entries and not development:
-                    self.library_status.setText(reader_state[6])
-            if show_ollama:
-                cards.append(self.create_ollama_tile())
-                if not entries and not development:
-                    self.library_status.setText("Owned runner registered; use Manage / Models for explicit Start and Stop." if self.owned_runtime_panel.installed else
-                    "Review Install new for the qualified supplied package; Connect existing remains separate." if self.owned_runtime_panel.ready else
-                    "Existing Ollama connection tools. Owned installation unavailable without a qualified package and permission.")
+            matching_apps = (cards or not self.organizer_workspace.isHidden() or
+                             any(not group.isHidden() for _, _, _, group in self.workflow_applications.rows.values()))
+            self.library_status.setText("" if matching_apps else "No apps match. Clear filters to see all apps.")
+            self.library_status.setVisible(not matching_apps)
             # Retire old action surfaces immediately; deferred Qt deletion must
             # not leave a previous enabled button visible during status refresh.
             for previous_card in self.library_body.cards:
@@ -2235,35 +2179,101 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             bridge = self.lifecycle_bridge
             return (bridge.ollama_scope, bridge.ollama_report) if bridge is not None else (None, None)
 
-        def render_local_resources(self):
-            if self.resource_panel is None:
+        def dashboard_update_panels(self):
+            from .workflow_applications_ui import WORKFLOW_NAMES
+
+            panels = {key: (WORKFLOW_NAMES[key], panel) for key, panel in self.workflow_applications.panels.items()}
+            panels.update({
+                "collectigen.media-organizer": ("Media Organizer", self.organizer_acquisition_panel),
+                "collectigen.tag-encyclopedia": ("Tag Encyclopedia", self.acquisition_panel),
+                "collectigen.suite-manager": ("Suite Manager", self.manager_update_panel),
+            })
+            return panels
+
+        def review_dashboard_update(self, component_id):
+            _name, panel = self.dashboard_update_panels().get(component_id, ("", None))
+            offer = panel.offer if panel is not None else None
+            if self.view.synthetic or offer is None or offer.current_version is None or self.close_policy.pending:
                 return
-            self.resource_panel.update_values()
-            route = self.resource_route
-            if route is not None:
-                self.resource_panel.refresh.setEnabled(route.can_request and not route.executor.close_held
-                    and not self.view.synthetic)
-                if not route.pending and route.executor.close_held:
-                    self.resource_panel.status.setText("Worker completion is unconfirmed. Keep Manager open; retry after completion is confirmed.")
-            from .resource_presentation_candidate import project_local_resources
-            rows = () if route is None or self.view.synthetic else project_local_resources(route, self.now())
-            self.dashboard.local_summary.setText("Local measurements disabled in Demo." if self.view.synthetic else
-                ("Not measured" if not rows else
-                 f"This computer: {sum(row.state == 'measured' for row in rows)} current readings / {len(rows)} observed resources. Details in Servers."))
-            from core.manager_server_inventory import project_ollama_connection
-            scope, report = self.server_metadata()
-            backend = project_ollama_connection(scope.connection,
-                report if scope.accepts(report) else None, self.now()) if scope is not None else None
-            self.dashboard.backend_summary.setText("Live Ollama metadata disabled in Demo." if self.view.synthetic else
-                ("Local Ollama: connection unknown" if backend is None else
-                 "Ollama: " + backend["connection_state"] + "; readiness and activity unknown."))
-            self.bar.refresh_state()
+            if panel is self.manager_update_panel:
+                self.navigation.setCurrentRow(self.page_rows["Settings"])
+                self.settings_tabs.setCurrentIndex(0)
+                self.settings_tabs.currentWidget().ensureWidgetVisible(panel)
+                panel.stage.setFocus()
+                return
+            self.navigation.setCurrentRow(self.page_rows["Applications"])
+            if component_id in self.workflow_applications.panels:
+                self.workflow_applications.manage(component_id)
+            else:
+                dialog = panel.parentWidget()
+                dialog.show()
+                dialog.raise_()
+            if panel.install.isVisible() and panel.install.isEnabled():
+                panel.install.setFocus()
+
+        def render_dashboard_status(self):
+            if not hasattr(self, "dashboard"):
+                return
+            from .resource_dashboard import active_module_jobs
+            from .workflow_applications_ui import WORKFLOW_NAMES
+            names = {**WORKFLOW_NAMES, "collectigen.tag-encyclopedia": "Tag Encyclopedia",
+                     "collectigen.media-organizer": "Media Organizer"}
+            jobs = active_module_jobs(self.view.jobs, names, self.now())
+            sessions = []
+            workflow = None if self.view.synthetic else self.workflow_workspace_owner
+            if workflow is not None and workflow.close_held and workflow.selection is not None:
+                name = names.get(workflow.selection.component_id)
+                if name is not None:
+                    sessions.append(f"{name}: {workflow.reason}")
+            organizer = self.organizer_acquisition_panel
+            reader = self.reader_panel
+            if self.view.synthetic:
+                organizer = reader = None
+            for name, owner in (
+                ("Media Organizer", organizer.service.native_owner if organizer is not None else None),
+                ("Tag Encyclopedia", reader.owner if reader is not None else None),
+            ):
+                if owner is not None and owner.close_held:
+                    sessions.append(f"{name}: {owner.reason}")
+
+            activity = (*jobs, *sessions)
+            self.dashboard.module_activity.setText(
+                "\n".join(activity[:8]) + (f"\n{len(activity) - 8} more reports" if len(activity) > 8 else "")
+                if activity else "No current module work reported."
+            )
+            from html import escape
+
+            label = self.dashboard.notifications
+            link_color = label.palette().color(label.foregroundRole()).name()
+            notices = []
+            panels = {} if self.view.synthetic else self.dashboard_update_panels()
+            for component_id, (name, panel) in panels.items():
+                offer = panel.offer if panel is not None else None
+                if offer is not None and offer.current_version is not None:
+                    version = escape(offer.release.software_version)
+                    notices.append(f'<a href="{component_id}" style="color:{link_color}">'
+                                   f'Review {name} {version} update</a>')
+            text = "<br>".join(notices) if notices else (
+                "No update notices. Check app releases in Applications or Manager updates in Settings."
+            )
+            if self.dashboard.notifications.text() != text:
+                self.dashboard.notifications.setText(text)
+            self.dashboard.notifications.setFocusPolicy(Qt.StrongFocus if notices else Qt.NoFocus)
+
+        def render_local_resources(self):
+            if self.resource_panel is not None:
+                self.resource_panel.update_values()
+                route = self.resource_route
+                if route is not None:
+                    self.resource_panel.refresh.setEnabled(route.can_request and not route.executor.close_held
+                        and not self.view.synthetic)
+                    if not route.pending and route.executor.close_held:
+                        self.resource_panel.status.setText("Worker completion is unconfirmed. Keep Manager open; retry after completion is confirmed.")
+                self.bar.refresh_state()
 
         def poll_local_resources(self):
             if self.resource_dashboard_binding is not None:
                 self.resource_dashboard_binding.tick()
-                if self.navigation.currentRow() == self.page_rows["Dashboard"]:
-                    self.render_local_resources()  # expire summary values; never submit a sample
 
         def organizer_connection_held(self):
             return self.workflow_applications.close_held or ((self.organizer_connection_host is not None and self.organizer_connection_host.close_held)
@@ -2275,7 +2285,7 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             replacement=host.poll()
             if replacement is not None:
                 old,new=replacement
-                self.organizer_workspace_layout.replaceWidget(old,new)
+                self.organizer_connection_layout.replaceWidget(old,new)
                 self.organizer_connection_panel=new
                 old.setParent(None);old.deleteLater()
             if hasattr(self,'library_filter'):self.render_library()
@@ -2726,8 +2736,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.workflow_management.setEnabled(session_ready)
             section = next((name for name, row in self.page_rows.items() if row == self.navigation.currentRow()), "Dashboard")
             databases_hint = "Use Databases to connect a catalog, review content and recover interrupted work."
-            applications_hint = "Use Applications to install, update or open Generate, Train and Media Organizer. Saved workflow data stays separate."
-            dashboard_hint = "Choose an application in Applications, or review your computer and connections in Servers."
+            applications_hint = "Choose an app to review a release, manage its installation, or open it."
+            dashboard_hint = ""
             if self.statusBar().currentMessage() in (databases_hint, applications_hint, dashboard_hint):
                 if section == "Dashboard":
                     self.statusBar().showMessage(dashboard_hint)
