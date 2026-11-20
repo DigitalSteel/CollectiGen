@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from tools.assistant_guides import guide_readme, load_catalog, render_guides
 from suite_core.installation import ComponentId, _relative
 from suite_core.discovery.component_release_signature import _json, _version, MAX_METADATA_BYTES, inventory_json
 from suite_core.discovery.component_staging import INVENTORY, MAX_ARCHIVE, MAX_UNPACKED, guard, canonical, require
@@ -330,6 +331,30 @@ def _frozen_workflow_catalog(source, producer, stage_sha256, component_id, softw
             'payload': '_internal/data/model_workflow_baseline.json', 'bytes': len(raw), 'sha256': pin}, check
 
 
+def with_assistant_guides(source_members, runtime, module, runtime_manifest, policy):
+    """Add guides to a verified byte snapshot before final inventory."""
+    base = Path(runtime_manifest).parent
+    catalog = load_catalog()
+    guides = render_guides(module, catalog)
+    members = dict(source_members)
+    rows = {row['path']: row for row in runtime['files']}
+    require(not any((base / relative).as_posix() in members for relative in guides),
+            'assistant_guide_path_already_present')
+    readme = (base / 'README.md').as_posix()
+    readme_bytes = members.get(readme, ('# ' + catalog['components'][module['module_id']]['name']).encode('utf-8'))
+    additions = {relative: content.encode('utf-8') for relative, content in guides.items()}
+    additions['README.md'] = guide_readme(readme_bytes)
+    for relative, raw in additions.items():
+        name = (base / relative).as_posix()
+        payload_relative(name, payload_policy=policy)
+        members[name] = raw
+        rows[relative] = {'path': relative, 'size_bytes': len(raw), 'sha256': sha256(raw).hexdigest()}
+    updated = canonical({**runtime, 'files': list(rows.values())})
+    require(len(updated) <= policy.max_inventory_json_bytes, 'assistant_guide_runtime_inventory_size')
+    members[runtime_manifest] = updated
+    return tuple(sorted(members.items()))
+
+
 def build_package(payload_root, output_root, *, runtime_manifest, module_manifest,
                   component_id, software_version, os_name, architecture, artifact_name,
                   supported_from, published_at, release_notes, require_update_data_contract=False,
@@ -434,11 +459,14 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
     for name, row in expected.items():
         require(type(row['size_bytes']) is int and row['size_bytes'] == len(by_name[name])
                 and row['sha256'] == sha256(by_name[name]).hexdigest(), 'runtime_file_pin')
+    if component_id in {'collectigen.media-organizer', 'collectigen.tag-encyclopedia'}:
+        members = with_assistant_guides(by_name, runtime, module, runtime_manifest, policy)
+        total = sum(len(raw) for _, raw in members)
     inventory = produce_inventory(members, component_id=ComponentId(component_id),
         software_version=software_version, os_name=os_name, architecture=architecture, runtime_kind=runtime_kind)
     require(total + len(inventory) <= policy.max_unpacked_bytes, 'final_payload_bounds')
     # Stale guard before creating any output. ZIP reads the admitted byte snapshot.
-    require(all((source / n).is_file() and (source / n).read_bytes() == v for n, v in members), 'payload_changed')
+    require(all((source / n).is_file() and (source / n).read_bytes() == v for n, v in by_name.items()), 'payload_changed')
     require({p.relative_to(source).as_posix() for p in source.rglob('*') if p.is_file()} == set(by_name),
             'payload_closure_changed')
     check_catalog()
@@ -455,7 +483,7 @@ def build_package(payload_root, output_root, *, runtime_manifest, module_manifes
             z.writestr(info, content, compresslevel=9)
     require(archive.stat().st_size <= policy.max_archive_bytes, 'archive_size')
     with zipfile.ZipFile(archive) as z:
-        require(z.namelist() == sorted((*by_name, INVENTORY)), 'output_closure')
+        require(z.namelist() == sorted((*(name for name, _ in members), INVENTORY)), 'output_closure')
         require(all(z.read(n) == v for n, v in (*members, (INVENTORY, inventory))), 'output_readback')
     envelope = canonical({'schema_version': 1, 'product': 'collectigen', 'component_id': component_id,
         'version': software_version, 'channel': 'beta' if version.prerelease else 'stable',

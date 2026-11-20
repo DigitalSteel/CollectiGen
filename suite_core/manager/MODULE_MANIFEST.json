@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "module_id": "collectigen.suite-manager",
-  "software_version": "0.8.2-alpha.1",
+  "software_version": "0.9.0-alpha.1",
   "manager_interface_version": 1,
   "runtime_files": [
     "core/__init__.py",
@@ -709,6 +709,7 @@
     "suite_core/manager/encyclopedia_acquisition_ui.py",
     "suite_core/manager/encyclopedia_connection_ui.py",
     "suite_core/manager/entry_binding.py",
+    "suite_core/manager/assistant_discovery.py",
     "suite_core/manager/frozen_entry.py",
     "suite_core/manager/host_contracts.py",
     "suite_core/manager/launcher_main.py",
@@ -716,7 +717,9 @@
     "suite_core/manager/metadata_binding.py",
     "suite_core/manager/metadata_setup.py",
     "suite_core/manager/model_chat_binding.py",
+    "suite_core/manager/assistant_context.py",
     "suite_core/manager/model_chat_controller.py",
+    "suite_core/manager/vllm_chat.py",
     "suite_core/manager/model_chat_ui.py",
     "suite_core/manager/model_workspace_host.py",
     "suite_core/manager/module_lifecycle_candidate.py",

@@ -618,6 +618,14 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             application_connections_layout.addWidget(management)
             application_connections_layout.addWidget(self.direct_model_button,0,Qt.AlignLeft)
             self.direct_model_button.setVisible(normal_entry_session is None and self.direct_model_host is not None)
+            if normal_entry_session is not None and not view.synthetic:
+                connect_assistant = compact_action(QPushButton('Connect an external assistant…'))
+                connect_assistant.clicked.connect(lambda: self.open_external_client_connection(normal_entry_session))
+                application_connections_layout.addWidget(connect_assistant, 0, Qt.AlignLeft)
+            if self.chat_host is not None and normal_entry_session is not None and not view.synthetic:
+                help_button = compact_action(QPushButton('CollectiGen help with vLLM…'))
+                help_button.clicked.connect(lambda: self.open_context_help(normal_entry_session))
+                application_connections_layout.addWidget(help_button, 0, Qt.AlignLeft)
             application_connections_layout.addStretch(1)
             external = QLabel("Connected endpoints are external instances. Manager does not install or own their Ollama installation.")
             external.setWordWrap(True)
@@ -1815,6 +1823,45 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             if normal_entry_session is not None or self.chat_host is None: return
             self.refresh_chat_admission()
             self.chat_host.open_panel(self)
+            self.start_chat_timer()
+
+        def open_context_help(self, session):
+            if self.chat_host is None or self.close_policy.pending:
+                return
+            from PySide6.QtWidgets import QMessageBox
+            if session.state != 'ready':
+                QMessageBox.information(self, 'CollectiGen help',
+                    'Reopen Manager from the suite installation to refresh the connection details.')
+                return
+            admitted = session.admitted
+            try:
+                self.chat_host.open_context_help(self, admitted.settings_path,
+                                                 admitted.layout.code_root / 'Apps',
+                                                 admission_is_current=lambda: session.state == 'ready'
+                                                 and session.admitted is admitted)
+            except ValueError:
+                QMessageBox.information(self, 'CollectiGen help',
+                    'Check the server endpoint and model, or wait for the current chat operation to finish.')
+                return
+            self.start_chat_timer()
+
+        def open_external_client_connection(self, session):
+            from sys import executable
+            from PySide6.QtWidgets import QMessageBox
+            from .model_chat_ui import show_external_client_connection
+
+            if self.close_policy.pending:
+                return
+            if session.state != 'ready':
+                QMessageBox.information(self, 'External assistant connection',
+                    'Reopen Manager from the suite installation to refresh the connection details.')
+                return
+            admitted = session.admitted
+            console = Path(executable).with_name('CollectiGenAssist.exe')
+            show_external_client_connection(self, console, admitted.settings_path,
+                                            admitted.layout.code_root / 'Apps')
+
+        def start_chat_timer(self):
             if not hasattr(self, 'chat_timer'):
                 self.chat_timer = QTimer(self); self.chat_timer.setInterval(100)
                 self.chat_timer.timeout.connect(self.poll_model_chat)
@@ -1826,7 +1873,8 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.chat_host.poll()
             self.refresh_chat_admission()
             if loading and self.chat_host.load_future is None: self.render_ollama()
-            if not self.chat_host.busy and self.chat_host.panel is not None and not self.chat_host.panel.isVisible():
+            panels = (self.chat_host.panel, self.chat_host.help_panel)
+            if not self.chat_host.busy and not any(panel is not None and panel.isVisible() for panel in panels):
                 self.chat_timer.stop()
             if not self.chat_host.busy and self.close_policy.pending:
                 self.reconsider_close()

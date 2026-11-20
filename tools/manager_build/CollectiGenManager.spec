@@ -72,4 +72,24 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name=product_name,
     debug=False, bootloader_ignore_signals=False, strip=False, upx=False,
     icon=str(source/'suite_core/manager/assets/collectigen.ico') if component == 'manager' else None, console=False, disable_windowed_traceback=True, contents_directory='_internal')
-bundle = COLLECT(exe,a.binaries,a.datas,strip=False,upx=False,name=product_name)
+executables = [exe]
+if component == 'manager' and 'suite_core.manager.assistant_discovery' in allowed:
+    # Discovery has its own Python archive and reuses the Manager's external runtime files.
+    assistant = Analysis([str(source/'suite_core/manager/assistant_discovery.py')],
+        pathex=[str(source)], excludes=['PySide6', 'shiboken6', 'qt_app', 'velopack'])
+    manager_modules = {name: origin for name, origin, _ in a.pure}
+    for name, origin, _ in assistant.pure:
+        if name.partition('.')[0] in local_top_level and (
+                name not in allowed or manager_modules.get(name) != origin):
+            raise ValueError('undeclared assistant module: '+name)
+    manager_runtime = {name: origin for name, origin, _ in (*a.binaries, *a.datas)}
+    for name, origin, kind in (*assistant.binaries, *assistant.datas):
+        if kind == 'BINARY' and Path(name).name.lower() in excluded_system_msvc:
+            continue
+        shared = manager_runtime.get(name)
+        if shared is None or (origin != shared and Path(origin).read_bytes() != Path(shared).read_bytes()):
+            raise ValueError('assistant dependency not shared with Manager: '+name)
+    executables.append(EXE(PYZ(assistant.pure), assistant.scripts, [], exclude_binaries=True, name='CollectiGenAssist',
+        debug=False, bootloader_ignore_signals=False, strip=False, upx=False,
+        console=True, contents_directory='_internal'))
+bundle = COLLECT(*executables,a.binaries,a.datas,strip=False,upx=False,name=product_name)

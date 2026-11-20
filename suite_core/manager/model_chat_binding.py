@@ -19,6 +19,8 @@ class ManagerChatHost:
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.controller = ModelChatController(self, self.executor)
         self.panel = None
+        self.help_panel = None
+        self.help_context_future = None
         self.closed = False
         self._lock = Lock()
         self._snapshot = (None, None, True)
@@ -32,7 +34,9 @@ class ManagerChatHost:
 
     @property
     def close_held(self):
-        return self.load_future is not None or self.controller.close_held
+        return (self.load_future is not None or self.controller.close_held
+                or self.help_context_future is not None
+                or (self.help_panel is not None and self.help_panel.controller.close_held))
 
     @property
     def busy(self):
@@ -153,6 +157,63 @@ class ManagerChatHost:
         self.panel.show(); self.panel.raise_(); self.panel.activateWindow()
         return self.panel
 
+    def open_context_help(self, parent, settings_path, code_root, *, admission_is_current=lambda: True):
+        from dataclasses import replace
+        from hashlib import sha256
+        from .assistant_context import public_suite_help, suite_context_revision
+        from .assistant_discovery import discover
+        from .model_chat_ui import ModelChatPanel, review_vllm_connection
+        from .vllm_chat import VllmChatClient, VllmChatError
+
+        if self.help_panel is not None and not self.help_panel.controller.closed:
+            self.help_panel.raise_()
+            self.help_panel.activateWindow()
+            return
+        if self.closed or self.close_held:
+            raise ValueError("Wait for the current chat operation to finish.")
+        connection = review_vllm_connection(parent)
+        if connection is None or self.closed or not admission_is_current():
+            return
+        endpoint, model, token = connection
+        identity = sha256((endpoint + "\n" + model).encode()).hexdigest()
+        target = ChatTarget("vllm", model, identity, True)
+        reviewed_revision = None
+
+        def context_is_current():
+            if not admission_is_current():
+                raise VllmChatError("vllm_manager_admission_changed")
+            return reviewed_revision == suite_context_revision(settings_path)
+
+        client = VllmChatClient(endpoint, target, credential=lambda: token,
+                                context_is_current=context_is_current)
+        controller = ModelChatController(client, self.executor)
+        controller.status = "Checking installed workflow information and the selected model…"
+        # Use a literal endpoint without userinfo. Display stays plain text.
+        self.help_panel = ModelChatPanel(controller, (), parent, review_endpoint=endpoint)
+        setup_cancel = Event()
+        self.help_setup_cancel = setup_cancel
+
+        def check_setup():
+            nonlocal reviewed_revision
+            if not admission_is_current():
+                error = VllmChatError("vllm_manager_admission_changed")
+                return public_suite_help({}), replace(target, ready=False, unavailable_reason=error.public_message)
+            try:
+                revision = suite_context_revision(settings_path)
+                context = public_suite_help(discover(settings_path, code_root))
+                if revision == suite_context_revision(settings_path):
+                    reviewed_revision = revision
+            except Exception:
+                context = public_suite_help({})
+            try:
+                client.check_model(lambda: setup_cancel.is_set() or not admission_is_current())
+            except VllmChatError as error:
+                return context, replace(target, ready=False, unavailable_reason=error.public_message)
+            return context, target
+
+        self.help_context_future = self.executor.submit(check_setup)
+        self.help_panel.show()
+
     def stream_chat(self, request, cancelled):
         with self._lock:
             binding, report, blocked = self._snapshot
@@ -186,6 +247,24 @@ class ManagerChatHost:
 
     def poll(self):
         self.controller.poll()
+        if (self.help_context_future is not None and self.help_panel is not None
+                and self.help_panel.controller.closed):
+            self.help_setup_cancel.set()
+        if self.help_context_future is not None and self.help_context_future.done() and not self.executor.close_held:
+            from .assistant_context import public_suite_help
+            try:
+                context, target = self.help_context_future.result()
+            except Exception:
+                context = public_suite_help({})
+                target = None
+            self.help_context_future = None
+            if self.help_panel is not None and not self.help_panel.controller.closed:
+                self.help_panel.set_public_context(context, target)
+        if (self.help_panel is not None and self.help_panel.controller.closed
+                and not self.help_panel.controller.close_held and self.help_context_future is None):
+            self.help_panel.close()
+            self.help_panel.deleteLater()
+            self.help_panel = None
         if self.load_future is not None and self.load_future.done() and not self.executor.close_held:
             binding, source, selected, event = self._active_load
             try:
@@ -209,6 +288,7 @@ class ManagerChatHost:
         self.cancel_load()
         if self.panel is not None: self.panel.close()
         else: self.controller.begin_close()
+        if self.help_panel is not None: self.help_panel.close()
         self.poll()
 
     def finish_close(self):

@@ -3373,8 +3373,8 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 42451,
-      "sha256": "fd5bbdfa3b53315f41e5dbdd3f3d08024068f1b7a044eda09e8e8560b7fe8f40"
+      "bytes": 42586,
+      "sha256": "1d15b6ca7ec64dd1c3f26cf1e494a468e0d18ebe281ea53f05d5db4a7d070ac2"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -3400,6 +3400,16 @@
       "path": "suite_core/manager/assets/collectigen.ico",
       "bytes": 32677,
       "sha256": "f819e00ab1dbaad539c7f25f08b9353561a56701eb83b6440e21b87dcf83bd10"
+    },
+    {
+      "path": "suite_core/manager/assistant_context.py",
+      "bytes": 4870,
+      "sha256": "0cd8a074435c64b7bbb3336c7d1aa088322553534847ae49f3ed55bca69c8719"
+    },
+    {
+      "path": "suite_core/manager/assistant_discovery.py",
+      "bytes": 18162,
+      "sha256": "b20c3af38241bca631fb42d3f680a4c638e59b5dee46ffcf4410eb0a1e92049b"
     },
     {
       "path": "suite_core/manager/async_lifecycle_bridge.py",
@@ -3528,8 +3538,8 @@
     },
     {
       "path": "suite_core/manager/frozen_entry.py",
-      "bytes": 6508,
-      "sha256": "c447401010acdb969d8e188ecf71c29cf4d451db8b4605fee43192ad5541e3d4"
+      "bytes": 6795,
+      "sha256": "8cf652fdb5275462c8829d8080294bf2b79a406a90d7d6e7274aa131a49ec315"
     },
     {
       "path": "suite_core/manager/host_contracts.py",
@@ -3558,18 +3568,18 @@
     },
     {
       "path": "suite_core/manager/model_chat_binding.py",
-      "bytes": 12682,
-      "sha256": "17f7c286e6222b18f036ecb958bfcd0b2ec0ce30ebdc460f1fdbf2f1cf36007f"
+      "bytes": 16946,
+      "sha256": "12f7aed17757fd2ac1f4c6c659182ceab0a7a09d9e68b3e23d7601875b42110e"
     },
     {
       "path": "suite_core/manager/model_chat_controller.py",
-      "bytes": 11868,
-      "sha256": "7f47fde5ad9b9f7a29e9ff7615799d8319083036455779586f026ccd501fb5cf"
+      "bytes": 13774,
+      "sha256": "cf1d140c4d6a575573ad424fa584975f3943e9ee9a72be218ec511382bb0ed55"
     },
     {
       "path": "suite_core/manager/model_chat_ui.py",
-      "bytes": 5960,
-      "sha256": "e72c19028abf6c0c375d427e192a181a34d260f1bad9a730cb1f5670d6eb0b6c"
+      "bytes": 14863,
+      "sha256": "b7b0f811424b814f08b78f809a27334aa72d23ed29277f03349e5848a2aad1b4"
     },
     {
       "path": "suite_core/manager/model_workspace_host.py",
@@ -3727,9 +3737,14 @@
       "sha256": "f1b41912d8c2f31ae612608ad49de659540ce8e80695c551c6927f9dd7b13262"
     },
     {
+      "path": "suite_core/manager/vllm_chat.py",
+      "bytes": 8878,
+      "sha256": "dd42800eb09e46e7b7e0bd7f9d2bf8309fb3abe69b58496894085af9fc5821be"
+    },
+    {
       "path": "suite_core/manager/window.py",
-      "bytes": 230717,
-      "sha256": "b3ea3a886727a22cd034123c1dfe8cc117fdc81999bb34027add25c9c7fef876"
+      "bytes": 233526,
+      "sha256": "09eca129f3d424fc285cba4095923d8ff4ef00801b8de59c7aa9ad4d53d96dc4"
     },
     {
       "path": "suite_core/manager/workflow_acquisition_binding.py",

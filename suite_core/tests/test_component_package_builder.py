@@ -3,14 +3,18 @@ from hashlib import sha256
 import json
 import subprocess
 import sys
+from types import SimpleNamespace
 import zipfile
 
 import pytest
-from tools.build_component_package import build_package
-from suite_core.discovery.component_staging import create_disposable_root, INVENTORY
+from tools.build_component_package import COMPONENTS, build_package
+from suite_core.discovery.component_staging import (
+    INVENTORY, active_token, create_disposable_root, finish_or_recover, stage_and_activate,
+)
 from suite_core.discovery.offline_component_producer import PackageInput, qualify_pair
 from suite_core.discovery.component_release_signature import verify_component_release
 from suite_core.installation import ComponentId
+from suite_core.manager.assistant_discovery import read_guide
 from suite_core.tests.test_component_staging import COMPONENT, TRUST, sign
 
 
@@ -24,7 +28,7 @@ def payload(tmp_path, version='0.1.0-alpha.9', component='collectigen.suite-mana
         file = wrapped / name
         file.parent.mkdir(parents=True, exist_ok=True)
         file.write_bytes(content)
-    runtime = {'schema_version': 1, 'component': 'manager' if component == COMPONENT.value else 'encyclopedia',
+    runtime = {'schema_version': 1, 'component': COMPONENTS[component],
         'feature_version': version, 'os': 'windows', 'architecture': 'x86_64',
         'inventory_excludes_itself': 'RUNTIME_MANIFEST.json', 'GUI_qualified': False,
         'files': [{'path': n, 'size_bytes': len(v), 'sha256': sha256(v).hexdigest()} for n, v in files.items()]}
@@ -56,15 +60,34 @@ def test_output_has_exact_inventory_and_unsigned_envelope_with_deterministic_byt
     assert not receipt['signed'] and not receipt['production_install_authorized'] and not receipt['native_health_verified']
     raw = (first / INVENTORY).read_bytes()
     inventory = json.loads(raw)
-    assert [r['path'] for r in inventory['files']] == sorted(before)
+    expected = dict(before)
+    publishes_guide = component in {'collectigen.media-organizer', 'collectigen.tag-encyclopedia'}
+    if publishes_guide:
+        runtime_path = next(name for name in before if name.endswith('RUNTIME_MANIFEST.json'))
+        prefix = runtime_path.removesuffix('RUNTIME_MANIFEST.json')
+        expected.update({prefix + name: None for name in (
+            'README.md', 'help/assistant/actions.json', 'help/assistant/README.md')})
+        expected[runtime_path] = None
+    assert [r['path'] for r in inventory['files']] == sorted(expected)
     assert INVENTORY not in [r['path'] for r in inventory['files']]
     with zipfile.ZipFile(next(first.glob('*.zip'))) as z:
-        assert z.namelist() == sorted((*before, INVENTORY))
+        assert z.namelist() == sorted((*expected, INVENTORY))
         assert z.read(INVENTORY) == raw
         for row in inventory['files']:
             actual = z.read(row['path'])
-            assert actual == before[row['path']]
+            if expected[row['path']] is not None:
+                assert actual == expected[row['path']]
             assert len(actual) == row['size_bytes'] and sha256(actual).hexdigest() == row['sha256']
+        if publishes_guide:
+            action_path = 'help/assistant/actions.json'
+            guide = json.loads(z.read(prefix + action_path))
+            assert guide['component_id'] == component
+            assert guide['software_version'] == '0.1.0-alpha.9'
+            assert f']({action_path})'.encode() in z.read(prefix + 'README.md')
+            runtime = json.loads(z.read(runtime_path))
+            for row in runtime['files']:
+                raw_member = z.read(prefix + row['path'])
+                assert row['sha256'] == sha256(raw_member).hexdigest()
     envelope = (first / 'release-manifest.input.json').read_bytes()
     verified = verify_component_release(envelope, sign(envelope), TRUST, expected_component=ComponentId(component),
         expected_version='0.1.0-alpha.9', expected_channel='beta', expected_os='windows', expected_architecture='x86_64')
@@ -86,6 +109,56 @@ def test_two_generated_inert_versions_qualify_through_canonical_validator(tmp_pa
     assert not proof.production_install_authorized and not proof.native_health_verified
     assert len(proof.prior_member_pins) == len(proof.target_member_pins) == 3
     assert not list(scratch.rglob('offline-qualification-*'))
+
+
+def test_organizer_guide_follows_installed_update_and_rollback(tmp_path):
+    component = ComponentId("collectigen.media-organizer")
+    base_version, next_version = "0.1.0-alpha.9", "0.1.0-alpha.10"
+    root = create_disposable_root(tmp_path / "guide-installation")
+    user_data = root / "Data" / "fixture.txt"
+    user_data.parent.mkdir()
+    user_data.write_bytes(b"synthetic saved state")
+
+    def install(version, before):
+        out = tmp_path / ("out-" + version)
+        build_package(**options(payload(tmp_path, version, component.value), out, version, component.value))
+        manifest = (out / "release-manifest.input.json").read_bytes()
+        target = stage_and_activate(
+            root, next(out.glob("*.zip")), component=component, version=version,
+            os_name="windows", architecture="x86_64", manifest_bytes=manifest,
+            signature_bytes=sign(manifest), trust_bytes=TRUST,
+            expected_active_token=active_token(before), operator_approved=True, idle=True,
+        )
+        # Synthetic health approval exercises the journal with inert payloads.
+        assert finish_or_recover(root, component=component, trust_bytes=TRUST, health_verified=True) == target
+        return target
+
+    def read_current(expected):
+        active = json.loads((root / "State" / component.value / "active.json").read_bytes())
+        assert active == expected
+        directory = root / active["directory"]
+        before = snapshot(directory)
+        guide_status, actions = read_guide(SimpleNamespace(
+            directory=directory, inventory_sha256=active["inventory_sha256"], version=active["version"],
+        ), component.value)
+        assert guide_status == "available"
+        assert [action["id"] for action in actions] == [
+            "organizer.collection.create", "organizer.collection.export", "organizer.image.remix",
+        ]
+        assert actions[0]["local_help"] == "README.md#organizer.collection.create"
+        assert b'id="organizer.collection.create"' in before["App/help/assistant/README.md"]
+        assert snapshot(directory) == before
+        guide = before["App/help/assistant/actions.json"]
+        assert json.loads(guide)["software_version"] == expected["version"]
+        return guide
+
+    prior = install(base_version, None)
+    original_guide = read_current(prior)
+    updated = install(next_version, prior)
+    assert read_current(updated) != original_guide
+    assert finish_or_recover(root, component=component, trust_bytes=TRUST, rollback_approved=True) == prior
+    assert read_current(prior) == original_guide
+    assert user_data.read_bytes() == b"synthetic saved state"
 
 
 @pytest.mark.parametrize('problem', ['platform', 'architecture', 'version', 'component', 'wrong_hash', 'extra',

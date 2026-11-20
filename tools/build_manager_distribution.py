@@ -14,6 +14,11 @@ import struct
 import subprocess
 import sys
 
+if __package__:
+    from .assistant_guides import guide_readme, load_catalog, render_guides
+else:
+    from assistant_guides import guide_readme, load_catalog, render_guides
+
 TEMPLATES = {'CollectiGenManager.spec', 'CollectiGen.spec',
              'sdk_binary_origin.py', 'windows_build_isolation.py', 'hooks/hook-core.py'}
 HERE = Path(__file__).resolve().parent / 'manager_build'
@@ -111,6 +116,13 @@ def write_new(path, raw):
     with path.open('xb') as stream:
         stream.write(raw)
     require(path.read_bytes() == raw, 'output_readback_failed')
+
+
+def write_assistant_guides(root, manifest):
+    for relative, content in render_guides(decode(manifest), load_catalog()).items():
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        write_new(path, content.encode('utf-8'))
 
 
 def validate_sources(stage, stage_sha256, manifest_raw, inventory_raw, *, component='manager'):
@@ -388,6 +400,14 @@ def verify_freeze(output, name, contents, config):
     folder = output / 'dist' / name
     exe = folder / (name + '.exe')
     pe_x64(read(exe))
+    discovery_declared = any(row['path'] == 'suite_core/manager/assistant_discovery.py'
+                             for row in config['source_rows'])
+    if name == 'CollectiGenManager' and discovery_declared:
+        cli = read(folder / 'CollectiGenAssist.exe')
+        pe_x64(cli)
+        offset = struct.unpack_from('<I', cli, 60)[0]
+        require(offset + 94 <= len(cli) and struct.unpack_from('<H', cli, offset + 92)[0] == 3,
+                'assistant_console_subsystem_required')
     report = decode(read(output / (name + '_ANALYSIS_CLOSURE.json')))
     require(report.get('status') == 'ANALYSIS_MODULE_BOUND_PASSED' and not report.get('missing_local_modules')
             and report.get('source_rows') == len(config['source_rows']), 'frozen_closure_not_proven')
@@ -664,6 +684,11 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
             'public_tool_profile_required')
     require(profile.get('msvc') == {'architecture': 'x64', 'minimum_version': '14.44.35211.0',
                                   'policy': 'existing-system-prerequisite'}, 'stock_msvc_policy_required')
+    mcp_adapter = None
+    if 'suite_core/manager/assistant_discovery.py' in sources:
+        mcp_adapter = pinned(HERE.parent / 'assistant_mcp.py', profile.get('assistant_mcp_sha256'))
+        require(digest(mcp_adapter) == decode(inventory_raw)['files'].get(
+            'tools/assistant_mcp.py', {}).get('sha256'), 'assistant_mcp_public_source_changed')
     renderer_raw = read(root_renderer)
     candidate_sources = candidate_render_inputs(candidate_admission, component='manager', sources=sources,
         software_version=receipt['software_version'], output=output,
@@ -749,6 +774,73 @@ def build_distribution(source_stage, output, *, stage_sha256, public_inventory, 
         child_config = decode(json_bytes(config))  # Retain its unbound wrapper expectation.
         if training_worker_root is not None:
             stage_training_worker(training_worker_root, training_worker_inventory_sha256, child.parent)
+        manager_manifest = decode(sources['suite_core/manager/MODULE_MANIFEST.json'])
+        manager_manifest.setdefault('module_id', 'collectigen.suite-manager')
+        require(manager_manifest['module_id'] == 'collectigen.suite-manager', 'manager_guide_identity')
+        write_assistant_guides(child.parent, json_bytes(manager_manifest))
+        readme = guide_readme(b'# CollectiGen Suite Manager')
+        if (child.parent / 'CollectiGenAssist.exe').is_file():
+            readme += (
+                b'\n## Read-only discovery\n\n'
+                b'Run `CollectiGenAssist.exe --manager-settings ABSOLUTE_SETTINGS_JSON '
+                b'--code-root ABSOLUTE_APPS_ROOT discover` from a terminal. '
+                b'The command works offline and returns one JSON object on stdout without opening Manager. '
+                b'Read `schema_version` before interpreting the result. This guide describes schema 1. '
+                b'Exit 0 means the settings snapshot was available. Check `components` for each module. '
+                b'Exit 1 returns JSON for unavailable or changed settings. Reopen Manager and copy a fresh recipe. '
+                b'Exit 2 means incorrect arguments. Read the usage message on stderr.\n\n'
+                b'For collection and training questions, run `explain-training-collection` in place of `discover`. '
+                b'Follow the reported next step. Use Suite Manager when a component or trainer needs setup. '
+                b'An unknown readiness result calls for the module\'s own preflight before running work.\n'
+            )
+        if mcp_adapter is not None:
+            write_new(child.parent / 'help/assistant/assistant_mcp.py', mcp_adapter)
+            readme += (
+                b'\n## Optional MCP connection\n\n'
+                b'Use an external Python environment with the official SDK `mcp==1.28.1`. '
+                b'Configure your harness to launch the [stdio adapter](help/assistant/assistant_mcp.py) '
+                b'with `--console`, `--manager-settings`, and `--code-root` set to explicit absolute paths. '
+                b'The adapter calls the same read-only console.\n\n'
+                b'Run `CollectiGenAssist.exe --manager-settings ABSOLUTE_SETTINGS_JSON '
+                b'--code-root ABSOLUTE_APPS_ROOT --mcp-python ABSOLUTE_PYTHON_EXE connection-info` '
+                b'to print the read-only check and copyable Codex and Hermes configurations. '
+                b'Use the Python environment with the SDK installed. Keep the output in your trusted local client setup. '
+                b'The command does not modify any client configuration.\n\n'
+                b'If the tools are absent, run the PowerShell discovery check first. '
+                b'If discovery succeeds, verify the selected Python environment has the SDK and the adapter path '
+                b'points to this Manager package. Wait for the host to list the CollectiGen tools before asking '
+                b'your first question. In Hermes, `hermes mcp test collectigen` checks the connection and lists the tools. '
+                b'To disconnect, disable or remove the `collectigen` MCP entry in the host and reopen its session. '
+                b'The CLI and offline guides remain available.\n\n'
+                b'### LM Studio as the model provider\n\n'
+                b'Set LM Studio as the model provider in your host client, separately from its CollectiGen MCP entry. '
+                b'An existing local server normally uses `http://127.0.0.1:1234/v1`. '
+                b'Checking `GET /v1/models` verifies server access without starting inference. '
+                b'With Just-in-Time loading enabled, this list can include downloaded models that are not loaded. '
+                b'Use [`lms ps`](https://lmstudio.ai/docs/cli/local-models/ps) to see the loaded model identifiers. '
+                b'For connection-only setup, stop after discovery and the server check. '
+                b'Before starting an intentional chat, select the exact loaded identifier and review '
+                b'[LM Studio model loading and eviction settings](https://lmstudio.ai/docs/developer/core/server/settings). '
+                b'Tool calling needs a separate live check. '
+                b'[Codex setup](https://lmstudio.ai/docs/integrations/codex) and '
+                b'[Hermes provider setup](https://hermes-agent.nousresearch.com/docs/integrations/providers).\n'
+                b'\n### Connect an existing vLLM server\n\n'
+                b'Keep the CollectiGen MCP entry. In your host client, select the server\'s API base URL ending '
+                b'in `/v1` and the exact served model ID. Use `GET /v1/models` to check visibility before a chat. '
+                b'Keep any token in the host provider settings or its credential store.\n\n'
+                b'- Codex CLI needs `/v1/responses`, including tool-call results. Select your custom '
+                b'`model_provider` and `model`. Set its `base_url` and `wire_api = "responses"`. '
+                b'For an authenticated server, set `env_key` to the name of the environment variable with the token. '
+                b'[Codex configuration](https://learn.chatgpt.com/docs/config-file/config-reference).\n'
+                b'- Hermes can use `/v1/chat/completions`. In `hermes model`, select Custom endpoint and '
+                b'enter the base URL, exact model ID and token if required. '
+                b'[Hermes vLLM setup](https://hermes-agent.nousresearch.com/docs/integrations/providers#vllm--high-performance-gpu-inference).\n\n'
+                b'Verify the exact server, model and client with a synthetic help question before relying on model help. '
+                b'The vLLM model and chat template must support the required tool calls. '
+                b'The model list confirms visibility only. If model help is unavailable, use the offline action guides or '
+                b'the discovery command. [vLLM tool calling](https://docs.vllm.ai/en/latest/features/tool_calling/).\n'
+            )
+        write_new(child.parent / 'README.md', readme)
         build_metadata = write_current_build_metadata(child.parent,
             software_version=receipt['software_version'], source_plan_sha256=stage_sha256,
             tool_profile=profile)
@@ -1225,7 +1317,8 @@ def build_workflow_distribution(source_stage, output, *, component, stage_sha256
         require(tree_inventory(payload) == tree_inventory(exe.parent), 'workflow_distribution_copy_changed')
         module = sources['suite_core/' + component + '/MODULE_MANIFEST.json']
         write_new(payload / 'MODULE_MANIFEST.json', module)
-        write_new(payload / 'README.md', readme)
+        write_assistant_guides(payload, module)
+        write_new(payload / 'README.md', guide_readme(readme))
         write_new(payload / 'WHATS_NEW.md', release_notes)
         runtime = dict(schema_version=1, component=component, feature_version=receipt['software_version'],
             os='windows', architecture='x86_64', inventory_excludes_itself='RUNTIME_MANIFEST.json',

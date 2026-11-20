@@ -90,12 +90,18 @@ def test_workflow_guide_is_sealed_and_inventoried_in_stock_package(inputs, tmp_p
     result = build.build_workflow_distribution(**args)
     payload=Path(result['payload'])
     original=(args['source_stage']/f'source/suite_core/{component}/README.md').read_bytes()
-    assert (payload/'README.md').read_bytes()==original
+    readme=(payload/'README.md').read_bytes()
+    assert readme.startswith(original.rstrip() + b'\n\n')
+    assistant_paths = {'help/assistant/actions.json', 'help/assistant/README.md'}
+    assert all(f']({path})'.encode() in readme for path in assistant_paths)
+    action_guide=json.loads((payload/'help/assistant/actions.json').read_bytes())
+    assert action_guide['component_id']=='collectigen.'+component
+    assert action_guide['software_version']==result['software_version']
     notes=(args['source_stage']/f'source/suite_core/{component}/WHATS_NEW.md').read_bytes()
     assert (payload/'WHATS_NEW.md').read_bytes()==notes
     runtime=json.loads((payload/'RUNTIME_MANIFEST.json').read_bytes())
     guide=next(row for row in runtime['files'] if row['path']=='README.md')
-    assert guide==dict(path='README.md',size_bytes=len(original),sha256=build.digest(original))
+    assert guide==dict(path='README.md',size_bytes=len(readme),sha256=build.digest(readme))
     assert calls==['tools-inspected-synthetically',component.title()]
     assert result['apps_launched'] is False and result['native_qualified'] is False
     archive=tmp_path/'package'
@@ -104,10 +110,14 @@ def test_workflow_guide_is_sealed_and_inventoried_in_stock_package(inputs, tmp_p
         artifact_name='synthetic.zip',supported_from='0.1.0-alpha.1',published_at='2026-11-17T00:00:00Z',
         release_notes='Synthetic package assembly; no application was run.')
     with zipfile.ZipFile(archive/'synthetic.zip') as z:
-        assert z.read('README.md')==original
+        assert z.read('README.md')==readme
         assert z.read('WHATS_NEW.md')==notes
         inventory=json.loads(z.read('BOOTSTRAP_INVENTORY.json'))
-        assert any(row['path']=='README.md' and row['sha256']==build.digest(original)
+        rows={row['path']: row for row in inventory['files']}
+        for path in assistant_paths:
+            assert z.read(path)==(payload/path).read_bytes()
+            assert rows[path]['sha256']==build.digest(z.read(path))
+        assert any(row['path']=='README.md' and row['sha256']==build.digest(readme)
                    for row in inventory['files'])
         assert any(row['path']=='WHATS_NEW.md' and row['sha256']==build.digest(notes)
                    for row in inventory['files'])

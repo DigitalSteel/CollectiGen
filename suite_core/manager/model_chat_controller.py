@@ -50,9 +50,23 @@ class ChatRequest:
 
 
 @dataclass(frozen=True)
+class ContextPreview:
+    target: ChatTarget
+    generation: int
+    serial: int
+    messages: tuple[ChatMessage, ...]
+
+
+@dataclass(frozen=True)
 class ChatEvent:
     text: str = ""
     done: bool = False
+
+
+class ChatProviderError(ValueError):
+    """A provider failure carrying a reviewed, public recovery message."""
+
+    public_message = "Chat failed. Check the selected backend, then retry."
 
 
 def ollama_event(value):
@@ -134,6 +148,8 @@ class ModelChatController:
     def _ready_status(self):
         if self.target is None:
             return "Choose a ready configured model."
+        if self.target.ready and self.target.backend_id == "vllm":
+            return "Review your question and the local help before sending to vLLM."
         return "Ready. Chat stays in this panel only." if self.target.ready else self.target.unavailable_reason
 
     def new_chat(self):
@@ -147,24 +163,47 @@ class ModelChatController:
             self._events.clear()
         self.status = "Stopping the previous request…" if self.busy else self._ready_status()
 
-    def send(self, text):
+    def preview_context(self, question, context):
+        """Return the exact messages for a single reviewed contextual request."""
         self._guard()
         if not self.can_send:
             raise ValueError("Choose a ready model and wait for the previous request to finish.")
+        if not isinstance(context, str) or not context:
+            raise ValueError("Select contextual help before creating a preview.")
+        self._validate_input(question)
+        if len(context.encode("utf-8")) + len(question.encode("utf-8")) > self.max_context_bytes:
+            raise ValueError("Context and question exceed the request limit.")
+        return ContextPreview(self.target, self._generation, self._serial, (
+            ChatMessage("system", context), ChatMessage("user", question),
+        ))
+
+    def _validate_input(self, text):
         if type(text) is not str or not text.strip():
             raise ValueError("Enter a message.")
         if len(text.encode("utf-8")) > self.max_input_bytes:
             raise ValueError(f"Message exceeds the {self.max_input_bytes}-byte limit.")
+
+    def send(self, text, *, preview=None):
+        self._guard()
+        if not self.can_send:
+            raise ValueError("Choose a ready model and wait for the previous request to finish.")
+        self._validate_input(text)
         request_messages = [ChatMessage("user", text)]
         remaining = self.max_context_bytes - len(text.encode("utf-8"))
         included = 0
-        for pair in reversed(self._history):
-            size = sum(len(m.text.encode("utf-8")) for m in pair)
-            if included >= self.max_turns - 1 or size > remaining:
-                break
-            request_messages[0:0] = pair
-            remaining -= size
-            included += 1
+        if preview is not None:
+            if (type(preview) is not ContextPreview or len(preview.messages) != 2
+                    or preview != self.preview_context(text, preview.messages[0].text)):
+                raise ValueError("Create a new preview for the current question and model.")
+            request_messages = list(preview.messages)
+        else:
+            for pair in reversed(self._history):
+                size = sum(len(m.text.encode("utf-8")) for m in pair)
+                if included >= self.max_turns - 1 or size > remaining:
+                    break
+                request_messages[0:0] = pair
+                remaining -= size
+                included += 1
         self.context_omitted_turns = len(self._history) - included
         self._serial += 1
         request = ChatRequest(self._serial, self.target, tuple(request_messages), self.output_tokens)
@@ -215,6 +254,8 @@ class ModelChatController:
             if not done:
                 return ("error", "Connection ended before completion. Retry when the backend is ready.")
             return ("complete", "".join(chunks))
+        except ChatProviderError as error:
+            return ("cancelled", "") if cancel.is_set() else ("error", error.public_message)
         except Exception:
             return ("cancelled", "") if cancel.is_set() else ("error", "Chat failed. Check the selected backend, then retry.")
         finally:

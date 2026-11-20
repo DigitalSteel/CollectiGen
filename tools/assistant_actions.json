@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "components": {
+    "collectigen.suite-manager": {
+      "name": "Suite Manager",
+      "actions": [
+        {
+          "id": "manager.component.setup",
+          "title": "Set up an application",
+          "summary": "Open Applications and select the exact component.",
+          "prerequisites": "A compatible trusted package and explicit approval for installation or update.",
+          "inputs": [
+            "component_id"
+          ],
+          "outputs": [
+            "component installation status"
+          ],
+          "effects": "Setup changes installed software only after review.",
+          "confirmation": "Approve the exact application, version and install or update in Suite Manager.",
+          "example": {"request": "Set up the example Train application.", "result": "Manager shows the selected component and version for approval."},
+          "recovery": "Keep the original workflow available. Use Manager retry, repair or rollback as offered.",
+          "invocation": "application_ui",
+          "support_status": "qualification_pending"
+        }
+      ]
+    },
+    "collectigen.media-organizer": {
+      "name": "Media Organizer",
+      "actions": [
+        {
+          "id": "organizer.collection.create",
+          "title": "Create a training collection",
+          "summary": "In Dataset, choose Manage Collections and create a named collection. Add images separately when ready.",
+          "prerequisites": "A writable Organizer library. Creating and filling a collection does not require Train.",
+          "inputs": ["collection name"],
+          "outputs": ["saved collection with no members"],
+          "effects": "Saving creates a collection record. It does not add images, export a package or start training.",
+          "confirmation": "Save the named collection, then explicitly choose any images to add in Dataset.",
+          "example": {"request": "Create a collection named Example Landscapes.", "result": "Organizer saves Example Landscapes and shows zero images until members are added."},
+          "recovery": "Reopen Manage Collections and select the saved collection before adding members or preparing an export.",
+          "invocation": "application_ui",
+          "support_status": "qualification_pending"
+        },
+        {
+          "id": "organizer.collection.export",
+          "title": "Export a training collection",
+          "summary": "Open Dataset, review the selected collection version, and choose export.",
+          "prerequisites": "A reviewed collection and writable user-selected destination.",
+          "inputs": [
+            "collection version",
+            "destination"
+          ],
+          "outputs": [
+            "exported draft or package receipt"
+          ],
+          "effects": "Export writes a separate artifact after review. The source collection stays available.",
+          "confirmation": "Approve the selected collection version and destination before exporting.",
+          "example": {"request": "Export version 2 of Example Landscapes for training.", "result": "Organizer records an export receipt for version 2 and keeps the source collection."},
+          "recovery": "Review changed collection evidence, destination conflicts or missing files and retry only the failed step.",
+          "invocation": "application_ui",
+          "support_status": "qualification_pending"
+        },
+        {
+          "id": "organizer.image.remix",
+          "title": "Remix an image",
+          "summary": "Select an eligible image and choose Remix This Image.",
+          "prerequisites": "An unchanged source and a compatible Generate installation for the handoff.",
+          "inputs": [
+            "selected image identity"
+          ],
+          "outputs": [
+            "reviewable Generate draft"
+          ],
+          "effects": "Opening a draft carries the source into Generate. Submission is a separate decision.",
+          "confirmation": "Review the selected source at handoff and approve any generation separately.",
+          "example": {"request": "Remix the selected sample landscape.", "result": "Generate opens a reviewable draft with the sample landscape as its source."},
+          "recovery": "If Generate is missing, review setup in Manager. Reconnect the exact image after restart or select a changed source explicitly.",
+          "invocation": "application_ui",
+          "support_status": "qualification_pending"
+        }
+      ]
+    },
+    "collectigen.tag-encyclopedia": {
+      "name": "Tag Encyclopedia",
+      "actions": [
+        {
+          "id": "encyclopedia.tag.lookup",
+          "title": "Look up a reference tag",
+          "summary": "Search the available reference content and inspect the full category path.",
+          "prerequisites": "Tag Encyclopedia and the relevant optional reference content.",
+          "inputs": [
+            "search query"
+          ],
+          "outputs": [
+            "reference tag and category"
+          ],
+          "effects": "Lookup is read-only. Corrections to image knowledge are reviewed in Organizer.",
+          "confirmation": "Lookup needs no write approval. Approve any proposed image knowledge correction in Organizer.",
+          "example": {"request": "Find the category path for the example landscape tag.", "result": "Encyclopedia displays the matching tag and its category for review."},
+          "recovery": "Use Manager for missing content, or return to the previous search or Organizer selection.",
+          "invocation": "application_ui",
+          "support_status": "qualification_pending"
+        }
+      ]
+    },
+    "collectigen.generate": {
+      "name": "Generate",
+      "actions": [
+        {
+          "id": "generate.image.remix",
+          "title": "Review and submit an image remix",
+          "summary": "Review the source, engine, settings and required models before generating.",
+          "prerequisites": "Compatible resources and an admitted runtime for the exact recipe.",
+          "inputs": [
+            "reviewed source",
+            "recipe"
+          ],
+          "outputs": [
+            "saved draft",
+            "generation result with lineage"
+          ],
+          "effects": "Save the draft separately. Submitting runs a job after user confirmation and result intake is reviewed in Organizer.",
+          "confirmation": "Approve the reviewed recipe before submission and review result intake separately.",
+          "example": {"request": "Review a remix of the sample landscape with the example recipe.", "result": "Generate shows the draft, recipe and resource requirements before submission."},
+          "recovery": "Preserve the draft on failure and check the existing job status before retrying an uncertain submission.",
+          "invocation": "application_ui",
+          "support_status": "qualification_pending"
+        }
+      ]
+    },
+    "collectigen.train": {
+      "name": "Train",
+      "actions": [
+        {
+          "id": "train.package.review",
+          "title": "Review a training package",
+          "summary": "Open the selected package and review its dataset, method and resources.",
+          "prerequisites": "An admitted package and compatible resources for the requested method.",
+          "inputs": [
+            "exported package or draft"
+          ],
+          "outputs": [
+            "review or recoverable preparation"
+          ],
+          "effects": "Package review precedes a separate user decision to prepare or start training.",
+          "confirmation": "Review the package first and approve preparation or run start at its explicit decision.",
+          "example": {"request": "Review the Example Landscapes training package.", "result": "Train shows the dataset, intended method and missing resources before preparation."},
+          "recovery": "Review incompatibilities or reopen the exact saved preparation after interruption.",
+          "invocation": "application_ui",
+          "support_status": "qualification_pending"
+        }
+      ]
+    }
+  }
+}

@@ -11,7 +11,7 @@ from tools import build_manager_distribution as build
 from tools.prepare_manager_production_stage import root_entry, prepare_public_stage
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUIRED = ['core/manager_launch_owner.py', 'suite_core/manager/bootstrap_entry.py',
+REQUIRED = ['core/manager_launch_owner.py', 'suite_core/manager/assistant_discovery.py', 'suite_core/manager/bootstrap_entry.py',
             'suite_core/manager/entry_binding.py', 'suite_core/manager/frozen_entry.py',
             'suite_core/manager/launcher_main.py']
 
@@ -38,6 +38,10 @@ def inputs(tmp_path, monkeypatch):
     inventory = {'schema_version': 1, 'manifest_excludes_self': True,
                  'files': {name: {'size_bytes': len(raw), 'sha256': build.digest(raw)}
                            for name, raw in files.items()}}
+    adapter = (ROOT / 'tools/assistant_mcp.py').read_bytes()
+    inventory['files']['tools/assistant_mcp.py'] = {
+        'size_bytes': len(adapter), 'sha256': build.digest(adapter),
+    }
     save(source / 'public-source.json', inventory)
     manifest = tmp_path / 'subset.json'
     save(manifest, {'schema': 1, 'source_rows': [row(n, r) for n, r in files.items()]})
@@ -92,6 +96,10 @@ def fake_freeze(monkeypatch, calls, *, failure=False, drift=False, missing=False
         struct.pack_into('<H', raw, 132, 0x8664)
         struct.pack_into('<H', raw, 152, 0x20b)
         (folder / (name + '.exe')).write_bytes(raw)
+        if name == 'CollectiGenManager':
+            console = bytearray(raw)
+            struct.pack_into('<H', console, 128 + 92, 3)
+            (folder / 'CollectiGenAssist.exe').write_bytes(console)
         for r in config['source_rows']:
             target = folder / contents / r['path']
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -132,6 +140,32 @@ def test_two_pass_pin_propagation_layout_and_no_application_launch(inputs, monke
     assert result['status'] == 'BUILD_ONLY_NOT_EXECUTED'
     assert result['apps_launched'] is False and result['signed'] is False and result['native_qualified'] is False
     assert not (suite / 'Data').exists()
+    manager = suite / 'Apps/Manager/current'
+    guide = build.decode((manager / 'help/assistant/actions.json').read_bytes())
+    assert guide['component_id'] == 'collectigen.suite-manager'
+    assert guide['software_version'] == '0.3.1-alpha.1'
+    assert len(guide['suite_index']) == 5
+    assert (manager / 'CollectiGenAssist.exe').is_file()
+    assert b'CollectiGenAssist.exe --manager-settings' in (manager / 'README.md').read_bytes()
+    adapter = manager / 'help/assistant/assistant_mcp.py'
+    assert adapter.read_bytes() == (ROOT / 'tools/assistant_mcp.py').read_bytes()
+    assert b'](help/assistant/assistant_mcp.py)' in (manager / 'README.md').read_bytes()
+    assert b'--mcp-python ABSOLUTE_PYTHON_EXE connection-info' in (manager / 'README.md').read_bytes()
+    assert b'GET /v1/models' in (manager / 'README.md').read_bytes()
+    readme = (manager / 'README.md').read_text(encoding='utf-8')
+    assert all(fragment in readme for fragment in (
+        'works offline and returns one JSON object on stdout', '`schema_version`',
+        'Exit 0', 'Exit 1', 'Exit 2', 'stderr', '`explain-training-collection`',
+        '`hermes mcp test collectigen`', 'disable or remove the `collectigen` MCP entry',
+        'this list can include downloaded models that are not loaded', '`lms ps`',
+        'For connection-only setup, stop after discovery and the server check.',
+        'select the exact loaded identifier',
+        '### Connect an existing vLLM server', 'exact served model ID',
+        '`/v1/responses`', '`wire_api = "responses"`', '`env_key`',
+        '`/v1/chat/completions`', 'the offline action guides',
+    ))
+    assert not (manager / '_internal/mcp').exists()
+    assert b'](help/assistant/actions.json)' in (manager / 'README.md').read_bytes()
 
 
 @pytest.mark.parametrize('missing', ['suite_core', 'suite_core.manager', 'suite_core.manager.frozen_entry'])

@@ -1,3 +1,9 @@
+# Suite Manager a.0.9.0 — 2026-11-20
+
+- Connect an external assistant from Settings → Shared software. Copy a read-only PowerShell check or a connection recipe for Codex or Hermes.
+- Discover installed CollectiGen apps and look up their workflow guides through the new CLI or MCP connection.
+- Review the help context before sending a question to a selected vLLM server. Offline guides remain available.
+
 # Suite Manager a.0.8.2 — 2026-11-20
 
 - Fixed a startup crash in the updated Manager that could leave the launcher waiting behind an error window.

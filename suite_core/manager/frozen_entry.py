@@ -108,5 +108,15 @@ def run(argv=None, *, executable=None, channel_factory=None,
         raise
 
 
+def main():
+    import sys
+    from pathlib import Path
+
+    if getattr(sys, 'frozen', False) and Path(sys.executable).name.casefold() == 'collectigenassist.exe':
+        from suite_core.manager.assistant_discovery import main as discovery
+        return discovery()
+    return run()
+
+
 if __name__ == '__main__':
-    raise SystemExit(run())
+    raise SystemExit(main())
