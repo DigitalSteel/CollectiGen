@@ -80,8 +80,8 @@
     "version": "1.2.161"
   },
   "templates": {
-    "CollectiGen.spec": "27a08252243425446bd5e4e09db69aeb957ed469b1de11311a26365c6d3e3899",
-    "CollectiGenManager.spec": "af458cc14b17e919e5f58194deb6971cf6580fbe6a7ac140cc64282177fdee23",
+    "CollectiGen.spec": "0361165bffa274a5f99dc5d75748fd9991cbb103f40f97d8ff5f53007ac35a3a",
+    "CollectiGenManager.spec": "cca3007820c4e96a38dcd3353948ee9fa80c034d35fabc7d2d98ab784cebefb0",
     "sdk_binary_origin.py": "84fc3756721a339dbee1e515b0179fcee6bea8212fb6472946578c9806cf8d1e",
     "windows_build_isolation.py": "8b6aa2dbb6901c8590b04ba9e039cf597b122061b5c708d5315074e9983b2d95",
     "hooks/hook-core.py": "00013af22a3b0adac8a26d73c971843885de70ea5b750d180d0a105e16b1546f"

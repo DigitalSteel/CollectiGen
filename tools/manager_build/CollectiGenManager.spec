@@ -71,5 +71,5 @@ a.binaries=[row for row in a.binaries if Path(row[0]).name.lower() not in exclud
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name=product_name,
     debug=False, bootloader_ignore_signals=False, strip=False, upx=False,
-    console=False, disable_windowed_traceback=True, contents_directory='_internal')
+    icon=str(source/'suite_core/manager/assets/collectigen.ico') if component == 'manager' else None, console=False, disable_windowed_traceback=True, contents_directory='_internal')
 bundle = COLLECT(exe,a.binaries,a.datas,strip=False,upx=False,name=product_name)
