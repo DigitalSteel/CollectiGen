@@ -1008,8 +1008,8 @@
     },
     {
       "path": "core/manager_stock_hook_provider.py",
-      "bytes": 44601,
-      "sha256": "4aab8c794585e4770d134c7c5b97dfaa746ddc2ce2550a70e237fce559a8e7eb"
+      "bytes": 44963,
+      "sha256": "881a0c7578bf5bac089eca5350e182f95e84a906dc720d41e01260a160d53e16"
     },
     {
       "path": "core/manager_successor_admission.py",

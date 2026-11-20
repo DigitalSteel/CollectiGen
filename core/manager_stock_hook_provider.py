@@ -595,7 +595,14 @@ class WindowsStockHookProvider:
                 settle_resources=self.settle_terminal_resources)
         except BaseException as error:
             process = self.owner.children['replacement']
-            if launch.state != 'update_target_health_pending' or process.poll() is None: raise
+            if launch.state != 'update_target_health_pending':
+                raise
+            if process.poll() is None:
+                if type(error) is not LaunchHold or str(error) != 'control_channel_eof_or_unavailable':
+                    raise
+                # The channel can disconnect before Windows signals process exit.
+                # Use the original handle before admitting any recovery action.
+                process.wait(timeout=30)
             launch.error = error
             launch.update_target_failed()
             return launch

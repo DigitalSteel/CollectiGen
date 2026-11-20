@@ -89,3 +89,33 @@ def test_readiness_keeps_waiting_for_the_original_reply_after_thirty_seconds(mon
     assert session.state == "ready"
     assert sends == ["ready"]
     assert waits == [30, 30]
+
+
+def test_disconnect_before_process_exit_can_enter_repair():
+    from core.manager_stock_hook_provider import WindowsStockHookProvider
+
+    exited = False
+    eof = LaunchHold("control_channel_eof_or_unavailable")
+
+    def disconnect():
+        raise eof
+
+    def wait(*, timeout):
+        nonlocal exited
+        assert timeout == 30
+        exited = True
+        return 1
+
+    def prepare_repair():
+        assert exited
+        launch.state = "update_repair_available"
+
+    replacement = SimpleNamespace(poll=lambda: 1 if exited else None, wait=wait)
+    provider = WindowsStockHookProvider.__new__(WindowsStockHookProvider)
+    provider.owner = SimpleNamespace(children={"replacement": replacement})
+    provider.successor_route = SimpleNamespace(state="offered", handle_next=disconnect)
+    launch = SimpleNamespace(state="update_target_health_pending", update_target_failed=prepare_repair)
+
+    assert provider.supervise_successor(launch) is launch
+    assert launch.error is eof
+    assert launch.state == "update_repair_available"
