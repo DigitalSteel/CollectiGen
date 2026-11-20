@@ -484,7 +484,6 @@ class CompiledManagerUpdateProfile:
                         and provider.state == 'successor_start_record_held'):
                     return launcher  # Original Root presents an explicit same-actor retry.
                 raise
-            launcher.update_handoff_status = None
             return provider.supervise_successor(launcher)
 
         launcher.pending_stock_continuation = finish_original_update

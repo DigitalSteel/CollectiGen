@@ -15,6 +15,7 @@ MAX_FRAME = 65536
 COMPONENT_STAGE_REPLY_TIMEOUT = 30
 MANAGER_UPDATE_REPLY_TIMEOUT = 30
 INITIAL_OFFER_TIMEOUT = 30
+READINESS_REPLY_TIMEOUT = 180
 ORGANIZER_HELPER_REPLY_TIMEOUT = 120
 FAST_HOOKS = frozenset({'--veloapp-install', '--veloapp-updated',
                         '--veloapp-obsolete', '--veloapp-uninstall'})
@@ -583,8 +584,9 @@ class NormalEntrySession:
             self.component_stage_outstanding=dict(kind=kind,payload=payload,send_entered=False,
                 deadline=time.monotonic()+COMPONENT_STAGE_REPLY_TIMEOUT,reply=None)
         if reply_timeout is not None:
+            limit = READINESS_REPLY_TIMEOUT if kind == 'ready' else 30
             require(type(reply_timeout) in {int,float} and math.isfinite(reply_timeout)
-                    and 0<reply_timeout<=30,'bounded_entry_reply_deadline_required')
+                    and 0<reply_timeout<=limit,'bounded_entry_reply_deadline_required')
             require(getattr(self,outstanding_slot,None) is None,'original_'+outstanding_kind+'_reply_required')
             setattr(self,outstanding_slot,dict(kind=kind,payload=payload,send_entered=False,
                 deadline=time.monotonic()+reply_timeout,reply=None))
@@ -601,7 +603,7 @@ class NormalEntrySession:
                         remaining=outstanding['deadline']-time.monotonic()
                         require(remaining>0,'entry_component_stage_reply_deadline' if stage_request
                                 else 'entry_'+outstanding_kind+'_reply_deadline')
-                        frame=self.wire.receive(timeout=remaining)
+                        frame=self.wire.receive(timeout=min(30, remaining))
                     break
                 except BaseException as error:
                     idle=((reply_timeout is not None or stage_request) and type(error) is _native().LaunchHold
@@ -618,7 +620,7 @@ class NormalEntrySession:
             self.state, self.error = 'held', error
             raise
 
-    def ready(self, *, timeout=30):
+    def ready(self, *, timeout=READINESS_REPLY_TIMEOUT):
         with self.wire.lock:
             require(self.state == 'offered', 'entry_readiness_phase')
             frame = self._exchange('ready', {'native_entry': self.wire.channel.local_witness(),

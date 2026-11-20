@@ -56,3 +56,36 @@ def test_launcher_delivers_install_error(qapp, tmp_path):
     with pytest.raises(LaunchHold, match="failure during apply"):
         launch._run_update_handoff()
     assert launch.update_worker.closed
+
+
+def test_readiness_keeps_waiting_for_the_original_reply_after_thirty_seconds(monkeypatch):
+    from threading import RLock
+    from suite_core.manager import bootstrap_entry
+
+    clock = iter((0, 1, 40))
+    monkeypatch.setattr(bootstrap_entry, "time", SimpleNamespace(monotonic=lambda: next(clock)))
+    replies = iter((None, {"kind": "ready", "payload": {"accepted": True}}))
+    sends = []
+    waits = []
+
+    def receive(*, timeout):
+        waits.append(timeout)
+        reply = next(replies)
+        if reply is None:
+            raise LaunchHold("control_channel_idle_timeout")
+        return reply
+
+    session = bootstrap_entry.NormalEntrySession.__new__(bootstrap_entry.NormalEntrySession)
+    session.wire = SimpleNamespace(lock=RLock(), receive=receive,
+        send=lambda kind, payload: sends.append(kind), received_pending=None,
+        channel=SimpleNamespace(local_witness=lambda: {}, read_fault=None))
+    session._peer = lambda: None
+    session.state = "offered"
+    session.scope = {}
+    session.helper_outstanding = None
+
+    session.ready()
+
+    assert session.state == "ready"
+    assert sends == ["ready"]
+    assert waits == [30, 30]

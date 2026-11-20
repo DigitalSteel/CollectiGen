@@ -1008,8 +1008,8 @@
     },
     {
       "path": "core/manager_stock_hook_provider.py",
-      "bytes": 44427,
-      "sha256": "368986712c2217b4097134790377ac780ad2fc01336b27a20d73e866f76e65fd"
+      "bytes": 44601,
+      "sha256": "4aab8c794585e4770d134c7c5b97dfaa746ddc2ce2550a70e237fce559a8e7eb"
     },
     {
       "path": "core/manager_successor_admission.py",
@@ -1023,8 +1023,8 @@
     },
     {
       "path": "core/manager_update_host.py",
-      "bytes": 31398,
-      "sha256": "f061e63fe0169f86fd511c51819a819f17e43aff49ee11a43fcaf9f82f91955b"
+      "bytes": 31348,
+      "sha256": "986fe4d6c46358089776208a77a7ff98ee49cf9b41fe2239875efb1b38112617"
     },
     {
       "path": "core/manager_update_service.py",
@@ -3418,8 +3418,8 @@
     },
     {
       "path": "suite_core/manager/bootstrap_entry.py",
-      "bytes": 110159,
-      "sha256": "b0b7a3916cbf824a226b31eed7a49bc67bd9c61da305366df881f79e2b15d3ea"
+      "bytes": 110293,
+      "sha256": "884255601c0caf2ff24b5484048b7e8541442d566e684033787d99c73819717d"
     },
     {
       "path": "suite_core/manager/candidate_inventory.py",

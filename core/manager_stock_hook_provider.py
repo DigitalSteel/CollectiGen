@@ -586,7 +586,10 @@ class WindowsStockHookProvider:
     def supervise_successor(self, launch):
         """Original readiness, normal closure and failed-start repair handoff."""
         try:
-            while self.successor_route.state != 'local_accepted': self.successor_route.handle_next()
+            while self.successor_route.state != 'local_accepted':
+                self.successor_route.handle_next()
+                if self.successor_route.state == 'ready' and launch.state == 'update_target_healthy':
+                    launch.update_handoff_status = None
             self.finish_successor_close()
             return launch.retire_update(verify_terminal=self.verify_terminal,
                 settle_resources=self.settle_terminal_resources)
