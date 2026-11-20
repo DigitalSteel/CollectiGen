@@ -670,7 +670,6 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                 self.manager_update_panel = ManagerUpdateReviewPanel(manager_update_service, settings_body,
                     normal_entry_session=normal_entry_session)
                 self.manager_update_panel.close_for_apply.connect(self.close)
-                settings_layout.addWidget(self.manager_update_panel)
             settings_layout.addStretch(1)
             settings_scroll = QScrollArea(); settings_scroll.setWidgetResizable(True); settings_scroll.setFrameShape(QFrame.NoFrame)
             settings_scroll.setWidget(settings_body)
@@ -682,6 +681,13 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             self.settings_tabs.addTab(settings_scroll, "General")
             self.settings_tabs.addTab(shared_software_scroll, "Shared software")
             self.settings_tabs.addTab(self.ollama_workspace, "Ollama")
+            self.manager_updates_page = None
+            if self.manager_update_panel is not None:
+                self.manager_updates_page = QWidget()
+                updates_layout = workspace_layout(self.manager_updates_page)
+                updates_layout.addWidget(self.manager_update_panel)
+                updates_layout.addStretch()
+                self.settings_tabs.addTab(self.manager_updates_page, "Updates")
             settings_outer.addWidget(self.settings_tabs)
             dependencies_page = QWidget(); dependencies_layout = workspace_layout(dependencies_page)
             from .dependency_status_ui import DependencyStatusPanel
@@ -2190,16 +2196,27 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
             })
             return panels
 
+        def open_manager_updates(self, *, check=False):
+            panel = self.manager_update_panel
+            if panel is None or self.view.synthetic or self.close_policy.pending:
+                return
+            self.navigation.setCurrentRow(self.page_rows["Settings"])
+            self.settings_tabs.setCurrentWidget(self.manager_updates_page)
+            if check:
+                panel.request("discover")
+            elif panel.stage.isVisible():
+                panel.stage.setFocus()
+
         def review_dashboard_update(self, component_id):
+            if component_id == "check-manager-updates":
+                self.open_manager_updates(check=True)
+                return
             _name, panel = self.dashboard_update_panels().get(component_id, ("", None))
             offer = panel.offer if panel is not None else None
             if self.view.synthetic or offer is None or offer.current_version is None or self.close_policy.pending:
                 return
             if panel is self.manager_update_panel:
-                self.navigation.setCurrentRow(self.page_rows["Settings"])
-                self.settings_tabs.setCurrentIndex(0)
-                self.settings_tabs.currentWidget().ensureWidgetVisible(panel)
-                panel.stage.setFocus()
+                self.open_manager_updates()
                 return
             self.navigation.setCurrentRow(self.page_rows["Applications"])
             if component_id in self.workflow_applications.panels:
@@ -2253,9 +2270,11 @@ def create_window(view, *, theme="system", color_blind_mode=False, candidate_ins
                     version = escape(offer.release.software_version)
                     notices.append(f'<a href="{component_id}" style="color:{link_color}">'
                                    f'Review {name} {version} update</a>')
-            text = "<br>".join(notices) if notices else (
-                "No update notices. Check app releases in Applications or Manager updates in Settings."
-            )
+            if (not self.view.synthetic and self.manager_update_panel is not None
+                    and self.manager_update_panel.offer is None):
+                notices.append(f'<a href="check-manager-updates" style="color:{link_color}">'
+                               'Check for Manager updates</a>')
+            text = "<br>".join(notices) if notices else "No update notices. Check app releases in Applications."
             if self.dashboard.notifications.text() != text:
                 self.dashboard.notifications.setText(text)
             self.dashboard.notifications.setFocusPolicy(Qt.StrongFocus if notices else Qt.NoFocus)

@@ -3718,8 +3718,8 @@
     },
     {
       "path": "suite_core/manager/update_review_ui.py",
-      "bytes": 15135,
-      "sha256": "c18efc1ecbf16d2d54cedce9ca2a3aa77987af03461428609ff2cd57d6bc8aff"
+      "bytes": 18110,
+      "sha256": "9fc1f1af21aae512d1a0a03d366d4bdbfe34e3ced14506b94887de78d8e487cf"
     },
     {
       "path": "suite_core/manager/version.py",
@@ -3728,8 +3728,8 @@
     },
     {
       "path": "suite_core/manager/window.py",
-      "bytes": 229691,
-      "sha256": "878c1a37496ee83aa3e0597edb8e79a0fe735c1c46bd8dc93459b0d4c58b8a02"
+      "bytes": 230717,
+      "sha256": "b3ea3a886727a22cd034123c1dfe8cc117fdc81999bb34027add25c9c7fef876"
     },
     {
       "path": "suite_core/manager/workflow_acquisition_binding.py",
