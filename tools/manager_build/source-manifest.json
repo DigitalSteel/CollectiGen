@@ -3378,8 +3378,8 @@
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
-      "bytes": 249,
-      "sha256": "da9490a0d702cca15fd9a4bfc374902b6c3bcb2f241b06d70914073890a206f6"
+      "bytes": 246,
+      "sha256": "b7279cb1fec7f02eea17b79c9cf6c5bb597ce0aea3da4299c057f6114463e2f2"
     },
     {
       "path": "suite_core/manager/__init__.py",
@@ -3734,7 +3734,7 @@
     {
       "path": "suite_core/manager/version.py",
       "bytes": 274,
-      "sha256": "f1b41912d8c2f31ae612608ad49de659540ce8e80695c551c6927f9dd7b13262"
+      "sha256": "d53100cb2aa3c72003effdedb7d809415c73e06087529548a1403eb466c88f21"
     },
     {
       "path": "suite_core/manager/vllm_chat.py",
