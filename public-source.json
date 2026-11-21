@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 360,
+  "allowlisted_source_file_count": 361,
   "component_ids": [
     "collectigen.suite-manager",
     "collectigen.tag-encyclopedia"
@@ -9,6 +9,10 @@
     ".gitattributes": {
       "sha256": "1e526da65ea698659a32c0aaa944ba0ffae748dfe1ab2bdfdd054ec40c8a8757",
       "size_bytes": 61
+    },
+    ".github/workflows/ci.yml": {
+      "sha256": "e3d4974ccdaa0e5eec2aa810d92257e13c80408eaf785738d5186386d8f7f331",
+      "size_bytes": 902
     },
     "AGENTS.md": {
       "sha256": "788e0f5ae02370b751b1ae6fa5de12836057af2d73d2b560c6b7e50509370259",
