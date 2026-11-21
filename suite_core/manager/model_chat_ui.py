@@ -211,7 +211,7 @@ class ModelChatPanel(QDialog):
                 context, question_message = preview.messages
                 text = f"CollectiGen context\n{context.text}\n\nYour question\n{question_message.text}"
                 subject = f"Review request to {self.review_endpoint}\nModel: {preview.target.model}"
-                if not self._show_text(subject, text, send=True):
+                if not _show_help_text(self, subject, text, send=True):
                     return
             self.controller.send(question, preview=preview)
         except Exception as error:
@@ -234,35 +234,8 @@ class ModelChatPanel(QDialog):
 
     def _show_local_help(self):
         from .assistant_context import help_for_question
-        self._show_text("Local CollectiGen help", help_for_question(
+        _show_help_text(self, "Local CollectiGen help", help_for_question(
             self.public_context, self.prompt.toPlainText()))
-
-    def _show_text(self, title, text, *, send=False):
-        dialog = QDialog(self)
-        dialog.setWindowTitle(title.splitlines()[0])
-        dialog.resize(640, 480)
-        layout = QVBoxLayout(dialog)
-        label = QLabel(title)
-        label.setTextFormat(Qt.TextFormat.PlainText)
-        label.setWordWrap(True)
-        layout.addWidget(label)
-        preview = QPlainTextEdit(text)
-        preview.setAccessibleName("Request messages" if send else "Local workflow help")
-        preview.setReadOnly(True)
-        layout.addWidget(preview)
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-            if send else QDialogButtonBox.StandardButton.Close
-        )
-        if send:
-            buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Send to vLLM")
-            buttons.button(QDialogButtonBox.StandardButton.Cancel).setDefault(True)
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        layout.addWidget(buttons)
-        if send:
-            buttons.button(QDialogButtonBox.StandardButton.Cancel).setFocus()
-        return dialog.exec() == QDialog.DialogCode.Accepted
 
     def _stop(self):
         self.controller.stop()
@@ -314,11 +287,41 @@ class ModelChatPanel(QDialog):
         self.close()
 
 
+def _show_help_text(parent, title, text, *, send=False):
+    dialog = QDialog(parent)
+    dialog.setWindowTitle(title.splitlines()[0])
+    dialog.resize(640, 480)
+    layout = QVBoxLayout(dialog)
+    label = QLabel(title)
+    label.setTextFormat(Qt.TextFormat.PlainText)
+    label.setWordWrap(True)
+    layout.addWidget(label)
+    preview = QPlainTextEdit(text)
+    preview.setAccessibleName("Request messages" if send else "Local workflow help")
+    preview.setReadOnly(True)
+    layout.addWidget(preview)
+    buttons = QDialogButtonBox(
+        QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        if send else QDialogButtonBox.StandardButton.Close
+    )
+    if send:
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Send to vLLM")
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setDefault(True)
+    buttons.accepted.connect(dialog.accept)
+    buttons.rejected.connect(dialog.reject)
+    layout.addWidget(buttons)
+    if send:
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setFocus()
+    return dialog.exec() == QDialog.DialogCode.Accepted
+
 def review_vllm_connection(parent):
+    from .assistant_context import help_for_question
+
     dialog = QDialog(parent)
     dialog.setWindowTitle("Connect to vLLM for CollectiGen help")
     layout = QVBoxLayout(dialog)
-    note = QLabel("Choose an existing server and model. Opening help checks the model list. Review each question before sending it.")
+    note = QLabel("Read the bundled help offline, or choose an existing server and model to ask a question. "
+                  "Review each question before sending it.")
     note.setWordWrap(True)
     layout.addWidget(note)
     form = QFormLayout()
@@ -334,6 +337,16 @@ def review_vllm_connection(parent):
     open_help = buttons.button(QDialogButtonBox.StandardButton.Ok)
     open_help.setText("Open contextual help")
     open_help.setEnabled(False)
+    local_help = buttons.addButton("View local help…", QDialogButtonBox.ButtonRole.ActionRole)
+
+    def show_local_help():
+        introduction = "Create and export collections in Media Organizer. Use Generate for image remix."
+        text = help_for_question(introduction, "training collections", budget=4096)
+        text = help_for_question(text, "remix")
+        _show_help_text(dialog, "Local CollectiGen help", text)
+
+    local_help.clicked.connect(show_local_help)
+
     def refresh():
         open_help.setEnabled(bool(server.text().strip() and model.text().strip()))
     server.textChanged.connect(refresh)

@@ -3578,8 +3578,8 @@
     },
     {
       "path": "suite_core/manager/model_chat_ui.py",
-      "bytes": 14863,
-      "sha256": "b7b0f811424b814f08b78f809a27334aa72d23ed29277f03349e5848a2aad1b4"
+      "bytes": 15347,
+      "sha256": "f7a2bc6358fe95420d9445f2a262887b76a9dde047b6a2e3050e2bbe2c1de908"
     },
     {
       "path": "suite_core/manager/model_workspace_host.py",
