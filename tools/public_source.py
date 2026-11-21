@@ -32,8 +32,10 @@ PRIVATE_PATH_PARTS = {
     "output",
     "training",
 }
+ROOT_AGENT_GUIDE = "AGENTS.md"
+PUBLIC_AGENT_GUIDE_SOURCE = "docs/CONTRIBUTOR_AGENTS.md"
 PRIVATE_EXACT_PATHS = {
-    "AGENTS.md",
+    ROOT_AGENT_GUIDE,
     "GUI_NOTES.txt",
     "UPDATE_NOTES.txt",
     "saved_rules.json",
@@ -182,7 +184,7 @@ def load_manifest(path: Path) -> dict[str, Any]:
     payload["files"] = sorted(files, key=str.casefold)
     for value in files:
         lowered = value.casefold()
-        if value in PRIVATE_EXACT_PATHS or (value not in PUBLIC_GITHUB_PATHS and any(
+        if lowered == ROOT_AGENT_GUIDE.casefold() or value in PRIVATE_EXACT_PATHS or (value not in PUBLIC_GITHUB_PATHS and any(
             lowered == part.casefold() or lowered.startswith(part.casefold() + "/")
             for part in PRIVATE_PATH_PARTS
         )):
@@ -292,6 +294,8 @@ def prepare_files(
             }
             raw = clean
         prepared[relative] = raw
+    if PUBLIC_AGENT_GUIDE_SOURCE in prepared:
+        prepared[ROOT_AGENT_GUIDE] = prepared[PUBLIC_AGENT_GUIDE_SOURCE]
     provenance = {}
     for relative in manifest["required_provenance"]:
         if relative not in prepared:
@@ -674,7 +678,12 @@ def scan_public_tree(
             )):
                 findings.append(f"private directory: {relative}")
             continue
-        if relative in PRIVATE_EXACT_PATHS:
+        if lowered == ROOT_AGENT_GUIDE.casefold():
+            guide_source = root / PUBLIC_AGENT_GUIDE_SOURCE
+            if (relative != ROOT_AGENT_GUIDE or not guide_source.is_file()
+                    or guide_source.is_symlink() or path.read_bytes() != guide_source.read_bytes()):
+                findings.append(f"private file: {relative}")
+        elif relative in PRIVATE_EXACT_PATHS:
             findings.append(f"private file: {relative}")
         if path.suffix.casefold() not in TEXT_SUFFIXES or relative in CONTENT_SCAN_EXEMPT:
             continue

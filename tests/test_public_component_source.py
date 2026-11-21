@@ -50,3 +50,42 @@ def test_ordinary_export_keeps_explicit_completeness_hold(tmp_path):
     with pytest.raises(exporter.PublicSourceError,match='Distribution knowledge is incomplete'):
         exporter.build_public_source(root,output,manifest,'inert',completeness_check=lambda:['unreviewed native defaults'])
     assert not output.exists()
+
+
+def test_public_agent_guide_is_generated_only_from_allowlisted_contributor_source(tmp_path):
+    root, manifest = candidate(tmp_path)
+    internal_guide = root / 'AGENTS.md'
+    internal_guide.write_bytes(b'# Maintainer instructions\n')
+    template = root / exporter.PUBLIC_AGENT_GUIDE_SOURCE
+    template.parent.mkdir()
+    public_guide = b'# Contributor instructions\n'
+    template.write_bytes(public_guide)
+
+    value = json.loads(manifest.read_bytes())
+    value['files'].append(exporter.PUBLIC_AGENT_GUIDE_SOURCE)
+    manifest.write_text(json.dumps(value), encoding='utf-8')
+    model = exporter.load_manifest(manifest)
+    _, _, digest = exporter.prepare_files(model, exporter._tree_reader(root))
+    output = tmp_path / 'export'
+    assert exporter.main([
+        '--repository', str(root), '--manifest', str(manifest), '--working-tree',
+        '--output', str(output), '--approve-defaults-digest', digest,
+    ]) == 0
+
+    exported_guide = output / 'AGENTS.md'
+    assert exported_guide.read_bytes() == public_guide
+    assert exporter.verify_public_inventory(output) == []
+    assert exporter.scan_public_tree(output) == []
+
+    exported_guide.write_bytes(internal_guide.read_bytes())
+    assert 'private file: AGENTS.md' in exporter.scan_public_tree(output)
+
+
+@pytest.mark.parametrize('path', ('AGENTS.md', 'agents.md', '.agents/skills/example/SKILL.md'))
+def test_maintainer_agent_files_cannot_enter_allowlist(tmp_path, path):
+    _, manifest = candidate(tmp_path)
+    value = json.loads(manifest.read_bytes())
+    value['files'].append(path)
+    manifest.write_text(json.dumps(value), encoding='utf-8')
+    with pytest.raises(exporter.PublicSourceError, match='Private path is allowlisted'):
+        exporter.load_manifest(manifest)

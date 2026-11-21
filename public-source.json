@@ -1,5 +1,5 @@
 {
-  "allowlisted_source_file_count": 355,
+  "allowlisted_source_file_count": 360,
   "component_ids": [
     "collectigen.suite-manager",
     "collectigen.tag-encyclopedia"
@@ -9,6 +9,14 @@
     ".gitattributes": {
       "sha256": "1e526da65ea698659a32c0aaa944ba0ffae748dfe1ab2bdfdd054ec40c8a8757",
       "size_bytes": 61
+    },
+    "AGENTS.md": {
+      "sha256": "788e0f5ae02370b751b1ae6fa5de12836057af2d73d2b560c6b7e50509370259",
+      "size_bytes": 997
+    },
+    "CONTRIBUTING.md": {
+      "sha256": "3715bee7a017f077f60b1ecb9f812bbde12810336d5590ced025377f13c8c00f",
+      "size_bytes": 2037
     },
     "LICENSE": {
       "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0",
@@ -23,8 +31,8 @@
       "size_bytes": 9008
     },
     "README.md": {
-      "sha256": "1275fac40ab582c6d6b1a8c170940fa3d8d1cff5a69fe582cbddd8f2f3adaa22",
-      "size_bytes": 6747
+      "sha256": "7f572d26c382f328911653698a235e792d086589d6f6797a46060a706b0c68b5",
+      "size_bytes": 11543
     },
     "SUPPORT.md": {
       "sha256": "1cb1e9aea57477e1494bf8b89ff692c9342e9169c4af5b8292ece123788fb1f3",
@@ -750,6 +758,10 @@
       "sha256": "ef58994610d2684cbfbb97ddb29b171d27e4d76aa51339a11a0964367a97b826",
       "size_bytes": 724
     },
+    "docs/CONTRIBUTOR_AGENTS.md": {
+      "sha256": "788e0f5ae02370b751b1ae6fa5de12836057af2d73d2b560c6b7e50509370259",
+      "size_bytes": 997
+    },
     "licenses/Apache-2.0.txt": {
       "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
       "size_bytes": 11357
@@ -998,6 +1010,10 @@
       "sha256": "2059732cf5640e781885b0f74c73769e05e68888485148ba705fc74a0379df0c",
       "size_bytes": 2824
     },
+    "suite_core/generate/README.md": {
+      "sha256": "942c9a05f128c56c20044b8f07fb1058f10c86a8d3190372fed26b99030dec2a",
+      "size_bytes": 3509
+    },
     "suite_core/installation.py": {
       "sha256": "df48bbfd99ab18df6227a9005e5aab7d664df8fc8d062cf0e805c47e7c17481d",
       "size_bytes": 14178
@@ -1051,8 +1067,8 @@
       "size_bytes": 31466
     },
     "suite_core/manager/README.md": {
-      "sha256": "dcebeedddb3b55be43eb77f4f6cb0e15afacb5cedd7457d3e55528f2b7b4d553",
-      "size_bytes": 7216
+      "sha256": "10c2ee4d0d316e89839eb5828216837c201f3cb741cef655bc6da73027480560",
+      "size_bytes": 3579
     },
     "suite_core/manager/RELEASE_HISTORY.json": {
       "sha256": "183f799cd4c78ce31419851d9fcd6b3f2ce1e555884cc2359082d683e283a18f",
@@ -1350,6 +1366,14 @@
       "sha256": "37b16f2c7f512c4ec01a9a77cf84d56323f55fd0a9b3c275668011b264dc4668",
       "size_bytes": 13769
     },
+    "suite_core/train/README.md": {
+      "sha256": "279b7431fe6651d474752182ba63a626cc0d7800fc489232e738dca23c600997",
+      "size_bytes": 4640
+    },
+    "suite_core/train/WHATS_NEW.md": {
+      "sha256": "403995dd03f152af431ca2e1efaec6c4c8d890d113abff7676933866d8eec19f",
+      "size_bytes": 1299
+    },
     "suite_core/version.py": {
       "sha256": "2235cee9c44d591ec185ba44b85acef2c8be3ba0a8305c7b0762bf603db9b847",
       "size_bytes": 190
@@ -1371,8 +1395,8 @@
       "size_bytes": 21970
     },
     "tests/test_public_component_source.py": {
-      "sha256": "b723b218fb9edc4121cfab8647f9b2ee43b76d92188b29403f6f7d47c68fa5a2",
-      "size_bytes": 3735
+      "sha256": "689f3e8c9b6b23173b02c8143786aae096b40a0b181eac296a5099e706e7ea26",
+      "size_bytes": 5524
     },
     "tools/Build-PublicSource.py": {
       "sha256": "2aa407dbbb65c567db94cbf668ad42167fbba87e76422865b8e28c4559577251",
@@ -1431,8 +1455,8 @@
       "size_bytes": 26121
     },
     "tools/public_source.py": {
-      "sha256": "56430c3dfeb6fbe288bbd52cf430e174288b6fbae0d920bc7be27ad5aedf688b",
-      "size_bytes": 40695
+      "sha256": "c210f5414b5b5ad0bc0cf9efffb7a51b5246c017cb0d5fa29bbaf44c2b706d99",
+      "size_bytes": 41308
     },
     "version.py": {
       "sha256": "f119dad6a3bca2d0c6f2c95665a9c2a5f8642ead6614c13d88fc8afef7000b48",
