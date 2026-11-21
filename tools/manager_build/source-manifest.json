@@ -2278,8 +2278,8 @@
     },
     {
       "path": "core/workflow_root_selection.py",
-      "bytes": 6299,
-      "sha256": "4934cbd6f73767c41992d90af994ca9a1c21fc801833ce86af168acd57160786"
+      "bytes": 9040,
+      "sha256": "e4d5a4e5cec44818478d97df42cce81eddf2ab33c4a3a5ef11020e5a2b4be731"
     },
     {
       "path": "core/workflow_semantic_proof.py",
@@ -3373,8 +3373,8 @@
     },
     {
       "path": "suite_core/manager/MODULE_MANIFEST.json",
-      "bytes": 42586,
-      "sha256": "1d15b6ca7ec64dd1c3f26cf1e494a468e0d18ebe281ea53f05d5db4a7d070ac2"
+      "bytes": 42643,
+      "sha256": "a1b6652a233bcdc2d60b555bd01256b2b5cd3b3e1c526e96025a28fabf516e4e"
     },
     {
       "path": "suite_core/manager/RELEASE_PRESENTATION.json",
@@ -3408,8 +3408,8 @@
     },
     {
       "path": "suite_core/manager/assistant_discovery.py",
-      "bytes": 18162,
-      "sha256": "b20c3af38241bca631fb42d3f680a4c638e59b5dee46ffcf4410eb0a1e92049b"
+      "bytes": 18470,
+      "sha256": "5af12ac300109946cf631b415e49542c98cba560010ce6a6dcd5876602b4cbd9"
     },
     {
       "path": "suite_core/manager/async_lifecycle_bridge.py",
@@ -3538,8 +3538,8 @@
     },
     {
       "path": "suite_core/manager/frozen_entry.py",
-      "bytes": 6795,
-      "sha256": "8cf652fdb5275462c8829d8080294bf2b79a406a90d7d6e7274aa131a49ec315"
+      "bytes": 7054,
+      "sha256": "c275ac8e90d835ca8d0266dd8536672b544b05cb948e1c82f0867108c2a1e8a7"
     },
     {
       "path": "suite_core/manager/host_contracts.py",
@@ -3748,8 +3748,8 @@
     },
     {
       "path": "suite_core/manager/workflow_acquisition_binding.py",
-      "bytes": 16165,
-      "sha256": "a0ec1c3e3fd568cb954e4e4ed35894f70b16bf38bbcd0c0c1ce821daef4cf597"
+      "bytes": 18157,
+      "sha256": "ec1ae14e01e696abda36b7513d59d4846927f59fd27f557aa44d4cb4508855e5"
     },
     {
       "path": "suite_core/manager/workflow_applications_ui.py",
@@ -3825,6 +3825,11 @@
       "path": "suite_core/workflow_modules/__init__.py",
       "bytes": 83,
       "sha256": "64f6f38a05cc6281f52274d75a151973f7eef23b2f83d7d8d67ab80b2cab14b0"
+    },
+    {
+      "path": "suite_core/workflow_modules/compiled_admission.py",
+      "bytes": 2128,
+      "sha256": "1f82c66fcf395c75b8fab46e807e2a3a470e404793e3a271423618516713257e"
     },
     {
       "path": "suite_core/workflow_modules/contracts.py",

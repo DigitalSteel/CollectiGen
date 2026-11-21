@@ -45,6 +45,10 @@ def run(argv=None, *, executable=None, channel_factory=None,
     try:
         session = NormalEntrySession.accept(channel, admitted,
                                             expected_launcher_sha256=expected_launcher_sha256)
+        if 'replacement' in session.scope['roles']:
+            from .version import VERSION
+            from .workflow_acquisition_binding import check_replacement_workflow_compatibility
+            check_replacement_workflow_compatibility(session, VERSION)
         if sdk_factory is None:
             import velopack
             sdk_factory = velopack.App

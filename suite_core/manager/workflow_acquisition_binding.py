@@ -239,40 +239,55 @@ def factory_for_session(session, component_id):
 def root_selection_for_owner(owner, admitted, component_id):
     """Only original Root issuance from signed retained transaction history."""
     from core.manager_launch_owner import DeploymentOwner
+    if _profile(component_id) is None:
+        return None
+    if (type(owner) is not DeploymentOwner or owner.root != admitted.layout.code_root
+            or owner.data_root != admitted.layout.data_root):
+        raise ValueError('original_workflow_roots_required')
+    selection = _read_saved_workflow_selection(admitted, component_id)
+    if selection is None:
+        return None
+    return owner.issue_workflow_selection(component_id, selection.settings_path,
+        manifest_bytes=selection.manifest_bytes, signature_bytes=selection.signature_bytes,
+        trust_bytes=selection.trust_bytes)
+
+
+def _read_saved_workflow_selection(admitted, component_id):
+    """Read signed selection evidence without issuing a launch or workspace grant."""
     from core.workflow_connection_settings import WorkflowConnectionStore
+    from core.workflow_root_selection import RootWorkflowSelection
     from suite_core.discovery.component_staging import (guard, read_json, validate_journal,
                                                         component_stage_owner, prior_journal_bytes)
     component = workflow_component(component_id)
     profile = _profile(component_id)
-    if profile is None:
-        return None
+    root, data_root = admitted.layout.code_root, admitted.layout.data_root
     if type(profile) is CompiledWorkflowQualificationProfile:
         profile = profile.production
-    if (type(owner) is not DeploymentOwner or owner.root != admitted.layout.code_root
-            or owner.data_root != admitted.layout.data_root):
-        raise ValueError('original_workflow_roots_required')
-    _check_candidate(profile, owner.root, owner.data_root)
+    if profile is not None:
+        _check_candidate(profile, root, data_root)
     settings = Path(admitted.settings_path)
     if settings.suffix.casefold() == '.ini':
         settings = settings.with_suffix('.json')
-    if not settings.is_absolute() or '..' in settings.parts or not settings.is_relative_to(owner.data_root / 'Manager'):
+    if not settings.is_absolute() or '..' in settings.parts or not settings.is_relative_to(data_root / 'Manager'):
         raise ValueError('original_workflow_settings_required')
     guard(settings)
     store = WorkflowConnectionStore(settings, component_id)
     selected = store.selected(store.observe())
     if selected is None:
         return None
-    base = owner.root / 'State' / component_id
-    origin = component_stage_owner(owner.root, owner.data_root, component)
+    if profile is None:
+        raise ValueError('signed_workflow_profile_unavailable')
+    base = root / 'State' / component_id
+    origin = component_stage_owner(root, data_root, component)
     journal, seen = read_json(base / 'transaction.json'), set()
-    while True:
+    for _ in range(128):
         validate_journal(journal, component, origin, profile.trust_bytes)
         pin = sha256(json.dumps(journal, sort_keys=True).encode()).hexdigest()
         if pin in seen:
             raise ValueError('cyclic_component_history')
         seen.add(pin)
         target = journal['target']
-        if (owner.root / target['directory'], target['version'], target['inventory_sha256']) == (
+        if (root / target['directory'], target['version'], target['inventory_sha256']) == (
                 selected.directory, selected.version, selected.inventory_sha256):
             manifest = base64.b64decode(journal['manifest'], validate=True)
             signature = base64.b64decode(journal['signature'], validate=True)
@@ -281,10 +296,29 @@ def root_selection_for_owner(owner, admitted, component_id):
                         or sha256(manifest).hexdigest() != profile.expected_offer.manifest.sha256
                         or sha256(signature).hexdigest() != profile.expected_offer.signature.sha256):
                     raise ValueError('exact_pending_candidate_origin_required')
-                _check_candidate(profile, owner.root, owner.data_root)
-            return owner.issue_workflow_selection(component_id, settings,
-                manifest_bytes=manifest, signature_bytes=signature, trust_bytes=profile.trust_bytes)
+                _check_candidate(profile, root, data_root)
+            return RootWorkflowSelection(root, data_root, settings, selected, manifest,
+                                         signature, profile.trust_bytes)
         raw = prior_journal_bytes(base, journal, component, origin, profile.trust_bytes)
         if raw is None:
             raise ValueError('signed_workflow_origin_unavailable')
         journal = json.loads(raw)
+    raise ValueError('workflow_software_history_bound')
+
+
+
+def check_replacement_workflow_compatibility(session, manager_version):
+    """Hold pre-health replacement entry if a saved module loses host compatibility."""
+    from .bootstrap_entry import EntryHold
+    from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
+
+    if 'replacement' not in session.scope['roles']:
+        return
+    for component_id in WORKFLOW_EXECUTABLES:
+        try:
+            selection = _read_saved_workflow_selection(session.admitted, component_id)
+            compatible = selection is None or selection.accepts_manager_version(manager_version)
+        except (ValueError, OSError) as error:
+            raise EntryHold(f'Repair Suite Manager, then review {component_id} in Applications before updating.') from error
+        if not compatible:
+            raise EntryHold(f'Repair Suite Manager, then update {component_id} in Applications before updating Manager.')

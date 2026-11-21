@@ -151,19 +151,24 @@ def describe_action(report, action_id):
             "action": action}
 
 
+def _settings_snapshot(settings_path, code_root):
+    try:
+        if ".." in code_root.parts or not code_root.is_absolute() or ".." in settings_path.parts:
+            return None
+        guard(code_root)
+        if not code_root.is_dir():
+            return None
+        snapshot = BackendConnectionSettings(settings_path).observe()
+    except (OSError, ValueError):
+        return None
+    return snapshot if snapshot.digest is not None else None
+
+
 def discover(settings_path, code_root, *, trainer_software_root=None):
     report = {"schema_version": 1, "manager": "unavailable", "components": {}}
     settings_path, code_root = Path(settings_path), Path(code_root)
-    try:
-        if ".." in code_root.parts or not code_root.is_absolute() or ".." in settings_path.parts:
-            return report
-        guard(code_root)
-        if not code_root.is_dir():
-            return report
-        snapshot = BackendConnectionSettings(settings_path).observe()
-    except (OSError, ValueError):
-        return report
-    if snapshot.digest is None:
+    snapshot = _settings_snapshot(settings_path, code_root)
+    if snapshot is None:
         return report
     report["manager"] = "settings_available"
     stores = {
@@ -360,6 +365,11 @@ def main(argv=None):
         arguments = ["--manager-settings", str(args.manager_settings), "--code-root", str(args.code_root)]
         if args.trainer_software_root is not None:
             arguments.extend(("--trainer-software-root", str(args.trainer_software_root)))
+        available = _settings_snapshot(args.manager_settings, args.code_root) is not None
+        result = {"schema_version": 1, "manager": "settings_available" if available else "unavailable",
+                  **connection_recipe(console, arguments, args.mcp_python)}
+        print(json.dumps(result, ensure_ascii=True))
+        return 0 if available else 1
     result = discover(args.manager_settings, args.code_root,
                       trainer_software_root=args.trainer_software_root)
     if args.command == "explain-training-collection":
@@ -368,9 +378,6 @@ def main(argv=None):
         described = describe_action(result, args.action_id)
         result = {"schema_version": result["schema_version"], "manager": result["manager"],
                   "description": described}
-    elif args.command == "connection-info":
-        result = {"schema_version": result["schema_version"], "manager": result["manager"],
-                  **connection_recipe(console, arguments, args.mcp_python)}
     print(json.dumps(result, ensure_ascii=True))
     return 0 if result["manager"] == "settings_available" else 1
 

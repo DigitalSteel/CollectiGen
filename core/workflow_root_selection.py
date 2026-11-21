@@ -16,6 +16,31 @@ from suite_core.discovery.component_staging import guard
 from suite_core.workflow_modules.contracts import WORKFLOW_EXECUTABLES
 
 
+_ADMISSION_PROFILE = '_internal/suite_core/workflow_modules/compiled_admission.py'
+_MAX_ADMISSION_PROFILE_BYTES = 128 * 1024
+
+
+def _compiled_admission(raw):
+    """Read the stock freezer's literal profile without importing module code."""
+    import ast
+    from suite_core.workflow_modules.compiled_admission import CompiledWorkflowAdmission
+
+    try:
+        assignment, = [node for node in ast.parse(raw).body if isinstance(node, ast.Assign)
+                       and any(isinstance(target, ast.Name) and target.id == 'PROFILE'
+                               for target in node.targets)]
+        call = assignment.value
+        if (len(assignment.targets) != 1 or not isinstance(call, ast.Call) or call.args
+                or not isinstance(call.func, ast.Name) or call.func.id != 'CompiledWorkflowAdmission'):
+            raise ValueError('literal profile required')
+        values = {arg.arg: ast.literal_eval(arg.value) for arg in call.keywords}
+        if len(values) != len(call.keywords) or None in values:
+            raise ValueError('unique profile fields required')
+        return CompiledWorkflowAdmission(**values)
+    except (SyntaxError, TypeError, ValueError, RecursionError) as error:
+        raise ValueError('invalid_compiled_workflow_profile') from error
+
+
 @dataclass(frozen=True)
 class RootWorkflowSelection:
     root: Path
@@ -82,15 +107,43 @@ class RootWorkflowSelection:
         return self._context()
 
     def _program_sha256(self):
+        row, = self._inventory_records(WORKFLOW_EXECUTABLES[self.component_id])
+        return row['sha256']
+
+    def _inventory_records(self, relative_path):
         path = self.selected.directory / 'BOOTSTRAP_INVENTORY.json'
         guard(path)
-        if path.stat().st_size > WORKFLOW_FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes:
+        limit = WORKFLOW_FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes
+        with path.open('rb') as stream:
+            raw = stream.read(limit + 1)
+        if len(raw) > limit:
             raise ValueError('workflow_inventory_size')
-        raw = path.read_bytes()
         if sha256(raw).hexdigest() != self.selected.inventory_sha256:
             raise ValueError('workflow_inventory_changed')
-        rows = inventory_json(raw, max_bytes=WORKFLOW_FROZEN_PAYLOAD_POLICY.max_inventory_json_bytes)['files']
-        return next(row['sha256'] for row in rows if row['path'] == WORKFLOW_EXECUTABLES[self.component_id])
+        return [row for row in inventory_json(raw, max_bytes=limit)['files'] if row['path'] == relative_path]
+
+    def accepts_manager_version(self, manager_version, *, checkpoint=None):
+        """Check the signed selection's compatibility without launching it."""
+        from suite_core.discovery.component_release_signature import _version
+
+        version = _version(manager_version)
+        self.validate(checkpoint=checkpoint)
+        records = self._inventory_records(_ADMISSION_PROFILE)
+        if len(records) != 1:
+            raise ValueError('signed_compiled_workflow_profile_required')
+        row = records[0]
+        path = self.selected.directory / _ADMISSION_PROFILE
+        guard(path)
+        with path.open('rb') as stream:
+            raw = stream.read(_MAX_ADMISSION_PROFILE_BYTES + 1)
+        if (len(raw) > _MAX_ADMISSION_PROFILE_BYTES or len(raw) != row['size_bytes']
+                or sha256(raw).hexdigest() != row['sha256']):
+            raise ValueError('signed_compiled_workflow_profile_changed')
+        profile = _compiled_admission(raw).validate(self.component_id)
+        if profile.software_version != self.selected.version or profile.trust_bytes != self.trust_bytes:
+            raise ValueError('signed_compiled_workflow_profile_identity_changed')
+        return (version.compare(_version(profile.minimum_manager_version)) >= 0
+                and version.compare(_version(profile.maximum_manager_version_exclusive)) < 0)
 
     @property
     def program_sha256(self):
