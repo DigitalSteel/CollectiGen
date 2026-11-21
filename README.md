@@ -11,7 +11,7 @@ source, checksums, and release notes.
 
 | Component | Current release | Download and purpose |
 | --- | --- | --- |
-| **Suite Manager** | [a.0.8.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.8.0-alpha.1) | [Complete Windows Suite ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.0-alpha.1/CollectiGen-Suite-a.0.8.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.0-alpha.1/CollectiGen-Suite-a.0.8.0-windows-x64.zip.sha256). Install, update and launch independently versioned workflow apps. Includes launcher 0.1.1. |
+| **Suite Manager** | [a.0.8.2](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.8.2-alpha.1) | [Complete Windows Suite ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.2-alpha.1/CollectiGen-Suite-a.0.8.2-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.2-alpha.1/CollectiGen-Suite-a.0.8.2-windows-x64.zip.sha256). Install, update and launch independently versioned workflow apps. Includes launcher 0.1.2. |
 | **Generate** | [a.0.1.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.generate/v0.1.0-alpha.1) | [Module ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.generate/v0.1.0-alpha.1/CollectiGen-Generate-a.0.1.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.generate/v0.1.0-alpha.1/CollectiGen-Generate-a.0.1.0-windows-x64.zip.sha256). Image/video request drafts and configured generation workflows. Install and open through Manager 0.8.0 / launcher 0.1.1. |
 | **Train** | [a.0.2.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.train/v0.2.0-alpha.1) | [Module ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.train/v0.2.0-alpha.1/CollectiGen-Train-a.0.2.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.train/v0.2.0-alpha.1/CollectiGen-Train-a.0.2.0-windows-x64.zip.sha256). Training-package review, SDXL dataset preparation and saved preparation history. Install and open through Manager 0.8.0 / launcher 0.1.1. |
 | **Media Organizer** | [a.0.7.0](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.7.0-alpha.1) | [Portable Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.7.0-alpha.1/MediaOrganizer-a.0.7.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.7.0-alpha.1/MediaOrganizer-a.0.7.0-windows-x64.zip.sha256). Local image organization, Tags/Descriptions and JSON/TXT sidecars, plus Training dataset planning and offline image/video drafts. |
@@ -30,8 +30,8 @@ Retain your previous package and separate profile/image/catalog backups.
 
 ### Install apps with Suite Manager
 
-Use the **complete Suite a.0.8.0 ZIP** for Manager 0.8.0-alpha.1 and launcher
-0.1.1. A Manager-only update cannot replace an older launcher. Keep your earlier
+Use the **complete Suite a.0.8.2 ZIP** for Manager 0.8.2-alpha.1 and launcher
+0.1.2. A Manager-only update cannot replace an older launcher. Keep your earlier
 installation and separate Data/image/catalog backups. Extract the new ZIP into
 its own short writable folder; do not overwrite a running installation or an
 interrupted recovery folder. Moving older profiles into this Suite is not
@@ -71,7 +71,7 @@ model quality and hardware suitability remain unqualified.
 
 Release metadata is RSA-signed; Windows executables are **not
 Authenticode-signed** and may show publisher warnings. Do not disable Windows
-security policy. See the [Manager release notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.8.0-alpha.1)
+security policy. See the [Manager release notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.8.2-alpha.1)
 and each module's validation asset for exact scope.
 
 ### Media Organizer

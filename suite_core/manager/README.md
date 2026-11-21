@@ -1,4 +1,4 @@
-# CollectiGen Suite Manager a.0.8.0
+# CollectiGen Suite Manager a.0.8.2
 
 Suite Manager installs, updates and launches independently versioned applications.
 It keeps shared settings, resources and connections together. Generate and Train
@@ -6,16 +6,19 @@ open in their own workflow windows from **Applications**.
 
 ## Download and start
 
-- [Complete Windows Suite ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.0-alpha.1/CollectiGen-Suite-a.0.8.0-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.0-alpha.1/CollectiGen-Suite-a.0.8.0-windows-x64.zip.sha256)
-- [Release notes and matching source](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.8.0-alpha.1)
+- [Complete Windows Suite ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.2-alpha.1/CollectiGen-Suite-a.0.8.2-windows-x64.zip) · [SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.suite-manager/v0.8.2-alpha.1/CollectiGen-Suite-a.0.8.2-windows-x64.zip.sha256)
+- [Release notes and matching source](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.suite-manager/v0.8.2-alpha.1)
 
 Extract the **complete** ZIP into a new, short writable folder, such as
 **C:\\CollectiGen**, keep the folder together and open **CollectiGen.exe**.
-This ZIP includes Manager 0.8.0-alpha.1 and launcher 0.1.1. A Manager-only update
-cannot replace an older launcher; use this complete ZIP to move from Manager 0.7.
+This ZIP includes Manager 0.8.2-alpha.1 and launcher 0.1.2. Use the complete ZIP
+when you need the newer launcher.
 Keep the previous installation and separate Data/image/catalog backups. Do not
 overwrite a running installation or interrupted recovery folder. Older-profile
 migration is not qualified by this release.
+
+On Manager 0.8.2, open **Settings > Updates** and choose **Check for updates**.
+The application shows published, compatible packages for review before download.
 
 ## Install and open a workflow
 
