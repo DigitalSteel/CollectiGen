@@ -3538,8 +3538,8 @@
     },
     {
       "path": "suite_core/manager/frozen_entry.py",
-      "bytes": 7054,
-      "sha256": "c275ac8e90d835ca8d0266dd8536672b544b05cb948e1c82f0867108c2a1e8a7"
+      "bytes": 7287,
+      "sha256": "2f4bc3a8334c622c18a06fc2951079380530c18004b294332811beaf70ce9f54"
     },
     {
       "path": "suite_core/manager/host_contracts.py",
