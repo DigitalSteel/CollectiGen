@@ -1,3 +1,18 @@
+# Media Organizer 0.7.0-alpha.2 (local unsigned candidate)
+
+2026-11-27 (America/New_York; not published)
+
+- Enter or keypad Enter opens the selected Encyclopedia entry's details.
+- Escape returns to the table with its selection, query, category and scroll context preserved.
+- No new writer, runtime installation, catalog authority or update route is introduced.
+
+The browser-only change is landed at b3f35ae3fbe9f96e7f34ffddccc52e3050e038fb.
+Retained matching browser-module synthetic Qt evidence is reused, not a new
+package, authenticated launch, installed update or rollback qualification.
+Packaging, independent review and final release approval remain separate gates.
+
+## Historical notes retained below
+
 # Media Organizer a.0.4.5 - Alpha (compatibility wire 0.4.5-alpha.1)
 
 2026-10-13 (America/New_York; unpublished candidate)

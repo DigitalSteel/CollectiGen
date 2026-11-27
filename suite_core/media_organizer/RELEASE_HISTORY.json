@@ -2,6 +2,16 @@
   "schema_version": 1,
   "releases": [
     {
+      "software_version": "0.7.0-alpha.2",
+      "numeric_version": "0.7.0",
+      "maturity": "alpha",
+      "date": "2026-11-27",
+      "timezone": "America/New_York",
+      "interface_version": 1,
+      "status": "Local unsigned source candidate; independent review, package qualification and release approval pending",
+      "scope": "Encyclopedia Enter/keypad Enter opens details; Escape restores selected table context; no new writer or runtime authority"
+    },
+    {
       "software_version": "0.7.0-alpha.1",
       "numeric_version": "0.7.0",
       "maturity": "alpha",

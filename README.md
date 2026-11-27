@@ -1,12 +1,13 @@
 # CollectiGen Media Organizer
 
-**Media Organizer a.0.6.0** organizes images, preserves Image Knowledge and generation
-lineage, and prepares Dataset captions and Training plans. Generate and Training
-execution belong to Suite Manager.
+**Media Organizer 0.7.0-alpha.2** is a local unsigned source candidate. It retains
+Organizer's published 0.7.0 image workflows and adds keyboard return from
+Encyclopedia details without losing the selected row or view context. Generate
+and Training execution belong to Suite Manager.
 
-[Release and notes](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.6.0-alpha.1) ·
-[Windows ZIP](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.6.0-alpha.1/MediaOrganizer-a.0.6.0-windows-x64.zip) ·
-[SHA-256](https://github.com/DigitalSteel/CollectiGen/releases/download/collectigen.media-organizer/v0.6.0-alpha.1/MediaOrganizer-a.0.6.0-windows-x64.zip.sha256)
+See [candidate release notes](RELEASE_NOTES.md). No alpha.2 download or signed
+release is published by this source change. The [prior published alpha.1](https://github.com/DigitalSteel/CollectiGen/releases/tag/collectigen.media-organizer/v0.7.0-alpha.1)
+remains a separate artifact.
 
 Export reusable Tag names/aliases, Characters and reviewed Outfit prompt choices with **Knowledge > Prompt Catalog**, then **Knowledge > Prompt Choices > Export Prompt Catalog for Generate**. Review and save a new export; import it in **Suite Manager a.0.7.6 or newer > Generate > Use Organizer Prompt Catalog**. The export excludes images, library/model paths and unreviewed Outfit text. Existing rule repair, Undo and Copy recovery remain included.
 

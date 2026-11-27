@@ -1,3 +1,11 @@
+# Media Organizer 0.7.0-alpha.2 (local unsigned candidate)
+
+2026-11-27 (America/New_York)
+
+- Enter or keypad Enter opens Encyclopedia details; Escape returns to the same table context.
+- Browser-only synthetic evidence is reused. New package, authenticated startup and installed update qualification remain pending.
+- No signing, publication or installation is authorized by this source checkpoint.
+
 # Media Organizer a.0.7.0 — Alpha
 
 2026-11-16 (America/New_York)

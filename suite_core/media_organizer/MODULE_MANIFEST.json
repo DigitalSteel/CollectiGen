@@ -46,7 +46,7 @@
     "Ingest",
     "Setup"
   ],
-  "release_date": "2026-11-15",
+  "release_date": "2026-11-27",
   "release_timezone": "America/New_York",
   "required_runtime": [
     "bundled Python 3.13.15 organizer-image runtime",
@@ -120,7 +120,7 @@
   "scope": "Explicit local LM Studio model-list review and guarded connection preferences;no inference or model management. Existing0.5.8 image,rule-repair and recovery behavior retained.",
   "settings_authority": "canonical AppSettings inside the explicitly selected standalone profile",
   "shell_owner": "qt_app.main_window.TagManagerWindow",
-  "software_version": "0.7.0-alpha.1",
+  "software_version": "0.7.0-alpha.2",
   "standalone_distribution_qualified": false,
   "startup_effects": "canonical settings recovery, migrations, AppState adoption, library restoration and existing user-chosen startup tasks",
   "startup_owner": "qt_main._start_application",
