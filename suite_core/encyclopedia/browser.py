@@ -4,7 +4,7 @@ from threading import Event
 from uuid import uuid4
 from suite_core.selected_catalog import SelectedCatalogSession
 from suite_core.media_examples import ExampleResult, ExampleStatus, MediaReference
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit,
     QMainWindow, QPushButton, QSplitter, QTableView, QTextEdit, QVBoxLayout, QWidget,
@@ -111,9 +111,12 @@ class EncyclopediaWindow(QMainWindow):
         self.table.setColumnHidden(1, True)
         self.table.selectionModel().currentChanged.connect(self._selection_changed)
         self.table.clicked.connect(lambda index: self._selection_changed(index, None))
+        self.table.activated.connect(self._inspect_result)
         self.details = QTextEdit()
         self.details.setReadOnly(True)
         self.details.setAccessibleName("Read-only Tag details")
+        self.details.installEventFilter(self)
+        layout.addWidget(QLabel("Results: Enter to focus details. Details: Escape to return to the selected result."))
         splitter.addWidget(self.table)
         splitter.addWidget(self.details)
         splitter.setSizes([190, 550, 350])
@@ -395,6 +398,20 @@ class EncyclopediaWindow(QMainWindow):
         if self.lookup is not None and current.isValid():
             self._selected_id = self.model.stable_id(current)
             self._show_resolution(self.lookup.get(self._selected_id, category_ids=self._scope()))
+
+    def _inspect_result(self, index):
+        if self.lookup is not None and index.isValid():
+            self._selection_changed(index, self.table.currentIndex())
+            self.details.setFocus(Qt.ShortcutFocusReason)
+
+    def eventFilter(self, watched, event):
+        if (watched is self.details and event.type() == QEvent.KeyPress
+                and event.key() == Qt.Key_Escape
+                and event.modifiers() == Qt.NoModifier
+                and self.table.currentIndex().isValid()):
+            self.table.setFocus(Qt.ShortcutFocusReason)
+            return True
+        return super().eventFilter(watched, event)
 
     def resolve_query(self):
         if self.lookup is None:
